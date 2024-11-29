@@ -1,5 +1,7 @@
 #include <nanobind/nanobind.h>
 
+#include "converter.hpp"
+
 // C
 extern "C" {
 #include <box2d/math_functions.h>
@@ -20,11 +22,12 @@ void export_id_types(py::module_ & m)
 }
 
 void export_b2Vec2(py::module_ &m) {
-    py::class_<b2Vec2>(m, "Vec2")
-        .def(py::init<>())
-        .def(py::init<float, float>())
-        .def_rw("x", &b2Vec2::x)
-        .def_rw("y", &b2Vec2::y);
+    // py::class_<b2Vec2>(m, "Vec2")
+    //     .def(py::init<>())
+    //     .def(py::init<float, float>())
+    //     .def_rw("x", &b2Vec2::x)
+    //     .def_rw("y", &b2Vec2::y)
+    // ;
 }
 
 void export_ray_result(py::module_ &m) {
@@ -75,6 +78,13 @@ void export_world_def(py::module_ &m) {
 }
 
 void export_body_def(py::module_ &m) {
+
+    py::enum_<b2BodyType>(m, "BodyType")
+        .value("STATIC", b2_staticBody)
+        .value("KINEMATIC", b2_kinematicBody)
+        .value("DYNAMIC", b2_dynamicBody)
+    ;
+
 
     // body def 
     py::class_<b2BodyDef>(m, "BodyDef")
