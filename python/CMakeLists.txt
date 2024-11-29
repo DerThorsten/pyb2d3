@@ -2,7 +2,10 @@ find_package(Python COMPONENTS Interpreter Development REQUIRED)
 find_package(nanobind CONFIG REQUIRED)
 
 
-nanobind_add_module(pybb2d pybb2d.cpp)
+nanobind_add_module(pybb2d pybb2d.cpp
+    export_box2d_types.cpp
+    export_box2d_functions.cpp
+)
 
 
 # link box2d
