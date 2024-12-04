@@ -1,6 +1,6 @@
 #include <nanobind/nanobind.h>
-
 #include "converter.hpp"
+#include "py_debug_draw.hpp"
 
 // C
 extern "C" {
@@ -12,13 +12,17 @@ extern "C" {
 namespace nb = nanobind;
 
 
+
 void export_world_functions(nb::module_ & m)
 {
-    m.def("create_world", &b2CreateWorld,nb::arg("def"));
+    m.def("create_world",  &b2CreateWorld,nb::arg("world_def"));
     m.def("destroy_world", &b2DestroyWorld,nb::arg("world_id"));
     m.def("world_is_valid", &b2World_IsValid,nb::arg("id"));
     m.def("world_step", &b2World_Step,nb::arg("world_id"),nb::arg("time_step"),nb::arg("sub_step_count"));
-    m.def("world_draw", &b2World_Draw,nb::arg("world_id"),nb::arg("draw"));
+    m.def("world_draw", [](b2WorldId world_id, PyDebugDraw* py_draw) { 
+        b2DebugDraw * draw = static_cast<b2DebugDraw*>(py_draw);
+        b2World_Draw(world_id, draw); 
+    },nb::arg("world_id"),nb::arg("draw"));
     m.def("world_get_body_events", &b2World_GetBodyEvents,nb::arg("world_id"));
     m.def("world_get_sensor_events", &b2World_GetSensorEvents,nb::arg("world_id"));
     m.def("world_get_contact_events", &b2World_GetContactEvents,nb::arg("world_id"));
@@ -52,8 +56,8 @@ void export_world_functions(nb::module_ & m)
     m.def("world_is_warm_starting_enabled", &b2World_IsWarmStartingEnabled,nb::arg("world_id"));
     m.def("world_get_profile", &b2World_GetProfile,nb::arg("world_id"));
     m.def("world_get_counters", &b2World_GetCounters,nb::arg("world_id"));
-    //m.def("world_set_user_data", &b2World_SetUserData,nb::arg("world_id"),nb::arg("user_data"));
-    //m.def("world_get_user_data", &b2World_GetUserData,nb::arg("world_id"));
+    m.def("world_set_user_data", [](b2WorldId world_id, user_data_uint user_data) { b2World_SetUserData(world_id, (void*)user_data);},nb::arg("world_id"),nb::arg("user_data"));
+    m.def("world_get_user_data", [](b2WorldId world_id) { return (user_data_uint)b2World_GetUserData(world_id);},nb::arg("world_id"));
     m.def("world_dump_memory_stats", &b2World_DumpMemoryStats,nb::arg("world_id"));
     m.def("world_rebuild_static_tree", &b2World_RebuildStaticTree,nb::arg("world_id"));
     m.def("world_enable_speculative", &b2World_EnableSpeculative,nb::arg("world_id"),nb::arg("flag"));
@@ -67,8 +71,6 @@ void export_body_functions(nb::module_ & m)
     m.def("body_is_valid", &b2Body_IsValid,nb::arg("id"));
     m.def("body_get_type", &b2Body_GetType,nb::arg("body_id"));
     m.def("body_set_type", &b2Body_SetType,nb::arg("body_id"),nb::arg("type"));
-    m.def("body_set_user_data", &b2Body_SetUserData,nb::arg("body_id"),nb::arg("user_data"));
-    m.def("body_get_user_data", &b2Body_GetUserData,nb::arg("body_id"));
     m.def("body_get_position", &b2Body_GetPosition,nb::arg("body_id"));
     m.def("body_get_rotation", &b2Body_GetRotation,nb::arg("body_id"));
     m.def("body_get_transform", &b2Body_GetTransform,nb::arg("body_id"));
@@ -122,6 +124,9 @@ void export_body_functions(nb::module_ & m)
     m.def("get_contact_capacity", &b2Body_GetContactCapacity,nb::arg("body_id"));
     m.def("get_contact_data", &b2Body_GetContactData,nb::arg("body_id"),nb::arg("contact_data"),nb::arg("capacity"));
     m.def("compute_aabb", &b2Body_ComputeAABB,nb::arg("body_id"));
+    // get and set user data
+    m.def("body_set_user_data", [](b2BodyId body_id, user_data_uint user_data) { b2Body_SetUserData(body_id, (void*)user_data);},nb::arg("body_id"),nb::arg("user_data"));
+    m.def("body_get_user_data", [](b2BodyId body_id) { return (user_data_uint)b2Body_GetUserData(body_id);},nb::arg("body_id"));
 }
 
 void export_shape_functions(nb::module_ & m)
@@ -136,8 +141,6 @@ void export_shape_functions(nb::module_ & m)
     m.def("shape_get_body", &b2Shape_GetBody,nb::arg("shape_id"));
     m.def("shape_get_world", &b2Shape_GetWorld,nb::arg("shape_id"));
     m.def("shape_is_sensor", &b2Shape_IsSensor,nb::arg("shape_id"));
-    m.def("shape_set_user_data", &b2Shape_SetUserData,nb::arg("shape_id"),nb::arg("user_data"));
-    m.def("shape_get_user_data", &b2Shape_GetUserData,nb::arg("shape_id"));
     m.def("shape_set_density", &b2Shape_SetDensity,nb::arg("shape_id"),nb::arg("density"),nb::arg("update_body_mass"));
     m.def("shape_get_density", &b2Shape_GetDensity,nb::arg("shape_id"));
     m.def("shape_set_friction", &b2Shape_SetFriction,nb::arg("shape_id"),nb::arg("friction"));
@@ -170,6 +173,8 @@ void export_shape_functions(nb::module_ & m)
     m.def("shape_get_contact_data", &b2Shape_GetContactData,nb::arg("shape_id"),nb::arg("contact_data"),nb::arg("capacity"));
     m.def("shape_get_aabb", &b2Shape_GetAABB,nb::arg("shape_id"));
     m.def("shape_get_closest_point", &b2Shape_GetClosestPoint,nb::arg("shape_id"),nb::arg("target"));
+    m.def("shape_set_user_data", [](b2ShapeId shape_id, user_data_uint user_data) { b2Shape_SetUserData(shape_id, (void*)user_data);},nb::arg("shape_id"),nb::arg("user_data"));
+    m.def("shape_get_user_data", [](b2ShapeId shape_id) { return (user_data_uint)b2Shape_GetUserData(shape_id);},nb::arg("shape_id"));
 }
 
 void export_chain_functions(nb::module_ & m){
@@ -197,11 +202,11 @@ void export_joint_functions_generic(nb::module_ & m)
     m.def("joint_get_local_anchor_b", &b2Joint_GetLocalAnchorB,nb::arg("joint_id"));
     m.def("joint_set_collide_connected", &b2Joint_SetCollideConnected,nb::arg("joint_id"),nb::arg("should_collide"));
     m.def("joint_get_collide_connected", &b2Joint_GetCollideConnected,nb::arg("joint_id"));
-    m.def("joint_set_user_data", &b2Joint_SetUserData,nb::arg("joint_id"),nb::arg("user_data"));
-    m.def("joint_get_user_data", &b2Joint_GetUserData,nb::arg("joint_id"));
     m.def("joint_wake_bodies", &b2Joint_WakeBodies,nb::arg("joint_id"));
     m.def("joint_get_constraint_force", &b2Joint_GetConstraintForce,nb::arg("joint_id"));
     m.def("joint_get_constraint_torque", &b2Joint_GetConstraintTorque,nb::arg("joint_id"));
+    m.def("joint_set_user_data", [](b2JointId joint_id, user_data_uint user_data) { b2Joint_SetUserData(joint_id, (void*)user_data);},nb::arg("joint_id"),nb::arg("user_data"));
+    m.def("joint_get_user_data", [](b2JointId joint_id) { return (user_data_uint)b2Joint_GetUserData(joint_id);},nb::arg("joint_id"));
 }
 
 void export_distance_joint_functions(nb::module_ & m){
@@ -324,7 +329,6 @@ void export_weld_joint_functions(nb::module_ & m){
 }
 
 void export_wheel_joint_functions(nb::module_ & m){
-
     m.def("create_wheel_joint", &b2CreateWheelJoint,nb::arg("world_id"),nb::arg("def"));
     m.def("wheel_joint_enable_spring", &b2WheelJoint_EnableSpring,nb::arg("joint_id"),nb::arg("enable_spring"));
     m.def("wheel_joint_is_spring_enabled", &b2WheelJoint_IsSpringEnabled,nb::arg("joint_id"));

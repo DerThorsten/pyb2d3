@@ -6,6 +6,8 @@ nanobind_add_module(_bb2d main.cpp
     export_box2d_types.cpp
     export_box2d_functions.cpp
     export_collision.cpp
+    export_math_functions.cpp
+    py_debug_draw.cpp
 )
 
 # link box2d

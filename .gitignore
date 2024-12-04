@@ -38,3 +38,6 @@
 
 _bb2d.cpython*
 __pycache__/
+
+# bld directory
+bld/

@@ -10,3 +10,5 @@ option(WITH_PYTHON_TESTS "Build tests" ON)
 if(WITH_PYTHON_EXTENSION)
     add_subdirectory(python)
 endif()
+
+add_subdirectory(samples)
