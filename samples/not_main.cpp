@@ -617,6 +617,9 @@ int start_everything( )
 
 	int32_t frame = 0;
 
+
+	g_camera.m_zoom = 20.0f;
+
 	while ( !glfwWindowShouldClose( g_mainWindow ) )
 	{
 		double time1 = glfwGetTime();
