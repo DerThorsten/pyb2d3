@@ -1,6 +1,6 @@
 #include <nanobind/nanobind.h>
 
-#include "converter.hpp"
+#include <pyb2d/py_converter.hpp>
 
 
 // C
@@ -14,12 +14,21 @@ namespace py = nanobind;
 
 void export_id_types(py::module_ & m)
 {
-    py::class_<b2BodyId>(m, "BodyId")
-    ;
-    py::class_<b2ShapeId>(m, "ShapeId")
-    ;
-    py::class_<b2WorldId>(m, "WorldId")
-    ;
+    // py::class_<b2BodyId>(m, "BodyId")
+    // // .def("__init__", [](b2BodyId *t, uint64_t val) { 
+    // //     new (t) b2BodyId(); 
+    // //     *t = b2LoadBodyId(val);
+    // // })
+    // ;
+    // py::class_<b2ShapeId>(m, "ShapeId")
+    // ;
+    // py::class_<b2WorldId>(m, "WorldId")
+    // ;
+
+    // // implicitly_convertible to uint64_t
+    // py::implicitly_convertible<uint64_t, b2BodyId>();
+    // py::implicitly_convertible<uint64_t, b2ShapeId>();
+    // py::implicitly_convertible<uint64_t, b2WorldId>();
 }
 
 void export_b2Vec2(py::module_ &m) {
@@ -74,7 +83,7 @@ void export_world_def(py::module_ &m) {
         .def_rw("joint_damping_ratio", &b2WorldDef::jointDampingRatio)
         .def_rw("maximum_linear_velocity", &b2WorldDef::maximumLinearVelocity)
         .def_rw("friction_mixing_rule", &b2WorldDef::frictionMixingRule)
-        .def_rw("restitution_mixing_rule", &b2WorldDef::restitutionMixingRule)
+        .def_rw("restitution_mixing_ru_le", &b2WorldDef::restitutionMixingRule)
         // .def_rw("enqueue_task", &b2WorldDef::enqueueTask)
         // .def_rw("finish_task", &b2WorldDef::finishTask)
         // .def_rw("user_task_context", &b2WorldDef::userTaskContext)
@@ -244,7 +253,6 @@ void export_joint_defs(py::module_ &m) {
         .def_rw("max_motor_force", &b2DistanceJointDef::maxMotorForce)
         .def_rw("motor_speed", &b2DistanceJointDef::motorSpeed)
         .def_rw("collide_connected", &b2DistanceJointDef::collideConnected)
-        .def_rw("internal_value", &b2DistanceJointDef::internalValue)
         EXPORT_USER_DATA(b2DistanceJointDef)
     ;
 
@@ -259,7 +267,6 @@ void export_joint_defs(py::module_ &m) {
         .def_rw("max_torque", &b2MotorJointDef::maxTorque)
         .def_rw("correction_factor", &b2MotorJointDef::correctionFactor)
         .def_rw("collide_connected", &b2MotorJointDef::collideConnected)
-        .def_rw("internal_value", &b2MotorJointDef::internalValue)
         EXPORT_USER_DATA(b2MotorJointDef)
     ;
 

@@ -1,5 +1,5 @@
 import pytest
-import bb2d as b2d
+import pyb2d as b2d
 
 
 

@@ -36,8 +36,12 @@
 .DS_Store
 
 
-_bb2d.cpython*
+_pyb2d.cpython*
 __pycache__/
 
 # bld directory
 bld/
+
+
+# some testfonts
+Minecraft.ttf

@@ -9,6 +9,14 @@
 // todo this include is slow
 #include "enkits/TaskScheduler.h"
 
+
+#include <nanobind/nanobind.h>
+
+namespace pyb2d
+{
+
+namespace py = nanobind;
+
 #define ARRAY_COUNT( A ) (int)( sizeof( A ) / sizeof( A[0] ) )
 
 struct Settings;
@@ -78,8 +86,6 @@ public:
 	b2JointId m_mouseJointId;
 	int32_t m_stepCount;
 	int32_t m_textIncrement;
-	b2Profile m_maxProfile;
-	b2Profile m_totalProfile;
 };
 
 typedef Sample* SampleCreateFcn( Settings& settings );
@@ -90,9 +96,17 @@ struct SampleEntry
 {
 	const char* category;
 	const char* name;
+	py::object py_factory;
+	py::object py_instance;
 	std::function<Sample*( Settings& )> createFcn;
 };
 
+
+
+} // namespace pyb2d
+
+
+
 #define MAX_SAMPLES 256
-extern SampleEntry g_sampleEntries[MAX_SAMPLES];
+extern pyb2d::SampleEntry g_sampleEntries[MAX_SAMPLES];
 extern int g_sampleCount;

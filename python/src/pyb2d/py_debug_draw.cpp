@@ -1,7 +1,6 @@
 #include <nanobind/nanobind.h>
 #include "py_debug_draw.hpp"
-#include "converter.hpp"
-
+#include <pyb2d/py_converter.hpp>
 #include <iostream>
 
 // C

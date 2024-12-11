@@ -3,6 +3,9 @@
 
 #pragma once
 
+namespace pyb2d
+{
+
 // todo add camera and draw and remove globals
 struct Settings
 {
@@ -41,3 +44,6 @@ struct Settings
 	bool singleStep = false;
 	bool restart = false;
 };
+
+
+}

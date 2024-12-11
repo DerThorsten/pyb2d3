@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-import bb2d as b2d
+import pyb2d as b2d
 
 class DebugDrawTest(b2d.DebugDraw):
 

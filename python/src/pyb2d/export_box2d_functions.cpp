@@ -1,5 +1,5 @@
 #include <nanobind/nanobind.h>
-#include "converter.hpp"
+#include <pyb2d/py_converter.hpp>
 #include "py_debug_draw.hpp"
 
 // C
@@ -66,7 +66,7 @@ void export_world_functions(nb::module_ & m)
 
 void export_body_functions(nb::module_ & m)
 {
-    m.def("create_body", &b2CreateBody,nb::arg("world_id"),nb::arg("def"));
+    m.def("create_body_from_def", &b2CreateBody,nb::arg("world_id"),nb::arg("def"));
     m.def("destroy_body", &b2DestroyBody,nb::arg("body_id"));
     m.def("body_is_valid", &b2Body_IsValid,nb::arg("id"));
     m.def("body_get_type", &b2Body_GetType,nb::arg("body_id"));
@@ -77,6 +77,12 @@ void export_body_functions(nb::module_ & m)
     m.def("body_set_transform", &b2Body_SetTransform,nb::arg("body_id"),nb::arg("position"),nb::arg("rotation"));
     m.def("body_get_local_point", &b2Body_GetLocalPoint,nb::arg("body_id"),nb::arg("world_point"));
     m.def("body_get_world_point", &b2Body_GetWorldPoint,nb::arg("body_id"),nb::arg("local_point"));
+
+
+
+
+
+    
     m.def("body_get_local_vector", &b2Body_GetLocalVector,nb::arg("body_id"),nb::arg("world_vector"));
     m.def("body_get_world_vector", &b2Body_GetWorldVector,nb::arg("body_id"),nb::arg("local_vector"));
     m.def("body_get_linear_velocity", &b2Body_GetLinearVelocity,nb::arg("body_id"));

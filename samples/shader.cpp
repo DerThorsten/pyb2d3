@@ -17,6 +17,10 @@
 	#include <stdlib.h>
 #endif
 
+namespace pyb2d
+{
+
+
 void DumpInfoGL()
 {
 	const char* renderer = (const char*)glGetString( GL_RENDERER );
@@ -207,4 +211,7 @@ uint32_t CreateProgramFromFiles( const char* vertexPath, const char* fragmentPat
 	glDeleteShader( fragment );
 
 	return program;
+}
+
+
 }

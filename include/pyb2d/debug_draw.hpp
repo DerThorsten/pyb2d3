@@ -5,7 +5,7 @@ extern "C" {
 }
 
 
-namespace bb2d
+namespace pyb2d
 {
     namespace detail
     {
@@ -214,4 +214,4 @@ namespace bb2d
 
 
 
-} // namespace bb2d
+} // namespace pyb2d

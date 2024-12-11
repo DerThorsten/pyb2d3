@@ -5,7 +5,13 @@
 
 #include "box2d/types.h"
 
+
 struct ImFont;
+
+namespace pyb2d
+{
+
+
 
 struct Camera
 {
@@ -30,7 +36,7 @@ public:
 	Draw();
 	~Draw();
 
-	void Create();
+	void Create(const char* dataDir);
 	void Destroy();
 
 	void DrawPolygon( const b2Vec2* vertices, int32_t vertexCount, b2HexColor color );
@@ -72,6 +78,8 @@ public:
 	ImFont* m_largeFont;
 };
 
-extern Draw g_draw;
-extern Camera g_camera;
+}
+
+extern pyb2d::Draw g_draw;
+extern pyb2d::Camera g_camera;
 extern struct GLFWwindow* g_mainWindow;

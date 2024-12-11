@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #endif
 
+#include <string>
+
 // clang-format off
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -27,8 +29,15 @@
 #include <imgui.h>
 
 #define BUFFER_OFFSET( x ) ( (const void*)( x ) )
-
 #define SHADER_TEXT( x ) "#version 330\n" #x
+
+
+pyb2d::Draw g_draw;
+pyb2d::Camera g_camera;
+
+namespace pyb2d
+{
+
 
 struct RGBA8
 {
@@ -40,8 +49,7 @@ static inline RGBA8 MakeRGBA8( b2HexColor c, float alpha )
 	return { uint8_t( ( c >> 16 ) & 0xFF ), uint8_t( ( c >> 8 ) & 0xFF ), uint8_t( c & 0xFF ), uint8_t( 0xFF * alpha ) };
 }
 
-Draw g_draw;
-Camera g_camera;
+
 
 Camera::Camera()
 {
@@ -135,9 +143,16 @@ b2AABB Camera::GetViewBounds()
 
 struct GLBackground
 {
-	void Create()
+	void Create(const char * dataDir)
 	{
-		m_programId = CreateProgramFromFiles( "samples/data/background.vs", "samples/data/background.fs" );
+		// concat dataDir with background.vs / background.fs
+		// load the files
+		(std::string(dataDir)+ "/background.vs").c_str();
+				
+		m_programId = CreateProgramFromFiles( 
+			(std::string(dataDir)+ "/background.vs").c_str(), 
+			(std::string(dataDir)+ "/background.fs").c_str()
+		);
 		m_timeUniform = glGetUniformLocation( m_programId, "time" );
 		m_resolutionUniform = glGetUniformLocation( m_programId, "resolution" );
 		m_baseColorUniform = glGetUniformLocation( m_programId, "baseColor" );
@@ -220,7 +235,7 @@ struct PointData
 
 struct GLPoints
 {
-	void Create()
+	void Create(const char * dataDir)
 	{
 		const char* vs = "#version 330\n"
 						 "uniform mat4 projectionMatrix;\n"
@@ -363,7 +378,7 @@ struct VertexData
 
 struct GLLines
 {
-	void Create()
+	void Create(const char * dataDir)
 	{
 		const char* vs = "#version 330\n"
 						 "uniform mat4 projectionMatrix;\n"
@@ -499,7 +514,7 @@ struct GLLines
 // todo this is not used anymore and has untested changes
 struct GLTriangles
 {
-	void Create()
+	void Create(const char * dataDir)
 	{
 		const char* vs = "#version 330\n"
 						 "uniform mat4 projectionMatrix;\n"
@@ -644,9 +659,13 @@ struct CircleData
 
 struct GLCircles
 {
-	void Create()
+	void Create(const char * dataDir)
 	{
-		m_programId = CreateProgramFromFiles( "samples/data/circle.vs", "samples/data/circle.fs" );
+
+		m_programId = CreateProgramFromFiles( 
+			(std::string(dataDir)+ "/circle.vs").c_str(), 
+			(std::string(dataDir)+ "/circle.fs").c_str()
+		);
 		m_projectionUniform = glGetUniformLocation( m_programId, "projectionMatrix" );
 		m_pixelScaleUniform = glGetUniformLocation( m_programId, "pixelScale" );
 		int vertexAttribute = 0;
@@ -788,9 +807,12 @@ struct SolidCircleData
 // https://www.g-truc.net/post-0666.html
 struct GLSolidCircles
 {
-	void Create()
+	void Create(const char * dataDir)
 	{
-		m_programId = CreateProgramFromFiles( "samples/data/solid_circle.vs", "samples/data/solid_circle.fs" );
+		m_programId = CreateProgramFromFiles( 
+			(std::string(dataDir)+ "/solid_circle.vs").c_str(), 
+			(std::string(dataDir)+ "/solid_circle.fs").c_str()
+		);
 		m_projectionUniform = glGetUniformLocation( m_programId, "projectionMatrix" );
 		m_pixelScaleUniform = glGetUniformLocation( m_programId, "pixelScale" );
 
@@ -932,9 +954,12 @@ struct CapsuleData
 // Draw capsules using SDF-based shader
 struct GLSolidCapsules
 {
-	void Create()
+	void Create(const char * dataDir)
 	{
-		m_programId = CreateProgramFromFiles( "samples/data/solid_capsule.vs", "samples/data/solid_capsule.fs" );
+		m_programId = CreateProgramFromFiles( 
+			(std::string(dataDir)+ "/solid_capsule.vs").c_str(), 
+			(std::string(dataDir)+ "/solid_capsule.fs").c_str()
+		);
 
 		m_projectionUniform = glGetUniformLocation( m_programId, "projectionMatrix" );
 		m_pixelScaleUniform = glGetUniformLocation( m_programId, "pixelScale" );
@@ -1101,9 +1126,13 @@ struct PolygonData
 // Rounded and non-rounded convex polygons using an SDF-based shader.
 struct GLSolidPolygons
 {
-	void Create()
-	{
-		m_programId = CreateProgramFromFiles( "samples/data/solid_polygon.vs", "samples/data/solid_polygon.fs" );
+	void Create(const char * dataDir)
+	{	
+
+		m_programId = CreateProgramFromFiles( 
+			(std::string(dataDir)+ "/solid_polygon.vs").c_str(), 
+			(std::string(dataDir)+ "/solid_polygon.fs").c_str()
+		);
 
 		m_projectionUniform = glGetUniformLocation( m_programId, "projectionMatrix" );
 		m_pixelScaleUniform = glGetUniformLocation( m_programId, "pixelScale" );
@@ -1342,24 +1371,24 @@ Draw::~Draw()
 	assert( m_solidPolygons == nullptr );
 }
 
-void Draw::Create()
+void Draw::Create(const char * dataDir)
 {
 	m_background = new GLBackground;
-	m_background->Create();
+	m_background->Create(dataDir);
 	m_points = new GLPoints;
-	m_points->Create();
+	m_points->Create(dataDir);
 	m_lines = new GLLines;
-	m_lines->Create();
+	m_lines->Create(dataDir);
 	m_triangles = new GLTriangles;
-	m_triangles->Create();
+	m_triangles->Create(dataDir);
 	m_circles = new GLCircles;
-	m_circles->Create();
+	m_circles->Create(dataDir);
 	m_solidCircles = new GLSolidCircles;
-	m_solidCircles->Create();
+	m_solidCircles->Create(dataDir);
 	m_solidCapsules = new GLSolidCapsules;
-	m_solidCapsules->Create();
+	m_solidCapsules->Create(dataDir);
 	m_solidPolygons = new GLSolidPolygons;
-	m_solidPolygons->Create();
+	m_solidPolygons->Create(dataDir);
 
 	b2AABB bounds = { { -FLT_MAX, -FLT_MAX }, { FLT_MAX, FLT_MAX } };
 
@@ -1537,4 +1566,6 @@ void Draw::Flush()
 void Draw::DrawBackground()
 {
 	m_background->Draw();
+}
+
 }

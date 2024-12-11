@@ -4,19 +4,24 @@
 #include <nanobind/trampoline.h>
 #include <nanobind/trampoline.h>
 
+#include <pyb2d_playground/settings.h>
 #include <iostream>
+
+#include "sample.h"
+
+
+namespace pyb2d
+{
 
 namespace py = nanobind;
 
-#include "settings.h"
-#include "sample.h"
 
 struct PySampleTrampoline : Sample {
     NB_TRAMPOLINE(Sample, 6);
 
-    // virtual ~PySampleTrampoline() {
-    //     std::cout<<"PySampleTrampoline::~PySampleTrampoline"<<std::endl;
-    // }
+    virtual ~PySampleTrampoline() {
+    }
+    
     void Step( Settings& settings ) override
     {
         NB_OVERRIDE_NAME("step", Step, settings);
@@ -46,4 +51,6 @@ struct PySampleTrampoline : Sample {
 inline void decrement_reference_count(Sample* s){
     auto py_object = py::cast(s);
     py_object.dec_ref();
+}
+
 }

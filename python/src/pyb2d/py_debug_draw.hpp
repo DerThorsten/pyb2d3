@@ -1,7 +1,7 @@
 #pragma once
 
 #include <nanobind/nanobind.h>
-#include "converter.hpp"
+#include <pyb2d/py_converter.hpp>
 
 // C
 extern "C" {

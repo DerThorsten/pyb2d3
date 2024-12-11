@@ -14,7 +14,8 @@
 
 #include "draw.h"
 #include "sample.h"
-#include "settings.h"
+
+#include <pyb2d_playground/settings.h>
 
 #include "box2d/base.h"
 #include "box2d/box2d.h"
@@ -30,22 +31,29 @@
 #include <imgui_impl_opengl3.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-
-
 #include <iostream>
-
 #include <nanobind/nanobind.h>
 #include "py_sample_base.hpp"
 
+
+#include "opengl_frontend.hpp"
+
+
 GLFWwindow* g_mainWindow = nullptr;
 static int32_t s_selection = 0;
-static Sample* s_sample = nullptr;
-static Settings s_settings;
+static pyb2d::Sample* s_sample = nullptr;
+static pyb2d::Settings s_settings;
 static bool s_rightMouseDown = false;
 static b2Vec2 s_clickPointWS = b2Vec2_zero;
 static float s_windowScale = 1.0f;
 static float s_framebufferScale = 1.0f;
+
+
+namespace pyb2d
+{
+
+
+
 
 inline bool IsPowerOfTwo( int32_t x )
 {
@@ -78,46 +86,17 @@ void FreeFcn( void* mem )
 #endif
 }
 
-int AssertFcn( const char* condition, const char* fileName, int lineNumber )
-{
-	printf( "SAMPLE ASSERTION: %s, %s, line %d\n", condition, fileName, lineNumber );
-	return 1;
-}
-
-void glfwErrorCallback( int error, const char* description )
-{
-	fprintf( stderr, "GLFW error occurred. Code: %d. Description: %s\n", error, description );
-}
-
-static inline int CompareSamples( const void* a, const void* b )
-{
-	SampleEntry* sa = (SampleEntry*)a;
-	SampleEntry* sb = (SampleEntry*)b;
-
-	int result = strcmp( sa->category, sb->category );
-	if ( result == 0 )
-	{
-		result = strcmp( sa->name, sb->name );
-	}
-
-	return result;
-}
-
-static void SortSamples()
-{
-	qsort( g_sampleEntries, g_sampleCount, sizeof( SampleEntry ), CompareSamples );
-}
-
 static void RestartSample()
 {
-	decrement_reference_count( s_sample );
+	g_sampleEntries[s_settings.sampleIndex].py_instance.dec_ref();
 	s_sample = nullptr;
 	s_settings.restart = true;
 	s_sample = g_sampleEntries[s_settings.sampleIndex].createFcn( s_settings );
 	s_settings.restart = false;
 }
 
-static void CreateUI( GLFWwindow* window, const char* glslVersion )
+static void CreateUI( GLFWwindow* window, const char* glslVersion,
+ const char* font_dir )
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -136,16 +115,20 @@ static void CreateUI( GLFWwindow* window, const char* glslVersion )
 		assert( false );
 	}
 
-	const char* fontPath = "samples/data/droid_sans.ttf";
-	FILE* file = fopen( fontPath, "rb" );
+	//const char* fontPath = "samples/data/droid_sans.ttf";
+
+	// join the font directory with the font file
+	std::string fontPath = std::string(font_dir) + "/droid_sans.ttf";
+
+	FILE* file = fopen( fontPath.c_str(), "rb" );
 
 	if ( file != NULL )
 	{
 		ImFontConfig fontConfig;
 		fontConfig.RasterizerMultiply = s_windowScale * s_framebufferScale;
-		g_draw.m_smallFont = ImGui::GetIO().Fonts->AddFontFromFileTTF( fontPath, 14.0f, &fontConfig );
-		g_draw.m_mediumFont = ImGui::GetIO().Fonts->AddFontFromFileTTF( fontPath, 40.0f, &fontConfig );
-		g_draw.m_largeFont = ImGui::GetIO().Fonts->AddFontFromFileTTF( fontPath, 64.0f, &fontConfig );
+		g_draw.m_smallFont = ImGui::GetIO().Fonts->AddFontFromFileTTF( fontPath.c_str(), 14.0f, &fontConfig );
+		g_draw.m_mediumFont = ImGui::GetIO().Fonts->AddFontFromFileTTF( fontPath.c_str(), 40.0f, &fontConfig );
+		g_draw.m_largeFont = ImGui::GetIO().Fonts->AddFontFromFileTTF( fontPath.c_str(), 64.0f, &fontConfig );
 	}
 	else
 	{
@@ -413,8 +396,7 @@ static void UpdateUI()
 				ImGui::Checkbox( "Friction Impulses", &s_settings.drawFrictionImpulses );
 				ImGui::Checkbox( "Center of Masses", &s_settings.drawMass );
 				ImGui::Checkbox( "Graph Colors", &s_settings.drawGraphColors );
-				ImGui::Checkbox( "Counters", &s_settings.drawCounters );
-				ImGui::Checkbox( "Profile", &s_settings.drawProfile );
+	
 
 				ImVec2 button_sz = ImVec2( -1, 0 );
 				if ( ImGui::Button( "Pause (P)", button_sz ) )
@@ -425,16 +407,6 @@ static void UpdateUI()
 				if ( ImGui::Button( "Single Step (O)", button_sz ) )
 				{
 					s_settings.singleStep = !s_settings.singleStep;
-				}
-
-				if ( ImGui::Button( "Dump Mem Stats", button_sz ) )
-				{
-					b2World_DumpMemoryStats( s_sample->m_worldId );
-				}
-
-				if ( ImGui::Button( "Reset Profile", button_sz ) )
-				{
-					s_sample->ResetProfile();
 				}
 
 				if ( ImGui::Button( "Restart (R)", button_sz ) )
@@ -455,52 +427,7 @@ static void UpdateUI()
 
 			ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
-			if ( ImGui::BeginTabItem( "Samples" ) )
-			{
-				int categoryIndex = 0;
-				const char* category = g_sampleEntries[categoryIndex].category;
-				int i = 0;
-				while ( i < g_sampleCount )
-				{
-					bool categorySelected = strcmp( category, g_sampleEntries[s_settings.sampleIndex].category ) == 0;
-					ImGuiTreeNodeFlags nodeSelectionFlags = categorySelected ? ImGuiTreeNodeFlags_Selected : 0;
-					bool nodeOpen = ImGui::TreeNodeEx( category, nodeFlags | nodeSelectionFlags );
 
-					if ( nodeOpen )
-					{
-						while ( i < g_sampleCount && strcmp( category, g_sampleEntries[i].category ) == 0 )
-						{
-							ImGuiTreeNodeFlags selectionFlags = 0;
-							if ( s_settings.sampleIndex == i )
-							{
-								selectionFlags = ImGuiTreeNodeFlags_Selected;
-							}
-							ImGui::TreeNodeEx( (void*)(intptr_t)i, leafNodeFlags | selectionFlags, "%s",
-											   g_sampleEntries[i].name );
-							if ( ImGui::IsItemClicked() )
-							{
-								s_selection = i;
-							}
-							++i;
-						}
-						ImGui::TreePop();
-					}
-					else
-					{
-						while ( i < g_sampleCount && strcmp( category, g_sampleEntries[i].category ) == 0 )
-						{
-							++i;
-						}
-					}
-
-					if ( i < g_sampleCount )
-					{
-						category = g_sampleEntries[i].category;
-						categoryIndex = i;
-					}
-				}
-				ImGui::EndTabItem();
-			}
 			ImGui::EndTabBar();
 		}
 
@@ -510,92 +437,41 @@ static void UpdateUI()
 	}
 }
 
-int start_everything( )
+int start_everything(const char * data_dir)
 {
 
+
+
 	// // Install memory hooks
-	// b2SetAllocator( AllocFcn, FreeFcn );
-	// b2SetAssertFcn( AssertFcn );
+	b2SetAllocator( AllocFcn, FreeFcn );
 
 	char buffer[128];
 
 	s_settings.workerCount = b2MinInt( 8, (int)enki::GetNumHardwareThreads() / 2 );
-	SortSamples();
 
-	glfwSetErrorCallback( glfwErrorCallback );
+
+	glfwSetErrorCallback( []( int error, const char* description ) {
+			throw std::runtime_error( description );
+	});
 
 	g_camera.m_width = s_settings.windowWidth;
 	g_camera.m_height = s_settings.windowHeight;
+	
 
-	if ( glfwInit() == 0 )
-	{
-		fprintf( stderr, "Failed to initialize GLFW\n" );
-		return -1;
-	}
+	OpenGlFrontend ui( s_settings );
+	auto ui_address = &ui;
+	
 
-#if __APPLE__
-	const char* glslVersion = "#version 150";
-#else
-	const char* glslVersion = nullptr;
-#endif
+	g_mainWindow = ui.main_window();
 
-	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 3 );
-	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 3 );
-	glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
-	glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
 
-	// MSAA
-	glfwWindowHint( GLFW_SAMPLES, 4 );
 
-	b2Version version = b2GetVersion();
-	snprintf( buffer, 128, "Box2D Version %d.%d.%d", version.major, version.minor, version.revision );
 
-	if ( GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor() )
-	{
-#ifdef __APPLE__
-		glfwGetMonitorContentScale( primaryMonitor, &s_framebufferScale, &s_framebufferScale );
-#else
-		glfwGetMonitorContentScale( primaryMonitor, &s_windowScale, &s_windowScale );
-#endif
-	}
 
-	bool fullscreen = false;
-	if ( fullscreen )
-	{
-		g_mainWindow = glfwCreateWindow( int( 1920 * s_windowScale ), int( 1080 * s_windowScale ), buffer,
-										 glfwGetPrimaryMonitor(), nullptr );
-	}
-	else
-	{
-		g_mainWindow = glfwCreateWindow( int( g_camera.m_width * s_windowScale ), int( g_camera.m_height * s_windowScale ),
-										 buffer, nullptr, nullptr );
-	}
 
-	if ( g_mainWindow == nullptr )
-	{
-		fprintf( stderr, "Failed to open GLFW g_mainWindow.\n" );
-		glfwTerminate();
-		return -1;
-	}
 
-#ifdef __APPLE__
-	glfwGetWindowContentScale( g_mainWindow, &s_framebufferScale, &s_framebufferScale );
-#else
-	glfwGetWindowContentScale( g_mainWindow, &s_windowScale, &s_windowScale );
-#endif
-
-	glfwMakeContextCurrent( g_mainWindow );
-
-	// Load OpenGL functions using glad
-	if ( !gladLoadGL() )
-	{
-		fprintf( stderr, "Failed to initialize glad\n" );
-		glfwTerminate();
-		return -1;
-	}
-
-	printf( "GL %d.%d\n", GLVersion.major, GLVersion.minor );
-	printf( "OpenGL %s, GLSL %s\n", glGetString( GL_VERSION ), glGetString( GL_SHADING_LANGUAGE_VERSION ) );
+	// printf( "GL %d.%d\n", GLVersion.major, GLVersion.minor );
+	// printf( "OpenGL %s, GLSL %s\n", glGetString( GL_VERSION ), glGetString( GL_SHADING_LANGUAGE_VERSION ) );
 
 	glfwSetWindowSizeCallback( g_mainWindow, ResizeWindowCallback );
 	glfwSetKeyCallback( g_mainWindow, KeyCallback );
@@ -604,9 +480,17 @@ int start_everything( )
 	glfwSetCursorPosCallback( g_mainWindow, MouseMotionCallback );
 	glfwSetScrollCallback( g_mainWindow, ScrollCallback );
 
+
+
+	#if __APPLE__
+		const char* glslVersion = "#version 150";
+	#else
+		const char* glslVersion = nullptr;
+	#endif
+
 	// todo put this in s_settings
-	CreateUI( g_mainWindow, glslVersion );
-	g_draw.Create();
+	CreateUI( g_mainWindow, glslVersion, data_dir );
+	g_draw.Create(data_dir);
 
 	s_settings.sampleIndex = b2ClampInt( s_settings.sampleIndex, 0, g_sampleCount - 1 );
 	s_selection = s_settings.sampleIndex;
@@ -683,16 +567,15 @@ int start_everything( )
 			s_sample->DrawTitle( buffer );
 		}
 
+		//std::cout<<"step"<<//std::endl;
 		s_sample->Step( s_settings );
-
+		//std::cout<<"step done"<<std::endl;
 
 
 		g_draw.Flush();
 
 
 		UpdateUI();
-
-		// ImGui::ShowDemoWindow();
 
 		if (g_draw.m_showUI)
 		{
@@ -725,7 +608,8 @@ int start_everything( )
 			s_settings.useCameraBounds = false;
 
 			//delete s_sample;
-			decrement_reference_count( s_sample );
+			g_sampleEntries[s_settings.sampleIndex].py_instance.dec_ref();
+
 			s_sample = nullptr;
 			s_sample = g_sampleEntries[s_settings.sampleIndex].createFcn( s_settings );
 		}
@@ -751,11 +635,18 @@ int start_everything( )
 		++frame;
 	}
 
-	//delete s_sample;
-	decrement_reference_count( s_sample );
-	s_sample = nullptr;
+	for( int i = 0; i < g_sampleCount; ++i )
+	{
+		g_sampleEntries[i].py_instance.dec_ref();
+		g_sampleEntries[i].py_factory.dec_ref();
+	}
 
+	//delete s_sample;
+	g_sampleEntries[s_settings.sampleIndex].py_instance.dec_ref();
+	s_sample = nullptr;
 	g_draw.Destroy();
+
+	
 
 	DestroyUI();
 	glfwTerminate();
@@ -765,4 +656,6 @@ int start_everything( )
 #endif
 
 	return 0;
+}
+
 }

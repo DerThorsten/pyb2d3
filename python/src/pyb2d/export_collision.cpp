@@ -1,9 +1,10 @@
 #include <nanobind/nanobind.h>
 
+#include <iostream>
 // stl conversion
 // #include <nanobind/stl/arr
 
-#include "converter.hpp"
+#include <pyb2d/py_converter.hpp>
 
 // C
 extern "C" {
@@ -35,7 +36,12 @@ void export_collision(py::module_ & m)
     py::class_<b2ShapeCastInput>(m, "ShapeCastInput")
         .def(py::init<>())
         .def_prop_rw("points", 
-            [](b2ShapeCastInput* self) { return ArrayVec2(reinterpret_cast<float*>(self->points));}, 
+            [](b2ShapeCastInput* self) {
+                return ArrayVec2(
+                    reinterpret_cast<float*>(self->points), // data
+                    {std::size_t(self->count), std::size_t(2)} // shape
+                );
+            }, 
             [](b2ShapeCastInput* self, ArrayVec2 value) { 
                 self->count = value.size();
                 for(int i = 0; i < value.size(); i++){
@@ -87,7 +93,12 @@ void export_collision(py::module_ & m)
     py::class_<b2Polygon>(m, "Polygon")
         .def(py::init<>())
         .def_prop_rw("vertices", 
-            [](b2Polygon* self) { return ArrayVec2(reinterpret_cast<float*>(self->vertices));}, 
+            [](b2Polygon* self) { 
+                return ArrayVec2(
+                    reinterpret_cast<float*>(self->vertices), // data
+                    {std::size_t(self->count), std::size_t(2)} // shape
+                );
+            }, 
             [](b2Polygon* self, ArrayVec2 value) { 
                 self->count = value.size();
                 for(int i = 0; i < value.size(); i++){
@@ -97,7 +108,12 @@ void export_collision(py::module_ & m)
             }
         )
         .def_prop_rw("normals", 
-            [](b2Polygon* self) { return ArrayVec2(reinterpret_cast<float*>(self->normals));}, 
+            [](b2Polygon* self) {
+                return ArrayVec2(
+                    reinterpret_cast<float*>(self->normals), // data
+                    {std::size_t(self->count), std::size_t(2)} // shape
+                );
+            }, 
             [](b2Polygon* self, ArrayVec2 value) { 
                 self->count = value.size();
                 for(int i = 0; i < value.size(); i++){
