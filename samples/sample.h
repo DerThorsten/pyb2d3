@@ -55,6 +55,7 @@ public:
 	virtual ~Sample();
 
 	void DrawTitle( const char* string );
+
 	virtual void Step( Settings& settings );
 	virtual void UpdateUI()
 	{
@@ -86,6 +87,8 @@ public:
 	b2JointId m_mouseJointId;
 	int32_t m_stepCount;
 	int32_t m_textIncrement;
+
+	b2DebugDraw * p_debugDraw = nullptr;
 };
 
 typedef Sample* SampleCreateFcn( Settings& settings );

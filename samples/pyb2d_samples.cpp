@@ -78,9 +78,9 @@ void export_core(py::module_ &m)
     ;
 
 
-    m.def("start_everything", [](const char * data_dir) {
+    m.def("start_everything", [](const char * data_dir, py::object sample_cls) {
         try {
-            return start_everything(data_dir);
+            return start_everything(data_dir, sample_cls);
         } catch (const std::exception &e) {
             std::cout << "Error: " << e.what() << std::endl;
             

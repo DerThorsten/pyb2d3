@@ -11,4 +11,4 @@ def run_sample(cls):
     cls_name = str(cls.__name__)
     register_sample( cls, cls_name, cls_name)
     print("data_dir", data_dir)
-    start_everything(str(data_dir))
+    start_everything(str(data_dir), cls_name)

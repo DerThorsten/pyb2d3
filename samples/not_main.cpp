@@ -437,8 +437,12 @@ static void UpdateUI()
 	}
 }
 
-int start_everything(const char * data_dir)
+int start_everything(
+	const char * data_dir,
+	nanobind::object & sample_cls
+)
 {
+
 
 
 
@@ -562,9 +566,9 @@ int start_everything(const char * data_dir)
 
 		if ( g_draw.m_showUI )
 		{
-			const SampleEntry& entry = g_sampleEntries[s_settings.sampleIndex];
-			snprintf( buffer, 128, "%s : %s", entry.category, entry.name );
-			s_sample->DrawTitle( buffer );
+			// const SampleEntry& entry = g_sampleEntries[s_settings.sampleIndex];
+			// snprintf( buffer, 128, "%s : %s", entry.category, entry.name );
+			// s_sample->DrawTitle( buffer );
 		}
 
 		//std::cout<<"step"<<//std::endl;
