@@ -1,1 +1,2 @@
-add_subdirectory(pyb2d_playground)
+add_subdirectory(src_pyb2d)
+# add_subdirectory(src_pyb2d_playground)

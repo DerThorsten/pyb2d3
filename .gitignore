@@ -45,3 +45,8 @@ bld/
 
 # some testfonts
 Minecraft.ttf
+
+.pixi/
+pixi.lock
+build/
+dist/

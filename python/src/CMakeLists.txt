@@ -1,2 +1,0 @@
-add_subdirectory(pyb2d)
-add_subdirectory(pyb2d_playground)

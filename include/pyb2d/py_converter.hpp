@@ -6,7 +6,7 @@
 
 // C
 extern "C" {
-#include <box2d/math_functions.h>
+// #include <box2d/math_functions.h>
 #include <box2d/collision.h>
 #include <box2d/box2d.h>
 }
