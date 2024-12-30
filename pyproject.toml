@@ -43,6 +43,7 @@ ninja = ">=1.12.1,<2"
 scikit-build-core = ">=0.10.7,<0.11"
 uv = ">=0.4.25,<0.5"
 pytest = ">=6.2.5"
+curl = ">=7.79.1,<9"
 
 
 [tool.pixi.feature.build.tasks.clone-box2d]
@@ -51,6 +52,19 @@ cmd = """
     patch -d deps/box2d -p1 -i ../box2d_patches/conditional_disable_cxx_operators.patch
 """
 outputs = ["deps/box2d/include/box2d/math_functions.h"]
+
+
+# download commit f377034920c42a26cd498c0a0b1b2e9f2b064989 as tarball
+[tool.pixi.feature.build.tasks.download-box2d]
+cmd = """
+    mkdir -p deps/box2d &&
+    cd deps &&
+    curl -L -o box2d-commit.tar.gz https://github.com/erincatto/box2d/archive/f377034920c42a26cd498c0a0b1b2e9f2b064989.tar.gz &&
+    tar --strip-components=1 -xvzf box2d-commit.tar.gz -C box2d &&
+    cd box2d &&
+    patch  -p1 -i ../box2d_patches/conditional_disable_cxx_operators.patch
+
+"""
 
 
 # [tool.pixi.feature.build.tasks.patch-box2d ]
@@ -68,7 +82,7 @@ cmd = """
         -DBOX2D_BENCHMARKS=OFF \
         -DBOX2D_SAMPLES=OFF
 """
-depends-on = ["clone-box2d"]
+depends-on = ["download-box2d"]
 
 
 [tool.pixi.feature.build.tasks.build-box2d]
