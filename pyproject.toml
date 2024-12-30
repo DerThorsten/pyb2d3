@@ -97,10 +97,16 @@ depends-on = ["build-box2d"]
 [tool.pixi.feature.build.tasks.build]
 cmd = ["uv", "build"]
 
-[tool.pixi.feature.build.tasks.install]
+[tool.pixi.feature.build.tasks.install_editable]
 cmd =  """
 uv pip install -e . --reinstall
 """
+
+[tool.pixi.feature.build.tasks.install]
+cmd =  """
+uv pip install 
+"""
+
 
 [tool.pixi.feature.build.tasks.test]
 cmd = ["pytest"]
