@@ -104,7 +104,7 @@ uv pip install -e . --reinstall
 
 [tool.pixi.feature.build.tasks.install]
 cmd =  """
-uv pip install 
+uv pip install
 """
 
 
