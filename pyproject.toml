@@ -84,7 +84,7 @@ cmd = ["uv", "build"]
 
 [tool.pixi.feature.build.tasks.install]
 cmd =  """
-uv pip install -e .
+uv pip install -e . --reinstall
 """
 
 [tool.pixi.feature.build.tasks.test]

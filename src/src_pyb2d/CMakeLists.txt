@@ -35,6 +35,8 @@ target_link_libraries(_pyb2d PRIVATE box2d::box2d)
 
 install(TARGETS _pyb2d LIBRARY DESTINATION pyb2d)
 
+#  install everything from ${CMAKE_SOURCE_DIR}/src/pyb2d to the python package directory
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/pyb2d/ DESTINATION pyb2d)
 
 # # after each build, copy the extension to the python package directory
 # add_custom_command(TARGET _pyb2d POST_BUILD
