@@ -13,7 +13,7 @@ pixi run build-box2d
 
 To build and install the python bindings, run:
 ```bash
-pixi run install
+pixi run install .
 ```
 
 # Testing
