@@ -22,16 +22,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      ################################################################
-      # CONFIG
-      ################################################################
       - uses: prefix-dev/setup-pixi@v0.8.1
         with:
           pixi-version: v0.39.2
       - run: |
-          pixi run build
-          
-          # run pytest in the pixi environment
           pixi run build-box2d
           pixi run install
           pixi run test
