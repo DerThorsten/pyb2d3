@@ -213,30 +213,30 @@ void export_collision(py::module_ & m)
     m.def("segment_distance", &b2SegmentDistance, py::arg("p1"), py::arg("q1"), py::arg("p2"), py::arg("q2"));
 
 
-    // b2DistanceProxy
-    py::class_<b2DistanceProxy>(m, "DistanceProxy")
-        .def(py::init<>())
-        .def_prop_rw("points", 
-            [](b2DistanceProxy* self) { return ArrayVec2(reinterpret_cast<float*>(self->points));}, 
-            [](b2DistanceProxy* self, ArrayVec2 value) { 
-                self->count = value.size();
-                for(int i = 0; i < value.size(); i++){
-                    self->points[i].x = value(i, 0);
-                    self->points[i].y = value(i, 1);
-                }
-            }
-        )
-        .def_rw("radius", &b2DistanceProxy::radius)
-        .def_ro("count", &b2DistanceProxy::count)
-    ;
+    // // b2DistanceProxy
+    // py::class_<b2DistanceProxy>(m, "DistanceProxy")
+    //     .def(py::init<>())
+    //     .def_prop_rw("points", 
+    //         [](b2DistanceProxy* self) { return ArrayVec2(reinterpret_cast<float*>(self->points));}, 
+    //         [](b2DistanceProxy* self, ArrayVec2 value) { 
+    //             self->count = value.size();
+    //             for(int i = 0; i < value.size(); i++){
+    //                 self->points[i].x = value(i, 0);
+    //                 self->points[i].y = value(i, 1);
+    //             }
+    //         }
+    //     )
+    //     .def_rw("radius", &b2DistanceProxy::radius)
+    //     .def_ro("count", &b2DistanceProxy::count)
+    // ;
 
 
-    // b2DistanceCache  
-    py::class_<b2DistanceCache>(m, "DistanceCache")
-        .def(py::init<>())
-        .def_rw("count", &b2DistanceCache::count)
-        // TODO indexA and indexB arrays
-    ;
+    // // b2DistanceCache  
+    // py::class_<b2DistanceCache>(m, "DistanceCache")
+    //     .def(py::init<>())
+    //     .def_rw("count", &b2DistanceCache::count)
+    //     // TODO indexA and indexB arrays
+    // ;
 
     // b2DistanceOutput
     py::class_<b2DistanceOutput>(m, "DistanceOutput")
@@ -301,15 +301,15 @@ void export_collision(py::module_ & m)
     // b2GetSweepTransform
     m.def("get_sweep_transform", &b2GetSweepTransform, py::arg("sweep"), py::arg("time"));
 
-    // b2TOIInput
-    py::class_<b2TOIInput>(m, "TOIInput")
-        .def(py::init<>())
-        .def_rw("proxyA", &b2TOIInput::proxyA)
-        .def_rw("proxyB", &b2TOIInput::proxyB)
-        .def_rw("sweepA", &b2TOIInput::sweepA)
-        .def_rw("sweepB", &b2TOIInput::sweepB)
-        .def_rw("tMax", &b2TOIInput::tMax)
-    ;
+    // // b2TOIInput
+    // py::class_<b2TOIInput>(m, "TOIInput")
+    //     .def(py::init<>())
+    //     .def_rw("proxyA", &b2TOIInput::proxyA)
+    //     .def_rw("proxyB", &b2TOIInput::proxyB)
+    //     .def_rw("sweepA", &b2TOIInput::sweepA)
+    //     .def_rw("sweepB", &b2TOIInput::sweepB)
+    //     .def_rw("tMax", &b2TOIInput::tMax)
+    // ;
 
     py::enum_<b2TOIState>(m, "TOIState")
         .value("UNKNOWN", b2TOIState::b2_toiStateUnknown)
@@ -324,7 +324,7 @@ void export_collision(py::module_ & m)
     py::class_<b2TOIOutput>(m, "TOIOutput")
         .def(py::init<>())
         .def_rw("state", &b2TOIOutput::state)
-        .def_rw("t", &b2TOIOutput::t)
+        //.def_rw("t", &b2TOIOutput::t)
     ;
 
     // b2TimeOfImpact

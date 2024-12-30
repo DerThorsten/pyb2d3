@@ -31,37 +31,8 @@ void export_id_types(py::module_ & m)
     // py::implicitly_convertible<uint64_t, b2WorldId>();
 }
 
-class MyB2Vec2 : public b2Vec2 {
-public:
-    MyB2Vec2() : b2Vec2() {}
-    MyB2Vec2(float x, float y) : b2Vec2{x,y} {}
-};
 
 void export_b2Vec2(py::module_ &m) {
-    py::class_<MyB2Vec2>(m, "MyVec2")
-        .def(py::init<float, float>())
-        .def_rw("x", &MyB2Vec2::x)
-        .def_rw("y", &MyB2Vec2::y)
-        .def("__add__", [](const MyB2Vec2 &a, const MyB2Vec2 &b) { 
-            return a + b;
-        })
-        .def("__sub__", [](const MyB2Vec2 &a, const MyB2Vec2 &b) { 
-            return a - b;
-        })
-        .def("__mul__", [](const MyB2Vec2 &a, float b) { 
-            return MyB2Vec2(a.x * b, a.y * b);
-        })
-        .def("__mul__", [](float a, const MyB2Vec2 &b) { 
-            return MyB2Vec2(a * b.x, a * b.y);
-        })
-        // element-wise multiplication
-        .def("__mul__", [](const MyB2Vec2 &a, const MyB2Vec2 &b) { 
-            return MyB2Vec2(a.x * b.x, a.y * b.y);
-        })
-
-    ;
-
-    m.def("length", [](const MyB2Vec2 &v) { return b2Length(v); });
 }
 
 void export_ray_result(py::module_ &m) {
@@ -99,13 +70,13 @@ void export_world_def(py::module_ &m) {
         .def("__init__", [](b2WorldDef *t) { new (t) b2WorldDef(b2DefaultWorldDef()); })
         .def_rw("gravity", &b2WorldDef::gravity)
         .def_rw("restitution_threshold", &b2WorldDef::restitutionThreshold)
-        .def_rw("contact_pushout_velocity", &b2WorldDef::contactPushoutVelocity)
+        //.def_rw("contact_pushout_velocity", &b2WorldDef::contactPushoutVelocity)
         .def_rw("hit_event_threshold", &b2WorldDef::hitEventThreshold)
         .def_rw("contact_hertz", &b2WorldDef::contactHertz)
         .def_rw("contact_damping_ratio", &b2WorldDef::contactDampingRatio)
         .def_rw("joint_hertz", &b2WorldDef::jointHertz)
         .def_rw("joint_damping_ratio", &b2WorldDef::jointDampingRatio)
-        .def_rw("maximum_linear_velocity", &b2WorldDef::maximumLinearVelocity)
+        //.def_rw("maximum_linear_velocity", &b2WorldDef::maximumLinearVelocity)
         .def_rw("friction_mixing_rule", &b2WorldDef::frictionMixingRule)
         .def_rw("restitution_mixing_ru_le", &b2WorldDef::restitutionMixingRule)
         // .def_rw("enqueue_task", &b2WorldDef::enqueueTask)

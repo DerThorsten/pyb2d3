@@ -2,8 +2,8 @@
 
 // stl conversion
 // #include <nanobind/stl/arr
-
 #include <pyb2d/py_converter.hpp>
+
 
 // C
 extern "C" {
@@ -18,6 +18,69 @@ namespace py = nanobind;
 
 
 
+
+/// Unary add one vector to another
+inline void operator+=( b2Vec2& a, b2Vec2 b )
+{
+	a.x += b.x;
+	a.y += b.y;
+}
+
+/// Unary subtract one vector from another
+inline void operator-=( b2Vec2& a, b2Vec2 b )
+{
+	a.x -= b.x;
+	a.y -= b.y;
+}
+
+/// Unary multiply a vector by a scalar
+inline void operator*=( b2Vec2& a, float b )
+{
+	a.x *= b;
+	a.y *= b;
+}
+
+// /// Unary negate a vector
+// inline b2Vec2 operator-( b2Vec2 a )
+// {
+// 	return { -a.x, -a.y };
+// }
+
+/// Binary vector addition
+inline b2Vec2 operator+( b2Vec2 a, b2Vec2 b )
+{
+	return { a.x + b.x, a.y + b.y };
+}
+
+/// Binary vector subtraction
+inline b2Vec2 operator-( b2Vec2 a, b2Vec2 b )
+{
+	return { a.x - b.x, a.y - b.y };
+}
+
+/// Binary scalar and vector multiplication
+inline b2Vec2 operator*( float a, b2Vec2 b )
+{
+	return { a * b.x, a * b.y };
+}
+
+/// Binary scalar and vector multiplication
+inline b2Vec2 operator*( b2Vec2 a, float b )
+{
+	return { a.x * b, a.y * b };
+}
+
+/// Binary vector equality
+inline bool operator==( b2Vec2 a, b2Vec2 b )
+{
+	return a.x == b.x && a.y == b.y;
+}
+
+/// Binary vector inequality
+inline bool operator!=( b2Vec2 a, b2Vec2 b )
+{
+	return a.x != b.x || a.y != b.y;
+}
 
 
 
@@ -366,22 +429,6 @@ void export_math_functions(py::module_ & m)
 
     m.def("union", [](b2AABB a, b2AABB b) {
         return b2AABB_Union(a, b);
-    });
-
-    m.def("is_valid_float", [](float a) {
-        return b2Float_IsValid(a);
-    });
-
-    m.def("is_valid_vec2", [](b2Vec2 v) {
-        return b2Vec2_IsValid(v);
-    });
-
-    m.def("is_valid_rot", [](b2Rot q) {
-        return b2Rot_IsValid(q);
-    });
-
-    m.def("is_valid_aabb", [](b2AABB aabb) {
-        return b2AABB_IsValid(aabb);
     });
 
     m.def("set_length_units_per_meter", [](float lengthUnits) {

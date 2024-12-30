@@ -50,8 +50,8 @@ void export_world_functions(nb::module_ & m)
     m.def("world_explode", &b2World_Explode,nb::arg("world_id"),nb::arg("explosion_def"));
     m.def("world_set_contact_tuning", &b2World_SetContactTuning,nb::arg("world_id"),nb::arg("hertz"),nb::arg("damping_ratio"),nb::arg("push_velocity"));
     m.def("world_set_joint_tuning", &b2World_SetJointTuning,nb::arg("world_id"),nb::arg("hertz"),nb::arg("damping_ratio"));
-    m.def("world_set_maximum_linear_velocity", &b2World_SetMaximumLinearVelocity,nb::arg("world_id"),nb::arg("maximum_linear_velocity"));
-    m.def("world_get_maximum_linear_velocity", &b2World_GetMaximumLinearVelocity,nb::arg("world_id"));
+    //m.def("world_set_maximum_linear_velocity", &b2World_SetMaximumLinearVelocity,nb::arg("world_id"),nb::arg("maximum_linear_velocity"));
+    //m.def("world_get_maximum_linear_velocity", &b2World_GetMaximumLinearVelocity,nb::arg("world_id"));
     m.def("world_enable_warm_starting", &b2World_EnableWarmStarting,nb::arg("world_id"),nb::arg("flag"));
     m.def("world_is_warm_starting_enabled", &b2World_IsWarmStartingEnabled,nb::arg("world_id"));
     m.def("world_get_profile", &b2World_GetProfile,nb::arg("world_id"));
