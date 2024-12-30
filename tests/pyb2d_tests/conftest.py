@@ -2,7 +2,6 @@ import pytest
 import pyb2d as b2d
 
 
-
 @pytest.fixture
 def world_id():
     world_def = b2d.world_def(gravity=(0, -10))

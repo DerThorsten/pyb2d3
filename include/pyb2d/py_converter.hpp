@@ -17,10 +17,10 @@ namespace nb = nanobind;
 using ArrayVec2 = nb::ndarray<float, nb::numpy, nb::shape<-1, 2>, nb::c_contig>;
 
 
-//typedef user_data_int = //  unsiged integer with size of ptr    
+//typedef user_data_int = //  unsiged integer with size of ptr
 using user_data_uint = std::uintptr_t;
 
-namespace nanobind::detail 
+namespace nanobind::detail
 {
 
 // Custom type caster for b2Vec2

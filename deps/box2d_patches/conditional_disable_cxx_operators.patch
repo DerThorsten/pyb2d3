@@ -3,9 +3,9 @@ index 977736f..3bd3dd0 100644
 --- a/include/box2d/math_functions.h
 +++ b/include/box2d/math_functions.h
 @@ -638,6 +638,8 @@ B2_API float b2GetLengthUnitsPerMeter( void );
- 
+
  /**@}*/
- 
+
 +
 +#ifndef B2_DISABLE_CXX_OPERATORS
  /**
@@ -13,7 +13,7 @@ index 977736f..3bd3dd0 100644
   * @brief Math operator overloads for C++
 @@ -714,3 +716,5 @@ inline bool operator!=( b2Vec2 a, b2Vec2 b )
  #endif
- 
+
  /**@}*/
 +
 +#endif // B2_DISABLE_CXX_OPERATORS

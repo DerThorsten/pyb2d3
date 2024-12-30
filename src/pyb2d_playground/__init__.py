@@ -1,10 +1,9 @@
-from ._pyb2d_samples import * # import all
+from ._pyb2d_samples import *  # import all
 
 from pathlib import Path
 import os
 
-data_dir = Path(os.path.join(os.path.dirname(__file__), 'data'))
-
+data_dir = Path(os.path.join(os.path.dirname(__file__), "data"))
 
 
 def run_sample(cls):

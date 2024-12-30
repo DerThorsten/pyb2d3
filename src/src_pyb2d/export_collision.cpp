@@ -35,14 +35,14 @@ void export_collision(py::module_ & m)
     //b2ShapeCastInput
     py::class_<b2ShapeCastInput>(m, "ShapeCastInput")
         .def(py::init<>())
-        .def_prop_rw("points", 
+        .def_prop_rw("points",
             [](b2ShapeCastInput* self) {
                 return ArrayVec2(
                     reinterpret_cast<float*>(self->points), // data
                     {std::size_t(self->count), std::size_t(2)} // shape
                 );
-            }, 
-            [](b2ShapeCastInput* self, ArrayVec2 value) { 
+            },
+            [](b2ShapeCastInput* self, ArrayVec2 value) {
                 self->count = value.size();
                 for(int i = 0; i < value.size(); i++){
                     self->points[i].x = value(i, 0);
@@ -92,14 +92,14 @@ void export_collision(py::module_ & m)
     // b2Polygon
     py::class_<b2Polygon>(m, "Polygon")
         .def(py::init<>())
-        .def_prop_rw("vertices", 
-            [](b2Polygon* self) { 
+        .def_prop_rw("vertices",
+            [](b2Polygon* self) {
                 return ArrayVec2(
                     reinterpret_cast<float*>(self->vertices), // data
                     {std::size_t(self->count), std::size_t(2)} // shape
                 );
-            }, 
-            [](b2Polygon* self, ArrayVec2 value) { 
+            },
+            [](b2Polygon* self, ArrayVec2 value) {
                 self->count = value.size();
                 for(int i = 0; i < value.size(); i++){
                     self->vertices[i].x = value(i, 0);
@@ -107,14 +107,14 @@ void export_collision(py::module_ & m)
                 }
             }
         )
-        .def_prop_rw("normals", 
+        .def_prop_rw("normals",
             [](b2Polygon* self) {
                 return ArrayVec2(
                     reinterpret_cast<float*>(self->normals), // data
                     {std::size_t(self->count), std::size_t(2)} // shape
                 );
-            }, 
-            [](b2Polygon* self, ArrayVec2 value) { 
+            },
+            [](b2Polygon* self, ArrayVec2 value) {
                 self->count = value.size();
                 for(int i = 0; i < value.size(); i++){
                     self->normals[i].x = value(i, 0);
@@ -143,7 +143,7 @@ void export_collision(py::module_ & m)
     ;
 
 
-    
+
     m.def("is_valid_ray", &b2IsValidRay, py::arg("input"));
     m.def("make_polygon", &b2MakePolygon, py::arg("hull"), py::arg("radius"));
     m.def("make_offset_polygon", &b2MakeOffsetPolygon, py::arg("hull"), py::arg("position"), py::arg("rotation"));
@@ -177,9 +177,9 @@ void export_collision(py::module_ & m)
     // b2Hull
     py::class_<b2Hull>(m, "Hull")
         .def(py::init<>())
-        .def_prop_rw("points", 
-            [](b2Hull* self) { return ArrayVec2(reinterpret_cast<float*>(self->points));}, 
-            [](b2Hull* self, ArrayVec2 value) { 
+        .def_prop_rw("points",
+            [](b2Hull* self) { return ArrayVec2(reinterpret_cast<float*>(self->points));},
+            [](b2Hull* self, ArrayVec2 value) {
                 self->count = value.size();
                 for(int i = 0; i < value.size(); i++){
                     self->points[i].x = value(i, 0);
@@ -216,9 +216,9 @@ void export_collision(py::module_ & m)
     // // b2DistanceProxy
     // py::class_<b2DistanceProxy>(m, "DistanceProxy")
     //     .def(py::init<>())
-    //     .def_prop_rw("points", 
-    //         [](b2DistanceProxy* self) { return ArrayVec2(reinterpret_cast<float*>(self->points));}, 
-    //         [](b2DistanceProxy* self, ArrayVec2 value) { 
+    //     .def_prop_rw("points",
+    //         [](b2DistanceProxy* self) { return ArrayVec2(reinterpret_cast<float*>(self->points));},
+    //         [](b2DistanceProxy* self, ArrayVec2 value) {
     //             self->count = value.size();
     //             for(int i = 0; i < value.size(); i++){
     //                 self->points[i].x = value(i, 0);
@@ -231,7 +231,7 @@ void export_collision(py::module_ & m)
     // ;
 
 
-    // // b2DistanceCache  
+    // // b2DistanceCache
     // py::class_<b2DistanceCache>(m, "DistanceCache")
     //     .def(py::init<>())
     //     .def_rw("count", &b2DistanceCache::count)
@@ -354,5 +354,5 @@ void export_collision(py::module_ & m)
         .def_rw("normal", &b2Manifold::normal)
     ;
 
-    
-}   
+
+}

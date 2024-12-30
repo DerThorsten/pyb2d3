@@ -15,8 +15,8 @@ namespace py = nanobind;
 void export_id_types(py::module_ & m)
 {
     // py::class_<b2BodyId>(m, "BodyId")
-    // // .def("__init__", [](b2BodyId *t, uint64_t val) { 
-    // //     new (t) b2BodyId(); 
+    // // .def("__init__", [](b2BodyId *t, uint64_t val) {
+    // //     new (t) b2BodyId();
     // //     *t = b2LoadBodyId(val);
     // // })
     // ;
@@ -96,7 +96,7 @@ void export_body_def(py::module_ &m) {
     ;
 
 
-    // body def 
+    // body def
     py::class_<b2BodyDef>(m, "BodyDef")
         .def("__init__", [](b2BodyDef *t) { new (t) b2BodyDef(b2DefaultBodyDef()); })
         .def_rw("type", &b2BodyDef::type)
@@ -117,8 +117,8 @@ void export_body_def(py::module_ &m) {
         .def_rw("internal_value", &b2BodyDef::internalValue)
         EXPORT_USER_DATA(b2BodyDef)
 
-    ; 
-    
+    ;
+
 }
 
 void export_filter(py::module_ &m) {
@@ -128,7 +128,7 @@ void export_filter(py::module_ &m) {
         .def_rw("mask_bits", &b2Filter::maskBits)
         .def_rw("group_index", &b2Filter::groupIndex)
     ;
-} 
+}
 
 void export_query_filter(py::module_ &m) {
     py::class_<b2QueryFilter>(m, "QueryFilter")
@@ -289,7 +289,7 @@ void export_joint_defs(py::module_ &m) {
         .def_rw("internal_value", &b2NullJointDef::internalValue)
         EXPORT_USER_DATA(b2NullJointDef)
     ;
-    
+
     py::class_<b2PrismaticJointDef>(m, "PrismaticJointDef")
         .def("__init__", [](b2PrismaticJointDef *t) { new (t) b2PrismaticJointDef(b2DefaultPrismaticJointDef()); })
         .def_rw("body_id_a", &b2PrismaticJointDef::bodyIdA)
@@ -382,7 +382,7 @@ void export_explosion_def(py::module_ &m) {
         .def_rw("falloff", &b2ExplosionDef::falloff)
         .def_rw("impulse_per_length", &b2ExplosionDef::impulsePerLength)
     ;
-}   
+}
 
 void export_events(py::module_ &m) {
 
@@ -430,7 +430,7 @@ void export_events(py::module_ &m) {
         .def_rw("end_count", &b2ContactEvents::endCount)
         .def_rw("hit_count", &b2ContactEvents::hitCount)
     ;
-    
+
     py::class_<b2BodyMoveEvent>(m, "BodyMoveEvent")
         .def_rw("transform", &b2BodyMoveEvent::transform)
         .def_rw("body_id", &b2BodyMoveEvent::bodyId)

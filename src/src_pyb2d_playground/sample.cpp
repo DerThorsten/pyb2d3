@@ -229,7 +229,7 @@ void Sample::Step( Settings& settings )
 	b2World_EnableContinuous( m_worldId, settings.enableContinuous );
 
 	for ( int i = 0; i < 1; ++i )
-	{	
+	{
 		b2World_Step( m_worldId, timeStep, settings.subStepCount );
 		m_taskCount = 0;
 	}

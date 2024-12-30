@@ -68,7 +68,7 @@ void* AllocFcn( uint32_t size, int32_t alignment )
 	size_t sizeAligned = ( ( size - 1 ) | ( alignment - 1 ) ) + 1;
 	assert( ( sizeAligned & ( alignment - 1 ) ) == 0 );
 
-#if defined( _WIN64 ) || defined( _WIN32 ) 
+#if defined( _WIN64 ) || defined( _WIN32 )
 	void* ptr = _aligned_malloc( sizeAligned, alignment );
 #else
 	void* ptr = aligned_alloc( alignment, sizeAligned );
@@ -331,7 +331,7 @@ static void UpdateUI()
 				ImGui::Checkbox( "Friction Impulses", &s_settings.drawFrictionImpulses );
 				ImGui::Checkbox( "Center of Masses", &s_settings.drawMass );
 				ImGui::Checkbox( "Graph Colors", &s_settings.drawGraphColors );
-	
+
 
 				ImVec2 button_sz = ImVec2( -1, 0 );
 				if ( ImGui::Button( "Pause (P)", button_sz ) )
@@ -394,11 +394,11 @@ int start_everything(
 
 	g_camera.m_width = s_settings.windowWidth;
 	g_camera.m_height = s_settings.windowHeight;
-	
+
 
 	OpenGlFrontend ui( s_settings );
 	auto ui_address = &ui;
-	
+
 
 	g_mainWindow = ui.main_window();
 
@@ -529,7 +529,7 @@ int start_everything(
 		++frame;
 	}
 
-	
+
 
 	//delete s_sample;
 	if ( s_sample )
@@ -540,7 +540,7 @@ int start_everything(
 	s_sample = nullptr;
 	g_draw.Destroy();
 
-	
+
 
 #if defined( _WIN32 )
 	_CrtDumpMemoryLeaks();

@@ -23,7 +23,7 @@ void main()
 
     // resolution.y = pixelScale * radius
     f_thickness = 3.0f / (pixelScale * radius);
-    
+
     float x = v_instanceTransform.x;
     float y = v_instanceTransform.y;
     float c = v_instanceTransform.z;

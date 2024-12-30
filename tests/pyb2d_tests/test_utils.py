@@ -2,8 +2,8 @@ import pytest
 import numpy as np
 import pyb2d as b2d
 
-class DebugDrawTest(b2d.DebugDraw):
 
+class DebugDrawTest(b2d.DebugDraw):
     def __init__(self):
         super().__init__()
 
@@ -32,7 +32,7 @@ class DebugDrawTest(b2d.DebugDraw):
         color = hex(color)
         assert radius >= 0
         assert isinstance(transform, b2d.Transform)
- 
+
     def draw_segment(self, p1, p2, color):
         color = hex(color)
         assert isinstance(p1, tuple)

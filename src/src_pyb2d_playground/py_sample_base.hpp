@@ -21,7 +21,7 @@ struct PySampleTrampoline : Sample {
 
     virtual ~PySampleTrampoline() {
     }
-    
+
     void Step( Settings& settings ) override
 {
         NB_OVERRIDE_NAME("step", Step, settings);
