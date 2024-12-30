@@ -8,7 +8,7 @@ include_directories(${Python_INCLUDE_DIRS})
 
 
 
-nanobind_add_module(_pyb2d 
+nanobind_add_module(_pyb2d
     # Target the stable ABI for Python 3.12+, which reduces
     # the number of binary wheels that must be built. This
     # does nothing on older Python versions
@@ -23,7 +23,7 @@ nanobind_add_module(_pyb2d
 )
 
 # include directories
-target_include_directories(_pyb2d 
+target_include_directories(_pyb2d
     PRIVATE ${CMAKE_SOURCE_DIR}/include
 #python include
     PRIVATE ${PYTHON_INCLUDE_DIRS}
@@ -62,7 +62,7 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/pyb2d/ DESTINATION pyb2d)
 if(WITH_PYTHON_TESTS)
     # run unit tests via pytest
     add_custom_target(test
-        COMMAND ${CMAKE_COMMAND} 
+        COMMAND ${CMAKE_COMMAND}
             -E env PYTHONPATH=${CMAKE_SOURCE_DIR}/python/module pytest ${CMAKE_SOURCE_DIR}/python/test -s
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Running unit tests"

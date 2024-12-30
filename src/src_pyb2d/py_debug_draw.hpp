@@ -50,7 +50,7 @@ void PyDrawString( b2Vec2 p, const char* s, void* context );
 
 template<class CLS>
 void PyDrawPolygonGeneric( const b2Vec2* vertices, int vertexCount, b2HexColor color, void* context )
-{   
+{
     CLS* draw = reinterpret_cast<CLS*>(context);
     float * data = const_cast<float *>(reinterpret_cast<const float*>(vertices));
     ArrayVec2 points(data, {static_cast<std::size_t>(vertexCount), static_cast<std::size_t>(2)});

@@ -19,9 +19,9 @@ void export_world_functions(nb::module_ & m)
     m.def("destroy_world", &b2DestroyWorld,nb::arg("world_id"));
     m.def("world_is_valid", &b2World_IsValid,nb::arg("id"));
     m.def("world_step", &b2World_Step,nb::arg("world_id"),nb::arg("time_step"),nb::arg("sub_step_count"));
-    m.def("world_draw", [](b2WorldId world_id, PyDebugDraw* py_draw) { 
+    m.def("world_draw", [](b2WorldId world_id, PyDebugDraw* py_draw) {
         b2DebugDraw * draw = static_cast<b2DebugDraw*>(py_draw);
-        b2World_Draw(world_id, draw); 
+        b2World_Draw(world_id, draw);
     },nb::arg("world_id"),nb::arg("draw"));
     m.def("world_get_body_events", &b2World_GetBodyEvents,nb::arg("world_id"));
     m.def("world_get_sensor_events", &b2World_GetSensorEvents,nb::arg("world_id"));
@@ -82,7 +82,7 @@ void export_body_functions(nb::module_ & m)
 
 
 
-    
+
     m.def("body_get_local_vector", &b2Body_GetLocalVector,nb::arg("body_id"),nb::arg("world_vector"));
     m.def("body_get_world_vector", &b2Body_GetWorldVector,nb::arg("body_id"),nb::arg("local_vector"));
     m.def("body_get_linear_velocity", &b2Body_GetLinearVelocity,nb::arg("body_id"));
@@ -268,7 +268,7 @@ void export_mouse_joint_functions(nb::module_ & m){
 
 void export_null_joint_functions(nb::module_ & m){
     m.def("create_null_joint", &b2CreateNullJoint,nb::arg("world_id"),nb::arg("def"));
-}   
+}
 
 void export_prismatic_joint_functions(nb::module_ & m){
     m.def("create_prismatic_joint", &b2CreatePrismaticJoint,nb::arg("world_id"),nb::arg("def"));
@@ -296,7 +296,7 @@ void export_prismatic_joint_functions(nb::module_ & m){
 }
 
 void export_revolute_joint_functions(nb::module_ & m){
-    
+
     m.def("create_revolute_joint", &b2CreateRevoluteJoint,nb::arg("world_id"),nb::arg("def"));
     m.def("revolute_joint_enable_spring", &b2RevoluteJoint_EnableSpring,nb::arg("joint_id"),nb::arg("enable_spring"));
     m.def("revolute_joint_is_spring_enabled", &b2RevoluteJoint_IsSpringEnabled,nb::arg("joint_id"));

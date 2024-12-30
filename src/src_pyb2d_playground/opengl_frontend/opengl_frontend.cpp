@@ -11,7 +11,7 @@
 #include "box2d/box2d.h"
 #include "box2d/math_functions.h"
 
-// clang-format off 
+// clang-format off
 #include <GLFW/glfw3.h>
 // clang-format on
 
@@ -21,7 +21,7 @@
 
 namespace pyb2d
 {
-    
+
     static void DestroyUI()
     {
         ImGui_ImplOpenGL3_Shutdown();
@@ -96,9 +96,9 @@ namespace pyb2d
         if ( !glfwInit() )
         {
             const char* description;
-            glfwGetError(&description); 
+            glfwGetError(&description);
             throw std::runtime_error("GLFW initialization failed" + std::string(description));
-        }   
+        }
 
         this->create_window();
         glfwSetWindowUserPointer( m_mainWindow, this );
@@ -157,7 +157,7 @@ namespace pyb2d
         }
         else
         {
-            
+
             m_mainWindow = glfwCreateWindow( int( g_camera.m_width * s_windowScale ), int( g_camera.m_height * s_windowScale ), title
                                                 , nullptr, nullptr );
 

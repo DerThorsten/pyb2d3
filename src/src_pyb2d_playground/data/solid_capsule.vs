@@ -21,19 +21,19 @@ void main()
 {
     f_position = v_localPosition;
     f_color = v_instanceColor;
-    
+
     float radius = v_instanceRadius;
     float length = v_instanceLength;
-    
+
     // scale quad large enough to hold capsule
     float scale = radius + 0.5 * length;
-    
+
     // quad range of [-1, 1] implies normalize radius and length
     f_length = length / scale;
-    
+
     // resolution.y = pixelScale * scale
     f_thickness = 3.0f / (pixelScale * scale);
-    
+
     float x = v_instanceTransform.x;
     float y = v_instanceTransform.y;
     float c = v_instanceTransform.z;

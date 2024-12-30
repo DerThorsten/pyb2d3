@@ -86,7 +86,7 @@ inline bool operator!=( b2Vec2 a, b2Vec2 b )
 
 void export_math_functions(py::module_ & m)
 {
-    
+
     py::class_<b2Transform>(m, "Transform")
         .def(py::init<>())
         .def_rw("p", &b2Transform::p)

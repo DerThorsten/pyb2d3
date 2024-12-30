@@ -53,7 +53,7 @@ void export_draw(py::module_ &m)
         })
     ;
 
-    
+
 }
 
 void export_core(py::module_ &m)
@@ -77,7 +77,7 @@ void export_core(py::module_ &m)
             return g_draw;
         }, py::rv_policy::reference_internal)
     ;
-    
+
 
     m.def("start_everything", [](const char * data_dir, py::object sample_cls) {
         try {
@@ -85,7 +85,7 @@ void export_core(py::module_ &m)
         } catch (const std::exception &e) {
             std::cout << "Error: " << e.what() << std::endl;
         }
-    });   
+    });
 }
 
 
@@ -93,7 +93,7 @@ void export_core(py::module_ &m)
 
 NB_MODULE(_pyb2d_playground, m) {
 
-    pyb2d::export_settings(m);   
+    pyb2d::export_settings(m);
     pyb2d::export_core(m);
     pyb2d::export_draw(m);
 }
