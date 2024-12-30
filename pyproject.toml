@@ -43,6 +43,7 @@ ninja = ">=1.12.1,<2"
 scikit-build-core = ">=0.10.7,<0.11"
 uv = ">=0.4.25,<0.5"
 pytest = ">=6.2.5"
+pytest-sugar = ">=0.9.4"
 curl = ">=7.79.1,<9"
 
 
@@ -96,10 +97,16 @@ depends-on = ["build-box2d"]
 [tool.pixi.feature.build.tasks.build]
 cmd = ["uv", "build"]
 
-[tool.pixi.feature.build.tasks.install]
+[tool.pixi.feature.build.tasks.install_editable]
 cmd =  """
 uv pip install -e . --reinstall
 """
+
+[tool.pixi.feature.build.tasks.install]
+cmd =  """
+uv pip install .
+"""
+
 
 [tool.pixi.feature.build.tasks.test]
 cmd = ["pytest"]

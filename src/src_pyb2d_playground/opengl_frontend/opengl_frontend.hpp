@@ -39,9 +39,9 @@ namespace pyb2d
         GLFWwindow* main_window();
 
     private:
-     
+
         void create_window();
-       
+
         GLFWwindow* m_mainWindow;
         float s_windowScale = 1.0f;
         float s_framebufferScale = 1.0f;

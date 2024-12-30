@@ -141,9 +141,9 @@ namespace pyb2d
     // // We absolutely want to minimize the number of times we need to cross the language
     // // barrier, so we collect the data in C++ and and then convert it to numpy arrays.
     // // On the python side we can then call functions like **draw_polygons**  (note the plural)
-    // // that will draw all the polygons in one go. This way, the number of times we cross 
+    // // that will draw all the polygons in one go. This way, the number of times we cross
     // // the language barrier is constant and independent of the number of shapes we want to draw.
-    // // 
+    // //
     // // The Transform template parameter is a class that will be used to apply
     // // arbitrary transformations to the coordinats, length units, and colors.
     // // This is usefull to already apply world to screen transformations in C++.
@@ -209,7 +209,7 @@ namespace pyb2d
     //         std::vector<t_coord> m_draw_polygon_vertices;
     //         std::vector<int> m_draw_polygon_acc_vertex_counts;
     //         std::vector<t_color> m_draw_polygon_colors;
-            
+
     // };
 
 

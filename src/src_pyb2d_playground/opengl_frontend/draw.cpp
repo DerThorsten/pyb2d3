@@ -148,9 +148,9 @@ struct GLBackground
 		// concat dataDir with background.vs / background.fs
 		// load the files
 		(std::string(dataDir)+ "/background.vs").c_str();
-				
-		m_programId = CreateProgramFromFiles( 
-			(std::string(dataDir)+ "/background.vs").c_str(), 
+
+		m_programId = CreateProgramFromFiles(
+			(std::string(dataDir)+ "/background.vs").c_str(),
 			(std::string(dataDir)+ "/background.fs").c_str()
 		);
 		m_timeUniform = glGetUniformLocation( m_programId, "time" );
@@ -201,7 +201,7 @@ struct GLBackground
 
 		float time = (float)glfwGetTime();
 		time = fmodf(time, 100.0f);
-		
+
 		glUniform1f( m_timeUniform, time );
 		glUniform2f( m_resolutionUniform, (float)g_camera.m_width, (float)g_camera.m_height );
 
@@ -662,8 +662,8 @@ struct GLCircles
 	void Create(const char * dataDir)
 	{
 
-		m_programId = CreateProgramFromFiles( 
-			(std::string(dataDir)+ "/circle.vs").c_str(), 
+		m_programId = CreateProgramFromFiles(
+			(std::string(dataDir)+ "/circle.vs").c_str(),
 			(std::string(dataDir)+ "/circle.fs").c_str()
 		);
 		m_projectionUniform = glGetUniformLocation( m_programId, "projectionMatrix" );
@@ -809,8 +809,8 @@ struct GLSolidCircles
 {
 	void Create(const char * dataDir)
 	{
-		m_programId = CreateProgramFromFiles( 
-			(std::string(dataDir)+ "/solid_circle.vs").c_str(), 
+		m_programId = CreateProgramFromFiles(
+			(std::string(dataDir)+ "/solid_circle.vs").c_str(),
 			(std::string(dataDir)+ "/solid_circle.fs").c_str()
 		);
 		m_projectionUniform = glGetUniformLocation( m_programId, "projectionMatrix" );
@@ -956,8 +956,8 @@ struct GLSolidCapsules
 {
 	void Create(const char * dataDir)
 	{
-		m_programId = CreateProgramFromFiles( 
-			(std::string(dataDir)+ "/solid_capsule.vs").c_str(), 
+		m_programId = CreateProgramFromFiles(
+			(std::string(dataDir)+ "/solid_capsule.vs").c_str(),
 			(std::string(dataDir)+ "/solid_capsule.fs").c_str()
 		);
 
@@ -1127,10 +1127,10 @@ struct PolygonData
 struct GLSolidPolygons
 {
 	void Create(const char * dataDir)
-	{	
+	{
 
-		m_programId = CreateProgramFromFiles( 
-			(std::string(dataDir)+ "/solid_polygon.vs").c_str(), 
+		m_programId = CreateProgramFromFiles(
+			(std::string(dataDir)+ "/solid_polygon.vs").c_str(),
 			(std::string(dataDir)+ "/solid_polygon.fs").c_str()
 		);
 

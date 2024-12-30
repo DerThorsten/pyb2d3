@@ -4,7 +4,7 @@ import pyb2d as b2d
 
 from .test_utils import DebugDrawTest
 
-from .conftest import * # noqa 
+from .conftest import *  # noqa
 
 
 def test_world():
@@ -19,7 +19,7 @@ def test_hello_world(world_id):
     # create static ground body
     body_def = b2d.body_def(position=(0, -10), type=b2d.BodyType.STATIC, user_data=10)
     assert body_def.user_data == 10
-    groud_body_id= b2d.create_body(world_id, body_def) 
+    groud_body_id = b2d.create_body(world_id, body_def)
     body_user_data = b2d.body_get_user_data(groud_body_id)
     assert body_user_data == 10
     box = b2d.make_box(1, 1)
@@ -29,12 +29,18 @@ def test_hello_world(world_id):
     assert shape_user_data == 100
 
     # create dynamic body
-    body_def = b2d.body_def(position=(0, 4), type=b2d.BodyType.DYNAMIC, angular_damping=0.1, linear_damping=0.1, fixed_rotation=False)
+    body_def = b2d.body_def(
+        position=(0, 4),
+        type=b2d.BodyType.DYNAMIC,
+        angular_damping=0.1,
+        linear_damping=0.1,
+        fixed_rotation=False,
+    )
     dynamic_body_id = b2d.create_body(world_id, body_def)
     circle = b2d.circle(radius=0.5)
     shape_def = b2d.shape_def(density=1, friction=0.3, restitution=0.5)
     shape_id = b2d.create_circle_shape(dynamic_body_id, shape_def, circle)
-    
+
     body_user_data = b2d.body_get_user_data(dynamic_body_id)
     assert body_user_data == 0
 
@@ -52,6 +58,3 @@ def test_hello_world(world_id):
         b2d.world_draw(world_id, debug_draw)
 
     assert pos[1] < pos_inital[1]
-
-
-

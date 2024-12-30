@@ -15,7 +15,7 @@ namespace py = nanobind;
 
 /// Draw a closed polygon provided in CCW order.
 void PyDrawPolygon( const b2Vec2* vertices, int vertexCount, b2HexColor color, void* context )
-{   
+{
     PyDebugDraw* draw = reinterpret_cast<PyDebugDraw*>(context);
     float * data = const_cast<float *>(reinterpret_cast<const float*>(vertices));
     ArrayVec2 points(data, {static_cast<std::size_t>(vertexCount), static_cast<std::size_t>(2)});
@@ -81,7 +81,7 @@ void PyDrawString( b2Vec2 p, const char* s, void* context )
 }
 
 
-PyDebugDraw::PyDebugDraw(py::handle py_class) 
+PyDebugDraw::PyDebugDraw(py::handle py_class)
 :   b2DebugDraw(b2DefaultDebugDraw()),
     m_py_class(py_class)
 {

@@ -42,7 +42,7 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 			${CMAKE_CURRENT_SOURCE_DIR}/data/
 			${CMAKE_SOURCE_DIR}/python/module/pyb2d_samples/data/)
-			
+
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${BOX2D_SAMPLE_FILES})
 
@@ -68,4 +68,3 @@ add_custom_command(TARGET _pyb2d_playground POST_BUILD
 )
 
 install(TARGETS _pyb2d_playground LIBRARY DESTINATION pyb2d/playground)
-
