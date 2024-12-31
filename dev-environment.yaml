@@ -1,0 +1,25 @@
+# a conda env
+name: pyb2d
+channels:
+  - conda-forge
+dependencies:
+  # Build tools
+  - cxx-compiler
+  - c-compiler
+  - cmake
+  - ninja
+  - scikit-build-core
+  - uv
+  # build deps
+  - nanobind
+  # run deps
+  - numpy
+  # Tests
+  - pytest
+  - pytest-sugar
+  # testbed
+  - glad
+  - glfw
+  - imgui
+  # utils
+  - pre-commit
