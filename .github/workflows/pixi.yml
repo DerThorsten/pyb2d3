@@ -3,16 +3,11 @@ on:
   push:
   pull_request:
 jobs:
-
   build_simple_with_pixi:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-
     steps:
-      ################################################################
-      # SETUP
-      ################################################################
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
