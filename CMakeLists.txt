@@ -13,4 +13,3 @@ option(BUILD_SHARED_PYB2D_PLAYGROUND "Build shared library for pyb2d_playground"
 
 
 add_subdirectory(src)
-

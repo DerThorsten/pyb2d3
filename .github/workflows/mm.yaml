@@ -22,9 +22,9 @@ jobs:
           uses: actions/checkout@v4
           with:
             fetch-depth: 0
-  
 
-        
+
+
         - uses: mamba-org/setup-micromamba@v2
           with:
             environment-file: dev-environment.yml
@@ -43,9 +43,9 @@ jobs:
             cd box2d &&
             patch  -p1 -i ../box2d_patches/conditional_disable_cxx_operators.patch
           shell: bash -el {0}
-        
+
           - name: build box2d
-            shell: bash -el {0} 
+            shell: bash -el {0}
             run: |
               cmake -S deps/box2d -B deps/box2d/build \
                 -DCMAKE_INSTALL_PREFIX=$(pwd)/.pixi/envs/build \
@@ -54,6 +54,6 @@ jobs:
                 -DBUILD_SHARED_LIBS=ON \
                 -DBOX2D_UNIT_TESTS=OFF \
                 -DBOX2D_BENCHMARKS=OFF \
-                -DBOX2D_SAMPLES=OFF 
+                -DBOX2D_SAMPLES=OFF
               cmake --build deps/box2d/build --config Release --target install
-      
+
