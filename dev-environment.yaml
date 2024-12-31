@@ -22,4 +22,4 @@ dependencies:
   - glfw
   - imgui
   # utils
-  - pre-commits
+  - pre-commit
