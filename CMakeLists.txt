@@ -25,6 +25,24 @@ target_include_directories(_pyb2d
 target_link_libraries(_pyb2d PRIVATE box2d::box2d)
 
 
+
+# after each build, copy the extension to the python package directory
+add_custom_command(TARGET _pyb2d POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_pyb2d> ${CMAKE_SOURCE_DIR}/src/pyb2d
+    COMMENT "Copying _pyb2d to python package directory"
+)
+
+if(NOT DEFINED SKBUILD)
+    # on mac or linux, set the shared library suffix to .so
+    if(APPLE OR UNIX)
+        set_target_properties(_pyb2d PROPERTIES SUFFIX ".so")
+    endif()
+else()
+    message(STATUS "using SKBUILD" ${SKBUILD})
+endif()
+
+# INSTALL
+###################
 # if SKBUILD is defined, install to the python package directory
 if(DEFINED SKBUILD)
     message(STATUS "using SKBUILD" ${SKBUILD})
