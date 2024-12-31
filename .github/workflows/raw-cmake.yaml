@@ -1,0 +1,46 @@
+
+name: raw-cmake
+on:
+  push:
+  pull_request:
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: dev-environment.yaml
+          init-shell: >-
+            bash
+          cache-environment: true
+          post-cleanup: 'all'
+
+      - name: download and patch box2d
+        shell: bash -el {0}
+        run: |
+          ./build_box2d.sh
+
+      - name: build
+        shell: bash -el {0}
+        run: |
+          NANOBIND_CMAKE_DIR=$(python -m nanobind --cmake_dir)
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+                    -Dnanobind_DIR=$NANOBIND_CMAKE_DIR
+
+          cmake --build . --config Release --target install
+
+      - name: test
+        shell: bash -el {0}
+        run: |
+          PYTHONPATH=$(pwd)/src  pytest -v
