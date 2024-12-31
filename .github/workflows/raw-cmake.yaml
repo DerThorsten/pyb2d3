@@ -1,25 +1,20 @@
 
-name: micromamba
+name: raw-cmake
 on:
   push:
   pull_request:
 jobs:
 
-  build_simple:
+  build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
 
     steps:
-      ################################################################
-      # SETUP
-      ################################################################
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-
 
       - uses: mamba-org/setup-micromamba@v2
         with:
@@ -37,9 +32,15 @@ jobs:
       - name: build
         shell: bash -el {0}
         run: |
-          uv pip install .
+          NANOBIND_CMAKE_DIR=$(python -m nanobind --cmake_dir)
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+                    -Dnanobind_DIR=$NANOBIND_CMAKE_DIR
+
+          cmake --build . --config Release
 
       - name: test
         shell: bash -el {0}
         run: |
-          pytest -v
+          PYTHONPATH=$(pwd)/src  pytest -v
