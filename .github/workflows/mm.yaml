@@ -51,3 +51,13 @@ jobs:
             -DBOX2D_BENCHMARKS=OFF \
             -DBOX2D_SAMPLES=OFF
           cmake --build deps/box2d/build --config Release --target install
+
+      - name: build
+        shell: bash -el {0}
+        run: |
+          uv pipe install .
+
+      - name: test
+        shell: bash -el {0}
+        run: |
+          pytest -v
