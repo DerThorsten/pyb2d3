@@ -2,13 +2,18 @@
 python bindings for Box2D.
 
 
+# badges
+[![pixi](https://github.com/DerThorsten/bb2d/actions/workflows/pixi.yml/badge.svg)](https://github.com/DerThorsten/bb2d/actions/workflows/pixi.yml)
+[![mm](https://github.com/DerThorsten/bb2d/actions/workflows/mm.yml/badge.svg)](https://github.com/DerThorsten/bb2d/actions/workflows/mm.yml)
+[![raw-cmake](https://github.com/DerThorsten/bb2d/actions/workflows/raw-cmake.yml/badge.svg)](https://github.com/DerThorsten/bb2d/actions/workflows/raw-cmake.yml)
+
 # Building
 This may not work on windows!
 
 ## micromamba + uv / pip
 
 Create the development environment with:
-```bash
+```bash=
 micromamba create -f dev-environment.yml
 ```
 
