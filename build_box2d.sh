@@ -1,5 +1,23 @@
 #!/bin/bash
 
+# exit on error
+set -e
+
+# get the first argument: its either SHARED or STATIC
+# if not provided, we default to SHARED
+BUILD_TYPE=$1
+if [ -z "$BUILD_TYPE" ]; then
+    BUILD_TYPE=SHARED
+fi
+
+BUILD_SHARED_LIBS=ON
+if [ "$BUILD_TYPE" == "STATIC" ]; then
+    BUILD_SHARED_LIBS=OFF
+fi
+
+echo "Building Box2D as $BUILD_TYPE"
+
+
 # this dir
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -21,13 +39,11 @@ cd box2d
 patch  -p1 -i ../box2d_patches/conditional_disable_cxx_operators.patch
 
 
-
-
 cmake -S . -B build \
     -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
     -DCMAKE_INSTALL_LIBDIR=$CONDA_PREFIX/lib \
     -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS \
     -DBOX2D_UNIT_TESTS=OFF \
     -DBOX2D_BENCHMARKS=OFF \
     -DBOX2D_SAMPLES=OFF
