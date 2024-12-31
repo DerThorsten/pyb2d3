@@ -13,7 +13,7 @@ This may not work on windows!
 ## micromamba + uv / pip
 
 Create the development environment with:
-```bash=
+```bash
 micromamba create -f dev-environment.yml
 ```
 
