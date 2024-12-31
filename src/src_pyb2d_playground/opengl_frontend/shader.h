@@ -8,12 +8,12 @@
 namespace pyb2d
 {
 
-uint32_t CreateProgramFromFiles( const char* vertexPath, const char* fragmentPath );
-uint32_t CreateProgramFromStrings( const char* vertexString, const char* fragmentString );
+    uint32_t CreateProgramFromFiles(const char* vertexPath, const char* fragmentPath);
+    uint32_t CreateProgramFromStrings(const char* vertexString, const char* fragmentString);
 
-void CheckErrorGL();
-void DumpInfoGL();
-void PrintLogGL( int object );
+    void CheckErrorGL();
+    void DumpInfoGL();
+    void PrintLogGL(int object);
 
 
 }

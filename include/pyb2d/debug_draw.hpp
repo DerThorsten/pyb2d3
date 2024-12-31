@@ -1,76 +1,81 @@
-extern "C" {
-#include <box2d/math_functions.h>
+extern "C"
+{
 #include <box2d/box2d.h>
+#include <box2d/math_functions.h>
 #include <box2d/types.h>
 }
-
 
 namespace pyb2d
 {
     namespace detail
     {
-        template<class CLS>
-        void GenericDrawPolygon( const b2Vec2* vertices, int vertexCount, b2HexColor color, void* context )
+        template <class CLS>
+        void GenericDrawPolygon(const b2Vec2* vertices, int vertexCount, b2HexColor color, void* context)
         {
             reinterpret_cast<CLS*>(context)->DrawPolygon(vertices, vertexCount, color);
         }
 
-        template<class CLS>
-        void GenericDrawSolidPolygon( b2Transform transform, const b2Vec2* vertices, int vertexCount, float radius, b2HexColor color,void* context )
+        template <class CLS>
+        void GenericDrawSolidPolygon(
+            b2Transform transform,
+            const b2Vec2* vertices,
+            int vertexCount,
+            float radius,
+            b2HexColor color,
+            void* context
+        )
         {
             reinterpret_cast<CLS*>(context)->DrawSolidPolygon(transform, vertices, vertexCount, radius, color);
         }
 
-        template<class CLS>
-        void GenericDrawCircle( b2Vec2 center, float radius, b2HexColor color, void* context )
+        template <class CLS>
+        void GenericDrawCircle(b2Vec2 center, float radius, b2HexColor color, void* context)
         {
             reinterpret_cast<CLS*>(context)->DrawCircle(center, radius, color);
         }
 
-        template<class CLS>
-        void GenericDrawSolidCircle( b2Transform transform, float radius, b2HexColor color, void* context )
+        template <class CLS>
+        void GenericDrawSolidCircle(b2Transform transform, float radius, b2HexColor color, void* context)
         {
             reinterpret_cast<CLS*>(context)->DrawSolidCircle(transform, radius, color);
         }
 
-        template<class CLS>
-        void GenericDrawSolidCapsule( b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color, void* context )
+        template <class CLS>
+        void GenericDrawSolidCapsule(b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color, void* context)
         {
             reinterpret_cast<CLS*>(context)->DrawSolidCapsule(p1, p2, radius, color);
         }
 
-        template<class CLS>
-        void GenericDrawSegment( b2Vec2 p1, b2Vec2 p2, b2HexColor color, void* context )
+        template <class CLS>
+        void GenericDrawSegment(b2Vec2 p1, b2Vec2 p2, b2HexColor color, void* context)
         {
             reinterpret_cast<CLS*>(context)->DrawSegment(p1, p2, color);
         }
 
-        template<class CLS>
-        void GenericDrawTransform( b2Transform transform, void* context )
+        template <class CLS>
+        void GenericDrawTransform(b2Transform transform, void* context)
         {
             reinterpret_cast<CLS*>(context)->DrawTransform(transform);
         }
 
-        template<class CLS>
-        void GenericDrawPoint( b2Vec2 p, float size, b2HexColor color, void* context )
+        template <class CLS>
+        void GenericDrawPoint(b2Vec2 p, float size, b2HexColor color, void* context)
         {
             reinterpret_cast<CLS*>(context)->DrawPoint(p, size, color);
         }
 
-        template<class CLS>
-        void GenericDrawString( b2Vec2 p, const char* s, void* context )
+        template <class CLS>
+        void GenericDrawString(b2Vec2 p, const char* s, void* context)
         {
             reinterpret_cast<CLS*>(context)->DrawString(p, s);
         }
     }
 
-
-
-
-    template<class Derived>
+    template <class Derived>
     class DebugDraw : public b2DebugDraw
     {
     public:
+
         DebugDraw()
         {
             this->DrawPolygon = detail::GenericDrawPolygon<Derived>;
@@ -80,7 +85,7 @@ namespace pyb2d
             this->DrawSolidCapsule = detail::GenericDrawSolidCapsule<Derived>;
             this->DrawSegment = detail::GenericDrawSegment<Derived>;
             this->DrawTransform = detail::GenericDrawTransform<Derived>;
-            this->DrawPoint =  GenericDrawPoint<Derived>;
+            this->DrawPoint = GenericDrawPoint<Derived>;
             this->DrawString = detail::GenericDrawString<Derived>;
             this->context = reinterpret_cast<void*>(this);
         }
@@ -90,7 +95,13 @@ namespace pyb2d
             this->derived_cast()->draw_polygon(vertices, vertexCount, color);
         }
 
-        void draw_solid_polygon(b2Transform transform, const b2Vec2* vertices, int vertexCount, float radius, b2HexColor color) override
+        void draw_solid_polygon(
+            b2Transform transform,
+            const b2Vec2* vertices,
+            int vertexCount,
+            float radius,
+            b2HexColor color
+        ) override
         {
             this->derived_cast()->draw_solid_polygon(transform, vertices, vertexCount, radius, color);
         }
@@ -129,8 +140,10 @@ namespace pyb2d
         {
             this->derived_cast()->draw_string(p, s);
         }
+
     private:
-        Derived * derived_cast()
+
+        Derived* derived_cast()
         {
             return static_cast<Derived*>(this);
         }
@@ -164,11 +177,13 @@ namespace pyb2d
     //             {
     //                 m_draw_polygon_vertices.push_back(transform.coordinate(vertices[i]));
     //             }
-    //             m_draw_polygon_acc_vertex_counts.push_back( m_draw_polygon_acc_vertex_counts.empty() ? vertexCount : m_draw_polygon_acc_vertex_counts.back() + vertexCount );
+    //             m_draw_polygon_acc_vertex_counts.push_back( m_draw_polygon_acc_vertex_counts.empty() ?
+    //             vertexCount : m_draw_polygon_acc_vertex_counts.back() + vertexCount );
     //             m_draw_polygon_colors.push_back(transform.color(color));
     //         }
 
-    //         void draw_solid_polygon(b2Transform t, const b2Vec2* vertices, int vertexCount, float radius, b2HexColor color)
+    //         void draw_solid_polygon(b2Transform t, const b2Vec2* vertices, int vertexCount, float radius,
+    //         b2HexColor color)
     //         {
     //         }
 
@@ -213,5 +228,4 @@ namespace pyb2d
     // };
 
 
-
-} // namespace pyb2d
+}  // namespace pyb2d

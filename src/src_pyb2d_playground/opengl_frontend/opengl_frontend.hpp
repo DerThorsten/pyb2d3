@@ -1,21 +1,18 @@
 #pragma once
 #include <frontend_base.hpp>
-
 #include <nanobind/nanobind.h>
-
-#include "draw.h"
 #include <sample.h>
 #include <settings.h>
 
 #include "box2d/base.h"
 #include "box2d/box2d.h"
 #include "box2d/math_functions.h"
+#include "draw.h"
 
 // clang-format off
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 // clang-format on
-
 
 namespace pyb2d
 {
@@ -30,7 +27,7 @@ namespace pyb2d
         OpenGlFrontend& operator=(OpenGlFrontend&&) = delete;
 
         OpenGlFrontend(
-            //nanobind::object & sample_cls,
+            // nanobind::object & sample_cls,
             Settings& settings
         );
 
@@ -45,8 +42,7 @@ namespace pyb2d
         GLFWwindow* m_mainWindow;
         float s_windowScale = 1.0f;
         float s_framebufferScale = 1.0f;
-
     };
 
 
-} // namespace pyb2d
+}  // namespace pyb2d

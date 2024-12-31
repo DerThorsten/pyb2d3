@@ -1,50 +1,47 @@
-#include <nanobind/nanobind.h>
-
 #include <iostream>
+
+#include <nanobind/nanobind.h>
 // stl conversion
 // #include <nanobind/stl/arr
 
 #include <pyb2d/py_converter.hpp>
 
 // C
-extern "C" {
-#include <box2d/math_functions.h>
+extern "C"
+{
 #include <box2d/box2d.h>
+#include <box2d/math_functions.h>
 }
 
 // nanobind namespace
 namespace py = nanobind;
 
-
-
-
-
-
-
-
-void export_collision(py::module_ & m)
+void export_collision(py::module_& m)
 {
-    //b2RayCastInput
+    // b2RayCastInput
     py::class_<b2RayCastInput>(m, "RayCastInput")
         .def(py::init<>())
         .def_rw("origin", &b2RayCastInput::origin)
         .def_rw("translation", &b2RayCastInput::translation)
-        .def_rw("max_fraction", &b2RayCastInput::maxFraction)
-    ;
+        .def_rw("max_fraction", &b2RayCastInput::maxFraction);
 
-    //b2ShapeCastInput
+    // b2ShapeCastInput
     py::class_<b2ShapeCastInput>(m, "ShapeCastInput")
         .def(py::init<>())
-        .def_prop_rw("points",
-            [](b2ShapeCastInput* self) {
+        .def_prop_rw(
+            "points",
+            [](b2ShapeCastInput* self)
+            {
                 return ArrayVec2(
-                    reinterpret_cast<float*>(self->points), // data
-                    {std::size_t(self->count), std::size_t(2)} // shape
+                    reinterpret_cast<float*>(self->points),     // data
+                    {std::size_t(self->count), std::size_t(2)}  // shape
                 );
             },
-            [](b2ShapeCastInput* self, ArrayVec2 value) {
+            [](b2ShapeCastInput* self, ArrayVec2 value)
+            {
                 self->count = value.size();
-                for(int i = 0; i < value.size(); i++){
+                for (int i = 0; i < value.size(); i++)
+                {
                     self->points[i].x = value(i, 0);
                     self->points[i].y = value(i, 1);
                 }
@@ -53,70 +50,73 @@ void export_collision(py::module_ & m)
         .def_ro("count", &b2ShapeCastInput::count)
         .def_rw("radius", &b2ShapeCastInput::radius)
         .def_rw("translation", &b2ShapeCastInput::translation)
-        .def_rw("max_fraction", &b2ShapeCastInput::maxFraction)
-    ;
+        .def_rw("max_fraction", &b2ShapeCastInput::maxFraction);
 
-    //b2CastOutput
+    // b2CastOutput
     py::class_<b2CastOutput>(m, "CastOutput")
         .def(py::init<>())
         .def_rw("normal", &b2CastOutput::normal)
         .def_rw("point", &b2CastOutput::point)
         .def_rw("fraction", &b2CastOutput::fraction)
         .def_rw("iterations", &b2CastOutput::iterations)
-        .def_rw("hit", &b2CastOutput::hit)
-    ;
+        .def_rw("hit", &b2CastOutput::hit);
 
-    //b2MassData
+    // b2MassData
     py::class_<b2MassData>(m, "MassData")
         .def(py::init<>())
         .def_rw("mass", &b2MassData::mass)
         .def_rw("center", &b2MassData::center)
-        .def_rw("rotational_inertia", &b2MassData::rotationalInertia)
-    ;
+        .def_rw("rotational_inertia", &b2MassData::rotationalInertia);
 
-    //b2Circle
+    // b2Circle
     py::class_<b2Circle>(m, "Circle")
         .def(py::init<>())
         .def_rw("center", &b2Circle::center)
-        .def_rw("radius", &b2Circle::radius)
-    ;
+        .def_rw("radius", &b2Circle::radius);
 
     // b2Capsule
     py::class_<b2Capsule>(m, "Capsule")
         .def(py::init<>())
         .def_rw("center1", &b2Capsule::center1)
         .def_rw("center2", &b2Capsule::center2)
-        .def_rw("radius", &b2Capsule::radius)
-    ;
+        .def_rw("radius", &b2Capsule::radius);
 
     // b2Polygon
     py::class_<b2Polygon>(m, "Polygon")
         .def(py::init<>())
-        .def_prop_rw("vertices",
-            [](b2Polygon* self) {
+        .def_prop_rw(
+            "vertices",
+            [](b2Polygon* self)
+            {
                 return ArrayVec2(
-                    reinterpret_cast<float*>(self->vertices), // data
-                    {std::size_t(self->count), std::size_t(2)} // shape
+                    reinterpret_cast<float*>(self->vertices),   // data
+                    {std::size_t(self->count), std::size_t(2)}  // shape
                 );
             },
-            [](b2Polygon* self, ArrayVec2 value) {
+            [](b2Polygon* self, ArrayVec2 value)
+            {
                 self->count = value.size();
-                for(int i = 0; i < value.size(); i++){
+                for (int i = 0; i < value.size(); i++)
+                {
                     self->vertices[i].x = value(i, 0);
                     self->vertices[i].y = value(i, 1);
                 }
             }
         )
-        .def_prop_rw("normals",
-            [](b2Polygon* self) {
+        .def_prop_rw(
+            "normals",
+            [](b2Polygon* self)
+            {
                 return ArrayVec2(
-                    reinterpret_cast<float*>(self->normals), // data
-                    {std::size_t(self->count), std::size_t(2)} // shape
+                    reinterpret_cast<float*>(self->normals),    // data
+                    {std::size_t(self->count), std::size_t(2)}  // shape
                 );
             },
-            [](b2Polygon* self, ArrayVec2 value) {
+            [](b2Polygon* self, ArrayVec2 value)
+            {
                 self->count = value.size();
-                for(int i = 0; i < value.size(); i++){
+                for (int i = 0; i < value.size(); i++)
+                {
                     self->normals[i].x = value(i, 0);
                     self->normals[i].y = value(i, 1);
                 }
@@ -124,35 +124,46 @@ void export_collision(py::module_ & m)
         )
         .def_rw("centroid", &b2Polygon::centroid)
         .def_rw("radius", &b2Polygon::radius)
-        .def_ro("count", &b2Polygon::count)
-    ;
+        .def_ro("count", &b2Polygon::count);
 
     // b2Segment
     py::class_<b2Segment>(m, "Segment")
         .def(py::init<>())
         .def_rw("point1", &b2Segment::point1)
-        .def_rw("point2", &b2Segment::point2)
-    ;
+        .def_rw("point2", &b2Segment::point2);
 
     // b2ChainSegment
     py::class_<b2ChainSegment>(m, "ChainSegment")
         .def(py::init<>())
         .def_rw("ghost1", &b2ChainSegment::ghost1)
         .def_rw("segment", &b2ChainSegment::segment)
-        .def_rw("ghost2", &b2ChainSegment::ghost2)
-    ;
-
+        .def_rw("ghost2", &b2ChainSegment::ghost2);
 
 
     m.def("is_valid_ray", &b2IsValidRay, py::arg("input"));
     m.def("make_polygon", &b2MakePolygon, py::arg("hull"), py::arg("radius"));
     m.def("make_offset_polygon", &b2MakeOffsetPolygon, py::arg("hull"), py::arg("position"), py::arg("rotation"));
-    m.def("make_offset_rounded_polygon", &b2MakeOffsetRoundedPolygon, py::arg("hull"), py::arg("position"), py::arg("rotation"), py::arg("radius"));
+    m.def(
+        "make_offset_rounded_polygon",
+        &b2MakeOffsetRoundedPolygon,
+        py::arg("hull"),
+        py::arg("position"),
+        py::arg("rotation"),
+        py::arg("radius")
+    );
     m.def("make_square", &b2MakeSquare, py::arg("h"));
     m.def("make_box", &b2MakeBox, py::arg("hx"), py::arg("hy"));
     m.def("make_rounded_box", &b2MakeRoundedBox, py::arg("hx"), py::arg("hy"), py::arg("radius"));
     m.def("make_offset_box", &b2MakeOffsetBox, py::arg("hx"), py::arg("hy"), py::arg("center"), py::arg("rotation"));
-    m.def("make_offset_rounded_box", &b2MakeOffsetRoundedBox, py::arg("hx"), py::arg("hy"), py::arg("center"), py::arg("rotation"), py::arg("radius"));
+    m.def(
+        "make_offset_rounded_box",
+        &b2MakeOffsetRoundedBox,
+        py::arg("hx"),
+        py::arg("hy"),
+        py::arg("center"),
+        py::arg("rotation"),
+        py::arg("radius")
+    );
     m.def("transform_polygon", &b2TransformPolygon, py::arg("transform"), py::arg("polygon"));
     m.def("compute_circle_mass", &b2ComputeCircleMass, py::arg("shape"), py::arg("density"));
     m.def("compute_capsule_mass", &b2ComputeCapsuleMass, py::arg("shape"), py::arg("density"));
@@ -177,23 +188,33 @@ void export_collision(py::module_ & m)
     // b2Hull
     py::class_<b2Hull>(m, "Hull")
         .def(py::init<>())
-        .def_prop_rw("points",
-            [](b2Hull* self) { return ArrayVec2(reinterpret_cast<float*>(self->points));},
-            [](b2Hull* self, ArrayVec2 value) {
+        .def_prop_rw(
+            "points",
+            [](b2Hull* self)
+            {
+                return ArrayVec2(reinterpret_cast<float*>(self->points));
+            },
+            [](b2Hull* self, ArrayVec2 value)
+            {
                 self->count = value.size();
-                for(int i = 0; i < value.size(); i++){
+                for (int i = 0; i < value.size(); i++)
+                {
                     self->points[i].x = value(i, 0);
                     self->points[i].y = value(i, 1);
                 }
             }
         )
-        .def_ro("count", &b2Hull::count)
-    ;
+        .def_ro("count", &b2Hull::count);
 
-    m.def("compute_hull", [](ArrayVec2 points) {
-        b2Hull hull = b2ComputeHull(reinterpret_cast<b2Vec2*>(points.data()), points.shape(0));
-        return hull;
-    }, py::arg("points"));
+    m.def(
+        "compute_hull",
+        [](ArrayVec2 points)
+        {
+            b2Hull hull = b2ComputeHull(reinterpret_cast<b2Vec2*>(points.data()), points.shape(0));
+            return hull;
+        },
+        py::arg("points")
+    );
 
     m.def("validate_hull", &b2ValidateHull, py::arg("hull"));
 
@@ -205,8 +226,7 @@ void export_collision(py::module_ & m)
         .def_rw("closest2", &b2SegmentDistanceResult::closest2)
         .def_rw("fraction1", &b2SegmentDistanceResult::fraction1)
         .def_rw("fraction2", &b2SegmentDistanceResult::fraction2)
-        .def_rw("distanceSquared", &b2SegmentDistanceResult::distanceSquared)
-    ;
+        .def_rw("distanceSquared", &b2SegmentDistanceResult::distanceSquared);
 
 
     // b2SegmentDistance
@@ -245,8 +265,7 @@ void export_collision(py::module_ & m)
         .def_rw("pointB", &b2DistanceOutput::pointB)
         .def_rw("distance", &b2DistanceOutput::distance)
         .def_rw("iterations", &b2DistanceOutput::iterations)
-        .def_rw("simplexCount", &b2DistanceOutput::simplexCount)
-    ;
+        .def_rw("simplexCount", &b2DistanceOutput::simplexCount);
 
     // b2SimplexVertex
     py::class_<b2SimplexVertex>(m, "SimplexVertex")
@@ -256,8 +275,7 @@ void export_collision(py::module_ & m)
         .def_rw("w", &b2SimplexVertex::w)
         .def_rw("a", &b2SimplexVertex::a)
         .def_rw("indexA", &b2SimplexVertex::indexA)
-        .def_rw("indexB", &b2SimplexVertex::indexB)
-    ;
+        .def_rw("indexB", &b2SimplexVertex::indexB);
 
     // b2Simplex
     py::class_<b2Simplex>(m, "Simplex")
@@ -265,11 +283,17 @@ void export_collision(py::module_ & m)
         .def_rw("v1", &b2Simplex::v1)
         .def_rw("v2", &b2Simplex::v2)
         .def_rw("v3", &b2Simplex::v3)
-        .def_rw("count", &b2Simplex::count)
-    ;
+        .def_rw("count", &b2Simplex::count);
 
     // b2ShapeDistance
-    m.def("shape_distance", &b2ShapeDistance, py::arg("cache"), py::arg("input"), py::arg("simplexes"), py::arg("simplexCapacity"));
+    m.def(
+        "shape_distance",
+        &b2ShapeDistance,
+        py::arg("cache"),
+        py::arg("input"),
+        py::arg("simplexes"),
+        py::arg("simplexCapacity")
+    );
 
     // b2ShapeCastPairInput
     py::class_<b2ShapeCastPairInput>(m, "ShapeCastPairInput")
@@ -279,14 +303,19 @@ void export_collision(py::module_ & m)
         .def_rw("transformA", &b2ShapeCastPairInput::transformA)
         .def_rw("transformB", &b2ShapeCastPairInput::transformB)
         .def_rw("translationB", &b2ShapeCastPairInput::translationB)
-        .def_rw("maxFraction", &b2ShapeCastPairInput::maxFraction)
-    ;
+        .def_rw("maxFraction", &b2ShapeCastPairInput::maxFraction);
 
     // b2ShapeCast
     m.def("shape_cast", &b2ShapeCast, py::arg("input"));
-    m.def("make_proxy", [](ArrayVec2 vertices, float radius) {
-        return b2MakeProxy(reinterpret_cast<b2Vec2*>(vertices.data()), vertices.shape(0), radius);
-    }, py::arg("vertices"), py::arg("radius"));
+    m.def(
+        "make_proxy",
+        [](ArrayVec2 vertices, float radius)
+        {
+            return b2MakeProxy(reinterpret_cast<b2Vec2*>(vertices.data()), vertices.shape(0), radius);
+        },
+        py::arg("vertices"),
+        py::arg("radius")
+    );
 
     // b2Sweep
     py::class_<b2Sweep>(m, "Sweep")
@@ -295,8 +324,7 @@ void export_collision(py::module_ & m)
         .def_rw("c1", &b2Sweep::c1)
         .def_rw("c2", &b2Sweep::c2)
         .def_rw("q1", &b2Sweep::q1)
-        .def_rw("q2", &b2Sweep::q2)
-    ;
+        .def_rw("q2", &b2Sweep::q2);
 
     // b2GetSweepTransform
     m.def("get_sweep_transform", &b2GetSweepTransform, py::arg("sweep"), py::arg("time"));
@@ -316,16 +344,13 @@ void export_collision(py::module_ & m)
         .value("FAILED", b2TOIState::b2_toiStateFailed)
         .value("OVERLAPPED", b2TOIState::b2_toiStateOverlapped)
         .value("HIT", b2TOIState::b2_toiStateHit)
-        .value("SEPARATED", b2TOIState::b2_toiStateSeparated)
-    ;
+        .value("SEPARATED", b2TOIState::b2_toiStateSeparated);
 
 
     // b2TOIOutput
-    py::class_<b2TOIOutput>(m, "TOIOutput")
-        .def(py::init<>())
-        .def_rw("state", &b2TOIOutput::state)
+    py::class_<b2TOIOutput>(m, "TOIOutput").def(py::init<>()).def_rw("state", &b2TOIOutput::state)
         //.def_rw("t", &b2TOIOutput::t)
-    ;
+        ;
 
     // b2TimeOfImpact
     m.def("time_of_impact", &b2TimeOfImpact, py::arg("input"));
@@ -343,16 +368,12 @@ void export_collision(py::module_ & m)
         .def_rw("max_normal_impulse", &b2ManifoldPoint::maxNormalImpulse)
         .def_rw("normal_velocity", &b2ManifoldPoint::normalVelocity)
         .def_rw("id", &b2ManifoldPoint::id)
-        .def_rw("persisted", &b2ManifoldPoint::persisted)
-    ;
+        .def_rw("persisted", &b2ManifoldPoint::persisted);
 
     // b2Manifold
     py::class_<b2Manifold>(m, "Manifold")
         .def(py::init<>())
         // TODO MANIFOLD POINTS
         .def_ro("point_count", &b2Manifold::pointCount)
-        .def_rw("normal", &b2Manifold::normal)
-    ;
-
-
+        .def_rw("normal", &b2Manifold::normal);
 }
