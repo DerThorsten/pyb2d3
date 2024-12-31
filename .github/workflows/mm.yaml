@@ -43,9 +43,9 @@ jobs:
         shell: bash -el {0}
         run: |
           cmake -S deps/box2d -B deps/box2d/build \
-            -DCMAKE_INSTALL_PREFIX=$(pwd)/.pixi/envs/build \
-            -DCMAKE_INSTALL_LIBDIR=$(pwd)/.pixi/envs/build/lib \
-            -DCMAKE_BUILD_TYPE=Release \`
+            -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+            -DCMAKE_INSTALL_LIBDIR=$CONDA_PREFIX/lib \
+            -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_SHARED_LIBS=ON \
             -DBOX2D_UNIT_TESTS=OFF \
             -DBOX2D_BENCHMARKS=OFF \
