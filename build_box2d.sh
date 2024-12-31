@@ -13,7 +13,7 @@ tar --strip-components=1 -xvzf box2d-commit.tar.gz -C box2d &&
 cd box2d &&
 patch  -p1 -i ../box2d_patches/conditional_disable_cxx_operators.patch
 
-cd $DIR
+cd $DIR/deps/box2d &&
 
 
 cmake -S deps/box2d -B $DIR/deps/box2d/build \

@@ -1,18 +1,12 @@
 cmake_minimum_required(VERSION 3.22)
-project(${SKBUILD_PROJECT_NAME})
+project(pyb2d)
 
 find_package(box2d REQUIRED)
-find_package(Python COMPONENTS Interpreter Development
-        REQUIRED)
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
+find_package(nanobind CONFIG REQUIRED)
 
 # add compile definitions
 add_compile_definitions(B2_DISABLE_CXX_OPERATORS)
-
-
-message(STATUS "Python_INCLUDE_DIRS: ${PYTHON_INCLUDE_DIRS}")
-message(STATUS "Python_INCLUDE_DIRS: ${Python_INCLUDE_DIRS}")
-find_package(nanobind CONFIG REQUIRED)
-
 
 nanobind_add_module(_pyb2d
     src/main.cpp
@@ -31,5 +25,12 @@ target_include_directories(_pyb2d
 target_link_libraries(_pyb2d PRIVATE box2d::box2d)
 
 
-install(TARGETS _pyb2d LIBRARY DESTINATION pyb2d)
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/pyb2d/ DESTINATION pyb2d)
+# if SKBUILD is defined, install to the python package directory
+if(DEFINED SKBUILD)
+    message(STATUS "using SKBUILD" ${SKBUILD})
+    install(TARGETS _pyb2d LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME})
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/pyb2d/ DESTINATION ${SKBUILD_PROJECT_NAME})
+else()
+    message(STATUS "not using SKBUILD")
+
+endif()
