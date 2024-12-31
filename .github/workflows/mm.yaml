@@ -11,15 +11,10 @@ jobs:
       fail-fast: false
 
     steps:
-      ################################################################
-      # SETUP
-      ################################################################
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-
 
       - uses: mamba-org/setup-micromamba@v2
         with:
