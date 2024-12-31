@@ -46,7 +46,6 @@ make -j$(nproc)
 ```
 
 
-
 ## Pixi
 
 Since box2d 3 is not yet published on conda-forge, we build it from source.
@@ -62,7 +61,19 @@ pixi run install .
 ```
 
 # Testing
+## With Pixi
 Run the tests with:
 ```bash
 pixi run test
+```
+## micromamba + uv / pip
+Run the tests with:
+```bash
+pytest
+```
+
+## raw cmake
+Run the tests with:
+```bash
+PYTHONPATH=$(pwd)/src pytest
 ```
