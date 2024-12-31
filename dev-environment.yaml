@@ -21,3 +21,5 @@ dependencies:
   - glad
   - glfw
   - imgui
+  # utils
+  - pre-commits
