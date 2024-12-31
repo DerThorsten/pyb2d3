@@ -14,35 +14,29 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
-namespace pyb2d
-{
+namespace pyb2d {
 
-    class OpenGlFrontend : public FrontendBase
-    {
-    public:
+class OpenGlFrontend : public FrontendBase {
+public:
+  OpenGlFrontend(const OpenGlFrontend &) = delete;
+  OpenGlFrontend &operator=(const OpenGlFrontend &) = delete;
+  OpenGlFrontend(OpenGlFrontend &&) = delete;
+  OpenGlFrontend &operator=(OpenGlFrontend &&) = delete;
 
-        OpenGlFrontend(const OpenGlFrontend&) = delete;
-        OpenGlFrontend& operator=(const OpenGlFrontend&) = delete;
-        OpenGlFrontend(OpenGlFrontend&&) = delete;
-        OpenGlFrontend& operator=(OpenGlFrontend&&) = delete;
+  OpenGlFrontend(
+      // nanobind::object & sample_cls,
+      Settings &settings);
 
-        OpenGlFrontend(
-            // nanobind::object & sample_cls,
-            Settings& settings
-        );
+  ~OpenGlFrontend();
 
-        ~OpenGlFrontend();
+  GLFWwindow *main_window();
 
-        GLFWwindow* main_window();
+private:
+  void create_window();
 
-    private:
+  GLFWwindow *m_mainWindow;
+  float s_windowScale = 1.0f;
+  float s_framebufferScale = 1.0f;
+};
 
-        void create_window();
-
-        GLFWwindow* m_mainWindow;
-        float s_windowScale = 1.0f;
-        float s_framebufferScale = 1.0f;
-    };
-
-
-}  // namespace pyb2d
+} // namespace pyb2d

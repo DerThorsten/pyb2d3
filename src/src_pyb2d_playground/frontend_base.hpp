@@ -2,26 +2,19 @@
 
 #include <settings.h>
 
-namespace pyb2d
-{
+namespace pyb2d {
 
+class FrontendBase {
+public:
+  FrontendBase(
+      // nanobind::object & sample_cls,
+      Settings &settings);
 
-    class FrontendBase
-    {
-    public:
+  virtual ~FrontendBase() = default;
 
-        FrontendBase(
-            // nanobind::object & sample_cls,
-            Settings& settings
-        );
+protected:
+  Settings &m_settings;
+  // nanobind::object m_sample_cls;
+};
 
-        virtual ~FrontendBase() = default;
-
-    protected:
-
-        Settings& m_settings;
-        // nanobind::object m_sample_cls;
-    };
-
-
-}  // namespace pyb2d
+} // namespace pyb2d
