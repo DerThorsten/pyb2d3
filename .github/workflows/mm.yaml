@@ -55,7 +55,7 @@ jobs:
       - name: build
         shell: bash -el {0}
         run: |
-          uv pipe install .
+          uv pip install .
 
       - name: test
         shell: bash -el {0}
