@@ -9,67 +9,76 @@
 // todo this include is slow
 #include "enkits/TaskScheduler.h"
 
-namespace pyb2d {
+namespace pyb2d
+{
 
-// namespace py = nanobind;
+    // namespace py = nanobind;
 
-#define ARRAY_COUNT(A) (int)(sizeof(A) / sizeof(A[0]))
+#define ARRAY_COUNT(A) (int) (sizeof(A) / sizeof(A[0]))
 
-struct Settings;
+    struct Settings;
 
-class SampleTask : public enki::ITaskSet {
-public:
-  SampleTask() = default;
+    class SampleTask : public enki::ITaskSet
+    {
+    public:
 
-  void ExecuteRange(enki::TaskSetPartition range,
-                    uint32_t threadIndex) override {
-    m_task(range.start, range.end, threadIndex, m_taskContext);
-  }
+        SampleTask() = default;
 
-  b2TaskCallback *m_task = nullptr;
-  void *m_taskContext = nullptr;
-};
+        void ExecuteRange(enki::TaskSetPartition range, uint32_t threadIndex) override
+        {
+            m_task(range.start, range.end, threadIndex, m_taskContext);
+        }
 
-constexpr int32_t maxTasks = 64;
-constexpr int32_t maxThreads = 64;
+        b2TaskCallback* m_task = nullptr;
+        void* m_taskContext = nullptr;
+    };
 
-class Sample {
-public:
-  explicit Sample(Settings &settings);
-  virtual ~Sample();
+    constexpr int32_t maxTasks = 64;
+    constexpr int32_t maxThreads = 64;
 
-  virtual void Step(Settings &settings);
+    class Sample
+    {
+    public:
 
-  virtual void UpdateUI() {}
+        explicit Sample(Settings& settings);
+        virtual ~Sample();
 
-  virtual void Keyboard(int) {}
+        virtual void Step(Settings& settings);
 
-  virtual void MouseDown(b2Vec2 p, int button, int mod);
-  virtual void MouseUp(b2Vec2 p, int button);
-  virtual void MouseMove(b2Vec2 p);
+        virtual void UpdateUI()
+        {
+        }
 
-  void ResetProfile();
-  void ShiftOrigin(b2Vec2 newOrigin);
+        virtual void Keyboard(int)
+        {
+        }
 
-  friend class DestructionListener;
-  friend class BoundaryListener;
-  friend class ContactListener;
+        virtual void MouseDown(b2Vec2 p, int button, int mod);
+        virtual void MouseUp(b2Vec2 p, int button);
+        virtual void MouseMove(b2Vec2 p);
 
-  enki::TaskScheduler m_scheduler;
-  SampleTask m_tasks[maxTasks];
-  int32_t m_taskCount;
-  int m_threadCount;
+        void ResetProfile();
+        void ShiftOrigin(b2Vec2 newOrigin);
 
-  b2BodyId m_groundBodyId;
+        friend class DestructionListener;
+        friend class BoundaryListener;
+        friend class ContactListener;
 
-  // DestructionListener m_destructionListener;
-  int32_t m_textLine;
-  b2WorldId m_worldId;
-  b2JointId m_mouseJointId;
-  int32_t m_stepCount;
-  int32_t m_textIncrement;
+        enki::TaskScheduler m_scheduler;
+        SampleTask m_tasks[maxTasks];
+        int32_t m_taskCount;
+        int m_threadCount;
 
-  b2DebugDraw *p_debugDraw = nullptr;
-};
+        b2BodyId m_groundBodyId;
 
-} // namespace pyb2d
+        // DestructionListener m_destructionListener;
+        int32_t m_textLine;
+        b2WorldId m_worldId;
+        b2JointId m_mouseJointId;
+        int32_t m_stepCount;
+        int32_t m_textIncrement;
+
+        b2DebugDraw* p_debugDraw = nullptr;
+    };
+
+}  // namespace pyb2d
