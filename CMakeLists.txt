@@ -13,6 +13,7 @@ else()
     SET(INSTALL_DIR  ${CMAKE_INSTALL_PREFIX})
 endif()
 
+message("INSTALL_DIR: ${INSTALL_DIR}")
 
 FetchContent_Declare(
 	box2d
