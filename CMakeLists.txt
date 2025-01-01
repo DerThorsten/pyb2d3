@@ -26,7 +26,7 @@ target_link_libraries(_pyb2d PRIVATE box2d::box2d)
 
 # after each build, copy the extension to the python package directory
 add_custom_command(TARGET _pyb2d POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_pyb2d> ${CMAKE_SOURCE_DIR}/src/pyb2d
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_pyb2d> ${CMAKE_SOURCE_DIR}/src/module/pyb2d
     COMMENT "Copying _pyb2d to python package directory"
 )
 
