@@ -2,15 +2,16 @@ cmake_minimum_required(VERSION 3.22)
 project(pyb2d)
 include(FetchContent)
 
-OPTION(USE_SHARED_BOX2D "Use shared box2d library" OFF)
-SET(BUILD_SHARED_LIBS ${USE_SHARED_BOX2D})
-message("USE_SHARED_BOX2D: ${USE_SHARED_BOX2D}")
+
+OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+
 
 
 if(DEFINED SKBUILD)
-    SET(INSTALL_DIR  ${SKBUILD_PROJECT_NAME})
+    SET(CMAKE_INSTALL_LIBDIR ${SKBUILD_PROJECT_NAME}/lib)
 else()
     SET(INSTALL_DIR  ${CMAKE_INSTALL_PREFIX})
+    SET(CMAKE_INSTALL_LIBDIR lib)
 endif()
 
 message("INSTALL_DIR: ${INSTALL_DIR}")
@@ -27,8 +28,6 @@ FetchContent_Declare(
         -DBOX2D_UNIT_TESTS=OFF
         -DBOX2D_BENCHMARKS=OFF
         -DBOX2D_SAMPLES=OFF
-        -DBUILD_SHARED_LIBS=${USE_SHARED_BOX2D}
-        -DCMAKE_INSTALL_LIBDIR=${INSTALL_DIR}/lib
 )
 FetchContent_MakeAvailable(box2d)
 
