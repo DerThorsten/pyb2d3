@@ -1,7 +1,37 @@
 cmake_minimum_required(VERSION 3.22)
 project(pyb2d)
+include(FetchContent)
 
-find_package(box2d REQUIRED)
+
+OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+
+
+
+if(DEFINED SKBUILD)
+    SET(CMAKE_INSTALL_LIBDIR ${SKBUILD_PROJECT_NAME}/lib)
+else()
+    SET(INSTALL_DIR  ${CMAKE_INSTALL_PREFIX})
+    SET(CMAKE_INSTALL_LIBDIR lib)
+endif()
+
+message("INSTALL_DIR: ${INSTALL_DIR}")
+
+FetchContent_Declare(
+	box2d
+	GIT_REPOSITORY https://github.com/DerThorsten/box2d.git
+	GIT_TAG 30c080e56efd13ef5aa8872db63d95b816ca23e0
+	GIT_SHALLOW TRUE
+	GIT_PROGRESS TRUE
+    CMAKE_ARGS
+        -DOPTION_ONE=ON
+        -DOPTION_TWO=OFF
+        -DBOX2D_UNIT_TESTS=OFF
+        -DBOX2D_BENCHMARKS=OFF
+        -DBOX2D_SAMPLES=OFF
+)
+FetchContent_MakeAvailable(box2d)
+
+# find_package(box2d REQUIRED)
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 find_package(nanobind CONFIG REQUIRED)
 
