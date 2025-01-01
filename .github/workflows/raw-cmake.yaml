@@ -43,4 +43,4 @@ jobs:
       - name: test
         shell: bash -el {0}
         run: |
-          PYTHONPATH=$(pwd)/src  pytest -v
+          PYTHONPATH=$(pwd)/src/module  pytest -v

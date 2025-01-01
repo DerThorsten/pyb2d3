@@ -61,5 +61,5 @@ pytest
 ## raw cmake
 Run the tests with:
 ```bash
-PYTHONPATH=$(pwd)/src pytest
+PYTHONPATH=$(pwd)/src/module pytest
 ```
