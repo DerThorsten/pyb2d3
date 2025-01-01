@@ -5,6 +5,15 @@ include(FetchContent)
 OPTION(USE_SHARED_BOX2D "Use shared box2d library" OFF)
 SET(BUILD_SHARED_LIBS ${USE_SHARED_BOX2D})
 message("USE_SHARED_BOX2D: ${USE_SHARED_BOX2D}")
+
+
+if(DEFINED SKBUILD)
+    SET(INSTALL_DIR  ${SKBUILD_PROJECT_NAME})
+else()
+    SET(INSTALL_DIR  ${CMAKE_INSTALL_PREFIX})
+endif()
+
+
 FetchContent_Declare(
 	box2d
 	GIT_REPOSITORY https://github.com/DerThorsten/box2d.git
@@ -18,7 +27,7 @@ FetchContent_Declare(
         -DBOX2D_BENCHMARKS=OFF
         -DBOX2D_SAMPLES=OFF
         -DBUILD_SHARED_LIBS=${USE_SHARED_BOX2D}
-        -DCMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_PREFIX}/lib
+        -DCMAKE_INSTALL_LIBDIR=${INSTALL_DIR}/lib
 )
 FetchContent_MakeAvailable(box2d)
 
