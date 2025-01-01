@@ -18,6 +18,7 @@ FetchContent_Declare(
         -DBOX2D_BENCHMARKS=OFF
         -DBOX2D_SAMPLES=OFF
         -DBUILD_SHARED_LIBS=${USE_SHARED_BOX2D}
+        -DCMAKE_INSTALL_LIBDIR=$CMAKE_INSTALL_PREFIX/lib
 )
 FetchContent_MakeAvailable(box2d)
 
