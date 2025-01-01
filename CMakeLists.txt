@@ -1,5 +1,25 @@
 cmake_minimum_required(VERSION 3.22)
 project(pyb2d)
+include(FetchContent)
+
+OPTION(USE_SHARED_BOX2D "Use shared box2d library" OFF)
+SET(BUILD_SHARED_LIBS ${USE_SHARED_BOX2D})
+message("USE_SHARED_BOX2D: ${USE_SHARED_BOX2D}")
+FetchContent_Declare(
+	box2d
+	GIT_REPOSITORY https://github.com/DerThorsten/box2d.git
+	GIT_TAG 30c080e56efd13ef5aa8872db63d95b816ca23e0
+	GIT_SHALLOW TRUE
+	GIT_PROGRESS TRUE
+    CMAKE_ARGS
+        -DOPTION_ONE=ON
+        -DOPTION_TWO=OFF
+        -DBOX2D_UNIT_TESTS=OFF
+        -DBOX2D_BENCHMARKS=OFF
+        -DBOX2D_SAMPLES=OFF
+        -DBUILD_SHARED_LIBS=${USE_SHARED_BOX2D}
+)
+FetchContent_MakeAvailable(box2d)
 
 find_package(box2d REQUIRED)
 find_package(Python COMPONENTS Interpreter Development REQUIRED)

@@ -24,11 +24,6 @@ jobs:
           cache-environment: true
           post-cleanup: 'all'
 
-      - name: download and patch box2d
-        shell: bash -el {0}
-        run: |
-          ./build_box2d.sh
-
       - name: build
         shell: bash -el {0}
         run: |
