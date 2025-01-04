@@ -10,11 +10,11 @@ cd $DIR/dependencies
 # download and build enkiTS
 OWNER=dougbinks
 REPO=enkiTS
-VERSION=1.11
-URL=https://github.com/${OWNER}/${REPO}/archive/refs/tags/v${VERSION}.tar.gz
+COMMIT=686d0ec31829e0d9e5edf9ceb68c40f9b9b20ea9
+URL=https://github.com/${OWNER}/${REPO}/archive/${COMMIT}.tar.gz
 rm -rf enkiTS
 curl -L ${URL} | tar zx
-mv ${REPO}-${VERSION} enkiTS
+mv ${REPO}-${COMMIT} enkiTS
 pushd enkiTS
 mkdir -p build
 pushd build
