@@ -24,6 +24,11 @@ jobs:
           cache-environment: true
           post-cleanup: 'all'
 
+      - name: setup dependencies
+        shell: bash -el {0}
+        run: |
+          ./build_deps.sh
+
       - name: build
         shell: bash -el {0}
         run: |

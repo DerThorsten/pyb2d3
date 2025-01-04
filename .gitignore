@@ -50,3 +50,5 @@ Minecraft.ttf
 pixi.lock
 build/
 dist/
+
+dependencies/
