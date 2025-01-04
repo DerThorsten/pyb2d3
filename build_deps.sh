@@ -19,9 +19,12 @@ pushd enkiTS
 mkdir -p build
 pushd build
 cmake .. \
+    -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} \
     -DCMAKE_BUILD_TYPE=Release \
     -DENKITS_INSTALL=ON \
-    -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX}
+    -DENKITS_BUILD_C_INTERFACE=ON \
+    -DENKITS_BUILD_EXAMPLES=OFF \
+    -DENKITS_BUILD_SHARED=ON
 
 cmake --build . --config Release --target install
 popd
