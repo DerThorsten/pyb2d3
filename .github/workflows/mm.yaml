@@ -7,8 +7,6 @@ jobs:
 
   build_simple:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
       - name: Checkout repo
@@ -23,6 +21,11 @@ jobs:
             bash
           cache-environment: true
           post-cleanup: 'all'
+
+      - name: setup dependencies
+        shell: bash -el {0}
+        run: |
+          ./build_deps.sh
 
       - name: build
         shell: bash -el {0}
