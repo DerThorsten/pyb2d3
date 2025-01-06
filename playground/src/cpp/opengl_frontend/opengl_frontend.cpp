@@ -30,8 +30,8 @@ namespace pyb2d
 
     static void CreateUI(GLFWwindow* window, const char* glslVersion, const char* font_dir)
     {
-        static float s_windowScale = 1.0f;
-        static float s_framebufferScale = 1.0f;
+        auto ui = static_cast<OpenGlFrontend*>(glfwGetWindowUserPointer(window));
+
 
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -60,10 +60,10 @@ namespace pyb2d
         if (file != NULL)
         {
             ImFontConfig fontConfig;
-            fontConfig.RasterizerMultiply = s_windowScale * s_framebufferScale;
-            g_draw.m_smallFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(fontPath.c_str(), 14.0f, &fontConfig);
-            g_draw.m_mediumFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(fontPath.c_str(), 40.0f, &fontConfig);
-            g_draw.m_largeFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(fontPath.c_str(), 64.0f, &fontConfig);
+            fontConfig.RasterizerMultiply = ui->window_scale * ui->framebuffer_scale;
+            ui->m_draw.m_smallFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(fontPath.c_str(), 14.0f, &fontConfig);
+            ui->m_draw.m_mediumFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(fontPath.c_str(), 40.0f, &fontConfig);
+            ui->m_draw.m_largeFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(fontPath.c_str(), 64.0f, &fontConfig);
         }
         else
         {
@@ -73,12 +73,25 @@ namespace pyb2d
         }
     }
 
-    OpenGlFrontend::OpenGlFrontend(nanobind::object& sample_cls, Settings& settings)
+    OpenGlFrontend::OpenGlFrontend(nanobind::list& samples, std::size_t selected_index, Settings& settings)
         : FrontendBase(settings)
-        , m_sample_cls(sample_cls)
+        , m_samples(samples)
+        , m_selected_index(selected_index)
         , m_settings(settings)
         , m_sample(nullptr)
     {
+        std::size_t n_examples = samples.size();
+        m_example_names.reserve(n_examples);
+        m_example_groups.reserve(n_examples);
+
+        for (std::size_t i = 0; i < n_examples; ++i)
+        {
+            nanobind::str name = samples[i][1];
+            nanobind::str group = samples[i][2];
+            m_example_names.push_back(name.c_str());
+            m_example_groups.push_back(group.c_str());
+        }
+
         glfwSetErrorCallback(
             [](int error, const char* description)
             {
@@ -102,6 +115,8 @@ namespace pyb2d
 #endif
 
         CreateUI(m_mainWindow, "#version 150", settings.data_dir.c_str());
+
+        m_draw.Create(m_settings.data_dir.c_str());
     }
 
     GLFWwindow* OpenGlFrontend::main_window()
@@ -131,9 +146,9 @@ namespace pyb2d
         if (GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor())
         {
 #ifdef __APPLE__
-            glfwGetMonitorContentScale(primaryMonitor, &s_framebufferScale, &s_framebufferScale);
+            glfwGetMonitorContentScale(primaryMonitor, &framebuffer_scale, &framebuffer_scale);
 #else
-            glfwGetMonitorContentScale(primaryMonitor, &s_windowScale, &s_windowScale);
+            glfwGetMonitorContentScale(primaryMonitor, &window_scale, &window_scale);
 #endif
         }
 
@@ -141,8 +156,8 @@ namespace pyb2d
         if (fullscreen)
         {
             m_mainWindow = glfwCreateWindow(
-                int(1920 * s_windowScale),
-                int(1080 * s_windowScale),
+                int(1920 * window_scale),
+                int(1080 * window_scale),
                 title,
                 glfwGetPrimaryMonitor(),
                 nullptr
@@ -151,8 +166,8 @@ namespace pyb2d
         else
         {
             m_mainWindow = glfwCreateWindow(
-                int(g_camera.m_width * s_windowScale),
-                int(g_camera.m_height * s_windowScale),
+                int(m_draw.m_camera.m_width * window_scale),
+                int(m_draw.m_camera.m_height * window_scale),
                 title,
                 nullptr,
                 nullptr
@@ -167,9 +182,9 @@ namespace pyb2d
         }
 
 #ifdef __APPLE__
-        glfwGetWindowContentScale(m_mainWindow, &s_framebufferScale, &s_framebufferScale);
+        glfwGetWindowContentScale(m_mainWindow, &framebuffer_scale, &framebuffer_scale);
 #else
-        glfwGetWindowContentScale(m_mainWindow, &s_windowScale, &s_windowScale);
+        glfwGetWindowContentScale(m_mainWindow, &window_scale, &window_scale);
 #endif
 
         glfwMakeContextCurrent(m_mainWindow);
@@ -193,6 +208,7 @@ namespace pyb2d
             // m_sample_instance.dec_ref();
             m_sample = nullptr;
         }
+        m_draw.Destroy();
     }
 
     void OpenGlFrontend::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -206,20 +222,29 @@ namespace pyb2d
             m_sample->prepare_destruction();
             m_sample = nullptr;
             m_settings.restart = true;
-            m_sample_instance = m_sample_cls(m_settings);
+            nanobind::object sample_cls = m_samples[m_selected_index][0];
+            m_sample_instance = sample_cls(m_settings);
             m_sample = nanobind::cast<pyb2d::Sample*>(m_sample_instance);
             m_settings.restart = false;
         }
         else
         {
-            m_sample_instance = m_sample_cls(m_settings);
+            nanobind::object sample_cls = m_samples[m_selected_index][0];
+            m_sample_instance = sample_cls(m_settings);
             m_sample = nanobind::cast<pyb2d::Sample*>(m_sample_instance);
         }
+        m_sample->p_debugDraw = &(m_draw.m_debugDraw);
     }
 
     Settings& OpenGlFrontend::settings()
     {
         return m_settings;
+    }
+
+    void OpenGlFrontend::change_sample(std::size_t index)
+    {
+        m_selected_index = index;
+        restart_sample();
     }
 
 

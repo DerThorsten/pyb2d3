@@ -31,8 +31,8 @@
 #define BUFFER_OFFSET(x) ((const void*) (x))
 #define SHADER_TEXT(x) "#version 330\n" #x
 
-pyb2d::Draw g_draw;
-pyb2d::Camera g_camera;
+// // pyb2d::Draw g_draw;
+// pyb2d::Camera m_camera;
 
 /// Unary add one vector to another
 inline void operator+=(b2Vec2& a, b2Vec2 b)
@@ -202,8 +202,9 @@ namespace pyb2d
 
     struct GLBackground
     {
-        void Create(const char* dataDir)
+        void Create(const char* dataDir, Camera& camera)
         {
+            p_camera = &camera;
             // concat dataDir with background.vs / background.fs
             // load the files
             (std::string(dataDir) + "/background.vs").c_str();
@@ -262,7 +263,7 @@ namespace pyb2d
             time = fmodf(time, 100.0f);
 
             glUniform1f(m_timeUniform, time);
-            glUniform2f(m_resolutionUniform, (float) g_camera.m_width, (float) g_camera.m_height);
+            glUniform2f(m_resolutionUniform, (float) p_camera->m_width, (float) p_camera->m_height);
 
             // struct RGBA8 c8 = MakeRGBA8( b2_colorGray2, 1.0f );
             // glUniform3f(m_baseColorUniform, c8.r/255.0f, c8.g/255.0f, c8.b/255.0f);
@@ -283,6 +284,8 @@ namespace pyb2d
         GLint m_timeUniform;
         GLint m_resolutionUniform;
         GLint m_baseColorUniform;
+
+        Camera* p_camera;
     };
 
     struct PointData
@@ -294,8 +297,9 @@ namespace pyb2d
 
     struct GLPoints
     {
-        void Create(const char* dataDir)
+        void Create(const char* dataDir, Camera& camera)
         {
+            p_camera = &camera;
             const char* vs = "#version 330\n"
                              "uniform mat4 projectionMatrix;\n"
                              "layout(location = 0) in vec2 v_position;\n"
@@ -407,7 +411,7 @@ namespace pyb2d
             glUseProgram(m_programId);
 
             float proj[16] = {0.0f};
-            g_camera.BuildProjectionMatrix(proj, 0.0f);
+            p_camera->BuildProjectionMatrix(proj, 0.0f);
 
             glUniformMatrix4fv(m_projectionUniform, 1, GL_FALSE, proj);
             glBindVertexArray(m_vaoId);
@@ -447,6 +451,7 @@ namespace pyb2d
         GLuint m_vboId;
         GLuint m_programId;
         GLint m_projectionUniform;
+        Camera* p_camera;
     };
 
     struct VertexData
@@ -457,8 +462,9 @@ namespace pyb2d
 
     struct GLLines
     {
-        void Create(const char* dataDir)
+        void Create(const char* dataDir, Camera& camera)
         {
+            p_camera = &camera;
             const char* vs = "#version 330\n"
                              "uniform mat4 projectionMatrix;\n"
                              "layout(location = 0) in vec2 v_position;\n"
@@ -558,7 +564,7 @@ namespace pyb2d
             glUseProgram(m_programId);
 
             float proj[16] = {0.0f};
-            g_camera.BuildProjectionMatrix(proj, 0.1f);
+            p_camera->BuildProjectionMatrix(proj, 0.1f);
 
             glUniformMatrix4fv(m_projectionUniform, 1, GL_FALSE, proj);
 
@@ -601,13 +607,15 @@ namespace pyb2d
         GLuint m_vboId;
         GLuint m_programId;
         GLint m_projectionUniform;
+        Camera* p_camera;
     };
 
     // todo this is not used anymore and has untested changes
     struct GLTriangles
     {
-        void Create(const char* dataDir)
+        void Create(const char* dataDir, Camera& camera)
         {
+            p_camera = &camera;
             const char* vs = "#version 330\n"
                              "uniform mat4 projectionMatrix;\n"
                              "layout(location = 0) in vec2 v_position;\n"
@@ -708,7 +716,7 @@ namespace pyb2d
             glUseProgram(m_programId);
 
             float proj[16] = {0.0f};
-            g_camera.BuildProjectionMatrix(proj, 0.2f);
+            p_camera->BuildProjectionMatrix(proj, 0.2f);
 
             glUniformMatrix4fv(m_projectionUniform, 1, GL_FALSE, proj);
 
@@ -753,6 +761,7 @@ namespace pyb2d
         GLuint m_vboId;
         GLuint m_programId;
         GLint m_projectionUniform;
+        Camera* p_camera;
     };
 
     struct CircleData
@@ -764,8 +773,9 @@ namespace pyb2d
 
     struct GLCircles
     {
-        void Create(const char* dataDir)
+        void Create(const char* dataDir, Camera& camera)
         {
+            p_camera = &camera;
             m_programId = CreateProgramFromFiles(
                 (std::string(dataDir) + "/circle.vs").c_str(),
                 (std::string(dataDir) + "/circle.fs").c_str()
@@ -869,10 +879,10 @@ namespace pyb2d
             glUseProgram(m_programId);
 
             float proj[16] = {0.0f};
-            g_camera.BuildProjectionMatrix(proj, 0.2f);
+            p_camera->BuildProjectionMatrix(proj, 0.2f);
 
             glUniformMatrix4fv(m_projectionUniform, 1, GL_FALSE, proj);
-            glUniform1f(m_pixelScaleUniform, g_camera.m_height / g_camera.m_zoom);
+            glUniform1f(m_pixelScaleUniform, p_camera->m_height / p_camera->m_zoom);
 
             glBindVertexArray(m_vaoId);
 
@@ -915,6 +925,7 @@ namespace pyb2d
         GLuint m_programId;
         GLint m_projectionUniform;
         GLint m_pixelScaleUniform;
+        Camera* p_camera;
     };
 
     struct SolidCircleData
@@ -930,8 +941,9 @@ namespace pyb2d
     // https://www.g-truc.net/post-0666.html
     struct GLSolidCircles
     {
-        void Create(const char* dataDir)
+        void Create(const char* dataDir, Camera& camera)
         {
+            p_camera = &camera;
             m_programId = CreateProgramFromFiles(
                 (std::string(dataDir) + "/solid_circle.vs").c_str(),
                 (std::string(dataDir) + "/solid_circle.fs").c_str()
@@ -1036,10 +1048,10 @@ namespace pyb2d
             glUseProgram(m_programId);
 
             float proj[16] = {0.0f};
-            g_camera.BuildProjectionMatrix(proj, 0.2f);
+            p_camera->BuildProjectionMatrix(proj, 0.2f);
 
             glUniformMatrix4fv(m_projectionUniform, 1, GL_FALSE, proj);
-            glUniform1f(m_pixelScaleUniform, g_camera.m_height / g_camera.m_zoom);
+            glUniform1f(m_pixelScaleUniform, p_camera->m_height / p_camera->m_zoom);
 
             glBindVertexArray(m_vaoId);
 
@@ -1082,6 +1094,7 @@ namespace pyb2d
         GLuint m_programId;
         GLint m_projectionUniform;
         GLint m_pixelScaleUniform;
+        Camera* p_camera;
     };
 
     struct CapsuleData
@@ -1095,8 +1108,9 @@ namespace pyb2d
     // Draw capsules using SDF-based shader
     struct GLSolidCapsules
     {
-        void Create(const char* dataDir)
+        void Create(const char* dataDir, Camera& camera)
         {
+            p_camera = &camera;
             m_programId = CreateProgramFromFiles(
                 (std::string(dataDir) + "/solid_capsule.vs").c_str(),
                 (std::string(dataDir) + "/solid_capsule.fs").c_str()
@@ -1231,10 +1245,10 @@ namespace pyb2d
             glUseProgram(m_programId);
 
             float proj[16] = {0.0f};
-            g_camera.BuildProjectionMatrix(proj, 0.2f);
+            p_camera->BuildProjectionMatrix(proj, 0.2f);
 
             glUniformMatrix4fv(m_projectionUniform, 1, GL_FALSE, proj);
-            glUniform1f(m_pixelScaleUniform, g_camera.m_height / g_camera.m_zoom);
+            glUniform1f(m_pixelScaleUniform, p_camera->m_height / p_camera->m_zoom);
 
             glBindVertexArray(m_vaoId);
 
@@ -1277,6 +1291,7 @@ namespace pyb2d
         GLuint m_programId;
         GLint m_projectionUniform;
         GLint m_pixelScaleUniform;
+        Camera* p_camera;
     };
 
     struct PolygonData
@@ -1293,8 +1308,9 @@ namespace pyb2d
     // Rounded and non-rounded convex polygons using an SDF-based shader.
     struct GLSolidPolygons
     {
-        void Create(const char* dataDir)
+        void Create(const char* dataDir, Camera& camera)
         {
+            p_camera = &camera;
             m_programId = CreateProgramFromFiles(
                 (std::string(dataDir) + "/solid_polygon.vs").c_str(),
                 (std::string(dataDir) + "/solid_polygon.fs").c_str()
@@ -1466,10 +1482,10 @@ namespace pyb2d
             glUseProgram(m_programId);
 
             float proj[16] = {0.0f};
-            g_camera.BuildProjectionMatrix(proj, 0.2f);
+            p_camera->BuildProjectionMatrix(proj, 0.2f);
 
             glUniformMatrix4fv(m_projectionUniform, 1, GL_FALSE, proj);
-            glUniform1f(m_pixelScaleUniform, g_camera.m_height / g_camera.m_zoom);
+            glUniform1f(m_pixelScaleUniform, p_camera->m_height / p_camera->m_zoom);
 
             glBindVertexArray(m_vaoId);
             glBindBuffer(GL_ARRAY_BUFFER, m_vboIds[1]);
@@ -1511,6 +1527,7 @@ namespace pyb2d
         GLuint m_programId;
         GLint m_projectionUniform;
         GLint m_pixelScaleUniform;
+        Camera* p_camera;
     };
 
     void DrawPolygonFcn(const b2Vec2* vertices, int vertexCount, b2HexColor color, void* context)
@@ -1595,21 +1612,26 @@ namespace pyb2d
     void Draw::Create(const char* dataDir)
     {
         m_background = new GLBackground;
-        m_background->Create(dataDir);
+        m_background->Create(dataDir, m_camera);
         m_points = new GLPoints;
-        m_points->Create(dataDir);
+        m_points->Create(dataDir, m_camera);
         m_lines = new GLLines;
-        m_lines->Create(dataDir);
+        m_lines->Create(dataDir, m_camera);
         m_triangles = new GLTriangles;
-        m_triangles->Create(dataDir);
+        m_triangles->Create(dataDir, m_camera);
+        ;
         m_circles = new GLCircles;
-        m_circles->Create(dataDir);
+        m_circles->Create(dataDir, m_camera);
+        ;
         m_solidCircles = new GLSolidCircles;
-        m_solidCircles->Create(dataDir);
+        m_solidCircles->Create(dataDir, m_camera);
+        ;
         m_solidCapsules = new GLSolidCapsules;
-        m_solidCapsules->Create(dataDir);
+        m_solidCapsules->Create(dataDir, m_camera);
+        ;
         m_solidPolygons = new GLSolidPolygons;
-        m_solidPolygons->Create(dataDir);
+        m_solidPolygons->Create(dataDir, m_camera);
+        ;
 
         b2AABB bounds = {{-FLT_MAX, -FLT_MAX}, {FLT_MAX, FLT_MAX}};
 
@@ -1752,7 +1774,7 @@ namespace pyb2d
 
     void Draw::DrawString(b2Vec2 p, const char* string, ...)
     {
-        b2Vec2 ps = g_camera.ConvertWorldToScreen(p);
+        b2Vec2 ps = m_camera.ConvertWorldToScreen(p);
 
         va_list arg;
         va_start(arg, string);

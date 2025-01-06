@@ -23,7 +23,11 @@ extern "C"
 namespace pyb2d
 {
 
-    int start_everything(const char* data_dir, nanobind::object);
+    int start_everything(
+        const char* data_dir,
+        nanobind::list,  // examples list
+        std::size_t start_index
+    );
 
     void export_settings(py::module_& m)
     {
@@ -59,24 +63,23 @@ namespace pyb2d
             .def_ro("world_id", &Sample::m_worldId)
             .def_ro("step_count", &Sample::m_stepCount)
             .def_ro("thread_count", &Sample::m_threadCount)
-            .def_ro("task_count", &Sample::m_taskCount)
-            .def(
-                "get_draw",
-                [](Sample& s)
-                {
-                    return g_draw;
-                },
-                py::rv_policy::reference_internal
-            );
+            .def_ro("task_count", &Sample::m_taskCount);
+        // .def(
+        //     "get_draw",
+        //     [](Sample& s)
+        //     {
+        //         return g_draw;
+        //     },
+        //     py::rv_policy::reference_internal
+        // );
 
         m.def(
             "start_everything",
-            [](const char* data_dir, py::object sample_cls)
+            [](const char* data_dir, py::list examples, std::size_t start_index)
             {
                 try
                 {
-                    std::cout << "Starting everything" << std::endl;
-                    start_everything(data_dir, sample_cls);
+                    start_everything(data_dir, examples, start_index);
                 }
                 catch (const std::exception& e)
                 {

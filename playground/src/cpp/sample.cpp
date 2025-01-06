@@ -53,7 +53,6 @@ namespace pyb2d
 
     Sample::Sample(Settings& settings)
     {
-        std::cout << "sample base" << std::endl;
         m_scheduler.Initialize(settings.workerCount);
         m_taskCount = 0;
 
@@ -78,16 +77,12 @@ namespace pyb2d
 
     void Sample::prepare_destruction()
     {
-        std::cout << "prepare_destruction" << std::endl;
         b2DestroyWorld(m_worldId);
         m_scheduler.ShutdownNow();
-        std::cout << "prepare_destruction done" << std::endl;
     }
 
     Sample::~Sample()
     {
-        std::cout << "sample destructor" << std::endl;
-        std::cout << "sample destructor done" << std::endl;
     }
 
     struct QueryContext

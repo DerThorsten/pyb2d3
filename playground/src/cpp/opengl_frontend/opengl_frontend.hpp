@@ -26,7 +26,7 @@ namespace pyb2d
         OpenGlFrontend(OpenGlFrontend&&) = delete;
         OpenGlFrontend& operator=(OpenGlFrontend&&) = delete;
 
-        OpenGlFrontend(nanobind::object& sample_cls, Settings& settings);
+        OpenGlFrontend(nanobind::list& samples, std::size_t selected_index, Settings& settings);
 
         ~OpenGlFrontend();
 
@@ -44,22 +44,27 @@ namespace pyb2d
 
         Settings& settings();
 
-    private:
-
-        void create_window();
-
-        nanobind::object m_sample_cls;
-        nanobind::object m_sample_instance;
-        Sample* m_sample = nullptr;
-        Settings m_settings;
-
-
-        GLFWwindow* m_mainWindow;
-        float s_windowScale = 1.0f;
-        float s_framebufferScale = 1.0f;
+        void change_sample(std::size_t index);
 
     public:
 
+        void create_window();
+
+        nanobind::list m_samples;
+        std::size_t m_selected_index;
+        Settings m_settings;
+        Sample* m_sample = nullptr;
+        Draw m_draw;
+
+        nanobind::object m_sample_instance;
+
+
+        GLFWwindow* m_mainWindow;
+        // float s_windowScale = 1.0f;
+        // float s_framebufferScale = 1.0f;
+
+        std::vector<std::string> m_example_names;
+        std::vector<std::string> m_example_groups;
         b2Vec2 s_click_point_ws = b2Vec2_zero;
         bool right_mouse_down = false;
         float window_scale = 1.0f;

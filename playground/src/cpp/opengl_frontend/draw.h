@@ -80,10 +80,12 @@ namespace pyb2d
         ImFont* m_smallFont;
         ImFont* m_mediumFont;
         ImFont* m_largeFont;
+
+        pyb2d::Camera m_camera;
     };
 
 }  // namespace pyb2d
 
-extern pyb2d::Draw g_draw;
-extern pyb2d::Camera g_camera;
+// extern pyb2d::Draw g_draw;
+// extern pyb2d::Camera g_camera;
 // extern struct GLFWwindow* g_mainWindow;

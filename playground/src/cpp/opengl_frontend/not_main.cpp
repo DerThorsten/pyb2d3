@@ -34,47 +34,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "misc.hpp"
 #include "opengl_frontend.hpp"
 
 namespace pyb2d
 {
 
-    inline bool IsPowerOfTwo(int32_t x)
-    {
-        return (x != 0) && ((x & (x - 1)) == 0);
-    }
-
-    void* AllocFcn(uint32_t size, int32_t alignment)
-    {
-        // Allocation must be a multiple of alignment or risk a seg fault
-        // https://en.cppreference.com/w/c/memory/aligned_alloc
-        assert(IsPowerOfTwo(alignment));
-        size_t sizeAligned = ((size - 1) | (alignment - 1)) + 1;
-        assert((sizeAligned & (alignment - 1)) == 0);
-
-#if defined(_WIN64) || defined(_WIN32)
-        void* ptr = _aligned_malloc(sizeAligned, alignment);
-#else
-        void* ptr = aligned_alloc(alignment, sizeAligned);
-#endif
-        assert(ptr != nullptr);
-        return ptr;
-    }
-
-    void FreeFcn(void* mem)
-    {
-#if defined(_WIN64) || defined(_WIN32)
-        _aligned_free(mem);
-#else
-        free(mem);
-#endif
-    }
-
     static void ResizeWindowCallback(GLFWwindow* window, int width, int height)
     {
         auto ui = static_cast<OpenGlFrontend*>(glfwGetWindowUserPointer(window));
-        g_camera.m_width = int(width / ui->window_scale);
-        g_camera.m_height = int(height / ui->window_scale);
+        auto& camera = ui->m_draw.m_camera;
+        camera.m_width = int(width / ui->window_scale);
+        camera.m_height = int(height / ui->window_scale);
         ui->settings().windowWidth = int(width / ui->window_scale);
         ui->settings().windowHeight = int(height / ui->window_scale);
     }
@@ -83,7 +54,7 @@ namespace pyb2d
     {
         // get user pointer from window
         auto ui = static_cast<OpenGlFrontend*>(glfwGetWindowUserPointer(window));
-
+        auto& camera = ui->m_draw.m_camera;
 
         ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
         if (ImGui::GetIO().WantCaptureKeyboard)
@@ -109,7 +80,7 @@ namespace pyb2d
                     }
                     else
                     {
-                        g_camera.m_center.x -= 0.5f;
+                        camera.m_center.x -= 0.5f;
                     }
                     break;
 
@@ -122,7 +93,7 @@ namespace pyb2d
                     }
                     else
                     {
-                        g_camera.m_center.x += 0.5f;
+                        camera.m_center.x += 0.5f;
                     }
                     break;
 
@@ -135,7 +106,7 @@ namespace pyb2d
                     }
                     else
                     {
-                        g_camera.m_center.y -= 0.5f;
+                        camera.m_center.y -= 0.5f;
                     }
                     break;
 
@@ -148,17 +119,16 @@ namespace pyb2d
                     }
                     else
                     {
-                        g_camera.m_center.y += 0.5f;
+                        camera.m_center.y += 0.5f;
                     }
                     break;
 
                 case GLFW_KEY_HOME:
-                    g_camera.ResetView();
+                    camera.ResetView();
                     break;
 
                 case GLFW_KEY_R:
                     ui->restart_sample();
-                    ui->sample()->p_debugDraw = &(g_draw.m_debugDraw);
 
                     break;
 
@@ -171,7 +141,7 @@ namespace pyb2d
                     break;
 
                 case GLFW_KEY_TAB:
-                    g_draw.m_showUI = !g_draw.m_showUI;
+                    ui->m_draw.m_showUI = !ui->m_draw.m_showUI;
 
                 default:
                     if (ui->sample())
@@ -191,6 +161,7 @@ namespace pyb2d
     {
         auto ui = static_cast<OpenGlFrontend*>(glfwGetWindowUserPointer(window));
         auto sample = ui->sample();
+        auto& camera = ui->m_draw.m_camera;
         ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
 
         if (ImGui::GetIO().WantCaptureMouse)
@@ -205,7 +176,7 @@ namespace pyb2d
         // Use the mouse to move things around.
         if (button == GLFW_MOUSE_BUTTON_1)
         {
-            b2Vec2 pw = g_camera.ConvertScreenToWorld(ps);
+            b2Vec2 pw = camera.ConvertScreenToWorld(ps);
             if (action == GLFW_PRESS)
             {
                 sample->MouseDown(pw, button, mods);
@@ -220,7 +191,7 @@ namespace pyb2d
         {
             if (action == GLFW_PRESS)
             {
-                ui->s_click_point_ws = g_camera.ConvertScreenToWorld(ps);
+                ui->s_click_point_ws = camera.ConvertScreenToWorld(ps);
                 ui->right_mouse_down = true;
             }
 
@@ -234,25 +205,28 @@ namespace pyb2d
     static void MouseMotionCallback(GLFWwindow* window, double xd, double yd)
     {
         auto ui = static_cast<OpenGlFrontend*>(glfwGetWindowUserPointer(window));
+        auto& camera = ui->m_draw.m_camera;
         auto sample = ui->sample();
         b2Vec2 ps = {float(xd) / ui->window_scale, float(yd) / ui->window_scale};
 
         ImGui_ImplGlfw_CursorPosCallback(window, ps.x, ps.y);
 
-        b2Vec2 pw = g_camera.ConvertScreenToWorld(ps);
+        b2Vec2 pw = camera.ConvertScreenToWorld(ps);
         sample->MouseMove(pw);
 
         if (ui->right_mouse_down)
         {
             b2Vec2 diff = b2Sub(pw, ui->s_click_point_ws);
-            g_camera.m_center.x -= diff.x;
-            g_camera.m_center.y -= diff.y;
-            ui->s_click_point_ws = g_camera.ConvertScreenToWorld(ps);
+            camera.m_center.x -= diff.x;
+            camera.m_center.y -= diff.y;
+            ui->s_click_point_ws = camera.ConvertScreenToWorld(ps);
         }
     }
 
     static void ScrollCallback(GLFWwindow* window, double dx, double dy)
     {
+        auto ui = static_cast<OpenGlFrontend*>(glfwGetWindowUserPointer(window));
+        auto& camera = ui->m_draw.m_camera;
         ImGui_ImplGlfw_ScrollCallback(window, dx, dy);
         if (ImGui::GetIO().WantCaptureMouse)
         {
@@ -261,11 +235,11 @@ namespace pyb2d
 
         if (dy > 0)
         {
-            g_camera.m_zoom /= 1.1f;
+            camera.m_zoom /= 1.1f;
         }
         else
         {
-            g_camera.m_zoom *= 1.1f;
+            camera.m_zoom *= 1.1f;
         }
     }
 
@@ -275,16 +249,17 @@ namespace pyb2d
         auto sample = ui->sample();
         auto& settings = ui->settings();
         auto main_window = ui->main_window();
+        auto& camera = ui->m_draw.m_camera;
 
         float menuWidth = 180.0f;
-        if (g_draw.m_showUI)
+        if (ui->m_draw.m_showUI)
         {
-            ImGui::SetNextWindowPos({g_camera.m_width - menuWidth - 10.0f, 10.0f});
-            ImGui::SetNextWindowSize({menuWidth, g_camera.m_height - 20.0f});
+            ImGui::SetNextWindowPos({camera.m_width - menuWidth - 10.0f, 10.0f});
+            ImGui::SetNextWindowSize({menuWidth, camera.m_height - 20.0f});
 
             ImGui::Begin(
                 "Tools",
-                &g_draw.m_showUI,
+                &(ui->m_draw.m_showUI),
                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse
             );
 
@@ -300,7 +275,6 @@ namespace pyb2d
                     {
                         settings.workerCount = b2ClampInt(settings.workerCount, 1, maxWorkers);
                         ui->restart_sample();
-                        ui->sample()->p_debugDraw = &(g_draw.m_debugDraw);
                         sample = ui->sample();
                     }
                     ImGui::PopItemWidth();
@@ -338,7 +312,6 @@ namespace pyb2d
                     if (ImGui::Button("Restart (R)", button_sz))
                     {
                         ui->restart_sample();
-                        ui->sample()->p_debugDraw = &(g_draw.m_debugDraw);
                         sample = ui->sample();
                     }
 
@@ -349,7 +322,6 @@ namespace pyb2d
 
                     ImGui::EndTabItem();
                 }
-
                 ImGuiTreeNodeFlags leafNodeFlags = ImGuiTreeNodeFlags_OpenOnArrow
                                                    | ImGuiTreeNodeFlags_OpenOnDoubleClick;
                 leafNodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
@@ -357,8 +329,69 @@ namespace pyb2d
                 ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow
                                                | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
+                if (ImGui::BeginTabItem("Examples"))
+                {
+                    std::size_t sample_count = ui->m_samples.size();
+
+
+                    int categoryIndex = 0;
+                    const char* category = ui->m_example_groups[categoryIndex].c_str();
+                    int i = 0;
+                    while (i < sample_count)
+                    {
+                        const char* sample_category = ui->m_example_groups[i].c_str();
+                        bool categorySelected = strcmp(category, sample_category) == 0;
+                        ImGuiTreeNodeFlags nodeSelectionFlags = categorySelected ? ImGuiTreeNodeFlags_Selected
+                                                                                 : 0;
+                        bool nodeOpen = ImGui::TreeNodeEx(category, nodeFlags | nodeSelectionFlags);
+
+                        if (nodeOpen)
+                        {
+                            while (i < sample_count && strcmp(category, ui->m_example_groups[i].c_str()) == 0)
+                            {
+                                ImGuiTreeNodeFlags selectionFlags = 0;
+                                if (ui->m_selected_index == i)
+                                {
+                                    selectionFlags = ImGuiTreeNodeFlags_Selected;
+                                }
+                                ImGui::TreeNodeEx(
+                                    (void*) (intptr_t) i,
+                                    leafNodeFlags | selectionFlags,
+                                    "%s",
+                                    ui->m_example_names[i].c_str()
+                                );
+                                if (ImGui::IsItemClicked())
+                                {
+                                    if (ui->m_selected_index != i)
+                                    {
+                                        ui->change_sample(i);
+                                    }
+                                }
+                                ++i;
+                            }
+                            ImGui::TreePop();
+                        }
+                        else
+                        {
+                            while (i < sample_count && strcmp(category, ui->m_example_groups[i].c_str()) == 0)
+                            {
+                                ++i;
+                            }
+                        }
+
+                        if (i < sample_count)
+                        {
+                            category = ui->m_example_groups[i].c_str();
+                            categoryIndex = i;
+                        }
+                    }
+                    ImGui::EndTabItem();
+                }
+
+
                 ImGui::EndTabBar();
             }
+
 
             ImGui::End();
 
@@ -366,12 +399,10 @@ namespace pyb2d
         }
     }
 
-    int start_everything(const char* data_dir, nanobind::object sample_cls)
+    int start_everything(const char* data_dir, nanobind::list samples, std::size_t start_index)
     {
         Settings settings;
         settings.data_dir = data_dir;
-
-        nanobind::object py_instance;
 
         // // Install memory hooks
         b2SetAllocator(AllocFcn, FreeFcn);
@@ -380,11 +411,12 @@ namespace pyb2d
 
         settings.workerCount = b2MinInt(8, (int) enki::GetNumHardwareThreads() / 2);
 
-        g_camera.m_width = settings.windowWidth;
-        g_camera.m_height = settings.windowHeight;
 
-        OpenGlFrontend ui(sample_cls, settings);
+        OpenGlFrontend ui(samples, start_index, settings);
         auto ui_address = &ui;
+        auto& camera = ui_address->m_draw.m_camera;
+        camera.m_width = settings.windowWidth;
+        camera.m_height = settings.windowHeight;
 
         auto main_window = ui.main_window();
 
@@ -395,15 +427,13 @@ namespace pyb2d
         glfwSetCursorPosCallback(main_window, MouseMotionCallback);
         glfwSetScrollCallback(main_window, ScrollCallback);
 
-        g_draw.Create(data_dir);
-
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
         float frameTime = 0.0;
 
         int32_t frame = 0;
 
-        g_camera.m_zoom = 20.0f;
+        camera.m_zoom = 20.0f;
         while (!glfwWindowShouldClose(main_window))
         {
             double time1 = glfwGetTime();
@@ -411,17 +441,17 @@ namespace pyb2d
             if (glfwGetKey(main_window, GLFW_KEY_Z) == GLFW_PRESS)
             {
                 // Zoom out
-                g_camera.m_zoom = b2MinFloat(1.005f * g_camera.m_zoom, 100.0f);
+                camera.m_zoom = b2MinFloat(1.005f * camera.m_zoom, 100.0f);
             }
             else if (glfwGetKey(main_window, GLFW_KEY_X) == GLFW_PRESS)
             {
                 // Zoom in
-                g_camera.m_zoom = b2MaxFloat(0.995f * g_camera.m_zoom, 0.5f);
+                camera.m_zoom = b2MaxFloat(0.995f * camera.m_zoom, 0.5f);
             }
 
-            glfwGetWindowSize(main_window, &g_camera.m_width, &g_camera.m_height);
-            g_camera.m_width = int(g_camera.m_width / ui.window_scale);
-            g_camera.m_height = int(g_camera.m_height / ui.window_scale);
+            glfwGetWindowSize(main_window, &camera.m_width, &camera.m_height);
+            camera.m_width = int(camera.m_width / ui.window_scale);
+            camera.m_height = int(camera.m_height / ui.window_scale);
 
             int bufferWidth, bufferHeight;
             glfwGetFramebufferSize(main_window, &bufferWidth, &bufferHeight);
@@ -429,7 +459,7 @@ namespace pyb2d
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            g_draw.DrawBackground();
+            ui_address->m_draw.DrawBackground();
 
             double cursorPosX = 0, cursorPosY = 0;
             glfwGetCursorPos(main_window, &cursorPosX, &cursorPosY);
@@ -446,13 +476,13 @@ namespace pyb2d
                 cursorPosY / ui.window_scale
             );
             ImGuiIO& io = ImGui::GetIO();
-            io.DisplaySize.x = float(g_camera.m_width);
-            io.DisplaySize.y = float(g_camera.m_height);
-            io.DisplayFramebufferScale.x = bufferWidth / float(g_camera.m_width);
-            io.DisplayFramebufferScale.y = bufferHeight / float(g_camera.m_height);
+            io.DisplaySize.x = float(camera.m_width);
+            io.DisplaySize.y = float(camera.m_height);
+            io.DisplayFramebufferScale.x = bufferWidth / float(camera.m_width);
+            io.DisplayFramebufferScale.y = bufferHeight / float(camera.m_height);
             ImGui::NewFrame();
             ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-            ImGui::SetNextWindowSize(ImVec2(float(g_camera.m_width), float(g_camera.m_height)));
+            ImGui::SetNextWindowSize(ImVec2(float(camera.m_width), float(camera.m_height)));
             ImGui::SetNextWindowBgAlpha(0.0f);
             ImGui::Begin(
                 "Overlay",
@@ -464,16 +494,15 @@ namespace pyb2d
             if (ui.sample() == nullptr)
             {
                 ui.restart_sample();
-                ui.sample()->p_debugDraw = &(g_draw.m_debugDraw);
             }
 
-            ui.sample()->p_debugDraw->drawingBounds = g_camera.GetViewBounds();
+            ui.sample()->p_debugDraw->drawingBounds = camera.GetViewBounds();
             ui.sample()->Step(ui.settings());
-            g_draw.Flush();
+            ui.m_draw.Flush();
 
             UpdateUI(ui_address);
 
-            if (g_draw.m_showUI)
+            if (ui_address->m_draw.m_showUI)
             {
                 snprintf(
                     buffer,
@@ -481,9 +510,9 @@ namespace pyb2d
                     "%.1f ms - step %d - camera (%g, %g, %g)",
                     1000.0f * frameTime,
                     ui.sample()->m_stepCount,
-                    g_camera.m_center.x,
-                    g_camera.m_center.y,
-                    g_camera.m_zoom
+                    camera.m_center.x,
+                    camera.m_center.y,
+                    camera.m_zoom
                 );
                 // snprintf( buffer, 128, "%.1f ms", 1000.0f * frameTime );
 
@@ -493,7 +522,7 @@ namespace pyb2d
                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoInputs
                         | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar
                 );
-                ImGui::SetCursorPos(ImVec2(5.0f, g_camera.m_height - 20.0f));
+                ImGui::SetCursorPos(ImVec2(5.0f, camera.m_height - 20.0f));
                 ImGui::TextColored(ImColor(153, 230, 153, 255), "%s", buffer);
                 ImGui::End();
             }
@@ -520,8 +549,6 @@ namespace pyb2d
             frameTime = (float) (time2 - time1);
             ++frame;
         }
-
-        g_draw.Destroy();
 
 #if defined(_WIN32)
         _CrtDumpMemoryLeaks();

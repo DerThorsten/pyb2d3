@@ -31,6 +31,7 @@ nanobind_add_module(_pyb2d_playground
     src/cpp/main.cpp
     src/cpp/opengl_frontend/draw.cpp
     src/cpp/opengl_frontend/opengl_frontend.cpp
+    src/cpp/opengl_frontend/misc.cpp
     src/cpp/opengl_frontend/not_main.cpp
     src/cpp/opengl_frontend/shader.cpp
     src/cpp/sample.cpp

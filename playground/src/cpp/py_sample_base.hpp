@@ -20,7 +20,6 @@ namespace pyb2d
 
         virtual ~PySampleTrampoline()
         {
-            std::cout << "Destroying py sample" << std::endl;
         }
 
         void Step(Settings& settings) override
