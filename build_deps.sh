@@ -32,13 +32,16 @@ popd
 
 
 # download and build box2d
-OWNER=DerThorsten
-REPO=box2d
-COMMIT=30c080e56efd13ef5aa8872db63d95b816ca23e0
-URL=https://github.com/${OWNER}/${REPO}/archive/${COMMIT}.tar.gz
+# OWNER=erincatto
+# REPO=box2d
+# COMMIT=30c080e56efd13ef5aa8872db63d95b816ca23e0
+# URL=https://github.com/${OWNER}/${REPO}/archive/${COMMIT}.tar.gz
+
+URL=https://github.com/erincatto/box2d/archive/refs/tags/v3.1.0.tar.gz
+
 rm -rf box2d
 curl -L ${URL} |    tar zx
-mv ${REPO}-${COMMIT} box2d
+mv box2d-3.1.0 box2d
 pushd box2d
 mkdir -p build
 pushd build

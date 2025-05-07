@@ -5,13 +5,13 @@
 #include <nanobind/nanobind.h>
 #include <pyb2d/py_converter.hpp>
 
-// C
-extern "C"
-{
+// // C
+// extern "C"
+// {
 #include <box2d/box2d.h>
 #include <box2d/math_functions.h>
 #include <box2d/types.h>
-}
+// }
 
 // nanobind namespace
 namespace py = nanobind;
@@ -84,25 +84,25 @@ void PyDrawPoint(b2Vec2 p, float size, b2HexColor color, void* context)
 }
 
 /// Draw a string.
-void PyDrawString(b2Vec2 p, const char* s, void* context)
+void PyDrawString(b2Vec2 p, const char* s, b2HexColor color, void* context)
 {
     PyDebugDraw* draw = (PyDebugDraw*) context;
-    draw->m_py_class.attr("draw_string")(p, s);
+    draw->m_py_class.attr("draw_string")(p, s, static_cast<int>(color));
 }
 
 PyDebugDraw::PyDebugDraw(py::handle py_class)
     : b2DebugDraw(b2DefaultDebugDraw())
     , m_py_class(py_class)
 {
-    this->DrawPolygon = PyDrawPolygonGeneric<PyDebugDraw>;
-    this->DrawSolidPolygon = PyDrawSolidPolygon;
-    this->DrawCircle = PyDrawCircle;
-    this->DrawSolidCircle = PyDrawSolidCircle;
-    this->DrawSolidCapsule = PyDrawSolidCapsule;
-    this->DrawSegment = PyDrawSegment;
-    this->DrawTransform = PyDrawTransform;
-    this->DrawPoint = PyDrawPoint;
-    this->DrawString = PyDrawString;
+    this->DrawPolygonFcn = PyDrawPolygonGeneric<PyDebugDraw>;
+    this->DrawSolidPolygonFcn = PyDrawSolidPolygon;
+    this->DrawCircleFcn = PyDrawCircle;
+    this->DrawSolidCircleFcn = PyDrawSolidCircle;
+    this->DrawSolidCapsuleFcn = PyDrawSolidCapsule;
+    this->DrawSegmentFcn = PyDrawSegment;
+    this->DrawTransformFcn = PyDrawTransform;
+    this->DrawPointFcn = PyDrawPoint;
+    this->DrawStringFcn = PyDrawString;
     this->context = reinterpret_cast<void*>(this);
 }
 
@@ -116,6 +116,6 @@ void export_py_debug_draw(py::module_& m)
         .def_rw("draw_shapes", &PyDebugDraw::drawShapes)
         .def_rw("draw_joints", &PyDebugDraw::drawJoints)
         .def_rw("draw_joint_extras", &PyDebugDraw::drawJointExtras)
-        .def_rw("draw_aabbs", &PyDebugDraw::drawAABBs)
+        // .def_rw("draw_aabbs", &PyDebugDraw::drawAABBs)
         .def_rw("draw_mass", &PyDebugDraw::drawMass);
 }

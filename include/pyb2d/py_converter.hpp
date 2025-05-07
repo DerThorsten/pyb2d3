@@ -4,12 +4,13 @@
 #include <nanobind/ndarray.h>
 
 // C
-extern "C"
-{
-// #include <box2d/math_functions.h>
+// extern "C"
+// {
 #include <box2d/box2d.h>
 #include <box2d/collision.h>
-}
+#include <box2d/math_functions.h>
+
+// }
 
 namespace nb = nanobind;
 
@@ -144,12 +145,6 @@ namespace nanobind::detail
         }
     };
 
-    // typedef struct b2WorldId
-    // {
-    // 	uint16_t index1;
-    // 	uint16_t revision;
-    // } b2WorldId;
-
     // Custom type caster for b2WorldId
     template <>
     struct type_caster<b2WorldId>
@@ -171,7 +166,7 @@ namespace nanobind::detail
         // C++ -> Python (to int)
         static nb::handle from_cpp(const b2WorldId& src, rv_policy policy, cleanup_list*)
         {
-            return nb::cast((uint32_t) (src.index1 << 16) | (uint32_t) (src.revision)).release();
+            return nb::cast((uint32_t) (src.index1 << 16) | (uint32_t) (src.generation)).release();
         }
     };
 
