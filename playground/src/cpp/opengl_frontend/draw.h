@@ -59,7 +59,7 @@ namespace pyb2d
 
         void DrawString(int x, int y, const char* string, ...);
 
-        void DrawString(b2Vec2 p, const char* string, ...);
+        void DrawString(b2Vec2 p, const char* string, b2HexColor color, ...);
 
         void DrawAABB(b2AABB aabb, b2HexColor color);
 

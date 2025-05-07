@@ -50,7 +50,7 @@ if(NOT DEFINED SKBUILD)
         set_target_properties(_pyb2d PROPERTIES SUFFIX ".so")
     endif()
 else()
-    message(STATUS "ppPusing SKBUILD" ${SKBUILD})
+    message(STATUS "using SKBUILD" ${SKBUILD})
 endif()
 
 # INSTALL

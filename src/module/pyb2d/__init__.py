@@ -71,6 +71,13 @@ def make_filter(**kwargs):
     return filter
 
 
+def surface_material(**kwargs):
+    material = SurfaceMaterial()
+    for k, v in kwargs.items():
+        setattr(material, k, v)
+    return material
+
+
 def shape_def(**kwargs):
     shape = ShapeDef()
     for k, v in kwargs.items():
@@ -152,13 +159,6 @@ def gear_joint_def(**kwargs):
 
 def wheel_joint_def(**kwargs):
     joint = WheelJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def null_joint_def(**kwargs):
-    joint = NullJointDef()
     for k, v in kwargs.items():
         setattr(joint, k, v)
     return joint

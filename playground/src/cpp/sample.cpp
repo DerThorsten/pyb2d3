@@ -11,7 +11,6 @@
 #include <string.h>
 
 #include "box2d/box2d.h"
-#include "box2d/math_functions.h"
 
 namespace pyb2d
 {
@@ -213,7 +212,7 @@ namespace pyb2d
         p_debugDraw->drawShapes = settings.drawShapes;
         p_debugDraw->drawJoints = settings.drawJoints;
         p_debugDraw->drawJointExtras = settings.drawJointExtras;
-        p_debugDraw->drawAABBs = settings.drawAABBs;
+        // p_debugDraw->drawAABBs = settings.drawAABBs;
         p_debugDraw->drawMass = settings.drawMass;
         p_debugDraw->drawContacts = settings.drawContactPoints;
         p_debugDraw->drawGraphColors = settings.drawGraphColors;

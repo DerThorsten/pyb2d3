@@ -8,7 +8,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "box2d/math_functions.h"
 #include "shader.h"
 
 #if defined(_WIN32)
@@ -34,69 +33,7 @@
 // // pyb2d::Draw g_draw;
 // pyb2d::Camera m_camera;
 
-/// Unary add one vector to another
-inline void operator+=(b2Vec2& a, b2Vec2 b)
-{
-    a.x += b.x;
-    a.y += b.y;
-}
-
-/// Unary subtract one vector from another
-inline void operator-=(b2Vec2& a, b2Vec2 b)
-{
-    a.x -= b.x;
-    a.y -= b.y;
-}
-
-/// Unary multiply a vector by a scalar
-inline void operator*=(b2Vec2& a, float b)
-{
-    a.x *= b;
-    a.y *= b;
-}
-
-// /// Unary negate a vector
-// inline b2Vec2 operator-( b2Vec2 a )
-// {
-// 	return { -a.x, -a.y };
-// }
-
-/// Binary vector addition
-inline b2Vec2 operator+(b2Vec2 a, b2Vec2 b)
-{
-    return {a.x + b.x, a.y + b.y};
-}
-
-/// Binary vector subtraction
-inline b2Vec2 operator-(b2Vec2 a, b2Vec2 b)
-{
-    return {a.x - b.x, a.y - b.y};
-}
-
-/// Binary scalar and vector multiplication
-inline b2Vec2 operator*(float a, b2Vec2 b)
-{
-    return {a * b.x, a * b.y};
-}
-
-/// Binary scalar and vector multiplication
-inline b2Vec2 operator*(b2Vec2 a, float b)
-{
-    return {a.x * b, a.y * b};
-}
-
-/// Binary vector equality
-inline bool operator==(b2Vec2 a, b2Vec2 b)
-{
-    return a.x == b.x && a.y == b.y;
-}
-
-/// Binary vector inequality
-inline bool operator!=(b2Vec2 a, b2Vec2 b)
-{
-    return a.x != b.x || a.y != b.y;
-}
-
+//
 namespace pyb2d
 {
 
@@ -1577,9 +1514,9 @@ namespace pyb2d
         static_cast<Draw*>(context)->DrawPoint(p, size, color);
     }
 
-    void DrawStringFcn(b2Vec2 p, const char* s, void* context)
+    void DrawStringFcn(b2Vec2 p, const char* s, b2HexColor color, void* context)
     {
-        static_cast<Draw*>(context)->DrawString(p, s);
+        static_cast<Draw*>(context)->DrawString(p, s, color);
     }
 
     Draw::Draw()
@@ -1635,30 +1572,75 @@ namespace pyb2d
 
         b2AABB bounds = {{-FLT_MAX, -FLT_MAX}, {FLT_MAX, FLT_MAX}};
 
-        m_debugDraw = {
-            DrawPolygonFcn,
-            DrawSolidPolygonFcn,
-            DrawCircleFcn,
-            DrawSolidCircleFcn,
-            DrawSolidCapsuleFcn,
-            DrawSegmentFcn,
-            DrawTransformFcn,
-            DrawPointFcn,
-            DrawStringFcn,
-            bounds,
-            false,  // drawUsingBounds
-            true,   // shapes
-            true,   // joints
-            false,  // joint extras
-            false,  // aabbs
-            false,  // mass
-            false,  // contacts
-            false,  // colors
-            false,  // normals
-            false,  // impulse
-            false,  // friction
-            this
-        };
+        m_debugDraw = b2DebugDraw{};
+        m_debugDraw.DrawPolygonFcn = DrawPolygonFcn;
+        m_debugDraw.DrawSolidPolygonFcn = DrawSolidPolygonFcn;
+        m_debugDraw.DrawCircleFcn = DrawCircleFcn;
+        m_debugDraw.DrawSolidCircleFcn = DrawSolidCircleFcn;
+        m_debugDraw.DrawSolidCapsuleFcn = DrawSolidCapsuleFcn;
+        m_debugDraw.DrawSegmentFcn = DrawSegmentFcn;
+        m_debugDraw.DrawTransformFcn = DrawTransformFcn;
+        m_debugDraw.DrawPointFcn = DrawPointFcn;
+        m_debugDraw.DrawStringFcn = DrawStringFcn;
+        m_debugDraw.context = this;
+
+
+        // bool useDrawingBounds;
+
+        // /// Option to draw shapes
+        // bool drawShapes;
+
+        // /// Option to draw joints
+        // bool drawJoints;
+
+        // /// Option to draw additional information for joints
+        // bool drawJointExtras;
+
+        // /// Option to draw the bounding boxes for shapes
+        // bool drawBounds;
+
+        // /// Option to draw the mass and center of mass of dynamic bodies
+        // bool drawMass;
+
+        // /// Option to draw body names
+        // bool drawBodyNames;
+
+        // /// Option to draw contact points
+        // bool drawContacts;
+
+        // /// Option to visualize the graph coloring used for contacts and joints
+        // bool drawGraphColors;
+
+        // /// Option to draw contact normals
+        // bool drawContactNormals;
+
+        // /// Option to draw contact normal impulses
+        // bool drawContactImpulses;
+
+        // /// Option to draw contact feature ids
+        // bool drawContactFeatures;
+
+        // /// Option to draw contact friction impulses
+        // bool drawFrictionImpulses;
+
+        // /// Option to draw islands as bounding boxes
+        // bool drawIslands;
+
+
+        m_debugDraw.drawShapes = true;
+        m_debugDraw.drawJoints = true;
+        m_debugDraw.drawJointExtras = true;
+        m_debugDraw.drawBounds = true;
+        m_debugDraw.drawMass = true;
+        m_debugDraw.drawBodyNames = true;
+        m_debugDraw.drawContacts = true;
+        m_debugDraw.drawGraphColors = true;
+        m_debugDraw.drawContactNormals = true;
+        m_debugDraw.drawContactImpulses = true;
+        m_debugDraw.drawContactFeatures = true;
+        m_debugDraw.drawFrictionImpulses = true;
+        m_debugDraw.drawIslands = true;
+        m_debugDraw.useDrawingBounds = false;
     }
 
     void Draw::Destroy()
@@ -1772,7 +1754,7 @@ namespace pyb2d
         va_end(arg);
     }
 
-    void Draw::DrawString(b2Vec2 p, const char* string, ...)
+    void Draw::DrawString(b2Vec2 p, const char* string, b2HexColor c, ...)
     {
         b2Vec2 ps = m_camera.ConvertWorldToScreen(p);
 
