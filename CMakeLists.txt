@@ -41,6 +41,9 @@ if(EMSCRIPTEN)
 
     # Attempt to create an alias (might not fully satisfy the check)
     add_library(Python::Module ALIAS MyFakePythonModule)
+else()
+    # Find Python
+    find_package(Python COMPONENTS Interpreter Development REQUIRED)
 endif()
 
 find_package(box2d REQUIRED)

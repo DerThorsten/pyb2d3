@@ -29,7 +29,7 @@ class HelloWorld(pg.Sample):
         print("5")
         box_shape = OpenBoxShape(box_dimensions, wall_thickness)
         try:
-            shape_def = b2d.shape_def(friction=0.3)
+            shape_def = b2d.shape_def()
         except Exception as e:
             print("Error creating shape_def:", e)
             raise

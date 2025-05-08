@@ -54,7 +54,8 @@ cmake .. \
     -DBOX2D_DOCS=OFF \
     -DBOX2D_PROFILE=OFF \
     -DBOX2D_VALIDATE=ON \
-    -DBOX2D_UNIT_TESTS=OFF
+    -DBOX2D_UNIT_TESTS=OFF \
+    -DBUILD_SHARED_LIBS=ON
 
 cmake --build . --config Release --target install
 popd
