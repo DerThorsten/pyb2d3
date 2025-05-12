@@ -32,12 +32,12 @@ popd
 
 
 # download and build box2d
-# OWNER=erincatto
-# REPO=box2d
-# COMMIT=30c080e56efd13ef5aa8872db63d95b816ca23e0
-# URL=https://github.com/${OWNER}/${REPO}/archive/${COMMIT}.tar.gz
+OWNER=erincatto
+REPO=box2d
+COMMIT=7f050d7ce7edb55428cfa0e03759361114a0e357
+URL=https://github.com/${OWNER}/${REPO}/archive/${COMMIT}.tar.gz
 
-URL=https://github.com/erincatto/box2d/archive/refs/tags/v3.1.0.tar.gz
+# URL=https://github.com/erincatto/box2d/archive/refs/tags/v3.1.0.tar.gz
 
 
 # rror: '*(float *)((char *)&localPointB + offsetof(b2Vec2, y))' may be used uninitialized [-Werror=maybe-uninitialized]
@@ -47,7 +47,7 @@ URL=https://github.com/erincatto/box2d/archive/refs/tags/v3.1.0.tar.gz
 
 rm -rf box2d
 curl -L ${URL} |    tar zx
-mv box2d-3.1.0 box2d
+mv ${REPO}-${COMMIT} box2d
 pushd box2d
 mkdir -p build
 pushd build
