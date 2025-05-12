@@ -39,6 +39,13 @@ popd
 
 URL=https://github.com/erincatto/box2d/archive/refs/tags/v3.1.0.tar.gz
 
+
+# rror: '*(float *)((char *)&localPointB + offsetof(b2Vec2, y))' may be used uninitialized [-Werror=maybe-uninitialized]
+#  275 |         float dy = b.y - a.y;
+# -Wno-error=maybe-uninitialized
+
+export CXXFLAGS="-Wno-error=maybe-uninitialized"
+
 rm -rf box2d
 curl -L ${URL} |    tar zx
 mv box2d-3.1.0 box2d
