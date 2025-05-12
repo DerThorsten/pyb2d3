@@ -4,11 +4,11 @@
 #include "py_debug_draw.hpp"
 
 // C
-extern "C"
-{
+// extern "C"
+// {
 #include <box2d/box2d.h>
 #include <box2d/math_functions.h>
-}
+// }
 
 // nanobind namespace
 namespace nb = nanobind;
@@ -32,45 +32,7 @@ void export_world_functions(nb::module_& m)
     m.def("world_get_body_events", &b2World_GetBodyEvents, nb::arg("world_id"));
     m.def("world_get_sensor_events", &b2World_GetSensorEvents, nb::arg("world_id"));
     m.def("world_get_contact_events", &b2World_GetContactEvents, nb::arg("world_id"));
-    m.def(
-        "world_overlap_aabb",
-        &b2World_OverlapAABB,
-        nb::arg("world_id"),
-        nb::arg("aabb"),
-        nb::arg("filter"),
-        nb::arg("fcn"),
-        nb::arg("context")
-    );
-    m.def(
-        "world_overlap_point",
-        &b2World_OverlapPoint,
-        nb::arg("world_id"),
-        nb::arg("point"),
-        nb::arg("transform"),
-        nb::arg("filter"),
-        nb::arg("fcn"),
-        nb::arg("context")
-    );
-    m.def(
-        "world_overlap_circle",
-        &b2World_OverlapCircle,
-        nb::arg("world_id"),
-        nb::arg("circle"),
-        nb::arg("transform"),
-        nb::arg("filter"),
-        nb::arg("fcn"),
-        nb::arg("context")
-    );
-    m.def(
-        "world_overlap_capsule",
-        &b2World_OverlapCapsule,
-        nb::arg("world_id"),
-        nb::arg("capsule"),
-        nb::arg("transform"),
-        nb::arg("filter"),
-        nb::arg("fcn"),
-        nb::arg("context")
-    );
+
     m.def(
         "world_cast_ray",
         &b2World_CastRay,
@@ -89,39 +51,7 @@ void export_world_functions(nb::module_& m)
         nb::arg("translation"),
         nb::arg("filter")
     );
-    m.def(
-        "world_cast_circle",
-        &b2World_CastCircle,
-        nb::arg("world_id"),
-        nb::arg("circle"),
-        nb::arg("origin_transform"),
-        nb::arg("translation"),
-        nb::arg("filter"),
-        nb::arg("fcn"),
-        nb::arg("context")
-    );
-    m.def(
-        "world_cast_capsule",
-        &b2World_CastCapsule,
-        nb::arg("world_id"),
-        nb::arg("capsule"),
-        nb::arg("origin_transform"),
-        nb::arg("translation"),
-        nb::arg("filter"),
-        nb::arg("fcn"),
-        nb::arg("context")
-    );
-    m.def(
-        "world_cast_polygon",
-        &b2World_CastPolygon,
-        nb::arg("world_id"),
-        nb::arg("polygon"),
-        nb::arg("origin_transform"),
-        nb::arg("translation"),
-        nb::arg("filter"),
-        nb::arg("fcn"),
-        nb::arg("context")
-    );
+
     m.def("world_enable_sleeping", &b2World_EnableSleeping, nb::arg("world_id"), nb::arg("flag"));
     m.def("world_is_sleeping_enabled", &b2World_IsSleepingEnabled, nb::arg("world_id"));
     m.def("world_enable_continuous", &b2World_EnableContinuous, nb::arg("world_id"), nb::arg("flag"));
@@ -540,11 +470,6 @@ void export_mouse_joint_functions(nb::module_& m)
     m.def("mouse_joint_get_max_force", &b2MouseJoint_GetMaxForce, nb::arg("joint_id"));
 }
 
-void export_null_joint_functions(nb::module_& m)
-{
-    m.def("create_null_joint", &b2CreateNullJoint, nb::arg("world_id"), nb::arg("def"));
-}
-
 void export_prismatic_joint_functions(nb::module_& m)
 {
     m.def("create_prismatic_joint", &b2CreatePrismaticJoint, nb::arg("world_id"), nb::arg("def"));
@@ -731,7 +656,6 @@ void export_joint_functions(nb::module_& m)
     export_distance_joint_functions(m);
     export_motor_joint_functions(m);
     export_mouse_joint_functions(m);
-    export_null_joint_functions(m);
     export_prismatic_joint_functions(m);
     export_revolute_joint_functions(m);
     export_weld_joint_functions(m);

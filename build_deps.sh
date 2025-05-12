@@ -32,10 +32,19 @@ popd
 
 
 # download and build box2d
-OWNER=DerThorsten
+OWNER=erincatto
 REPO=box2d
-COMMIT=30c080e56efd13ef5aa8872db63d95b816ca23e0
+COMMIT=7f050d7ce7edb55428cfa0e03759361114a0e357
 URL=https://github.com/${OWNER}/${REPO}/archive/${COMMIT}.tar.gz
+
+# URL=https://github.com/erincatto/box2d/archive/refs/tags/v3.1.0.tar.gz
+
+
+# rror: '*(float *)((char *)&localPointB + offsetof(b2Vec2, y))' may be used uninitialized [-Werror=maybe-uninitialized]
+#  275 |         float dy = b.y - a.y;
+# -Wno-error=maybe-uninitialized
+
+
 rm -rf box2d
 curl -L ${URL} |    tar zx
 mv ${REPO}-${COMMIT} box2d
@@ -51,7 +60,9 @@ cmake .. \
     -DBOX2D_DOCS=OFF \
     -DBOX2D_PROFILE=OFF \
     -DBOX2D_VALIDATE=ON \
-    -DBOX2D_UNIT_TESTS=OFF
+    -DBOX2D_UNIT_TESTS=OFF \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_CXX_FLAGS="-Wno-maybe-uninitialized"
 
 cmake --build . --config Release --target install
 popd

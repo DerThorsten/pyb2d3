@@ -2,11 +2,9 @@
 #include <pyb2d/py_converter.hpp>
 
 // C
-extern "C"
-{
+
 #include <box2d/box2d.h>
-#include <box2d/math_functions.h>
-}
+
 
 // nanobind namespace
 namespace py = nanobind;
@@ -45,15 +43,15 @@ void export_ray_result(py::module_& m)
         .def_rw("leaf_visits", &b2RayResult::leafVisits);
 }
 
-void export_mixing_rule(py::module_& m)
-{
-    py::enum_<b2MixingRule>(m, "MixingRule")
-        .value("average", b2_mixAverage)
-        .value("geometric_mean", b2_mixGeometricMean)
-        .value("multiply", b2_mixMultiply)
-        .value("minimum", b2_mixMinimum)
-        .value("maximum", b2_mixMaximum);
-}
+// void export_mixing_rule(py::module_& m)
+// {
+//     py::enum_<b2MixingRule>(m, "MixingRule")
+//         .value("average", b2_mixAverage)
+//         .value("geometric_mean", b2_mixGeometricMean)
+//         .value("multiply", b2_mixMultiply)
+//         .value("minimum", b2_mixMinimum)
+//         .value("maximum", b2_mixMaximum);
+// }
 
 // macro to help exporting user data
 #define EXPORT_USER_DATA(T)                              \
@@ -83,15 +81,14 @@ void export_world_def(py::module_& m)
         )
         .def_rw("gravity", &b2WorldDef::gravity)
         .def_rw("restitution_threshold", &b2WorldDef::restitutionThreshold)
-        //.def_rw("contact_pushout_velocity", &b2WorldDef::contactPushoutVelocity)
         .def_rw("hit_event_threshold", &b2WorldDef::hitEventThreshold)
         .def_rw("contact_hertz", &b2WorldDef::contactHertz)
         .def_rw("contact_damping_ratio", &b2WorldDef::contactDampingRatio)
         .def_rw("joint_hertz", &b2WorldDef::jointHertz)
         .def_rw("joint_damping_ratio", &b2WorldDef::jointDampingRatio)
-        //.def_rw("maximum_linear_velocity", &b2WorldDef::maximumLinearVelocity)
-        .def_rw("friction_mixing_rule", &b2WorldDef::frictionMixingRule)
-        .def_rw("restitution_mixing_ru_le", &b2WorldDef::restitutionMixingRule)
+        .def_rw("maximum_linear_speed", &b2WorldDef::maximumLinearSpeed)
+        // .def_rw("friction_mixing_rule", &b2WorldDef::frictionMixingRule)
+        // .def_rw("restitution_mixing_ru_le", &b2WorldDef::restitutionMixingRule)
         // .def_rw("enqueue_task", &b2WorldDef::enqueueTask)
         // .def_rw("finish_task", &b2WorldDef::finishTask)
         // .def_rw("user_task_context", &b2WorldDef::userTaskContext)
@@ -163,6 +160,24 @@ void export_query_filter(py::module_& m)
         .def_rw("mask_bits", &b2QueryFilter::maskBits);
 }
 
+void export_surface_material(py::module_& m)
+{
+    py::class_<b2SurfaceMaterial>(m, "SurfaceMaterial")
+        .def(
+            "__init__",
+            [](b2SurfaceMaterial* t)
+            {
+                new (t) b2SurfaceMaterial(b2DefaultSurfaceMaterial());
+            }
+        )
+        .def_rw("friction", &b2SurfaceMaterial::friction)
+        .def_rw("restitution", &b2SurfaceMaterial::restitution)
+        .def_rw("rolling_resistance", &b2SurfaceMaterial::rollingResistance)
+        .def_rw("tangent_speed", &b2SurfaceMaterial::tangentSpeed)
+        .def_rw("user_material_id", &b2SurfaceMaterial::userMaterialId)
+        .def_rw("custom_color", &b2SurfaceMaterial::customColor);
+}
+
 void export_shape_def(py::module_& m)
 {
     py::class_<b2ShapeDef>(m, "ShapeDef")
@@ -183,11 +198,9 @@ void export_shape_def(py::module_& m)
             }
         )
 
-        .def_rw("friction", &b2ShapeDef::friction)
-        .def_rw("restitution", &b2ShapeDef::restitution)
+        .def_rw("material", &b2ShapeDef::material)
         .def_rw("density", &b2ShapeDef::density)
         .def_rw("filter", &b2ShapeDef::filter)
-        .def_rw("custom_color", &b2ShapeDef::customColor)
         .def_rw("is_sensor", &b2ShapeDef::isSensor)
         .def_rw("enable_sensor_events", &b2ShapeDef::enableSensorEvents)
         .def_rw("enable_contact_events", &b2ShapeDef::enableContactEvents)
@@ -209,11 +222,8 @@ void export_chain_def(py::module_& m)
             }
         )
         //.def_rw("points", &b2ChainDef::points) //TODO
-        .def_rw("count", &b2ChainDef::count)
-        .def_rw("friction", &b2ChainDef::friction)
-        .def_rw("restitution", &b2ChainDef::restitution)
+        // .def_rw("materials", &b2ChainDef::materials) //TODO
         .def_rw("filter", &b2ChainDef::filter)
-        .def_rw("custom_color", &b2ChainDef::customColor)
         .def_rw("is_loop", &b2ChainDef::isLoop)
         .def_rw("internal_value", &b2ChainDef::internalValue) EXPORT_USER_DATA(b2ChainDef);
 }
@@ -225,24 +235,24 @@ void export_profile(py::module_& m)
         .def_rw("pairs", &b2Profile::pairs)
         .def_rw("collide", &b2Profile::collide)
         .def_rw("solve", &b2Profile::solve)
-        .def_rw("build_islands", &b2Profile::buildIslands)
+        .def_rw("merge_islands", &b2Profile::mergeIslands)
+        .def_rw("prepare_stages", &b2Profile::prepareStages)
         .def_rw("solve_constraints", &b2Profile::solveConstraints)
-        .def_rw("prepare_tasks", &b2Profile::prepareTasks)
-        .def_rw("solver_tasks", &b2Profile::solverTasks)
         .def_rw("prepare_constraints", &b2Profile::prepareConstraints)
         .def_rw("integrate_velocities", &b2Profile::integrateVelocities)
         .def_rw("warm_start", &b2Profile::warmStart)
-        .def_rw("solve_velocities", &b2Profile::solveVelocities)
+        .def_rw("solve_impulses", &b2Profile::solveImpulses)
         .def_rw("integrate_positions", &b2Profile::integratePositions)
-        .def_rw("relax_velocities", &b2Profile::relaxVelocities)
+        .def_rw("relax_impulses", &b2Profile::relaxImpulses)
         .def_rw("apply_restitution", &b2Profile::applyRestitution)
         .def_rw("store_impulses", &b2Profile::storeImpulses)
-        .def_rw("finalize_bodies", &b2Profile::finalizeBodies)
         .def_rw("split_islands", &b2Profile::splitIslands)
-        .def_rw("sleep_islands", &b2Profile::sleepIslands)
+        .def_rw("transforms", &b2Profile::transforms)
         .def_rw("hit_events", &b2Profile::hitEvents)
-        .def_rw("broadphase", &b2Profile::broadphase)
-        .def_rw("continuous", &b2Profile::continuous);
+        .def_rw("refit", &b2Profile::refit)
+        .def_rw("bullets", &b2Profile::bullets)
+        .def_rw("sleep_islands", &b2Profile::sleepIslands)
+        .def_rw("sensors", &b2Profile::sensors);
 }
 
 void export_counters(py::module_& m)
@@ -268,7 +278,6 @@ void export_joint_defs(py::module_& m)
         .value("DISTANCE_JOINT", b2JointType::b2_distanceJoint)
         .value("MOTOR_JOINT", b2JointType::b2_motorJoint)
         .value("MOUSE_JOINT", b2JointType::b2_mouseJoint)
-        .value("NULL_JOINT", b2JointType::b2_nullJoint)
         .value("PRISMATIC_JOINT", b2JointType::b2_prismaticJoint)
         .value("REVOLUTE_JOINT", b2JointType::b2_revoluteJoint)
         .value("WELD_JOINT", b2JointType::b2_weldJoint)
@@ -334,17 +343,6 @@ void export_joint_defs(py::module_& m)
         .def_rw("collide_connected", &b2MouseJointDef::collideConnected)
         .def_rw("internal_value", &b2MouseJointDef::internalValue) EXPORT_USER_DATA(b2MouseJointDef);
 
-    py::class_<b2NullJointDef>(m, "NullJointDef")
-        .def(
-            "__init__",
-            [](b2NullJointDef* t)
-            {
-                new (t) b2NullJointDef(b2DefaultNullJointDef());
-            }
-        )
-        .def_rw("body_id_a", &b2NullJointDef::bodyIdA)
-        .def_rw("body_id_b", &b2NullJointDef::bodyIdB)
-        .def_rw("internal_value", &b2NullJointDef::internalValue) EXPORT_USER_DATA(b2NullJointDef);
 
     py::class_<b2PrismaticJointDef>(m, "PrismaticJointDef")
         .def(
@@ -527,9 +525,10 @@ void export_box2d_types(py::module_& m)
     export_body_def(m);
     export_id_types(m);
     export_ray_result(m);
-    export_mixing_rule(m);
+    // export_mixing_rule(m);
     export_filter(m);
     export_query_filter(m);
+    export_surface_material(m);
     export_shape_def(m);
     export_chain_def(m);
     export_profile(m);

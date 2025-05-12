@@ -16,6 +16,7 @@ def test_world():
 
 
 def test_hello_world(world_id):
+
     # create static ground body
     body_def = b2d.body_def(position=(0, -10), type=b2d.BodyType.STATIC, user_data=10)
     assert body_def.user_data == 10
@@ -23,7 +24,14 @@ def test_hello_world(world_id):
     body_user_data = b2d.body_get_user_data(groud_body_id)
     assert body_user_data == 10
     box = b2d.make_box(1, 1)
-    shape_def = b2d.shape_def(density=0, friction=0.3, restitution=0.5, user_data=100)
+
+    # surface material
+    surface_material = b2d.surface_material(
+        friction=0.3, restitution=0.5, rolling_resistance=0.3
+    )
+
+    # shape definition
+    shape_def = b2d.shape_def(density=0, material=surface_material, user_data=100)
     shape_id = b2d.create_polygon_shape(groud_body_id, shape_def, box)
     shape_user_data = b2d.shape_get_user_data(shape_id)
     assert shape_user_data == 100
@@ -38,7 +46,8 @@ def test_hello_world(world_id):
     )
     dynamic_body_id = b2d.create_body(world_id, body_def)
     circle = b2d.circle(radius=0.5)
-    shape_def = b2d.shape_def(density=1, friction=0.3, restitution=0.5)
+    surface_material = b2d.surface_material(friction=0.3, restitution=0.5)
+    shape_def = b2d.shape_def(density=1, material=surface_material, user_data=0)
     shape_id = b2d.create_circle_shape(dynamic_body_id, shape_def, circle)
 
     body_user_data = b2d.body_get_user_data(dynamic_body_id)

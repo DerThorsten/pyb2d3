@@ -4,12 +4,12 @@
 #include <pyb2d/py_converter.hpp>
 
 // C
-extern "C"
-{
+// extern "C"
+// {
 #include <box2d/box2d.h>
 #include <box2d/math_functions.h>
 #include <box2d/types.h>
-}
+// }
 
 // nanobind namespace
 namespace py = nanobind;

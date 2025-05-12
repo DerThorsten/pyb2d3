@@ -6,36 +6,39 @@ import numpy as np
 import math
 
 
-print("pyb2d.__file__", b2d.__file__)
-
-
-class MySample(pg.Sample):
-    def __init__(self, settings):
-        print("MySample.__init__")
-        super(MySample, self).__init__(settings)
-        print("MySample.__init__ after super")
+class HelloWorld(pg.Sample):
+    def __init__(self, settings, radius=0.2):
+        print("HelloWorld.__init__")
+        super().__init__(settings)
 
         # make a open box
         box_dimensions = [100, 10]
         wall_thickness = 0.1
 
-        print("get_world_id")
+        print("1")
         w = self.world_id
-        print("world_id", w)
+        surface_material = b2d.surface_material()
+        print("2")
+        shape_def = b2d.shape_def(material=surface_material)
 
-        print("shape_def")
-        shape_def = b2d.shape_def(friction=0.3)
-
-        print("box_dimensions", box_dimensions)
+        print("3")
         body_def = b2d.body_def(type=b2d.BodyType.STATIC)
 
+        print("4")
         box_body_id = b2d.create_body_from_def(w, body_def)
-        print("box_body_id", box_body_id)
+        print("5")
         box_shape = OpenBoxShape(box_dimensions, wall_thickness)
-        shape_def = b2d.shape_def(friction=0.3)
+        try:
+            shape_def = b2d.shape_def()
+        except Exception as e:
+            print("Error creating shape_def:", e)
+            raise
+        print("6")
         b2d.create_shape(box_body_id, shape_def, box_shape)
 
-        n = 100
+        print("open box created")
+
+        n = 10000
         self.bodies_ids = np.zeros(n, dtype="uint64")
         for i in range(n):
             rx = random.uniform(-box_dimensions[0] / 2, box_dimensions[0] / 2)
@@ -50,16 +53,20 @@ class MySample(pg.Sample):
                 angular_damping=0.01,
                 linear_damping=0.01,
             )
+            surface_material = b2d.surface_material(
+                friction=0.3, restitution=0.5, rolling_resistance=0.3
+            )
 
             b2d.create_shape(
                 dynamic_body_id,
-                b2d.shape_def(density=1, friction=0.3, restitution=0.9),
-                b2d.circle(radius=0.2),
+                b2d.shape_def(density=1, material=surface_material),
+                b2d.circle(radius=radius),
             )
             self.bodies_ids[i] = dynamic_body_id
 
+        print("done")
+
         self._is_down = False
-        print("MySample.__init__ end")
 
     # def mouse_down(self, pos, button, mod):
     #     self._is_down = True
@@ -85,6 +92,3 @@ class MySample(pg.Sample):
     #         delta_vec = (100 * delta_vec[0] / magnitude, 100 * delta_vec[1] / magnitude)
 
     #         b2d.body_apply_force_to_center(body_id, delta_vec, True)
-
-
-pg.run_sample(MySample)

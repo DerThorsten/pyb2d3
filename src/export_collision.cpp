@@ -7,11 +7,11 @@
 #include <pyb2d/py_converter.hpp>
 
 // C
-extern "C"
-{
+// extern "C"
+// {
 #include <box2d/box2d.h>
 #include <box2d/math_functions.h>
-}
+// }
 
 // nanobind namespace
 namespace py = nanobind;
@@ -25,32 +25,32 @@ void export_collision(py::module_& m)
         .def_rw("translation", &b2RayCastInput::translation)
         .def_rw("max_fraction", &b2RayCastInput::maxFraction);
 
-    // b2ShapeCastInput
-    py::class_<b2ShapeCastInput>(m, "ShapeCastInput")
-        .def(py::init<>())
-        .def_prop_rw(
-            "points",
-            [](b2ShapeCastInput* self)
-            {
-                return ArrayVec2(
-                    reinterpret_cast<float*>(self->points),     // data
-                    {std::size_t(self->count), std::size_t(2)}  // shape
-                );
-            },
-            [](b2ShapeCastInput* self, ArrayVec2 value)
-            {
-                self->count = value.size();
-                for (int i = 0; i < value.size(); i++)
-                {
-                    self->points[i].x = value(i, 0);
-                    self->points[i].y = value(i, 1);
-                }
-            }
-        )
-        .def_ro("count", &b2ShapeCastInput::count)
-        .def_rw("radius", &b2ShapeCastInput::radius)
-        .def_rw("translation", &b2ShapeCastInput::translation)
-        .def_rw("max_fraction", &b2ShapeCastInput::maxFraction);
+    // // b2ShapeCastInput
+    // py::class_<b2ShapeCastInput>(m, "ShapeCastInput")
+    //     .def(py::init<>())
+    //     .def_prop_rw(
+    //         "points",
+    //         [](b2ShapeCastInput* self)
+    //         {
+    //             return ArrayVec2(
+    //                 reinterpret_cast<float*>(self->points),     // data
+    //                 {std::size_t(self->count), std::size_t(2)}  // shape
+    //             );
+    //         },
+    //         [](b2ShapeCastInput* self, ArrayVec2 value)
+    //         {
+    //             self->count = value.size();
+    //             for (int i = 0; i < value.size(); i++)
+    //             {
+    //                 self->points[i].x = value(i, 0);
+    //                 self->points[i].y = value(i, 1);
+    //             }
+    //         }
+    //     )
+    //     .def_ro("count", &b2ShapeCastInput::count)
+    //     .def_rw("radius", &b2ShapeCastInput::radius)
+    //     .def_rw("translation", &b2ShapeCastInput::translation)
+    //     .def_rw("max_fraction", &b2ShapeCastInput::maxFraction);
 
     // b2CastOutput
     py::class_<b2CastOutput>(m, "CastOutput")
@@ -358,7 +358,7 @@ void export_collision(py::module_& m)
         .def_rw("separation", &b2ManifoldPoint::separation)
         .def_rw("normal_impulse", &b2ManifoldPoint::normalImpulse)
         .def_rw("tangent_impulse", &b2ManifoldPoint::tangentImpulse)
-        .def_rw("max_normal_impulse", &b2ManifoldPoint::maxNormalImpulse)
+        .def_rw("total_normal_impulse", &b2ManifoldPoint::totalNormalImpulse)
         .def_rw("normal_velocity", &b2ManifoldPoint::normalVelocity)
         .def_rw("id", &b2ManifoldPoint::id)
         .def_rw("persisted", &b2ManifoldPoint::persisted);

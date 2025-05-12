@@ -14,9 +14,39 @@ else()
     SET(CMAKE_INSTALL_LIBDIR lib)
 endif()
 
+if(EMSCRIPTEN)
+    set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
+    set(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "-s SIDE_MODULE=1")
+    set(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "-s SIDE_MODULE=1")
+    set(CMAKE_STRIP FALSE)  # used by default in pybind11 on .so modules
+
+
+    # Create a target that holds Python module information
+    add_library(MyFakePythonModule INTERFACE)
+
+    # Define the include directories
+    set_target_properties(MyFakePythonModule PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${Python_INCLUDE_DIRS}"
+    )
+
+    # Define the link libraries (the actual Python library)
+    set_target_properties(MyFakePythonModule PROPERTIES
+        INTERFACE_LINK_LIBRARIES "${Python_LIBRARIES}"
+    )
+
+    # Optionally, if nanobind uses the Python executable path:
+    set_target_properties(MyFakePythonModule PROPERTIES
+        INTERFACE_COMPILE_DEFINITIONS "PYTHON_EXECUTABLE=\"${Python_EXECUTABLE}\""
+    )
+
+    # Attempt to create an alias (might not fully satisfy the check)
+    add_library(Python::Module ALIAS MyFakePythonModule)
+else()
+    # Find Python
+    find_package(Python COMPONENTS Interpreter Development REQUIRED)
+endif()
 
 find_package(box2d REQUIRED)
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
 find_package(nanobind CONFIG REQUIRED)
 
 # add compile definitions

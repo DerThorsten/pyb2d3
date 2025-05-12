@@ -4,6 +4,8 @@ from ._pyb2d import make_offset_box
 
 class OpenBoxShape(CompoundShape):
     def __init__(self, dimensions, wall_thickness):
+
+        print("OpenBoxShape.__init__")
         super(OpenBoxShape, self).__init__()
         self.dimensions = dimensions
         self.wall_thickness = wall_thickness
