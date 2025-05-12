@@ -44,7 +44,6 @@ URL=https://github.com/erincatto/box2d/archive/refs/tags/v3.1.0.tar.gz
 #  275 |         float dy = b.y - a.y;
 # -Wno-error=maybe-uninitialized
 
-export CXXFLAGS="-Wno-error=maybe-uninitialized"
 
 rm -rf box2d
 curl -L ${URL} |    tar zx
@@ -62,7 +61,8 @@ cmake .. \
     -DBOX2D_PROFILE=OFF \
     -DBOX2D_VALIDATE=ON \
     -DBOX2D_UNIT_TESTS=OFF \
-    -DBUILD_SHARED_LIBS=ON
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_CXX_FLAGS="-Wno-maybe-uninitialized"
 
 cmake --build . --config Release --target install
 popd
