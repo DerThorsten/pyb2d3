@@ -290,14 +290,14 @@ namespace pyb2d
                     ImGui::Checkbox("Shapes", &settings.drawShapes);
                     ImGui::Checkbox("Joints", &settings.drawJoints);
                     ImGui::Checkbox("Joint Extras", &settings.drawJointExtras);
-                    ImGui::Checkbox("AABBs", &settings.drawAABBs);
+                    ImGui::Checkbox("Bounds", &settings.drawBounds);
                     ImGui::Checkbox("Contact Points", &settings.drawContactPoints);
                     ImGui::Checkbox("Contact Normals", &settings.drawContactNormals);
                     ImGui::Checkbox("Contact Impulses", &settings.drawContactImpulses);
                     ImGui::Checkbox("Friction Impulses", &settings.drawFrictionImpulses);
                     ImGui::Checkbox("Center of Masses", &settings.drawMass);
                     ImGui::Checkbox("Graph Colors", &settings.drawGraphColors);
-
+                    // ImGui::Checkbox("drawIslands", &settings.drawIslands);
                     ImVec2 button_sz = ImVec2(-1, 0);
                     if (ImGui::Button("Pause (P)", button_sz))
                     {

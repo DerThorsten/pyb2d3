@@ -29,7 +29,7 @@ namespace pyb2d
         bool drawShapes = true;
         bool drawJoints = true;
         bool drawJointExtras = false;
-        bool drawAABBs = false;
+        bool drawBounds = false;
         bool drawContactPoints = false;
         bool drawContactNormals = false;
         bool drawContactImpulses = false;

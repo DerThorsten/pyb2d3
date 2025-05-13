@@ -212,7 +212,7 @@ namespace pyb2d
         p_debugDraw->drawShapes = settings.drawShapes;
         p_debugDraw->drawJoints = settings.drawJoints;
         p_debugDraw->drawJointExtras = settings.drawJointExtras;
-        // p_debugDraw->drawAABBs = settings.drawAABBs;
+        p_debugDraw->drawBounds = settings.drawBounds;
         p_debugDraw->drawMass = settings.drawMass;
         p_debugDraw->drawContacts = settings.drawContactPoints;
         p_debugDraw->drawGraphColors = settings.drawGraphColors;

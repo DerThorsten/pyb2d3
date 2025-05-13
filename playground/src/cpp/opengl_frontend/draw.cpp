@@ -1639,7 +1639,7 @@ namespace pyb2d
         m_debugDraw.drawContactImpulses = true;
         m_debugDraw.drawContactFeatures = true;
         m_debugDraw.drawFrictionImpulses = true;
-        m_debugDraw.drawIslands = true;
+        m_debugDraw.drawIslands = false;
         m_debugDraw.useDrawingBounds = false;
     }
 
