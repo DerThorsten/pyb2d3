@@ -99,6 +99,19 @@ def capsule(**kwargs):
     return c
 
 
+def aabb(lower_bound, upper_bound):
+    aabb = AABB()
+    aabb.lower_bound = lower_bound
+    aabb.upper_bound = upper_bound
+    return aabb
+
+
+def aabb_arround_point(point, radius):
+    lower_bound = (point[0] - radius, point[1] - radius)
+    upper_bound = (point[0] + radius, point[1] + radius)
+    return aabb(lower_bound, upper_bound)
+
+
 def create_shape(body_id, shape_def, shape):
 
     if isinstance(shape, Circle):
@@ -164,6 +177,13 @@ def wheel_joint_def(**kwargs):
     return joint
 
 
+def mouse_joint_def(**kwargs):
+    joint = MouseJointDef()
+    for k, v in kwargs.items():
+        setattr(joint, k, v)
+    return joint
+
+
 def create_joint(world_id, joint_def):
     if isinstance(joint_def, RevoluteJointDef):
         return create_revolute_joint(world_id, joint_def)
@@ -175,6 +195,12 @@ def create_joint(world_id, joint_def):
         return create_wheel_joint(world_id, joint_def)
     elif isinstance(joint_def, NullJointDef):
         return create_null_joint(world_id, joint_def)
+    elif isinstance(joint_def, PulleyJointDef):
+        return create_pulley_joint(world_id, joint_def)
+    elif isinstance(joint_def, GearJointDef):
+        return create_gear_joint(world_id, joint_def)
+    elif isinstance(joint_def, MouseJointDef):
+        return create_mouse_joint(world_id, joint_def)
     else:
         raise ValueError(f"joint {joint_def} not recognized")
 

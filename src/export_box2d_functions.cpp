@@ -33,6 +33,32 @@ void export_world_functions(nb::module_& m)
     m.def("world_get_sensor_events", &b2World_GetSensorEvents, nb::arg("world_id"));
     m.def("world_get_contact_events", &b2World_GetContactEvents, nb::arg("world_id"));
 
+
+    //     /// Overlap test for all shapes that *potentially* overlap the provided AABB
+    // B2_API b2TreeStats b2World_OverlapAABB( b2WorldId worldId, b2AABB aabb, b2QueryFilter filter,
+    // b2OverlapResultFcn* fcn,
+    //     void* context );
+    m.def(
+        "world_overlap_aabb",
+        [](b2WorldId world_id, b2AABB aabb, b2QueryFilter filter, nanobind::object& fcn)
+        {
+            // lambda without captures st. we can pass it to the C function
+            auto fcn_lambda = [](b2ShapeId shape_id, void* context) -> bool
+            {
+                auto callable = static_cast<nanobind::object*>(context);
+                return nanobind::cast<bool>(callable->operator()(shape_id));
+            };
+
+            void* context = &fcn;
+            b2TreeStats stats = b2World_OverlapAABB(world_id, aabb, filter, fcn_lambda, context);
+            return stats;
+        },
+        nb::arg("world_id"),
+        nb::arg("aabb"),
+        nb::arg("filter"),
+        nb::arg("fcn")
+    );
+
     m.def(
         "world_cast_ray",
         &b2World_CastRay,

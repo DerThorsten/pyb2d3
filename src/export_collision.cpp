@@ -369,4 +369,11 @@ void export_collision(py::module_& m)
         // TODO MANIFOLD POINTS
         .def_ro("point_count", &b2Manifold::pointCount)
         .def_rw("normal", &b2Manifold::normal);
+
+    // b2TreeStats
+
+    py::class_<b2TreeStats>(m, "TreeStats")
+        .def(py::init<>())
+        .def_rw("node_visits", &b2TreeStats::nodeVisits)
+        .def_rw("leaf_visits", &b2TreeStats::leafVisits);
 }
