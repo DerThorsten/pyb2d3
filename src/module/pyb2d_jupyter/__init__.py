@@ -111,7 +111,7 @@ class Sample(object):
     def print(self, *args):
         # print to the output widget
         with self.output:
-            # clear_output(wait=False)
+            clear_output(wait=False)
             print(*args)
             # self.output.append_stdout(*args)
             # self.output.append_stdout("\n")
@@ -147,7 +147,6 @@ class Sample(object):
     def on_mouse_down(self, event):
         canvas_point = (event["offsetX"], event["offsetY"])
         world_point = self.transform.point_canvas_to_world(canvas_point)
-        self.print("on_mouse_down", canvas_point, world_point)
 
         # aabb around the mouse point
         aabb = b2d.aabb_arround_point(point=world_point, radius=0.1)
@@ -186,17 +185,13 @@ class Sample(object):
             mouse_joint_def.max_force = 10000.0 * b2d.body_get_mass(body_id)
             # mouse_joint_def.damping_ratio = 0.5
 
-            print("mouse joint force", mouse_joint_def.max_force)
-
             # create the mouse joint
             self.mouse_joint = b2d.create_mouse_joint(self.world_id, mouse_joint_def)
-            self.print("create mouse joint", self.mouse_joint)
 
     def _destroy_mouse_joint(self):
         if self.mouse_joint is not None:
             b2d.destroy_joint(self.mouse_joint)
             self.mouse_joint = None
-            self.print("destroy mouse joint")
 
     def on_mouse_up(self, event):
         self._destroy_mouse_joint()
@@ -219,7 +214,7 @@ class Sample(object):
     def show(self):
 
         display(self.canvas)
-        # display(self.output)
+        display(self.output)
 
         self.canvas.clear()
         self.canvas.fill_style = "white"

@@ -1,6 +1,8 @@
 #include <nanobind/nanobind.h>
 #include <pyb2d/py_converter.hpp>
 
+#include "py_chain_def.hpp"
+
 // C
 
 #include <box2d/box2d.h>
@@ -213,19 +215,58 @@ void export_shape_def(py::module_& m)
 
 void export_chain_def(py::module_& m)
 {
-    py::class_<b2ChainDef>(m, "ChainDef")
-        .def(
-            "__init__",
-            [](b2ChainDef* t)
+    py::class_<PyChainDef>(m, "ChainDef")
+        .def(nb::init<>())
+
+        // from numpy
+        .def_prop_rw(
+            "points",
+            [](PyChainDef* self)
             {
-                new (t) b2ChainDef(b2DefaultChainDef());
+                // the storage for the points is an std::vector<b2Vec2> in self
+                return ArrayVec2(
+                    reinterpret_cast<float*>(self->points.data()),      // data
+                    {std::size_t(self->points.size()), std::size_t(2)}  // shape
+                );
+            },
+            [](PyChainDef* self, ArrayVec2 value)
+            {
+                self->points.resize(value.size());
+                for (int i = 0; i < value.size(); i++)
+                {
+                    self->points[i].x = value(i, 0);
+                    self->points[i].y = value(i, 1);
+                }
+                // update the ptrs in the chaindef
+                self->chain_def.points = self->points.data();
+                self->chain_def.count = value.size();
             }
         )
-        //.def_rw("points", &b2ChainDef::points) //TODO
-        // .def_rw("materials", &b2ChainDef::materials) //TODO
-        .def_rw("filter", &b2ChainDef::filter)
-        .def_rw("is_loop", &b2ChainDef::isLoop)
-        .def_rw("internal_value", &b2ChainDef::internalValue) EXPORT_USER_DATA(b2ChainDef);
+
+
+        // // .def_rw("materials", &b2ChainDef::materials) //TODO
+        .def_prop_rw(
+            "filter",
+            [](PyChainDef* self)
+            {
+                return self->chain_def.filter;
+            },
+            [](PyChainDef* self, b2Filter value)
+            {
+                self->chain_def.filter = value;
+            }
+        )
+        .def_prop_rw(
+            "is_loop",
+            [](PyChainDef* self)
+            {
+                return self->chain_def.isLoop;
+            },
+            [](PyChainDef* self, bool value)
+            {
+                self->chain_def.isLoop = value;
+            }
+        );
 }
 
 void export_profile(py::module_& m)

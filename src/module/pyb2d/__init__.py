@@ -19,6 +19,13 @@ def body_def(**kwargs):
     return body
 
 
+def chain_def(**kwargs):
+    chain = ChainDef()
+    for k, v in kwargs.items():
+        setattr(chain, k, v)
+    return chain
+
+
 # shorthand for body types
 dynamic_body_def = partial(body_def, type=BodyType.DYNAMIC)
 static_body_def = partial(body_def, type=BodyType.STATIC)
