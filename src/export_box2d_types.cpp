@@ -6,6 +6,7 @@
 // C
 
 #include <box2d/box2d.h>
+#include <nanobind/stl/vector.h>
 
 
 // nanobind namespace
@@ -240,6 +241,21 @@ void export_chain_def(py::module_& m)
                 // update the ptrs in the chaindef
                 self->chain_def.points = self->points.data();
                 self->chain_def.count = value.size();
+            }
+        )
+
+        .def_prop_rw(
+            "materials",
+            [](PyChainDef* self)
+            {
+                return self->materials;
+            },
+            [](PyChainDef* self, const std::vector<b2SurfaceMaterial>& value)
+            {
+                self->materials = value;
+                // update the ptrs in the chaindef
+                self->chain_def.materials = self->materials.data();
+                self->chain_def.materialCount = value.size();
             }
         )
 
