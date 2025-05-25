@@ -232,7 +232,7 @@ void export_chain_def(py::module_& m)
             },
             [](PyChainDef* self, ArrayVec2 value)
             {
-                self->points.resize(value.size());
+                self->points.resize(value.shape(0));
                 for (int i = 0; i < value.size(); i++)
                 {
                     self->points[i].x = value(i, 0);
@@ -240,7 +240,7 @@ void export_chain_def(py::module_& m)
                 }
                 // update the ptrs in the chaindef
                 self->chain_def.points = self->points.data();
-                self->chain_def.count = value.size();
+                self->chain_def.count = value.shape(0);
             }
         )
 
