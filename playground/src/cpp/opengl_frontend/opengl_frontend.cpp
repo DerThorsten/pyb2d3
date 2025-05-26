@@ -67,8 +67,10 @@ namespace pyb2d
         }
         else
         {
-            printf("\n\nERROR: the Box2D samples working directory must be the top "
-                   "level Box2D directory (same as README.md)\n\n");
+            printf(
+                "\n\nERROR: the Box2D samples working directory must be the top "
+                "level Box2D directory (same as README.md)\n\n"
+            );
             exit(EXIT_FAILURE);
         }
     }
