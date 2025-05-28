@@ -43,6 +43,16 @@ void export_math_functions(py::module_& m)
         .def_rw("c", &b2Rot::c)
         .def_rw("s", &b2Rot::s);
 
+    py::class_<b2AABB>(m, "AABB")
+        .def(py::init<>())
+        .def_rw("lower_bound", &b2AABB::lowerBound)
+        .def_rw("upper_bound", &b2AABB::upperBound);
+
+    py::class_<b2Plane>(m, "Plane")
+        .def(py::init<>())
+        .def_rw("normal", &b2Plane::normal)
+        .def_rw("offset", &b2Plane::offset);
+
     m.def(
         "add",
         [](b2Vec2 a, b2Vec2 b)

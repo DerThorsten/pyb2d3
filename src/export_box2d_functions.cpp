@@ -1,6 +1,7 @@
 #include <nanobind/nanobind.h>
 #include <pyb2d/py_converter.hpp>
 
+#include "py_chain_def.hpp"
 #include "py_debug_draw.hpp"
 
 // C
@@ -32,6 +33,32 @@ void export_world_functions(nb::module_& m)
     m.def("world_get_body_events", &b2World_GetBodyEvents, nb::arg("world_id"));
     m.def("world_get_sensor_events", &b2World_GetSensorEvents, nb::arg("world_id"));
     m.def("world_get_contact_events", &b2World_GetContactEvents, nb::arg("world_id"));
+
+
+    //     /// Overlap test for all shapes that *potentially* overlap the provided AABB
+    // B2_API b2TreeStats b2World_OverlapAABB( b2WorldId worldId, b2AABB aabb, b2QueryFilter filter,
+    // b2OverlapResultFcn* fcn,
+    //     void* context );
+    m.def(
+        "world_overlap_aabb",
+        [](b2WorldId world_id, b2AABB aabb, b2QueryFilter filter, nanobind::object& fcn)
+        {
+            // lambda without captures st. we can pass it to the C function
+            auto fcn_lambda = [](b2ShapeId shape_id, void* context) -> bool
+            {
+                auto callable = static_cast<nanobind::object*>(context);
+                return nanobind::cast<bool>(callable->operator()(shape_id));
+            };
+
+            void* context = &fcn;
+            b2TreeStats stats = b2World_OverlapAABB(world_id, aabb, filter, fcn_lambda, context);
+            return stats;
+        },
+        nb::arg("world_id"),
+        nb::arg("aabb"),
+        nb::arg("filter"),
+        nb::arg("fcn")
+    );
 
     m.def(
         "world_cast_ray",
@@ -125,6 +152,16 @@ void export_body_functions(nb::module_& m)
     m.def("body_get_type", &b2Body_GetType, nb::arg("body_id"));
     m.def("body_set_type", &b2Body_SetType, nb::arg("body_id"), nb::arg("type"));
     m.def("body_get_position", &b2Body_GetPosition, nb::arg("body_id"));
+    m.def(
+        "body_get_distance_to",
+        [](b2BodyId body_id, b2Vec2 point) -> float
+        {
+            b2Vec2 position = b2Body_GetPosition(body_id);
+            return b2Distance(position, point);
+        },  // Returns the distance from the body position to the given point
+        nb::arg("body_id"),
+        nb::arg("point")
+    );
     m.def("body_get_rotation", &b2Body_GetRotation, nb::arg("body_id"));
     m.def("body_get_transform", &b2Body_GetTransform, nb::arg("body_id"));
     m.def("body_set_transform", &b2Body_SetTransform, nb::arg("body_id"), nb::arg("position"), nb::arg("rotation"));
@@ -134,6 +171,15 @@ void export_body_functions(nb::module_& m)
     m.def("body_get_local_vector", &b2Body_GetLocalVector, nb::arg("body_id"), nb::arg("world_vector"));
     m.def("body_get_world_vector", &b2Body_GetWorldVector, nb::arg("body_id"), nb::arg("local_vector"));
     m.def("body_get_linear_velocity", &b2Body_GetLinearVelocity, nb::arg("body_id"));
+    m.def(
+        "body_get_linear_velocity_magnitude",
+        [](b2BodyId body_id) -> float
+        {
+            b2Vec2 linear_velocity = b2Body_GetLinearVelocity(body_id);
+            return b2Length(linear_velocity);
+        },  // Returns the magnitude of the linear velocity
+        nb::arg("body_id")
+    );
     m.def("body_get_angular_velocity", &b2Body_GetAngularVelocity, nb::arg("body_id"));
     m.def("body_set_linear_velocity", &b2Body_SetLinearVelocity, nb::arg("body_id"), nb::arg("linear_velocity"));
     m.def("body_set_angular_velocity", &b2Body_SetAngularVelocity, nb::arg("body_id"), nb::arg("angular_velocity"));
@@ -313,7 +359,17 @@ void export_shape_functions(nb::module_& m)
 
 void export_chain_functions(nb::module_& m)
 {
-    m.def("create_chain", &b2CreateChain, nb::arg("body_id"), nb::arg("def"));
+    // m.def("create_chain", &b2CreateChain, nb::arg("body_id"), nb::arg("def"));
+    m.def(
+        "create_chain",
+        [](b2BodyId body_id, PyChainDef& def) -> b2ChainId
+        {
+            return b2CreateChain(body_id, &def.chain_def);
+        },
+        nb::arg("body_id"),
+        nb::arg("chain_def")
+    );
+
     m.def("destroy_chain", &b2DestroyChain, nb::arg("chain_id"));
     m.def("chain_get_world", &b2Chain_GetWorld, nb::arg("chain_id"));
     m.def("chain_get_segment_count", &b2Chain_GetSegmentCount, nb::arg("chain_id"));
