@@ -17,14 +17,6 @@ dependencies:
   - numpy
   # Tests
   - pytest
-  - pytest-sugar
-  # testbed
-  - glad
-  - glfw
-  - imgui
-  - libvulkan-headers
-  - libvulkan-loader
+  - pytest-sugarå
   # utils
   - pre-commit
-  # debug
-  - lldb
