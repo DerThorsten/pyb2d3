@@ -151,9 +151,6 @@ class Sample(object):
         # aabb around the mouse point
         aabb = b2d.aabb_arround_point(point=world_point, radius=0.1)
 
-        # query filter
-        query_filter = b2d.QueryFilter()
-
         result = [False, None]  # [found, shape_id]
 
         def callback(shape_id):
@@ -166,7 +163,7 @@ class Sample(object):
             return not inside
 
         # world overlapp aabb
-        b2d.world_overlap_aabb(self.world_id, aabb, query_filter, callback)
+        b2d.world_overlap_aabb(self.world_id, aabb, b2d.QueryFilter(), callback)
 
         if result[0]:
             self.print("on_mouse_down found shape", result[1])

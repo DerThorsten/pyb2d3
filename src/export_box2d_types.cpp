@@ -5,9 +5,10 @@
 
 // C
 
+#include <iostream>
+
 #include <box2d/box2d.h>
 #include <nanobind/stl/vector.h>
-
 
 // nanobind namespace
 namespace py = nanobind;
@@ -232,11 +233,16 @@ void export_chain_def(py::module_& m)
             },
             [](PyChainDef* self, ArrayVec2 value)
             {
+                // std::cout << "Setting points in ChainDef with shape: " << value.shape(0) << "x" <<
+                // value.shape(1) << std::endl;
                 self->points.resize(value.shape(0));
-                for (int i = 0; i < value.size(); i++)
+                for (int i = 0; i < self->points.size(); i++)
                 {
                     self->points[i].x = value(i, 0);
                     self->points[i].y = value(i, 1);
+
+                    // std::cout << "Point " << i << ": (" << self->points[i].x << ", " << self->points[i].y
+                    // << ")" << std::endl;
                 }
                 // update the ptrs in the chaindef
                 self->chain_def.points = self->points.data();
