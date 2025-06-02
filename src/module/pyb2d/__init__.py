@@ -1,7 +1,19 @@
 import numpy as np  # type: ignore
 from ._pyb2d import *
 from .compound_shape import CompoundShape
-from functools import partial
+from functools import partial, partialmethod
+
+
+class World(WorldView):
+    # only the constructor (and __del__) is allowed to be added to this class.
+    # All other methods are added to the WorldView class
+    def __init__(self, /, **kwargs):
+        d = world_def(**kwargs)
+        world_id = create_world_id(d)
+        super().__init__(world_id)
+
+    def __del__(self):
+        self.destroy()
 
 
 # Factory functions
@@ -24,6 +36,165 @@ def chain_def(**kwargs):
     for k, v in kwargs.items():
         setattr(chain, k, v)
     return chain
+
+
+def surface_material(**kwargs):
+    material = SurfaceMaterial()
+    for k, v in kwargs.items():
+        setattr(material, k, v)
+    return material
+
+
+def shape_def(**kwargs):
+    shape = ShapeDef()
+    for k, v in kwargs.items():
+        setattr(shape, k, v)
+    return shape
+
+
+_shape_def_f = shape_def
+_surface_material_f = surface_material
+
+
+class BodyFactory(object):
+    def __init__(self, world, **kwargs):
+        self.world = world
+        self.body_def = body_def(**kwargs)
+
+        self._material = _surface_material_f()
+        self._shape_def = _shape_def_f()
+        self._s = []
+
+    def surface_material(self, **kwargs):
+        self._material = _surface_material_f(**kwargs)
+        self._shape_def.material = self._material
+        return self
+
+    def shape(self, material=None, **kwargs):
+        if material is not None:
+            self._shape_def = _shape_def_f(**kwargs)
+            self._shape_def.material = self.material
+        else:
+            self._shape_def = _shape_def_f(**kwargs)
+            self._material = self._shape_def.material
+        return self
+
+    def static(self):
+        self.body_def.type = BodyType.STATIC
+        return self
+
+    def dynamic(self):
+        self.body_def.type = BodyType.DYNAMIC
+        return self
+
+    def kinematic(self):
+        self.body_def.type = BodyType.KINEMATIC
+        return self
+
+    def __call__(self):
+        body = self.world.create_body(self.body_def)
+        body.create_shapes(self._shape_def, self._s)
+        return body
+
+    def add_circle(self, *args, **kwargs):
+        circle = make_circle(*args, **kwargs)
+        self._s.append(circle)
+        return self
+
+    def add_capsule(self, *args, **kwargs):
+        capsule = make_capsule(*args, **kwargs)
+        self._s.append(capsule)
+        return self
+
+    def add_polygon(self, *args, **kwargs):
+        polygon = make_polygon(*args, **kwargs)
+        self._s.append(polygon)
+        return self
+
+    def add_box(self, *args, **kwargs):
+        box = make_box(*args, **kwargs)
+        self._s.append(box)
+        return self
+
+    # chain all properties of body_def st.
+    # we can use this factory.position((0, 0)).type(BodyType.DYNAMIC).create()
+    def __getattr__(self, name):
+        if hasattr(self.body_def, name):
+
+            def setter(value):
+                setattr(self.body_def, name, value)
+                return self
+
+            return setter
+        raise AttributeError(
+            f"'{self.__class__.__name__}/{self.body_def.__class__.__name__}' object has no attribute '{name}'"
+        )
+
+
+# add pure python methods to various classes
+def _extend_classes():
+    # avoid name conflicts
+    _body_def_func = body_def
+
+    ##########################
+    # extend word
+    #########################
+    def create_body(self, body_def=None, **kwargs):
+        if body_def is None:
+            body_def = _body_def_func(**kwargs)
+        for k, v in kwargs.items():
+            setattr(body_def, k, v)
+        return self.create_body_from_def(body_def)
+
+    WorldView.create_body = create_body
+    WorldView.create_dynamic_body = partialmethod(
+        WorldView.create_body, type=BodyType.DYNAMIC
+    )
+    WorldView.create_static_body = partialmethod(
+        WorldView.create_body, type=BodyType.STATIC
+    )
+    WorldView.create_kinematic_body = partialmethod(
+        WorldView.create_body, type=BodyType.KINEMATIC
+    )
+
+    def body_factory(self):
+        return BodyFactory(self)
+
+    WorldView.body_factory = body_factory
+
+    def create_shape(self, shape_def, shape):
+
+        if isinstance(shape, Circle):
+            return self.create_circle_shape(shape_def, shape)
+        elif isinstance(shape, Polygon):
+            return self.create_polygon_shape(shape_def, shape)
+        elif isinstance(shape, Capsule):
+            return self.create_capsule_shape(shape_def, shape)
+        elif isinstance(shape, Segment):
+            return self.create_segment_shape(shape_def, shape)
+        else:
+            raise ValueError(f"shape {shape} not recognized")
+
+    Body.create_shape = create_shape
+
+    def create_shapes(self, shape_def, shapes):
+        res = []
+        for shape in shapes:
+            res.append(self.create_shape(shape_def, shape))
+        return res
+
+    Body.create_shapes = create_shapes
+
+    # @property
+    # def shapes(self):
+    #     shape_ids = self._shape_ids()
+    #     return [Shape(shape_id).cast() for shape_id in shape_ids]
+
+    # Body.shapes = shapes
+
+
+_extend_classes()
+del _extend_classes
 
 
 # shorthand for body types
@@ -78,20 +249,6 @@ def make_filter(**kwargs):
     return filter
 
 
-def surface_material(**kwargs):
-    material = SurfaceMaterial()
-    for k, v in kwargs.items():
-        setattr(material, k, v)
-    return material
-
-
-def shape_def(**kwargs):
-    shape = ShapeDef()
-    for k, v in kwargs.items():
-        setattr(shape, k, v)
-    return shape
-
-
 def circle(**kwargs):
     c = Circle()
     for k, v in kwargs.items():
@@ -117,28 +274,6 @@ def aabb_arround_point(point, radius):
     lower_bound = (point[0] - radius, point[1] - radius)
     upper_bound = (point[0] + radius, point[1] + radius)
     return aabb(lower_bound, upper_bound)
-
-
-def create_shape(body_id, shape_def, shape):
-
-    if isinstance(shape, Circle):
-        return create_circle_shape(body_id, shape_def, shape)
-    elif isinstance(shape, Polygon):
-        return create_polygon_shape(body_id, shape_def, shape)
-    elif isinstance(shape, Capsule):
-        return create_capsule_shape(body_id, shape_def, shape)
-    elif isinstance(shape, Segment):
-        return create_segment_shape(body_id, shape_def, shape)
-    elif isinstance(shape, CompoundShape):
-        shape_ids = []
-        for sub_shape, sub_shape_def in shape.shapes:
-            if sub_shape_def is None:
-                sub_shape_def = shape_def
-            shape_id = create_shape(body_id, shape_def=sub_shape_def, shape=sub_shape)
-            shape_ids.append(shape_id)
-        return shape_ids
-    else:
-        raise ValueError(f"shape {shape} not recognized")
 
 
 # joints

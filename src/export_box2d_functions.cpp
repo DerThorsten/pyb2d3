@@ -1,8 +1,11 @@
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/vector.h>
 #include <pyb2d/py_converter.hpp>
 
 #include "py_chain_def.hpp"
 #include "py_debug_draw.hpp"
+#include "pyb2d/wrapper_structs.hpp"
+
 
 // C
 // extern "C"
@@ -14,344 +17,377 @@
 // nanobind namespace
 namespace nb = nanobind;
 
-void export_world_functions(nb::module_& m)
+void export_world_class(nb::module_& m)
 {
-    m.def("create_world", &b2CreateWorld, nb::arg("world_def"));
-    m.def("destroy_world", &b2DestroyWorld, nb::arg("world_id"));
-    m.def("world_is_valid", &b2World_IsValid, nb::arg("id"));
-    m.def("world_step", &b2World_Step, nb::arg("world_id"), nb::arg("time_step"), nb::arg("sub_step_count"));
-    m.def(
-        "world_draw",
-        [](b2WorldId world_id, PyDebugDraw* py_draw)
-        {
-            b2DebugDraw* draw = static_cast<b2DebugDraw*>(py_draw);
-            b2World_Draw(world_id, draw);
-        },
-        nb::arg("world_id"),
-        nb::arg("draw")
-    );
-    m.def("world_get_body_events", &b2World_GetBodyEvents, nb::arg("world_id"));
-    m.def("world_get_sensor_events", &b2World_GetSensorEvents, nb::arg("world_id"));
-    m.def("world_get_contact_events", &b2World_GetContactEvents, nb::arg("world_id"));
-
-
-    //     /// Overlap test for all shapes that *potentially* overlap the provided AABB
-    // B2_API b2TreeStats b2World_OverlapAABB( b2WorldId worldId, b2AABB aabb, b2QueryFilter filter,
-    // b2OverlapResultFcn* fcn,
-    //     void* context );
-    m.def(
-        "world_overlap_aabb",
-        [](b2WorldId world_id, b2AABB aabb, b2QueryFilter filter, nanobind::object& fcn)
-        {
-            // lambda without captures st. we can pass it to the C function
-            auto fcn_lambda = [](b2ShapeId shape_id, void* context) -> bool
+    nb::class_<WorldView>(m, "WorldView")
+        .def(nb::init<uint64_t>(), nb::arg("world_id"))
+        .def_prop_ro(
+            "id",
+            [](WorldView& self)
             {
-                auto callable = static_cast<nanobind::object*>(context);
-                return nanobind::cast<bool>(callable->operator()(shape_id));
-            };
+                return (uint32_t) ((self.id.index1 << 16) | self.id.generation);
+            }
+        )
+        .def("destroy", &WorldView::Destroy)
+        .def("is_valid", &WorldView::IsValid)
+        .def("step", &WorldView::Step, nb::arg("time_step"), nb::arg("sub_step_count"))
+        .def(
+            "draw",
+            [](WorldView& self, PyDebugDraw* py_draw)
+            {
+                b2DebugDraw* draw = static_cast<b2DebugDraw*>(py_draw);
+                self.Draw(draw);
+            },
+            nb::arg("draw")
+        )
+        .def("get_body_events", &WorldView::GetBodyEvents)
+        .def("get_sensor_events", &WorldView::GetSensorEvents)
+        .def("get_contact_events", &WorldView::GetContactEvents)
+        .def(
+            "overlap_aabb",
+            [](WorldView& self, b2AABB aabb, b2QueryFilter filter, nanobind::object& fcn)
+            {
+                // lambda without captures st. we can pass it to the C function
+                auto fcn_lambda = [](b2ShapeId shape_id, void* context) -> bool
+                {
+                    auto callable = static_cast<nanobind::object*>(context);
+                    return nanobind::cast<bool>(callable->operator()(shape_id));
+                };
 
-            void* context = &fcn;
-            b2TreeStats stats = b2World_OverlapAABB(world_id, aabb, filter, fcn_lambda, context);
-            return stats;
-        },
-        nb::arg("world_id"),
-        nb::arg("aabb"),
-        nb::arg("filter"),
-        nb::arg("fcn")
-    );
+                void* context = &fcn;
+                b2TreeStats stats = b2World_OverlapAABB(self.id, aabb, filter, fcn_lambda, context);
+                return stats;
+            },
+            nb::arg("aabb"),
+            nb::arg("filter"),
+            nb::arg("fcn")
+        )
+        .def(
+            "cast_ray",
+            &WorldView::CastRay,
+            nb::arg("origin"),
+            nb::arg("translation"),
+            nb::arg("filter"),
+            nb::arg("fcn"),
+            nb::arg("context")
+        )
+        .def(
+            "cast_ray_closest",
+            &WorldView::CastRayClosest,
+            nb::arg("origin"),
+            nb::arg("translation"),
+            nb::arg("filter")
+        )
+        .def_prop_rw("sleeping_enabled", &WorldView::IsSleepingEnabled, &WorldView::EnableSleeping, nb::arg("flag"))
+        .def_prop_rw(
+            "continuous_enabled",
+            &WorldView::IsContinuousEnabled,
+            &WorldView::EnableContinuous,
+            nb::arg("flag")
+        )
+        .def_prop_rw(
+            "restitution_threshold",
+            &WorldView::GetRestitutionThreshold,
+            &WorldView::SetRestitutionThreshold,
+            nb::arg("value")
+        )
+        .def_prop_rw(
+            "hit_event_threshold",
+            &WorldView::GetHitEventThreshold,
+            &WorldView::SetHitEventThreshold,
+            nb::arg("value")
+        )
+        .def_prop_rw("gravity", &WorldView::GetGravity, &WorldView::SetGravity, nb::arg("gravity"))
+        .def_prop_rw(
+            "user_data",
+            [](WorldView& self) -> user_data_uint
+            {
+                return (user_data_uint) b2World_GetUserData(self.id);
+            },
+            [](WorldView& self, user_data_uint user_data)
+            {
+                b2World_SetUserData(self.id, (void*) user_data);
+            },
+            nb::arg("user_data")
+        )
+
+        .def("explode", &WorldView::Explode, nb::arg("explosion_def"))
+        .def(
+            "set_contact_tuning",
+            &WorldView::SetContactTuning,
+            nb::arg("hertz"),
+            nb::arg("damping_ratio"),
+            nb::arg("push_velocity")
+        )
+        .def("set_joint_tuning", &WorldView::SetJointTuning, nb::arg("hertz"), nb::arg("damping_ratio"))
+        .def("create_body_from_def", &WorldView::CreateBodyId, nb::arg("def"))
+        // .def("create_body_id_from_def", &WorldView::CreateBodyId, nb::arg("def"))
+        ;
 
     m.def(
-        "world_cast_ray",
-        &b2World_CastRay,
-        nb::arg("world_id"),
-        nb::arg("origin"),
-        nb::arg("translation"),
-        nb::arg("filter"),
-        nb::arg("fcn"),
-        nb::arg("context")
-    );
-    m.def(
-        "world_cast_ray_closest",
-        &b2World_CastRayClosest,
-        nb::arg("world_id"),
-        nb::arg("origin"),
-        nb::arg("translation"),
-        nb::arg("filter")
-    );
-
-    m.def("world_enable_sleeping", &b2World_EnableSleeping, nb::arg("world_id"), nb::arg("flag"));
-    m.def("world_is_sleeping_enabled", &b2World_IsSleepingEnabled, nb::arg("world_id"));
-    m.def("world_enable_continuous", &b2World_EnableContinuous, nb::arg("world_id"), nb::arg("flag"));
-    m.def("world_is_continuous_enabled", &b2World_IsContinuousEnabled, nb::arg("world_id"));
-    m.def(
-        "world_set_restitution_threshold",
-        &b2World_SetRestitutionThreshold,
-        nb::arg("world_id"),
-        nb::arg("value")
-    );
-    m.def("world_get_restitution_threshold", &b2World_GetRestitutionThreshold, nb::arg("world_id"));
-    m.def("world_set_hit_event_threshold", &b2World_SetHitEventThreshold, nb::arg("world_id"), nb::arg("value"));
-    m.def("world_get_hit_event_threshold", &b2World_GetHitEventThreshold, nb::arg("world_id"));
-    // m.def("world_set_custom_filter_callback",
-    // &b2World_SetCustomFilterCallback,nb::arg("world_id"),nb::arg("fcn"),nb::arg("context"));
-    // m.def("world_set_pre_solve_callback",
-    // &b2World_SetPreSolveCallback,nb::arg("world_id"),nb::arg("fcn"),nb::arg("context"));
-    m.def("world_set_gravity", &b2World_SetGravity, nb::arg("world_id"), nb::arg("gravity"));
-    m.def("world_get_gravity", &b2World_GetGravity, nb::arg("world_id"));
-    m.def("world_explode", &b2World_Explode, nb::arg("world_id"), nb::arg("explosion_def"));
-    m.def(
-        "world_set_contact_tuning",
-        &b2World_SetContactTuning,
-        nb::arg("world_id"),
-        nb::arg("hertz"),
-        nb::arg("damping_ratio"),
-        nb::arg("push_velocity")
-    );
-    m.def(
-        "world_set_joint_tuning",
-        &b2World_SetJointTuning,
-        nb::arg("world_id"),
-        nb::arg("hertz"),
-        nb::arg("damping_ratio")
-    );
-    // m.def("world_set_maximum_linear_velocity",
-    // &b2World_SetMaximumLinearVelocity,nb::arg("world_id"),nb::arg("maximum_linear_velocity"));
-    // m.def("world_get_maximum_linear_velocity",
-    // &b2World_GetMaximumLinearVelocity,nb::arg("world_id"));
-    m.def("world_enable_warm_starting", &b2World_EnableWarmStarting, nb::arg("world_id"), nb::arg("flag"));
-    m.def("world_is_warm_starting_enabled", &b2World_IsWarmStartingEnabled, nb::arg("world_id"));
-    m.def("world_get_profile", &b2World_GetProfile, nb::arg("world_id"));
-    m.def("world_get_counters", &b2World_GetCounters, nb::arg("world_id"));
-    m.def(
-        "world_set_user_data",
-        [](b2WorldId world_id, user_data_uint user_data)
+        "create_world_id",
+        [](b2WorldDef def)
         {
-            b2World_SetUserData(world_id, (void*) user_data);
+            b2WorldId world_id = b2CreateWorld(&def);
+            return b2StoreWorldId(world_id);
         },
-        nb::arg("world_id"),
-        nb::arg("user_data")
-    );
-    m.def(
-        "world_get_user_data",
-        [](b2WorldId world_id)
-        {
-            return (user_data_uint) b2World_GetUserData(world_id);
-        },
-        nb::arg("world_id")
-    );
-    m.def("world_dump_memory_stats", &b2World_DumpMemoryStats, nb::arg("world_id"));
-    m.def("world_rebuild_static_tree", &b2World_RebuildStaticTree, nb::arg("world_id"));
-    m.def("world_enable_speculative", &b2World_EnableSpeculative, nb::arg("world_id"), nb::arg("flag"));
-}
-
-void export_body_functions(nb::module_& m)
-{
-    m.def("create_body_from_def", &b2CreateBody, nb::arg("world_id"), nb::arg("def"));
-    m.def("destroy_body", &b2DestroyBody, nb::arg("body_id"));
-    m.def("body_is_valid", &b2Body_IsValid, nb::arg("id"));
-    m.def("body_get_type", &b2Body_GetType, nb::arg("body_id"));
-    m.def("body_set_type", &b2Body_SetType, nb::arg("body_id"), nb::arg("type"));
-    m.def("body_get_position", &b2Body_GetPosition, nb::arg("body_id"));
-    m.def(
-        "body_get_distance_to",
-        [](b2BodyId body_id, b2Vec2 point) -> float
-        {
-            b2Vec2 position = b2Body_GetPosition(body_id);
-            return b2Distance(position, point);
-        },  // Returns the distance from the body position to the given point
-        nb::arg("body_id"),
-        nb::arg("point")
-    );
-    m.def("body_get_rotation", &b2Body_GetRotation, nb::arg("body_id"));
-    m.def("body_get_transform", &b2Body_GetTransform, nb::arg("body_id"));
-    m.def("body_set_transform", &b2Body_SetTransform, nb::arg("body_id"), nb::arg("position"), nb::arg("rotation"));
-    m.def("body_get_local_point", &b2Body_GetLocalPoint, nb::arg("body_id"), nb::arg("world_point"));
-    m.def("body_get_world_point", &b2Body_GetWorldPoint, nb::arg("body_id"), nb::arg("local_point"));
-
-    m.def("body_get_local_vector", &b2Body_GetLocalVector, nb::arg("body_id"), nb::arg("world_vector"));
-    m.def("body_get_world_vector", &b2Body_GetWorldVector, nb::arg("body_id"), nb::arg("local_vector"));
-    m.def("body_get_linear_velocity", &b2Body_GetLinearVelocity, nb::arg("body_id"));
-    m.def(
-        "body_get_linear_velocity_magnitude",
-        [](b2BodyId body_id) -> float
-        {
-            b2Vec2 linear_velocity = b2Body_GetLinearVelocity(body_id);
-            return b2Length(linear_velocity);
-        },  // Returns the magnitude of the linear velocity
-        nb::arg("body_id")
-    );
-    m.def("body_get_angular_velocity", &b2Body_GetAngularVelocity, nb::arg("body_id"));
-    m.def("body_set_linear_velocity", &b2Body_SetLinearVelocity, nb::arg("body_id"), nb::arg("linear_velocity"));
-    m.def("body_set_angular_velocity", &b2Body_SetAngularVelocity, nb::arg("body_id"), nb::arg("angular_velocity"));
-    m.def(
-        "body_apply_force",
-        &b2Body_ApplyForce,
-        nb::arg("body_id"),
-        nb::arg("force"),
-        nb::arg("point"),
-        nb::arg("wake")
-    );
-    m.def(
-        "body_apply_force_to_center",
-        &b2Body_ApplyForceToCenter,
-        nb::arg("body_id"),
-        nb::arg("force"),
-        nb::arg("wake")
-    );
-    m.def("body_apply_torque", &b2Body_ApplyTorque, nb::arg("body_id"), nb::arg("torque"), nb::arg("wake"));
-    m.def(
-        "body_apply_linear_impulse",
-        &b2Body_ApplyLinearImpulse,
-        nb::arg("body_id"),
-        nb::arg("impulse"),
-        nb::arg("point"),
-        nb::arg("wake")
-    );
-    m.def(
-        "body_apply_linear_impulse_to_center",
-        &b2Body_ApplyLinearImpulseToCenter,
-        nb::arg("body_id"),
-        nb::arg("impulse"),
-        nb::arg("wake")
-    );
-    m.def(
-        "body_apply_angular_impulse",
-        &b2Body_ApplyAngularImpulse,
-        nb::arg("body_id"),
-        nb::arg("impulse"),
-        nb::arg("wake")
-    );
-    m.def("body_get_mass", &b2Body_GetMass, nb::arg("body_id"));
-    m.def("body_get_rotational_inertia", &b2Body_GetRotationalInertia, nb::arg("body_id"));
-    m.def("body_get_local_center_of_mass", &b2Body_GetLocalCenterOfMass, nb::arg("body_id"));
-    m.def("body_get_world_center_of_mass", &b2Body_GetWorldCenterOfMass, nb::arg("body_id"));
-    m.def("body_set_mass_data", &b2Body_SetMassData, nb::arg("body_id"), nb::arg("mass_data"));
-    m.def("body_get_mass_data", &b2Body_GetMassData, nb::arg("body_id"));
-    m.def("body_apply_mass_from_shapes", &b2Body_ApplyMassFromShapes, nb::arg("body_id"));
-    m.def("body_set_linear_damping", &b2Body_SetLinearDamping, nb::arg("body_id"), nb::arg("linear_damping"));
-    m.def("body_get_linear_damping", &b2Body_GetLinearDamping, nb::arg("body_id"));
-    m.def("body_set_angular_damping", &b2Body_SetAngularDamping, nb::arg("body_id"), nb::arg("angular_damping"));
-    m.def("body_get_angular_damping", &b2Body_GetAngularDamping, nb::arg("body_id"));
-    m.def("body_set_gravity_scale", &b2Body_SetGravityScale, nb::arg("body_id"), nb::arg("gravity_scale"));
-    m.def("body_get_gravity_scale", &b2Body_GetGravityScale, nb::arg("body_id"));
-    m.def("body_is_awake", &b2Body_IsAwake, nb::arg("body_id"));
-    m.def("body_set_awake", &b2Body_SetAwake, nb::arg("body_id"), nb::arg("awake"));
-    m.def("body_enable_sleep", &b2Body_EnableSleep, nb::arg("body_id"), nb::arg("enable_sleep"));
-    m.def("body_is_sleep_enabled", &b2Body_IsSleepEnabled, nb::arg("body_id"));
-    m.def("body_set_sleep_threshold", &b2Body_SetSleepThreshold, nb::arg("body_id"), nb::arg("sleep_threshold"));
-    m.def("body_get_sleep_threshold", &b2Body_GetSleepThreshold, nb::arg("body_id"));
-    m.def("body_is_enabled", &b2Body_IsEnabled, nb::arg("body_id"));
-    m.def("body_disable", &b2Body_Disable, nb::arg("body_id"));
-    m.def("body_enable", &b2Body_Enable, nb::arg("body_id"));
-    m.def("body_set_fixed_rotation", &b2Body_SetFixedRotation, nb::arg("body_id"), nb::arg("flag"));
-    m.def("body_is_fixed_rotation", &b2Body_IsFixedRotation, nb::arg("body_id"));
-    m.def("body_set_bullet", &b2Body_SetBullet, nb::arg("body_id"), nb::arg("flag"));
-    m.def("body_is_bullet", &b2Body_IsBullet, nb::arg("body_id"));
-    m.def("enable_hit_events", &b2Body_EnableHitEvents, nb::arg("body_id"), nb::arg("enable_hit_events"));
-    m.def("get_world", &b2Body_GetWorld, nb::arg("body_id"));
-    m.def("get_shape_count", &b2Body_GetShapeCount, nb::arg("body_id"));
-    m.def("get_shapes", &b2Body_GetShapes, nb::arg("body_id"), nb::arg("shape_array"), nb::arg("capacity"));
-    m.def("get_joint_count", &b2Body_GetJointCount, nb::arg("body_id"));
-    m.def("get_joints", &b2Body_GetJoints, nb::arg("body_id"), nb::arg("joint_array"), nb::arg("capacity"));
-    m.def("get_contact_capacity", &b2Body_GetContactCapacity, nb::arg("body_id"));
-    m.def(
-        "get_contact_data",
-        &b2Body_GetContactData,
-        nb::arg("body_id"),
-        nb::arg("contact_data"),
-        nb::arg("capacity")
-    );
-    m.def("compute_aabb", &b2Body_ComputeAABB, nb::arg("body_id"));
-    // get and set user data
-    m.def(
-        "body_set_user_data",
-        [](b2BodyId body_id, user_data_uint user_data)
-        {
-            b2Body_SetUserData(body_id, (void*) user_data);
-        },
-        nb::arg("body_id"),
-        nb::arg("user_data")
-    );
-    m.def(
-        "body_get_user_data",
-        [](b2BodyId body_id)
-        {
-            return (user_data_uint) b2Body_GetUserData(body_id);
-        },
-        nb::arg("body_id")
+        nb::arg("def")
     );
 }
 
-void export_shape_functions(nb::module_& m)
+void export_body_class(nb::module_& m)
 {
-    m.def("create_circle_shape", &b2CreateCircleShape, nb::arg("body_id"), nb::arg("def"), nb::arg("circle"));
-    m.def("create_segment_shape", &b2CreateSegmentShape, nb::arg("body_id"), nb::arg("def"), nb::arg("segment"));
-    m.def("create_capsule_shape", &b2CreateCapsuleShape, nb::arg("body_id"), nb::arg("def"), nb::arg("capsule"));
-    m.def("create_polygon_shape", &b2CreatePolygonShape, nb::arg("body_id"), nb::arg("def"), nb::arg("polygon"));
-    m.def("destroy_shape", &b2DestroyShape, nb::arg("shape_id"), nb::arg("update_body_mass"));
-    m.def("shape_is_valid", &b2Shape_IsValid, nb::arg("id"));
-    m.def("shape_get_type", &b2Shape_GetType, nb::arg("shape_id"));
-    m.def("shape_get_body", &b2Shape_GetBody, nb::arg("shape_id"));
-    m.def("shape_get_world", &b2Shape_GetWorld, nb::arg("shape_id"));
-    m.def("shape_is_sensor", &b2Shape_IsSensor, nb::arg("shape_id"));
+    nb::class_<Body>(m, "Body")
+        .def(nb::init<uint64_t>(), nb::arg("body_id"))
+        .def_prop_ro(
+            "id",
+            [](Body& self)
+            {
+                return b2StoreBodyId(self.id);
+            }
+        )
+        .def("is_valid", &Body::IsValid)
+
+        .def_prop_rw("type", &Body::GetType, &Body::SetType, nb::arg("type"))
+        .def_prop_ro("position", &Body::GetPosition)
+
+        .def_prop_rw("linear_velocity", &Body::GetLinearVelocity, &Body::SetLinearVelocity, nb::arg("velocity"))
+        .def_prop_ro("linear_velocity_magnitude", &Body::GetLinearVelocityMagnitude)
+        .def_prop_rw("angular_velocity", &Body::GetAngularVelocity, &Body::SetAngularVelocity, nb::arg("velocity"))
+
+        // forces
+        .def("apply_force_to_center", &Body::ApplyForceToCenter, nb::arg("force"), nb::arg("wake") = true)
+        .def("apply_force", &Body::ApplyForce, nb::arg("force"), nb::arg("point"), nb::arg("wake") = true)
+        .def("apply_torque", &Body::ApplyTorque, nb::arg("torque"), nb::arg("wake") = true)
+        .def(
+            "apply_linear_impulse_to_center",
+            &Body::ApplyLinearImpulseToCenter,
+            nb::arg("impulse"),
+            nb::arg("wake") = true
+        )
+        .def(
+            "apply_linear_impulse",
+            &Body::ApplyLinearImpulse,
+            nb::arg("impulse"),
+            nb::arg("point"),
+            nb::arg("wake") = true
+        )
+        .def("apply_angular_impulse", &Body::ApplyAngularImpulse, nb::arg("impulse"), nb::arg("wake") = true)
+        .def("rotational_inertia", &Body::GetRotationalInertia)
+        .def("local_center_of_mass", &Body::GetLocalCenterOfMass)
+        .def("world_center_of_mass", &Body::GetWorldCenterOfMass)
+        .def_prop_rw("mass_data", &Body::GetMassData, &Body::SetMassData, nb::arg("mass_data"))
+        .def("apply_mass_from_shapes", &Body::ApplyMassFromShapes)
+        .def_prop_rw("linear_damping", &Body::GetLinearDamping, &Body::SetLinearDamping, nb::arg("linear_damping"))
+        .def_prop_rw(
+            "angular_damping",
+            &Body::GetAngularDamping,
+            &Body::SetAngularDamping,
+            nb::arg("angular_damping")
+        )
+        .def_prop_rw(
+            "sleep_threshold",
+            &Body::GetSleepThreshold,
+            &Body::SetSleepThreshold,
+            nb::arg("sleep_threshold")
+        )
+        .def_prop_rw("awake", &Body::IsAwake, &Body::SetAwake, nb::arg("awake"))
+        .def_prop_rw("enabled_sleep", &Body::IsSleepEnabled, &Body::EnableSleep, nb::arg("enabled"))
+        .def_prop_rw("enabled", &Body::IsEnabled, &Body::SetEnabled, nb::arg("enabled"))
+        .def("set_transform", &Body::SetTransform, nb::arg("position"), nb::arg("rotation"))
+        .def_prop_ro("transform", &Body::GetTransform)
+        .def("local_point", &Body::GetLocalPoint)
+        .def("world_point", &Body::GetWorldPoint)
+        .def("local_vector", &Body::GetLocalVector)
+        .def("world_vector", &Body::GetWorldVector)
+        .def_prop_rw("fixed_rotation", &Body::IsFixedRotation, &Body::SetFixedRotation, nb::arg("flag"))
+        .def_prop_rw(
+            "user_data",
+            [](Body& self) -> user_data_uint
+            {
+                return (user_data_uint) b2Body_GetUserData(self.id);
+            },
+            [](Body& self, user_data_uint user_data)
+            {
+                b2Body_SetUserData(self.id, (void*) user_data);
+            },
+            nb::arg("user_data")
+        )
+        .def_prop_rw("bullet", &Body::IsBullet, &Body::SetBullet, nb::arg("flag"))
+        .def_prop_rw("name", &Body::GetName, &Body::SetName, nb::arg("name"))
+        .def_prop_ro(
+            "world",
+            [](Body& self)
+            {
+                return WorldView(b2Body_GetWorld(self.id));
+            }
+        )
+        .def_prop_ro("shape_count", &Body::GetShapeCount)
+        .def("compute_aabb", &Body::ComputeAABB)
+        // get all shapes
+        .def_prop_ro(
+            "shapes",
+            [](Body& self)
+            {
+                int capacity = self.GetShapeCount();
+                std::vector<b2ShapeId> shape_ids(capacity);
+                int count = self.GetShapes(shape_ids.data(), capacity);
+                return shape_ids;
+            }
+        )
+
+
+        // Shape creation methods
+        .def("create_circle_shape", &Body::CreateCircleShape, nb::arg("def"), nb::arg("circle"))
+        .def("create_segment_shape", &Body::CreateSegmentShape, nb::arg("def"), nb::arg("segment"))
+        .def("create_capsule_shape", &Body::CreateCapsuleShape, nb::arg("def"), nb::arg("capsule"))
+        .def("create_polygon_shape", &Body::CreatePolygonShape, nb::arg("def"), nb::arg("polygon"));
+}
+
+void export_shape_class(nb::module_& m)
+{
+    // shape type enum
+    nb::enum_<b2ShapeType>(m, "ShapeType")
+        .value("circle", b2_circleShape)
+        .value("capsule", b2_capsuleShape)
+        .value("segment", b2_segmentShape)
+        .value("polygon", b2_polygonShape)
+        .value("chain_segment", b2_chainSegmentShape)
+        .export_values();
+
+    nb::class_<Shape>(m, "Shape")
+        .def(nb::init<uint64_t>(), nb::arg("shape_id"))
+        .def_prop_ro(
+            "id",
+            [](Shape& self)
+            {
+                return b2StoreShapeId(self.id);
+            }
+        )
+        .def_prop_ro("is_valid", &Shape::IsValid)
+        .def_prop_ro("type", &Shape::GetType)
+        .def_prop_ro("body", &Shape::GetBody)
+        .def_prop_ro("world", &Shape::GetWorld)
+        .def_prop_ro("is_sensor", &Shape::IsSensor)
+        .def_prop_rw(
+            "user_data",
+            [](Shape& self) -> user_data_uint
+            {
+                return (user_data_uint) b2Shape_GetUserData(self.id);
+            },
+            [](Shape& self, user_data_uint user_data)
+            {
+                b2Shape_SetUserData(self.id, (void*) user_data);
+            },
+            nb::arg("user_data")
+        )
+        .def("set_density", &Shape::SetDensity, nb::arg("density"), nb::arg("update_body_mass") = true)
+        .def_prop_ro("density", &Shape::GetDensity)
+        .def_prop_rw("friction", &Shape::GetFriction, &Shape::SetFriction, nb::arg("friction"))
+        .def_prop_rw("restitution", &Shape::GetRestitution, &Shape::SetRestitution, nb::arg("restitution"))
+        .def_prop_rw("material", &Shape::GetMaterial, &Shape::SetMaterial, nb::arg("material"))
+        .def_prop_rw(
+            "surface_material",
+            &Shape::GetSurfaceMaterial,
+            &Shape::SetSurfaceMaterial,
+            nb::arg("surface_material")
+        )
+        .def_prop_rw("filter", &Shape::GetFilter, &Shape::SetFilter, nb::arg("filter"))
+        .def_prop_rw(
+            "sensor_events_enabled",
+            &Shape::AreSensorEventsEnabled,
+            &Shape::EnableSensorEvents,
+            nb::arg("flag")
+        )
+        .def_prop_rw(
+            "contact_events_enabled",
+            &Shape::AreContactEventsEnabled,
+            &Shape::EnableContactEvents,
+            nb::arg("flag")
+        )
+        .def_prop_rw(
+            "pre_solve_events_enabled",
+            &Shape::ArePreSolveEventsEnabled,
+            &Shape::EnablePreSolveEvents,
+            nb::arg("flag")
+        )
+        .def_prop_rw("hit_events_enabled", &Shape::AreHitEventsEnabled, &Shape::EnableHitEvents, nb::arg("flag"))
+        .def("test_point", &Shape::TestPoint, nb::arg("point"))
+        .def("ray_cast", &Shape::RayCast, nb::arg("input"))
+        .def(
+            "cast",
+            [](Shape& self)
+            {
+                return GetCastedShape(self.id);
+            }
+        );
+
+    nb::class_<CircleShape, Shape>(m, "CircleShape")
+        .def(nb::init<uint64_t>(), nb::arg("shape_id"))
+        .def_prop_rw(
+            "circle",
+            [](CircleShape& self)
+            {
+                return b2Shape_GetCircle(self.id);
+            },
+            [](CircleShape& self, const b2Circle* circle)
+            {
+                b2Shape_SetCircle(self.id, circle);
+            },
+            nb::arg("circle")
+        );
+
+    nb::class_<CapsuleShape, Shape>(m, "CapsuleShape")
+        .def(nb::init<uint64_t>(), nb::arg("shape_id"))
+        .def_prop_rw(
+            "capsule",
+            [](CapsuleShape& self)
+            {
+                return b2Shape_GetCapsule(self.id);
+            },
+            [](CapsuleShape& self, const b2Capsule* capsule)
+            {
+                b2Shape_SetCapsule(self.id, capsule);
+            },
+            nb::arg("capsule")
+        );
+
+    nb::class_<SegmentShape, Shape>(m, "SegmentShape")
+        .def(nb::init<uint64_t>(), nb::arg("shape_id"))
+        .def_prop_rw(
+            "segment",
+            [](SegmentShape& self)
+            {
+                return b2Shape_GetSegment(self.id);
+            },
+            [](SegmentShape& self, const b2Segment* segment)
+            {
+                b2Shape_SetSegment(self.id, segment);
+            },
+            nb::arg("segment")
+        );
+
+    nb::class_<PolygonShape, Shape>(m, "PolygonShape")
+        .def(nb::init<uint64_t>(), nb::arg("shape_id"))
+        .def_prop_rw(
+            "polygon",
+            [](PolygonShape& self)
+            {
+                return b2Shape_GetPolygon(self.id);
+            },
+            [](PolygonShape& self, const b2Polygon* polygon)
+            {
+                b2Shape_SetPolygon(self.id, polygon);
+            },
+            nb::arg("polygon")
+        );
+
     m.def(
-        "shape_set_density",
-        &b2Shape_SetDensity,
-        nb::arg("shape_id"),
-        nb::arg("density"),
-        nb::arg("update_body_mass")
-    );
-    m.def("shape_get_density", &b2Shape_GetDensity, nb::arg("shape_id"));
-    m.def("shape_set_friction", &b2Shape_SetFriction, nb::arg("shape_id"), nb::arg("friction"));
-    m.def("shape_get_friction", &b2Shape_GetFriction, nb::arg("shape_id"));
-    m.def("shape_set_restitution", &b2Shape_SetRestitution, nb::arg("shape_id"), nb::arg("restitution"));
-    m.def("shape_get_restitution", &b2Shape_GetRestitution, nb::arg("shape_id"));
-    m.def("shape_get_filter", &b2Shape_GetFilter, nb::arg("shape_id"));
-    m.def("shape_set_filter", &b2Shape_SetFilter, nb::arg("shape_id"), nb::arg("filter"));
-    m.def("shape_enable_sensor_events", &b2Shape_EnableSensorEvents, nb::arg("shape_id"), nb::arg("flag"));
-    m.def("shape_are_sensor_events_enabled", &b2Shape_AreSensorEventsEnabled, nb::arg("shape_id"));
-    m.def("shape_enable_contact_events", &b2Shape_EnableContactEvents, nb::arg("shape_id"), nb::arg("flag"));
-    m.def("shape_are_contact_events_enabled", &b2Shape_AreContactEventsEnabled, nb::arg("shape_id"));
-    m.def("shape_enable_pre_solve_events", &b2Shape_EnablePreSolveEvents, nb::arg("shape_id"), nb::arg("flag"));
-    m.def("shape_are_pre_solve_events_enabled", &b2Shape_ArePreSolveEventsEnabled, nb::arg("shape_id"));
-    m.def("shape_enable_hit_events", &b2Shape_EnableHitEvents, nb::arg("shape_id"), nb::arg("flag"));
-    m.def("shape_are_hit_events_enabled", &b2Shape_AreHitEventsEnabled, nb::arg("shape_id"));
-    m.def("shape_test_point", &b2Shape_TestPoint, nb::arg("shape_id"), nb::arg("point"));
-    m.def("shape_ray_cast", &b2Shape_RayCast, nb::arg("shape_id"), nb::arg("input"));
-    m.def("shape_get_circle", &b2Shape_GetCircle, nb::arg("shape_id"));
-    m.def("shape_get_segment", &b2Shape_GetSegment, nb::arg("shape_id"));
-    m.def("shape_get_chain_segment", &b2Shape_GetChainSegment, nb::arg("shape_id"));
-    m.def("shape_get_capsule", &b2Shape_GetCapsule, nb::arg("shape_id"));
-    m.def("shape_get_polygon", &b2Shape_GetPolygon, nb::arg("shape_id"));
-    m.def("shape_set_circle", &b2Shape_SetCircle, nb::arg("shape_id"), nb::arg("circle"));
-    m.def("shape_set_capsule", &b2Shape_SetCapsule, nb::arg("shape_id"), nb::arg("capsule"));
-    m.def("shape_set_segment", &b2Shape_SetSegment, nb::arg("shape_id"), nb::arg("segment"));
-    m.def("shape_set_polygon", &b2Shape_SetPolygon, nb::arg("shape_id"), nb::arg("polygon"));
-    m.def("shape_get_parent_chain", &b2Shape_GetParentChain, nb::arg("shape_id"));
-    m.def("shape_get_contact_capacity", &b2Shape_GetContactCapacity, nb::arg("shape_id"));
-    m.def(
-        "shape_get_contact_data",
-        &b2Shape_GetContactData,
-        nb::arg("shape_id"),
-        nb::arg("contact_data"),
-        nb::arg("capacity")
-    );
-    m.def("shape_get_aabb", &b2Shape_GetAABB, nb::arg("shape_id"));
-    m.def("shape_get_closest_point", &b2Shape_GetClosestPoint, nb::arg("shape_id"), nb::arg("target"));
-    m.def(
-        "shape_set_user_data",
-        [](b2ShapeId shape_id, user_data_uint user_data)
+        "get_casted_shape",
+        [](uint64_t shape_id)
         {
-            b2Shape_SetUserData(shape_id, (void*) user_data);
-        },
-        nb::arg("shape_id"),
-        nb::arg("user_data")
-    );
-    m.def(
-        "shape_get_user_data",
-        [](b2ShapeId shape_id)
-        {
-            return (user_data_uint) b2Shape_GetUserData(shape_id);
+            b2ShapeId id = b2LoadShapeId(shape_id);
+            return GetCastedShape(id);
         },
         nb::arg("shape_id")
     );
@@ -720,9 +756,10 @@ void export_joint_functions(nb::module_& m)
 
 void export_box2d_functions(nb::module_& m)
 {
-    export_world_functions(m);
-    export_body_functions(m);
-    export_shape_functions(m);
+    export_world_class(m);
+    export_body_class(m);
+    export_shape_class(m);
+    // export_shape_class(m);
     export_chain_functions(m);
     export_joint_functions(m);
 }

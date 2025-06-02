@@ -150,6 +150,18 @@ void export_collision(py::module_& m)
         py::arg("rotation"),
         py::arg("radius")
     );
+    m.def(
+        "make_circle",
+        [](float radius, b2Vec2 center) -> b2Circle
+        {
+            b2Circle circle;
+            circle.radius = radius;
+            circle.center = center;
+            return circle;
+        },
+        py::arg("radius"),
+        py::arg("center") = b2Vec2{0.0f, 0.0f}
+    );
     m.def("make_square", &b2MakeSquare, py::arg("h"));
     m.def("make_box", &b2MakeBox, py::arg("hx"), py::arg("hy"));
     m.def("make_rounded_box", &b2MakeRoundedBox, py::arg("hx"), py::arg("hy"), py::arg("radius"));
