@@ -2,6 +2,7 @@
 #include <box2d/box2d.h>
 #include <box2d/math_functions.h>
 
+#include "py_chain_def.hpp"
 
 namespace nb = nanobind;
 
@@ -11,6 +12,49 @@ struct Shape;
 struct Chain;
 struct Joint;
 
+/*
+
+/// Create a chain shape
+/// @see b2ChainDef for details
+B2_API b2ChainId b2CreateChain( b2BodyId bodyId, const b2ChainDef* def );
+
+/// Destroy a chain shape
+B2_API void b2DestroyChain( b2ChainId chainId );
+
+/// Get the world that owns this chain shape
+B2_API b2WorldId b2Chain_GetWorld( b2ChainId chainId );
+
+/// Get the number of segments on this chain
+B2_API int b2Chain_GetSegmentCount( b2ChainId chainId );
+
+/// Fill a user array with chain segment shape ids up to the specified capacity. Returns
+/// the actual number of segments returned.
+B2_API int b2Chain_GetSegments( b2ChainId chainId, b2ShapeId* segmentArray, int capacity );
+
+/// Set the chain friction
+/// @see b2ChainDef::friction
+B2_API void b2Chain_SetFriction( b2ChainId chainId, float friction );
+
+/// Get the chain friction
+B2_API float b2Chain_GetFriction( b2ChainId chainId );
+
+/// Set the chain restitution (bounciness)
+/// @see b2ChainDef::restitution
+B2_API void b2Chain_SetRestitution( b2ChainId chainId, float restitution );
+
+/// Get the chain restitution
+B2_API float b2Chain_GetRestitution( b2ChainId chainId );
+
+/// Set the chain material
+/// @see b2ChainDef::material
+B2_API void b2Chain_SetMaterial( b2ChainId chainId, int material );
+
+/// Get the chain material
+B2_API int b2Chain_GetMaterial( b2ChainId chainId );
+
+/// Chain identifier validation. Provides validation for up to 64K allocations.
+B2_API bool b2Chain_IsValid( b2ChainId id );
+*/
 struct Chain
 {
     b2ChainId id;
@@ -18,6 +62,61 @@ struct Chain
     inline Chain(b2ChainId chainId)
         : id(chainId)
     {
+    }
+
+    inline Chain(uint64_t chain_id)
+        : id(b2LoadChainId(chain_id))
+    {
+    }
+
+    inline bool IsValid() const
+    {
+        return b2Chain_IsValid(id);
+    }
+
+    inline b2WorldId GetWorld() const
+    {
+        return b2Chain_GetWorld(id);
+    }
+
+    inline int GetSegmentCount() const
+    {
+        return b2Chain_GetSegmentCount(id);
+    }
+
+    inline int GetSegments(b2ShapeId* segmentArray, int capacity) const
+    {
+        return b2Chain_GetSegments(id, segmentArray, capacity);
+    }
+
+    inline void SetFriction(float friction)
+    {
+        b2Chain_SetFriction(id, friction);
+    }
+
+    inline float GetFriction() const
+    {
+        return b2Chain_GetFriction(id);
+    }
+
+    inline void SetRestitution(float restitution)
+    {
+        b2Chain_SetRestitution(id, restitution);
+    }
+
+    inline float GetRestitution() const
+    {
+        return b2Chain_GetRestitution(id);
+    }
+
+    inline void SetMaterial(int material)
+    {
+        b2Chain_SetMaterial(id, material);
+    }
+
+    inline int GetMaterial() const
+    {
+        return b2Chain_GetMaterial(id);
     }
 };
 
@@ -28,6 +127,651 @@ struct Joint
     inline Joint(b2JointId jointId)
         : id(jointId)
     {
+    }
+
+    inline Joint(uint64_t joint_id)
+        : id(b2LoadJointId(joint_id))
+    {
+    }
+
+    inline bool IsValid() const
+    {
+        return b2Joint_IsValid(id);
+    }
+
+    inline b2JointType GetType() const
+    {
+        return b2Joint_GetType(id);
+    }
+
+    inline b2BodyId GetBodyA() const
+    {
+        return b2Joint_GetBodyA(id);
+    }
+
+    inline b2BodyId GetBodyB() const
+    {
+        return b2Joint_GetBodyB(id);
+    }
+
+    inline b2WorldId GetWorld() const
+    {
+        return b2Joint_GetWorld(id);
+    }
+
+    inline b2Vec2 GetLocalAnchorA() const
+    {
+        return b2Joint_GetLocalAnchorA(id);
+    }
+
+    inline b2Vec2 GetLocalAnchorB() const
+    {
+        return b2Joint_GetLocalAnchorB(id);
+    }
+
+    inline void SetCollideConnected(bool shouldCollide)
+    {
+        b2Joint_SetCollideConnected(id, shouldCollide);
+    }
+
+    inline bool GetCollideConnected() const
+    {
+        return b2Joint_GetCollideConnected(id);
+    }
+
+    inline void SetUserData(void* userData)
+    {
+        b2Joint_SetUserData(id, userData);
+    }
+
+    inline void* GetUserData() const
+    {
+        return b2Joint_GetUserData(id);
+    }
+
+    inline void WakeBodies()
+    {
+        b2Joint_WakeBodies(id);
+    }
+
+    inline b2Vec2 GetConstraintForce() const
+    {
+        return b2Joint_GetConstraintForce(id);
+    }
+
+    inline float GetConstraintTorque() const
+    {
+        return b2Joint_GetConstraintTorque(id);
+    }
+};
+
+struct DistanceJoint : public Joint
+{
+    using Joint::Joint;
+
+    inline void SetLength(float length)
+    {
+        b2DistanceJoint_SetLength(id, length);
+    }
+
+    inline float GetLength() const
+    {
+        return b2DistanceJoint_GetLength(id);
+    }
+
+    inline void EnableSpring(bool enableSpring)
+    {
+        b2DistanceJoint_EnableSpring(id, enableSpring);
+    }
+
+    inline bool IsSpringEnabled() const
+    {
+        return b2DistanceJoint_IsSpringEnabled(id);
+    }
+
+    inline void SetSpringHertz(float hertz)
+    {
+        b2DistanceJoint_SetSpringHertz(id, hertz);
+    }
+
+    inline float GetSpringHertz() const
+    {
+        return b2DistanceJoint_GetSpringHertz(id);
+    }
+
+    inline void SetSpringDampingRatio(float dampingRatio)
+    {
+        b2DistanceJoint_SetSpringDampingRatio(id, dampingRatio);
+    }
+
+    inline float GetSpringDampingRatio() const
+    {
+        return b2DistanceJoint_GetSpringDampingRatio(id);
+    }
+
+    inline void EnableLimit(bool enableLimit)
+    {
+        b2DistanceJoint_EnableLimit(id, enableLimit);
+    }
+
+    inline bool IsLimitEnabled() const
+    {
+        return b2DistanceJoint_IsLimitEnabled(id);
+    }
+
+    inline void SetLengthRange(float minLength, float maxLength)
+    {
+        b2DistanceJoint_SetLengthRange(id, minLength, maxLength);
+    }
+
+    inline float GetMinLength() const
+    {
+        return b2DistanceJoint_GetMinLength(id);
+    }
+
+    inline float GetMaxLength() const
+    {
+        return b2DistanceJoint_GetMaxLength(id);
+    }
+
+    inline float GetCurrentLength() const
+    {
+        return b2DistanceJoint_GetCurrentLength(id);
+    }
+
+    inline void EnableMotor(bool enableMotor)
+    {
+        b2DistanceJoint_EnableMotor(id, enableMotor);
+    }
+
+    inline bool IsMotorEnabled() const
+    {
+        return b2DistanceJoint_IsMotorEnabled(id);
+    }
+
+    inline void SetMotorSpeed(float motorSpeed)
+    {
+        b2DistanceJoint_SetMotorSpeed(id, motorSpeed);
+    }
+
+    inline float GetMotorSpeed() const
+    {
+        return b2DistanceJoint_GetMotorSpeed(id);
+    }
+
+    inline void SetMaxMotorForce(float maxForce)
+    {
+        b2DistanceJoint_SetMaxMotorForce(id, maxForce);
+    }
+
+    inline float GetMaxMotorForce() const
+    {
+        return b2DistanceJoint_GetMaxMotorForce(id);
+    }
+
+    inline float GetMotorForce() const
+    {
+        return b2DistanceJoint_GetMotorForce(id);
+    }
+};
+
+struct FilterJoint : public Joint
+{
+    using Joint::Joint;
+};
+
+struct MotorJoint : public Joint
+{
+    using Joint::Joint;
+
+    inline void SetLinearOffset(b2Vec2 linearOffset)
+    {
+        b2MotorJoint_SetLinearOffset(id, linearOffset);
+    }
+
+    inline b2Vec2 GetLinearOffset() const
+    {
+        return b2MotorJoint_GetLinearOffset(id);
+    }
+
+    inline void SetAngularOffset(float angularOffset)
+    {
+        b2MotorJoint_SetAngularOffset(id, angularOffset);
+    }
+
+    inline float GetAngularOffset() const
+    {
+        return b2MotorJoint_GetAngularOffset(id);
+    }
+
+    inline void SetMaxForce(float maxForce)
+    {
+        b2MotorJoint_SetMaxForce(id, maxForce);
+    }
+
+    inline float GetMaxForce() const
+    {
+        return b2MotorJoint_GetMaxForce(id);
+    }
+
+    inline void SetMaxTorque(float maxTorque)
+    {
+        b2MotorJoint_SetMaxTorque(id, maxTorque);
+    }
+
+    inline float GetMaxTorque() const
+    {
+        return b2MotorJoint_GetMaxTorque(id);
+    }
+
+    inline void SetCorrectionFactor(float correctionFactor)
+    {
+        b2MotorJoint_SetCorrectionFactor(id, correctionFactor);
+    }
+
+    inline float GetCorrectionFactor() const
+    {
+        return b2MotorJoint_GetCorrectionFactor(id);
+    }
+};
+
+struct MouseJoint : public Joint
+{
+    using Joint::Joint;
+
+    inline void SetTarget(b2Vec2 target)
+    {
+        b2MouseJoint_SetTarget(id, target);
+    }
+
+    inline b2Vec2 GetTarget() const
+    {
+        return b2MouseJoint_GetTarget(id);
+    }
+
+    inline void SetSpringHertz(float hertz)
+    {
+        b2MouseJoint_SetSpringHertz(id, hertz);
+    }
+
+    inline float GetSpringHertz() const
+    {
+        return b2MouseJoint_GetSpringHertz(id);
+    }
+
+    inline void SetSpringDampingRatio(float dampingRatio)
+    {
+        b2MouseJoint_SetSpringDampingRatio(id, dampingRatio);
+    }
+
+    inline float GetSpringDampingRatio() const
+    {
+        return b2MouseJoint_GetSpringDampingRatio(id);
+    }
+
+    inline void SetMaxForce(float maxForce)
+    {
+        b2MouseJoint_SetMaxForce(id, maxForce);
+    }
+
+    inline float GetMaxForce() const
+    {
+        return b2MouseJoint_GetMaxForce(id);
+    }
+};
+
+struct PrismaticJoint : public Joint
+{
+    using Joint::Joint;
+
+    inline void EnableSpring(bool enableSpring)
+    {
+        b2PrismaticJoint_EnableSpring(id, enableSpring);
+    }
+
+    inline bool IsSpringEnabled() const
+    {
+        return b2PrismaticJoint_IsSpringEnabled(id);
+    }
+
+    inline void SetSpringHertz(float hertz)
+    {
+        b2PrismaticJoint_SetSpringHertz(id, hertz);
+    }
+
+    inline float GetSpringHertz() const
+    {
+        return b2PrismaticJoint_GetSpringHertz(id);
+    }
+
+    inline void SetSpringDampingRatio(float dampingRatio)
+    {
+        b2PrismaticJoint_SetSpringDampingRatio(id, dampingRatio);
+    }
+
+    inline float GetSpringDampingRatio() const
+    {
+        return b2PrismaticJoint_GetSpringDampingRatio(id);
+    }
+
+    inline void EnableLimit(bool enableLimit)
+    {
+        b2PrismaticJoint_EnableLimit(id, enableLimit);
+    }
+
+    inline bool IsLimitEnabled() const
+    {
+        return b2PrismaticJoint_IsLimitEnabled(id);
+    }
+
+    inline void SetLimits(float lower, float upper)
+    {
+        b2PrismaticJoint_SetLimits(id, lower, upper);
+    }
+
+    inline float GetLowerLimit() const
+    {
+        return b2PrismaticJoint_GetLowerLimit(id);
+    }
+
+    inline float GetUpperLimit() const
+    {
+        return b2PrismaticJoint_GetUpperLimit(id);
+    }
+
+    inline void EnableMotor(bool enableMotor)
+    {
+        b2PrismaticJoint_EnableMotor(id, enableMotor);
+    }
+
+    inline bool IsMotorEnabled() const
+    {
+        return b2PrismaticJoint_IsMotorEnabled(id);
+    }
+
+    inline void SetMotorSpeed(float motorSpeed)
+    {
+        b2PrismaticJoint_SetMotorSpeed(id, motorSpeed);
+    }
+
+    inline float GetMotorSpeed() const
+    {
+        return b2PrismaticJoint_GetMotorSpeed(id);
+    }
+
+    inline void SetMaxMotorForce(float force)
+    {
+        b2PrismaticJoint_SetMaxMotorForce(id, force);
+    }
+
+    inline float GetMaxMotorForce() const
+    {
+        return b2PrismaticJoint_GetMaxMotorForce(id);
+    }
+
+    inline float GetMotorForce() const
+    {
+        return b2PrismaticJoint_GetMotorForce(id);
+    }
+
+    inline float GetTranslation() const
+    {
+        return b2PrismaticJoint_GetTranslation(id);
+    }
+
+    inline float GetSpeed() const
+    {
+        return b2PrismaticJoint_GetSpeed(id);
+    }
+};
+
+struct RevoluteJoint : public Joint
+{
+    using Joint::Joint;
+
+    inline void EnableSpring(bool enableSpring)
+    {
+        b2RevoluteJoint_EnableSpring(id, enableSpring);
+    }
+
+    inline bool IsSpringEnabled() const
+    {
+        return b2RevoluteJoint_IsSpringEnabled(id);
+    }
+
+    inline void SetSpringHertz(float hertz)
+    {
+        b2RevoluteJoint_SetSpringHertz(id, hertz);
+    }
+
+    inline float GetSpringHertz() const
+    {
+        return b2RevoluteJoint_GetSpringHertz(id);
+    }
+
+    inline void SetSpringDampingRatio(float dampingRatio)
+    {
+        b2RevoluteJoint_SetSpringDampingRatio(id, dampingRatio);
+    }
+
+    inline float GetSpringDampingRatio() const
+    {
+        return b2RevoluteJoint_GetSpringDampingRatio(id);
+    }
+
+    inline float GetAngle() const
+    {
+        return b2RevoluteJoint_GetAngle(id);
+    }
+
+    inline void EnableLimit(bool enableLimit)
+    {
+        b2RevoluteJoint_EnableLimit(id, enableLimit);
+    }
+
+    inline bool IsLimitEnabled() const
+    {
+        return b2RevoluteJoint_IsLimitEnabled(id);
+    }
+
+    inline float GetLowerLimit() const
+    {
+        return b2RevoluteJoint_GetLowerLimit(id);
+    }
+
+    inline float GetUpperLimit() const
+    {
+        return b2RevoluteJoint_GetUpperLimit(id);
+    }
+
+    inline void SetLimits(float lower, float upper)
+    {
+        b2RevoluteJoint_SetLimits(id, lower, upper);
+    }
+
+    inline void EnableMotor(bool enableMotor)
+    {
+        b2RevoluteJoint_EnableMotor(id, enableMotor);
+    }
+
+    inline bool IsMotorEnabled() const
+    {
+        return b2RevoluteJoint_IsMotorEnabled(id);
+    }
+
+    inline void SetMotorSpeed(float motorSpeed)
+    {
+        b2RevoluteJoint_SetMotorSpeed(id, motorSpeed);
+    }
+
+    inline float GetMotorSpeed() const
+    {
+        return b2RevoluteJoint_GetMotorSpeed(id);
+    }
+
+    inline float GetMotorTorque() const
+    {
+        return b2RevoluteJoint_GetMotorTorque(id);
+    }
+
+    inline void SetMaxMotorTorque(float torque)
+    {
+        b2RevoluteJoint_SetMaxMotorTorque(id, torque);
+    }
+
+    inline float GetMaxMotorTorque() const
+    {
+        return b2RevoluteJoint_GetMaxMotorTorque(id);
+    }
+};
+
+struct WeldJoint : public Joint
+{
+    using Joint::Joint;
+
+    inline float GetReferenceAngle() const
+    {
+        return b2WeldJoint_GetReferenceAngle(id);
+    }
+
+    inline void SetReferenceAngle(float angleInRadians)
+    {
+        b2WeldJoint_SetReferenceAngle(id, angleInRadians);
+    }
+
+    inline void SetLinearHertz(float hertz)
+    {
+        b2WeldJoint_SetLinearHertz(id, hertz);
+    }
+
+    inline float GetLinearHertz() const
+    {
+        return b2WeldJoint_GetLinearHertz(id);
+    }
+
+    inline void SetLinearDampingRatio(float dampingRatio)
+    {
+        b2WeldJoint_SetLinearDampingRatio(id, dampingRatio);
+    }
+
+    inline float GetLinearDampingRatio() const
+    {
+        return b2WeldJoint_GetLinearDampingRatio(id);
+    }
+
+    inline void SetAngularHertz(float hertz)
+    {
+        b2WeldJoint_SetAngularHertz(id, hertz);
+    }
+
+    inline float GetAngularHertz() const
+    {
+        return b2WeldJoint_GetAngularHertz(id);
+    }
+
+    inline void SetAngularDampingRatio(float dampingRatio)
+    {
+        b2WeldJoint_SetAngularDampingRatio(id, dampingRatio);
+    }
+
+    inline float GetAngularDampingRatio() const
+    {
+        return b2WeldJoint_GetAngularDampingRatio(id);
+    }
+};
+
+struct WheelJoint : public Joint
+{
+    using Joint::Joint;
+
+    inline void EnableSpring(bool enableSpring)
+    {
+        b2WheelJoint_EnableSpring(id, enableSpring);
+    }
+
+    inline bool IsSpringEnabled() const
+    {
+        return b2WheelJoint_IsSpringEnabled(id);
+    }
+
+    inline void SetSpringHertz(float hertz)
+    {
+        b2WheelJoint_SetSpringHertz(id, hertz);
+    }
+
+    inline float GetSpringHertz() const
+    {
+        return b2WheelJoint_GetSpringHertz(id);
+    }
+
+    inline void SetSpringDampingRatio(float dampingRatio)
+    {
+        b2WheelJoint_SetSpringDampingRatio(id, dampingRatio);
+    }
+
+    inline float GetSpringDampingRatio() const
+    {
+        return b2WheelJoint_GetSpringDampingRatio(id);
+    }
+
+    inline void EnableLimit(bool enableLimit)
+    {
+        b2WheelJoint_EnableLimit(id, enableLimit);
+    }
+
+    inline bool IsLimitEnabled() const
+    {
+        return b2WheelJoint_IsLimitEnabled(id);
+    }
+
+    inline void SetLimits(float lower, float upper)
+    {
+        b2WheelJoint_SetLimits(id, lower, upper);
+    }
+
+    inline float GetLowerLimit() const
+    {
+        return b2WheelJoint_GetLowerLimit(id);
+    }
+
+    inline float GetUpperLimit() const
+    {
+        return b2WheelJoint_GetUpperLimit(id);
+    }
+
+    inline void EnableMotor(bool enableMotor)
+    {
+        b2WheelJoint_EnableMotor(id, enableMotor);
+    }
+
+    inline bool IsMotorEnabled() const
+    {
+        return b2WheelJoint_IsMotorEnabled(id);
+    }
+
+    inline void SetMotorSpeed(float motorSpeed)
+    {
+        b2WheelJoint_SetMotorSpeed(id, motorSpeed);
+    }
+
+    inline float GetMotorSpeed() const
+    {
+        return b2WheelJoint_GetMotorSpeed(id);
+    }
+
+    inline void SetMaxMotorTorque(float torque)
+    {
+        b2WheelJoint_SetMaxMotorTorque(id, torque);
+    }
+
+    inline float GetMaxMotorTorque() const
+    {
+        return b2WheelJoint_GetMaxMotorTorque(id);
+    }
+
+    inline float GetMotorTorque() const
+    {
+        return b2WheelJoint_GetMotorTorque(id);
     }
 };
 
@@ -210,15 +954,7 @@ struct Shape
 
 struct CircleShape : public Shape
 {
-    inline CircleShape(b2ShapeId shapeId)
-        : Shape(shapeId)
-    {
-    }
-
-    inline CircleShape(uint64_t shapeId)
-        : Shape(shapeId)
-    {
-    }
+    using Shape::Shape;
 
     inline b2Circle GetCircle() const
     {
@@ -233,15 +969,7 @@ struct CircleShape : public Shape
 
 struct CapsuleShape : public Shape
 {
-    inline CapsuleShape(b2ShapeId shapeId)
-        : Shape(shapeId)
-    {
-    }
-
-    inline CapsuleShape(uint64_t shapeId)
-        : Shape(shapeId)
-    {
-    }
+    using Shape::Shape;
 
     inline b2Capsule GetCapsule() const
     {
@@ -256,15 +984,7 @@ struct CapsuleShape : public Shape
 
 struct SegmentShape : public Shape
 {
-    inline SegmentShape(b2ShapeId shapeId)
-        : Shape(shapeId)
-    {
-    }
-
-    inline SegmentShape(uint64_t shapeId)
-        : Shape(shapeId)
-    {
-    }
+    using Shape::Shape;
 
     inline b2Segment GetSegment() const
     {
@@ -279,15 +999,7 @@ struct SegmentShape : public Shape
 
 struct PolygonShape : public Shape
 {
-    inline PolygonShape(b2ShapeId shapeId)
-        : Shape(shapeId)
-    {
-    }
-
-    inline PolygonShape(uint64_t shapeId)
-        : Shape(shapeId)
-    {
-    }
+    using Shape::Shape;
 
     inline b2Polygon GetPolygon() const
     {
@@ -340,6 +1052,33 @@ inline nb::object GetCastedShape(b2ShapeId shapeId)
         default:
             // This should never happen if the shape is valid
             throw std::runtime_error("Invalid shape type");
+            return nb::none();
+    }
+}
+
+inline nb::object GetCastedJoint(b2JointId jointId)
+{
+    switch (b2Joint_GetType(jointId))
+    {
+        case b2_distanceJoint:
+            return nb::cast(DistanceJoint(jointId));
+        case b2_filterJoint:
+            return nb::cast(FilterJoint(jointId));
+        case b2_motorJoint:
+            return nb::cast(MotorJoint(jointId));
+        case b2_mouseJoint:
+            return nb::cast(MouseJoint(jointId));
+        case b2_prismaticJoint:
+            return nb::cast(PrismaticJoint(jointId));
+        case b2_revoluteJoint:
+            return nb::cast(RevoluteJoint(jointId));
+        case b2_weldJoint:
+            return nb::cast(WeldJoint(jointId));
+        case b2_wheelJoint:
+            return nb::cast(WheelJoint(jointId));
+        default:
+            // This should never happen if the joint is valid
+            throw std::runtime_error("Invalid joint type");
             return nb::none();
     }
 }
@@ -698,6 +1437,11 @@ struct Body
     {
         return Shape(b2CreatePolygonShape(id, def, polygon));
     }
+
+    Chain CreateChain(PyChainDef& def)
+    {
+        return Chain(b2CreateChain(id, &def.chain_def));
+    }
 };
 
 // all inline !
@@ -729,12 +1473,6 @@ struct WorldView
         }
     }
 
-    // inline ~WorldView() {
-    //     if(b2World_IsValid(id))
-    //     {
-    //         b2DestroyWorld(id);
-    //     }
-    // }
     inline bool IsValid() const
     {
         return b2World_IsValid(id);

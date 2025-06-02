@@ -2,8 +2,8 @@
 #include <nanobind/stl/vector.h>
 #include <pyb2d/py_converter.hpp>
 
-#include "py_chain_def.hpp"
 #include "py_debug_draw.hpp"
+#include "pyb2d/py_chain_def.hpp"
 #include "pyb2d/wrapper_structs.hpp"
 
 
@@ -241,7 +241,10 @@ void export_body_class(nb::module_& m)
         .def("create_circle_shape", &Body::CreateCircleShape, nb::arg("def"), nb::arg("circle"))
         .def("create_segment_shape", &Body::CreateSegmentShape, nb::arg("def"), nb::arg("segment"))
         .def("create_capsule_shape", &Body::CreateCapsuleShape, nb::arg("def"), nb::arg("capsule"))
-        .def("create_polygon_shape", &Body::CreatePolygonShape, nb::arg("def"), nb::arg("polygon"));
+        .def("create_polygon_shape", &Body::CreatePolygonShape, nb::arg("def"), nb::arg("polygon"))
+
+        // chain
+        .def("create_chain", &Body::CreateChain, nb::arg("def"));
 }
 
 void export_shape_class(nb::module_& m)
@@ -286,12 +289,6 @@ void export_shape_class(nb::module_& m)
         .def_prop_rw("friction", &Shape::GetFriction, &Shape::SetFriction, nb::arg("friction"))
         .def_prop_rw("restitution", &Shape::GetRestitution, &Shape::SetRestitution, nb::arg("restitution"))
         .def_prop_rw("material", &Shape::GetMaterial, &Shape::SetMaterial, nb::arg("material"))
-        .def_prop_rw(
-            "surface_material",
-            &Shape::GetSurfaceMaterial,
-            &Shape::SetSurfaceMaterial,
-            nb::arg("surface_material")
-        )
         .def_prop_rw("filter", &Shape::GetFilter, &Shape::SetFilter, nb::arg("filter"))
         .def_prop_rw(
             "sensor_events_enabled",
@@ -393,365 +390,246 @@ void export_shape_class(nb::module_& m)
     );
 }
 
-void export_chain_functions(nb::module_& m)
+void export_chain_class(nb::module_& m)
 {
-    // m.def("create_chain", &b2CreateChain, nb::arg("body_id"), nb::arg("def"));
-    m.def(
-        "create_chain",
-        [](b2BodyId body_id, PyChainDef& def) -> b2ChainId
-        {
-            return b2CreateChain(body_id, &def.chain_def);
-        },
-        nb::arg("body_id"),
-        nb::arg("chain_def")
-    );
+    nb::class_<Chain>(m, "Chain")
+        .def(nb::init<uint64_t>(), nb::arg("chain_id"))
+        .def_prop_ro(
+            "id",
+            [](Chain& self)
+            {
+                return b2StoreChainId(self.id);
+            }
+        )
+        .def_prop_ro("is_valid", &Chain::IsValid)
+        .def_prop_ro("world", &Chain::GetWorld)
+        .def_prop_ro("segment_count", &Chain::GetSegmentCount)
+        .def(
+            "get_segments",
+            [](Chain& self)
+            {
+                int capacity = self.GetSegmentCount();
+                std::vector<b2ShapeId> segment_ids(capacity);
+                int count = self.GetSegments(segment_ids.data(), capacity);
+                return segment_ids;
+            }
+        )
+        .def_prop_rw("friction", &Chain::GetFriction, &Chain::SetFriction, nb::arg("friction"))
+        .def_prop_rw("restitution", &Chain::GetRestitution, &Chain::SetRestitution, nb::arg("restitution"))
+        .def_prop_rw("material", &Chain::GetMaterial, &Chain::SetMaterial, nb::arg("material"))
 
-    m.def("destroy_chain", &b2DestroyChain, nb::arg("chain_id"));
-    m.def("chain_get_world", &b2Chain_GetWorld, nb::arg("chain_id"));
-    m.def("chain_get_segment_count", &b2Chain_GetSegmentCount, nb::arg("chain_id"));
-    m.def(
-        "chain_get_segments",
-        &b2Chain_GetSegments,
-        nb::arg("chain_id"),
-        nb::arg("segment_array"),
-        nb::arg("capacity")
-    );
-    m.def("chain_set_friction", &b2Chain_SetFriction, nb::arg("chain_id"), nb::arg("friction"));
-    m.def("chain_get_friction", &b2Chain_GetFriction, nb::arg("chain_id"));
-    m.def("chain_set_restitution", &b2Chain_SetRestitution, nb::arg("chain_id"), nb::arg("restitution"));
-    m.def("chain_get_restitution", &b2Chain_GetRestitution, nb::arg("chain_id"));
-    m.def("chain_is_valid", &b2Chain_IsValid, nb::arg("id"));
+        ;
 }
 
-void export_joint_functions_generic(nb::module_& m)
+void export_joint_classes(nb::module_& m)
 {
-    m.def("destroy_joint", &b2DestroyJoint, nb::arg("joint_id"));
-    m.def("joint_is_valid", &b2Joint_IsValid, nb::arg("id"));
-    m.def("joint_get_type", &b2Joint_GetType, nb::arg("joint_id"));
-    m.def("joint_get_body_a", &b2Joint_GetBodyA, nb::arg("joint_id"));
-    m.def("joint_get_body_b", &b2Joint_GetBodyB, nb::arg("joint_id"));
-    m.def("joint_get_world", &b2Joint_GetWorld, nb::arg("joint_id"));
-    m.def("joint_get_local_anchor_a", &b2Joint_GetLocalAnchorA, nb::arg("joint_id"));
-    m.def("joint_get_local_anchor_b", &b2Joint_GetLocalAnchorB, nb::arg("joint_id"));
-    m.def(
-        "joint_set_collide_connected",
-        &b2Joint_SetCollideConnected,
-        nb::arg("joint_id"),
-        nb::arg("should_collide")
-    );
-    m.def("joint_get_collide_connected", &b2Joint_GetCollideConnected, nb::arg("joint_id"));
-    m.def("joint_wake_bodies", &b2Joint_WakeBodies, nb::arg("joint_id"));
-    m.def("joint_get_constraint_force", &b2Joint_GetConstraintForce, nb::arg("joint_id"));
-    m.def("joint_get_constraint_torque", &b2Joint_GetConstraintTorque, nb::arg("joint_id"));
-    m.def(
-        "joint_set_user_data",
-        [](b2JointId joint_id, user_data_uint user_data)
-        {
-            b2Joint_SetUserData(joint_id, (void*) user_data);
-        },
-        nb::arg("joint_id"),
-        nb::arg("user_data")
-    );
-    m.def(
-        "joint_get_user_data",
-        [](b2JointId joint_id)
-        {
-            return (user_data_uint) b2Joint_GetUserData(joint_id);
-        },
-        nb::arg("joint_id")
-    );
-}
+    nb::class_<Joint>(m, "Joint")
+        .def(nb::init<uint64_t>(), nb::arg("joint_id"))
+        .def_prop_ro(
+            "id",
+            [](Joint& self)
+            {
+                return b2StoreJointId(self.id);
+            }
+        )
+        .def_prop_ro("is_valid", &Joint::IsValid)
+        .def_prop_ro("type", &Joint::GetType)
+        .def_prop_ro("body_a", &Joint::GetBodyA)
+        .def_prop_ro("body_b", &Joint::GetBodyB)
+        .def_prop_ro("world", &Joint::GetWorld)
+        .def_prop_ro("local_anchor_a", &Joint::GetLocalAnchorA)
+        .def_prop_ro("local_anchor_b", &Joint::GetLocalAnchorB)
+        .def("wake_bodies", &Joint::WakeBodies)
+        .def("get_constraint_force", &Joint::GetConstraintForce)
+        .def("get_constraint_torque", &Joint::GetConstraintTorque)
+        .def_prop_rw(
+            "user_data",
+            [](Joint& self)
+            {
+                return (user_data_uint) b2Joint_GetUserData(self.id);
+            },
+            [](Joint& self, user_data_uint user_data)
+            {
+                b2Joint_SetUserData(self.id, (void*) user_data);
+            },
+            nb::arg("user_data")
+        );
 
-void export_distance_joint_functions(nb::module_& m)
-{
-    m.def("create_distance_joint", &b2CreateDistanceJoint, nb::arg("world_id"), nb::arg("def"));
-    m.def("distance_joint_set_length", &b2DistanceJoint_SetLength, nb::arg("joint_id"), nb::arg("length"));
-    m.def("distance_joint_get_length", &b2DistanceJoint_GetLength, nb::arg("joint_id"));
-    m.def(
-        "distance_joint_enable_spring",
-        &b2DistanceJoint_EnableSpring,
-        nb::arg("joint_id"),
-        nb::arg("enable_spring")
-    );
-    m.def("distance_joint_is_spring_enabled", &b2DistanceJoint_IsSpringEnabled, nb::arg("joint_id"));
-    m.def("distance_joint_set_spring_hertz", &b2DistanceJoint_SetSpringHertz, nb::arg("joint_id"), nb::arg("hertz"));
-    m.def("distance_joint_get_spring_hertz", &b2DistanceJoint_GetSpringHertz, nb::arg("joint_id"));
-    m.def(
-        "distance_joint_set_spring_damping_ratio",
-        &b2DistanceJoint_SetSpringDampingRatio,
-        nb::arg("joint_id"),
-        nb::arg("damping_ratio")
-    );
-    m.def("distance_joint_get_spring_damping_ratio", &b2DistanceJoint_GetSpringDampingRatio, nb::arg("joint_id"));
-    m.def("distance_joint_enable_limit", &b2DistanceJoint_EnableLimit, nb::arg("joint_id"), nb::arg("enable_limit"));
-    m.def("distance_joint_is_limit_enabled", &b2DistanceJoint_IsLimitEnabled, nb::arg("joint_id"));
-    m.def(
-        "distance_joint_set_length_range",
-        &b2DistanceJoint_SetLengthRange,
-        nb::arg("joint_id"),
-        nb::arg("min_length"),
-        nb::arg("max_length")
-    );
-    m.def("distance_joint_get_min_length", &b2DistanceJoint_GetMinLength, nb::arg("joint_id"));
-    m.def("distance_joint_get_max_length", &b2DistanceJoint_GetMaxLength, nb::arg("joint_id"));
-    m.def("distance_joint_get_current_length", &b2DistanceJoint_GetCurrentLength, nb::arg("joint_id"));
-    m.def("distance_joint_enable_motor", &b2DistanceJoint_EnableMotor, nb::arg("joint_id"), nb::arg("enable_motor"));
-    m.def("distance_joint_is_motor_enabled", &b2DistanceJoint_IsMotorEnabled, nb::arg("joint_id"));
-    m.def(
-        "distance_joint_set_motor_speed",
-        &b2DistanceJoint_SetMotorSpeed,
-        nb::arg("joint_id"),
-        nb::arg("motor_speed")
-    );
-    m.def("distance_joint_get_motor_speed", &b2DistanceJoint_GetMotorSpeed, nb::arg("joint_id"));
-    m.def(
-        "distance_joint_set_max_motor_force",
-        &b2DistanceJoint_SetMaxMotorForce,
-        nb::arg("joint_id"),
-        nb::arg("max_force")
-    );
-    m.def("distance_joint_get_max_motor_force", &b2DistanceJoint_GetMaxMotorForce, nb::arg("joint_id"));
-    m.def("distance_joint_get_motor_force", &b2DistanceJoint_GetMotorForce, nb::arg("joint_id"));
-}
 
-void export_motor_joint_functions(nb::module_& m)
-{
-    m.def("create_motor_joint", &b2CreateMotorJoint, nb::arg("world_id"), nb::arg("def"));
-    m.def(
-        "motor_joint_set_linear_offset",
-        &b2MotorJoint_SetLinearOffset,
-        nb::arg("joint_id"),
-        nb::arg("linear_offset")
-    );
-    m.def("motor_joint_get_linear_offset", &b2MotorJoint_GetLinearOffset, nb::arg("joint_id"));
-    m.def(
-        "motor_joint_set_angular_offset",
-        &b2MotorJoint_SetAngularOffset,
-        nb::arg("joint_id"),
-        nb::arg("angular_offset")
-    );
-    m.def("motor_joint_get_angular_offset", &b2MotorJoint_GetAngularOffset, nb::arg("joint_id"));
-    m.def("motor_joint_set_max_force", &b2MotorJoint_SetMaxForce, nb::arg("joint_id"), nb::arg("max_force"));
-    m.def("motor_joint_get_max_force", &b2MotorJoint_GetMaxForce, nb::arg("joint_id"));
-    m.def("motor_joint_set_max_torque", &b2MotorJoint_SetMaxTorque, nb::arg("joint_id"), nb::arg("max_torque"));
-    m.def("motor_joint_get_max_torque", &b2MotorJoint_GetMaxTorque, nb::arg("joint_id"));
-    m.def(
-        "motor_joint_set_correction_factor",
-        &b2MotorJoint_SetCorrectionFactor,
-        nb::arg("joint_id"),
-        nb::arg("correction_factor")
-    );
-    m.def("motor_joint_get_correction_factor", &b2MotorJoint_GetCorrectionFactor, nb::arg("joint_id"));
-}
+    nb::class_<DistanceJoint, Joint>(m, "DistanceJoint")
+        .def(nb::init<uint64_t>(), nb::arg("joint_id"))
+        .def_prop_rw("length", &DistanceJoint::GetLength, &DistanceJoint::SetLength, nb::arg("length"))
+        .def_prop_rw(
+            "spring_enabled",
+            &DistanceJoint::IsSpringEnabled,
+            &DistanceJoint::EnableSpring,
+            nb::arg("enabled")
+        )
+        .def_prop_rw("spring_hertz", &DistanceJoint::GetSpringHertz, &DistanceJoint::SetSpringHertz, nb::arg("hertz"))
+        .def_prop_rw(
+            "spring_damping_ratio",
+            &DistanceJoint::GetSpringDampingRatio,
+            &DistanceJoint::SetSpringDampingRatio,
+            nb::arg("damping_ratio")
+        )
+        .def_prop_rw("limit_enabled", &DistanceJoint::IsLimitEnabled, &DistanceJoint::EnableLimit, nb::arg("enabled"))
+        .def_prop_ro("min_length", &DistanceJoint::GetMinLength)
+        .def_prop_ro("max_length", &DistanceJoint::GetMaxLength)
+        .def_prop_ro("current_length", &DistanceJoint::GetCurrentLength)
+        .def_prop_rw("motor_enabled", &DistanceJoint::IsMotorEnabled, &DistanceJoint::EnableMotor, nb::arg("enabled"))
+        .def_prop_rw("motor_speed", &DistanceJoint::GetMotorSpeed, &DistanceJoint::SetMotorSpeed, nb::arg("speed"))
+        .def_prop_rw(
+            "max_motor_force",
+            &DistanceJoint::GetMaxMotorForce,
+            &DistanceJoint::SetMaxMotorForce,
+            nb::arg("force")
+        )
+        .def_prop_ro("motor_force", &DistanceJoint::GetMotorForce);
 
-void export_mouse_joint_functions(nb::module_& m)
-{
-    m.def("create_mouse_joint", &b2CreateMouseJoint, nb::arg("world_id"), nb::arg("def"));
-    m.def("mouse_joint_set_target", &b2MouseJoint_SetTarget, nb::arg("joint_id"), nb::arg("target"));
-    m.def("mouse_joint_get_target", &b2MouseJoint_GetTarget, nb::arg("joint_id"));
-    m.def("mouse_joint_set_spring_hertz", &b2MouseJoint_SetSpringHertz, nb::arg("joint_id"), nb::arg("hertz"));
-    m.def("mouse_joint_get_spring_hertz", &b2MouseJoint_GetSpringHertz, nb::arg("joint_id"));
-    m.def(
-        "mouse_joint_set_spring_damping_ratio",
-        &b2MouseJoint_SetSpringDampingRatio,
-        nb::arg("joint_id"),
-        nb::arg("damping_ratio")
-    );
-    m.def("mouse_joint_get_spring_damping_ratio", &b2MouseJoint_GetSpringDampingRatio, nb::arg("joint_id"));
-    m.def("mouse_joint_set_max_force", &b2MouseJoint_SetMaxForce, nb::arg("joint_id"), nb::arg("max_force"));
-    m.def("mouse_joint_get_max_force", &b2MouseJoint_GetMaxForce, nb::arg("joint_id"));
-}
+    nb::class_<MotorJoint, Joint>(m, "MotorJoint")
+        .def(nb::init<uint64_t>(), nb::arg("joint_id"))
+        .def_prop_rw("linear_offset", &MotorJoint::GetLinearOffset, &MotorJoint::SetLinearOffset, nb::arg("offset"))
+        .def_prop_ro("angular_offset", &MotorJoint::GetAngularOffset)
+        .def_prop_rw("max_force", &MotorJoint::GetMaxForce, &MotorJoint::SetMaxForce, nb::arg("max_force"))
+        .def_prop_rw("max_torque", &MotorJoint::GetMaxTorque, &MotorJoint::SetMaxTorque, nb::arg("max_torque"))
+        .def_prop_rw(
+            "correction_factor",
+            &MotorJoint::GetCorrectionFactor,
+            &MotorJoint::SetCorrectionFactor,
+            nb::arg("correction_factor")
+        );
 
-void export_prismatic_joint_functions(nb::module_& m)
-{
-    m.def("create_prismatic_joint", &b2CreatePrismaticJoint, nb::arg("world_id"), nb::arg("def"));
-    m.def(
-        "prismatic_joint_enable_spring",
-        &b2PrismaticJoint_EnableSpring,
-        nb::arg("joint_id"),
-        nb::arg("enable_spring")
-    );
-    m.def("prismatic_joint_is_spring_enabled", &b2PrismaticJoint_IsSpringEnabled, nb::arg("joint_id"));
-    m.def(
-        "prismatic_joint_set_spring_hertz",
-        &b2PrismaticJoint_SetSpringHertz,
-        nb::arg("joint_id"),
-        nb::arg("hertz")
-    );
-    m.def("prismatic_joint_get_spring_hertz", &b2PrismaticJoint_GetSpringHertz, nb::arg("joint_id"));
-    m.def(
-        "prismatic_joint_set_spring_damping_ratio",
-        &b2PrismaticJoint_SetSpringDampingRatio,
-        nb::arg("joint_id"),
-        nb::arg("damping_ratio")
-    );
-    m.def("prismatic_joint_get_spring_damping_ratio", &b2PrismaticJoint_GetSpringDampingRatio, nb::arg("joint_id"));
-    m.def(
-        "prismatic_joint_enable_limit",
-        &b2PrismaticJoint_EnableLimit,
-        nb::arg("joint_id"),
-        nb::arg("enable_limit")
-    );
-    m.def("prismatic_joint_is_limit_enabled", &b2PrismaticJoint_IsLimitEnabled, nb::arg("joint_id"));
-    m.def("prismatic_joint_get_lower_limit", &b2PrismaticJoint_GetLowerLimit, nb::arg("joint_id"));
-    m.def("prismatic_joint_get_upper_limit", &b2PrismaticJoint_GetUpperLimit, nb::arg("joint_id"));
-    m.def(
-        "prismatic_joint_set_limits",
-        &b2PrismaticJoint_SetLimits,
-        nb::arg("joint_id"),
-        nb::arg("lower"),
-        nb::arg("upper")
-    );
-    m.def(
-        "prismatic_joint_enable_motor",
-        &b2PrismaticJoint_EnableMotor,
-        nb::arg("joint_id"),
-        nb::arg("enable_motor")
-    );
-    m.def("prismatic_joint_is_motor_enabled", &b2PrismaticJoint_IsMotorEnabled, nb::arg("joint_id"));
-    m.def(
-        "prismatic_joint_set_motor_speed",
-        &b2PrismaticJoint_SetMotorSpeed,
-        nb::arg("joint_id"),
-        nb::arg("motor_speed")
-    );
-    m.def("prismatic_joint_get_motor_speed", &b2PrismaticJoint_GetMotorSpeed, nb::arg("joint_id"));
-    m.def("prismatic_joint_get_motor_force", &b2PrismaticJoint_GetMotorForce, nb::arg("joint_id"));
-    m.def(
-        "prismatic_joint_set_max_motor_force",
-        &b2PrismaticJoint_SetMaxMotorForce,
-        nb::arg("joint_id"),
-        nb::arg("force")
-    );
-    m.def("prismatic_joint_get_max_motor_force", &b2PrismaticJoint_GetMaxMotorForce, nb::arg("joint_id"));
-    m.def("prismatic_joint_get_current_length", &b2PrismaticJoint_GetMotorForce, nb::arg("joint_id"));
-    m.def("prismatic_joint_get_translation", &b2PrismaticJoint_GetTranslation, nb::arg("joint_id"));
-    m.def("prismatic_joint_get_speed", &b2PrismaticJoint_GetSpeed, nb::arg("joint_id"));
-}
+    nb::class_<MouseJoint, Joint>(m, "MouseJoint")
+        .def(nb::init<uint64_t>(), nb::arg("joint_id"))
+        .def_prop_rw("target", &MouseJoint::GetTarget, &MouseJoint::SetTarget, nb::arg("target"))
+        .def_prop_rw("spring_hertz", &MouseJoint::GetSpringHertz, &MouseJoint::SetSpringHertz, nb::arg("hertz"))
+        .def_prop_rw(
+            "spring_damping_ratio",
+            &MouseJoint::GetSpringDampingRatio,
+            &MouseJoint::SetSpringDampingRatio,
+            nb::arg("damping_ratio")
+        )
+        .def_prop_rw("max_force", &MouseJoint::GetMaxForce, &MouseJoint::SetMaxForce, nb::arg("max_force"));
 
-void export_revolute_joint_functions(nb::module_& m)
-{
-    m.def("create_revolute_joint", &b2CreateRevoluteJoint, nb::arg("world_id"), nb::arg("def"));
-    m.def(
-        "revolute_joint_enable_spring",
-        &b2RevoluteJoint_EnableSpring,
-        nb::arg("joint_id"),
-        nb::arg("enable_spring")
-    );
-    m.def("revolute_joint_is_spring_enabled", &b2RevoluteJoint_IsSpringEnabled, nb::arg("joint_id"));
-    m.def("revolute_joint_set_spring_hertz", &b2RevoluteJoint_SetSpringHertz, nb::arg("joint_id"), nb::arg("hertz"));
-    m.def("revolute_joint_get_spring_hertz", &b2RevoluteJoint_GetSpringHertz, nb::arg("joint_id"));
-    m.def(
-        "revolute_joint_set_spring_damping_ratio",
-        &b2RevoluteJoint_SetSpringDampingRatio,
-        nb::arg("joint_id"),
-        nb::arg("damping_ratio")
-    );
-    m.def("revolute_joint_get_spring_damping_ratio", &b2RevoluteJoint_GetSpringDampingRatio, nb::arg("joint_id"));
-    m.def("revolute_joint_get_angle", &b2RevoluteJoint_GetAngle, nb::arg("joint_id"));
-    m.def("revolute_joint_enable_limit", &b2RevoluteJoint_EnableLimit, nb::arg("joint_id"), nb::arg("enable_limit"));
-    m.def("revolute_joint_is_limit_enabled", &b2RevoluteJoint_IsLimitEnabled, nb::arg("joint_id"));
-    m.def("revolute_joint_get_lower_limit", &b2RevoluteJoint_GetLowerLimit, nb::arg("joint_id"));
-    m.def("revolute_joint_get_upper_limit", &b2RevoluteJoint_GetUpperLimit, nb::arg("joint_id"));
-    m.def(
-        "revolute_joint_set_limits",
-        &b2RevoluteJoint_SetLimits,
-        nb::arg("joint_id"),
-        nb::arg("lower"),
-        nb::arg("upper")
-    );
-    m.def("revolute_joint_enable_motor", &b2RevoluteJoint_EnableMotor, nb::arg("joint_id"), nb::arg("enable_motor"));
-    m.def("revolute_joint_is_motor_enabled", &b2RevoluteJoint_IsMotorEnabled, nb::arg("joint_id"));
-    m.def(
-        "revolute_joint_set_motor_speed",
-        &b2RevoluteJoint_SetMotorSpeed,
-        nb::arg("joint_id"),
-        nb::arg("motor_speed")
-    );
-    m.def("revolute_joint_get_motor_speed", &b2RevoluteJoint_GetMotorSpeed, nb::arg("joint_id"));
-    m.def("revolute_joint_get_motor_torque", &b2RevoluteJoint_GetMotorTorque, nb::arg("joint_id"));
-    m.def(
-        "revolute_joint_set_max_motor_torque",
-        &b2RevoluteJoint_SetMaxMotorTorque,
-        nb::arg("joint_id"),
-        nb::arg("torque")
-    );
-    m.def("revolute_joint_get_max_motor_torque", &b2RevoluteJoint_GetMaxMotorTorque, nb::arg("joint_id"));
-}
+    nb::class_<PrismaticJoint, Joint>(m, "PrismaticJoint")
+        .def(nb::init<uint64_t>(), nb::arg("joint_id"))
+        .def_prop_rw(
+            "spring_enabled",
+            &PrismaticJoint::IsSpringEnabled,
+            &PrismaticJoint::EnableSpring,
+            nb::arg("enabled")
+        )
+        .def_prop_rw(
+            "spring_hertz",
+            &PrismaticJoint::GetSpringHertz,
+            &PrismaticJoint::SetSpringHertz,
+            nb::arg("hertz")
+        )
+        .def_prop_rw(
+            "spring_damping_ratio",
+            &PrismaticJoint::GetSpringDampingRatio,
+            &PrismaticJoint::SetSpringDampingRatio,
+            nb::arg("damping_ratio")
+        )
+        .def_prop_rw(
+            "limit_enabled",
+            &PrismaticJoint::IsLimitEnabled,
+            &PrismaticJoint::EnableLimit,
+            nb::arg("enabled")
+        )
+        .def_prop_ro("lower_limit", &PrismaticJoint::GetLowerLimit)
+        .def_prop_ro("upper_limit", &PrismaticJoint::GetUpperLimit)
+        .def_prop_rw(
+            "motor_enabled",
+            &PrismaticJoint::IsMotorEnabled,
+            &PrismaticJoint::EnableMotor,
+            nb::arg("enabled")
+        )
+        .def_prop_rw("motor_speed", &PrismaticJoint::GetMotorSpeed, &PrismaticJoint::SetMotorSpeed, nb::arg("speed"))
+        .def_prop_rw(
+            "max_motor_force",
+            &PrismaticJoint::GetMaxMotorForce,
+            &PrismaticJoint::SetMaxMotorForce,
+            nb::arg("force")
+        )
+        .def_prop_ro("translation", &PrismaticJoint::GetTranslation)
+        .def_prop_ro("speed", &PrismaticJoint::GetSpeed);
 
-void export_weld_joint_functions(nb::module_& m)
-{
-    m.def("create_weld_joint", &b2CreateWeldJoint, nb::arg("world_id"), nb::arg("def"));
-    m.def("weld_joint_get_reference_angle", &b2WeldJoint_GetReferenceAngle, nb::arg("joint_id"));
-    m.def(
-        "weld_joint_set_reference_angle",
-        &b2WeldJoint_SetReferenceAngle,
-        nb::arg("joint_id"),
-        nb::arg("angle_in_radians")
-    );
-    m.def("weld_joint_set_linear_hertz", &b2WeldJoint_SetLinearHertz, nb::arg("joint_id"), nb::arg("hertz"));
-    m.def("weld_joint_get_linear_hertz", &b2WeldJoint_GetLinearHertz, nb::arg("joint_id"));
-    m.def(
-        "weld_joint_set_linear_damping_ratio",
-        &b2WeldJoint_SetLinearDampingRatio,
-        nb::arg("joint_id"),
-        nb::arg("damping_ratio")
-    );
-    m.def("weld_joint_get_linear_damping_ratio", &b2WeldJoint_GetLinearDampingRatio, nb::arg("joint_id"));
-    m.def("weld_joint_set_angular_hertz", &b2WeldJoint_SetAngularHertz, nb::arg("joint_id"), nb::arg("hertz"));
-    m.def("weld_joint_get_angular_hertz", &b2WeldJoint_GetAngularHertz, nb::arg("joint_id"));
-    m.def(
-        "weld_joint_set_angular_damping_ratio",
-        &b2WeldJoint_SetAngularDampingRatio,
-        nb::arg("joint_id"),
-        nb::arg("damping_ratio")
-    );
-    m.def("weld_joint_get_angular_damping_ratio", &b2WeldJoint_GetAngularDampingRatio, nb::arg("joint_id"));
-}
+    nb::class_<RevoluteJoint, Joint>(m, "RevoluteJoint")
+        .def(nb::init<uint64_t>(), nb::arg("joint_id"))
+        .def_prop_rw(
+            "spring_enabled",
+            &RevoluteJoint::IsSpringEnabled,
+            &RevoluteJoint::EnableSpring,
+            nb::arg("enabled")
+        )
+        .def_prop_rw("spring_hertz", &RevoluteJoint::GetSpringHertz, &RevoluteJoint::SetSpringHertz, nb::arg("hertz"))
+        .def_prop_rw(
+            "spring_damping_ratio",
+            &RevoluteJoint::GetSpringDampingRatio,
+            &RevoluteJoint::SetSpringDampingRatio,
+            nb::arg("damping_ratio")
+        )
+        .def_prop_ro("angle", &RevoluteJoint::GetAngle)
+        .def_prop_rw("limit_enabled", &RevoluteJoint::IsLimitEnabled, &RevoluteJoint::EnableLimit, nb::arg("enabled"))
+        .def_prop_ro("lower_limit", &RevoluteJoint::GetLowerLimit)
+        .def_prop_ro("upper_limit", &RevoluteJoint::GetUpperLimit)
+        .def_prop_rw("motor_enabled", &RevoluteJoint::IsMotorEnabled, &RevoluteJoint::EnableMotor, nb::arg("enabled"))
+        .def_prop_rw("motor_speed", &RevoluteJoint::GetMotorSpeed, &RevoluteJoint::SetMotorSpeed, nb::arg("speed"))
+        .def_prop_rw(
+            "max_motor_torque",
+            &RevoluteJoint::GetMaxMotorTorque,
+            &RevoluteJoint::SetMaxMotorTorque,
+            nb::arg("torque")
+        )
+        .def_prop_ro("motor_torque", &RevoluteJoint::GetMotorTorque);
 
-void export_wheel_joint_functions(nb::module_& m)
-{
-    m.def("create_wheel_joint", &b2CreateWheelJoint, nb::arg("world_id"), nb::arg("def"));
-    m.def("wheel_joint_enable_spring", &b2WheelJoint_EnableSpring, nb::arg("joint_id"), nb::arg("enable_spring"));
-    m.def("wheel_joint_is_spring_enabled", &b2WheelJoint_IsSpringEnabled, nb::arg("joint_id"));
-    m.def("wheel_joint_set_spring_hertz", &b2WheelJoint_SetSpringHertz, nb::arg("joint_id"), nb::arg("hertz"));
-    m.def("wheel_joint_get_spring_hertz", &b2WheelJoint_GetSpringHertz, nb::arg("joint_id"));
-    m.def(
-        "wheel_joint_set_spring_damping_ratio",
-        &b2WheelJoint_SetSpringDampingRatio,
-        nb::arg("joint_id"),
-        nb::arg("damping_ratio")
-    );
-    m.def("wheel_joint_get_spring_damping_ratio", &b2WheelJoint_GetSpringDampingRatio, nb::arg("joint_id"));
-    m.def("wheel_joint_enable_limit", &b2WheelJoint_EnableLimit, nb::arg("joint_id"), nb::arg("enable_limit"));
-    m.def("wheel_joint_is_limit_enabled", &b2WheelJoint_IsLimitEnabled, nb::arg("joint_id"));
-    m.def("wheel_joint_get_lower_limit", &b2WheelJoint_GetLowerLimit, nb::arg("joint_id"));
-    m.def("wheel_joint_get_upper_limit", &b2WheelJoint_GetUpperLimit, nb::arg("joint_id"));
-    m.def("wheel_joint_set_limits", &b2WheelJoint_SetLimits, nb::arg("joint_id"), nb::arg("lower"), nb::arg("upper"));
-    m.def("wheel_joint_enable_motor", &b2WheelJoint_EnableMotor, nb::arg("joint_id"), nb::arg("enable_motor"));
-    m.def("wheel_joint_is_motor_enabled", &b2WheelJoint_IsMotorEnabled, nb::arg("joint_id"));
-    m.def("wheel_joint_set_motor_speed", &b2WheelJoint_SetMotorSpeed, nb::arg("joint_id"), nb::arg("motor_speed"));
-    m.def("wheel_joint_get_motor_speed", &b2WheelJoint_GetMotorSpeed, nb::arg("joint_id"));
-    m.def(
-        "wheel_joint_set_max_motor_torque",
-        &b2WheelJoint_SetMaxMotorTorque,
-        nb::arg("joint_id"),
-        nb::arg("torque")
-    );
-    m.def("wheel_joint_get_max_motor_torque", &b2WheelJoint_GetMaxMotorTorque, nb::arg("joint_id"));
-    m.def("wheel_joint_get_motor_torque", &b2WheelJoint_GetMotorTorque, nb::arg("joint_id"));
-}
+    nb::class_<WeldJoint, Joint>(m, "WeldJoint")
+        .def(nb::init<uint64_t>(), nb::arg("joint_id"))
+        .def_prop_ro("reference_angle", &WeldJoint::GetReferenceAngle)
+        .def_prop_rw(
+            "reference_angle",
+            &WeldJoint::GetReferenceAngle,
+            &WeldJoint::SetReferenceAngle,
+            nb::arg("angle_in_radians")
+        )
+        .def_prop_rw("linear_hertz", &WeldJoint::GetLinearHertz, &WeldJoint::SetLinearHertz, nb::arg("hertz"))
+        .def_prop_rw(
+            "linear_damping_ratio",
+            &WeldJoint::GetLinearDampingRatio,
+            &WeldJoint::SetLinearDampingRatio,
+            nb::arg("damping_ratio")
+        )
+        .def_prop_rw("angular_hertz", &WeldJoint::GetAngularHertz, &WeldJoint::SetAngularHertz, nb::arg("hertz"))
+        .def_prop_rw(
+            "angular_damping_ratio",
+            &WeldJoint::GetAngularDampingRatio,
+            &WeldJoint::SetAngularDampingRatio,
+            nb::arg("damping_ratio")
+        );
 
-void export_joint_functions(nb::module_& m)
-{
-    export_joint_functions_generic(m);
-    export_distance_joint_functions(m);
-    export_motor_joint_functions(m);
-    export_mouse_joint_functions(m);
-    export_prismatic_joint_functions(m);
-    export_revolute_joint_functions(m);
-    export_weld_joint_functions(m);
-    export_wheel_joint_functions(m);
+    nb::class_<WheelJoint, Joint>(m, "WheelJoint")
+        .def(nb::init<uint64_t>(), nb::arg("joint_id"))
+        .def_prop_rw("spring_enabled", &WheelJoint::IsSpringEnabled, &WheelJoint::EnableSpring, nb::arg("enabled"))
+        .def_prop_rw("spring_hertz", &WheelJoint::GetSpringHertz, &WheelJoint::SetSpringHertz, nb::arg("hertz"))
+        .def_prop_rw(
+            "spring_damping_ratio",
+            &WheelJoint::GetSpringDampingRatio,
+            &WheelJoint::SetSpringDampingRatio,
+            nb::arg("damping_ratio")
+        )
+        .def_prop_rw("limit_enabled", &WheelJoint::IsLimitEnabled, &WheelJoint::EnableLimit, nb::arg("enabled"))
+        .def_prop_ro("lower_limit", &WheelJoint::GetLowerLimit)
+        .def_prop_ro("upper_limit", &WheelJoint::GetUpperLimit)
+        .def_prop_rw("motor_enabled", &WheelJoint::IsMotorEnabled, &WheelJoint::EnableMotor, nb::arg("enabled"))
+        .def_prop_rw("motor_speed", &WheelJoint::GetMotorSpeed, &WheelJoint::SetMotorSpeed, nb::arg("speed"))
+        .def_prop_rw(
+            "max_motor_torque",
+            &WheelJoint::GetMaxMotorTorque,
+            &WheelJoint::SetMaxMotorTorque,
+            nb::arg("torque")
+        )
+        .def_prop_ro("motor_torque", &WheelJoint::GetMotorTorque);
 }
 
 void export_box2d_functions(nb::module_& m)
@@ -759,7 +637,6 @@ void export_box2d_functions(nb::module_& m)
     export_world_class(m);
     export_body_class(m);
     export_shape_class(m);
-    // export_shape_class(m);
-    export_chain_functions(m);
-    export_joint_functions(m);
+    export_chain_class(m);
+    export_joint_classes(m);
 }

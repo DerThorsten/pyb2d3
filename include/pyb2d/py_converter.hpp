@@ -89,10 +89,8 @@ namespace nanobind::detail
 
     MY_CASTER(b2BodyId, Body, b2LoadBodyId);
     MY_CASTER(b2WorldId, WorldView, b2LoadWorldId);
-
-    MY_CASTER(b2JointId, Joint, b2LoadJointId);
     MY_CASTER(b2ChainId, Chain, b2LoadChainId);
-// MY_CASTER(b2ShapeId, Shape, b2LoadShapeId);
+
 #undef MY_CASTER
 
     // Custom type caster for b2ShapeId
@@ -129,6 +127,43 @@ namespace nanobind::detail
         static nb::handle from_cpp(const b2ShapeId& src, rv_policy policy, cleanup_list*)
         {
             return GetCastedShape(src).release();
+        }
+    };
+
+    // Custom type caster for b2JointId
+    template <>
+    struct type_caster<b2JointId>
+    {
+        NB_TYPE_CASTER(b2JointId, const_name("b2JointId"));
+
+        // Python -> C++ (from int or long)
+        bool from_python(nb::handle src, uint8_t flags, cleanup_list*) noexcept
+        {
+            if (nb::isinstance<nb::int_>(src))
+            {
+                uint32_t x = nb::cast<uint32_t>(src);
+                value = b2LoadJointId(x);
+                return true;
+            }
+            else if (nb::isinstance<nb::object>(src))
+            {
+                try
+                {
+                    value = b2LoadJointId(nb::cast<uint64_t>(src.attr("id")));
+                    return true;
+                }
+                catch (const nb::cast_error& e)
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        // C++ -> Python (to int)
+        static nb::handle from_cpp(const b2JointId& src, rv_policy policy, cleanup_list*)
+        {
+            return GetCastedJoint(src).release();
         }
     };
 

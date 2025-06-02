@@ -185,13 +185,6 @@ def _extend_classes():
 
     Body.create_shapes = create_shapes
 
-    # @property
-    # def shapes(self):
-    #     shape_ids = self._shape_ids()
-    #     return [Shape(shape_id).cast() for shape_id in shape_ids]
-
-    # Body.shapes = shapes
-
 
 _extend_classes()
 del _extend_classes
