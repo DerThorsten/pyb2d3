@@ -55,7 +55,7 @@ add_compile_definitions(B2_DISABLE_CXX_OPERATORS)
 nanobind_add_module(_pyb2d
     src/main.cpp
     src/export_box2d_types.cpp
-    src/export_box2d_functions.cpp
+    src/export_box2d_wrapper_structs.cpp
     src/export_collision.cpp
     src/export_math_functions.cpp
     src/py_debug_draw.cpp

@@ -881,16 +881,6 @@ struct Shape
         return b2Shape_GetMaterial(id);
     }
 
-    inline void SetSurfaceMaterial(b2SurfaceMaterial surfaceMaterial)
-    {
-        b2Shape_SetSurfaceMaterial(id, surfaceMaterial);
-    }
-
-    inline b2SurfaceMaterial GetSurfaceMaterial() const
-    {
-        return b2Shape_GetSurfaceMaterial(id);
-    }
-
     inline b2Filter GetFilter() const
     {
         return b2Shape_GetFilter(id);
