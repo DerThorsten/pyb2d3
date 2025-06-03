@@ -1696,4 +1696,45 @@ struct WorldView
     {
         return Body(b2CreateBody(id, def));
     }
+
+    // extra functions to create joints
+    inline DistanceJoint CreateDistanceJoint(const b2DistanceJointDef* def)
+    {
+        return DistanceJoint(b2CreateDistanceJoint(id, def));
+    }
+
+    inline FilterJoint CreateFilterJoint(const b2FilterJointDef* def)
+    {
+        return FilterJoint(b2CreateFilterJoint(id, def));
+    }
+
+    inline MotorJoint CreateMotorJoint(const b2MotorJointDef* def)
+    {
+        return MotorJoint(b2CreateMotorJoint(id, def));
+    }
+
+    inline MouseJoint CreateMouseJoint(const b2MouseJointDef* def)
+    {
+        return MouseJoint(b2CreateMouseJoint(id, def));
+    }
+
+    inline PrismaticJoint CreatePrismaticJoint(const b2PrismaticJointDef* def)
+    {
+        return PrismaticJoint(b2CreatePrismaticJoint(id, def));
+    }
+
+    inline RevoluteJoint CreateRevoluteJoint(const b2RevoluteJointDef* def)
+    {
+        return RevoluteJoint(b2CreateRevoluteJoint(id, def));
+    }
+
+    inline WeldJoint CreateWeldJoint(const b2WeldJointDef* def)
+    {
+        return WeldJoint(b2CreateWeldJoint(id, def));
+    }
+
+    inline WheelJoint CreateWheelJoint(const b2WheelJointDef* def)
+    {
+        return WheelJoint(b2CreateWheelJoint(id, def));
+    }
 };

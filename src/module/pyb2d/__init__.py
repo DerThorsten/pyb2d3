@@ -132,7 +132,7 @@ class BodyFactory(object):
 
 
 # add pure python methods to various classes
-def _extend_classes():
+def _extend_world():
     # avoid name conflicts
     _body_def_func = body_def
 
@@ -162,6 +162,28 @@ def _extend_classes():
 
     WorldView.body_factory = body_factory
 
+    def create_joint(self, joint_def):
+        if isinstance(joint_def, RevoluteJointDef):
+            return self.create_revolute_joint(joint_def)
+        elif isinstance(joint_def, DistanceJointDef):
+            return self.create_distance_joint(joint_def)
+        elif isinstance(joint_def, PrismaticJointDef):
+            return self.create_prismatic_joint(joint_def)
+        elif isinstance(joint_def, WheelJointDef):
+            return self.create_wheel_joint(joint_def)
+        elif isinstance(joint_def, NullJointDef):
+            return self.create_null_joint(joint_def)
+        elif isinstance(joint_def, PulleyJointDef):
+            return self.create_pulley_joint(joint_def)
+        elif isinstance(joint_def, GearJointDef):
+            return self.create_gear_joint(joint_def)
+        elif isinstance(joint_def, MouseJointDef):
+            return self.create_mouse_joint(joint_def)
+        else:
+            raise ValueError(f"joint {joint_def} not recognized")
+
+    WorldView.create_joint = create_joint
+
     def create_shape(self, shape_def, shape):
 
         if isinstance(shape, Circle):
@@ -186,8 +208,38 @@ def _extend_classes():
     Body.create_shapes = create_shapes
 
 
-_extend_classes()
-del _extend_classes
+_extend_world()
+del _extend_world
+
+
+def _extend_body():
+
+    def create_shape(self, shape_def, shape):
+
+        if isinstance(shape, Circle):
+            return self.create_circle_shape(shape_def, shape)
+        elif isinstance(shape, Polygon):
+            return self.create_polygon_shape(shape_def, shape)
+        elif isinstance(shape, Capsule):
+            return self.create_capsule_shape(shape_def, shape)
+        elif isinstance(shape, Segment):
+            return self.create_segment_shape(shape_def, shape)
+        else:
+            raise ValueError(f"shape {shape} not recognized")
+
+    Body.create_shape = create_shape
+
+    def create_shapes(self, shape_def, shapes):
+        res = []
+        for shape in shapes:
+            res.append(self.create_shape(shape_def, shape))
+        return res
+
+    Body.create_shapes = create_shapes
+
+
+_extend_body()
+del _extend_body
 
 
 # shorthand for body types
@@ -317,27 +369,6 @@ def mouse_joint_def(**kwargs):
     for k, v in kwargs.items():
         setattr(joint, k, v)
     return joint
-
-
-def create_joint(world_id, joint_def):
-    if isinstance(joint_def, RevoluteJointDef):
-        return create_revolute_joint(world_id, joint_def)
-    elif isinstance(joint_def, DistanceJointDef):
-        return create_distance_joint(world_id, joint_def)
-    elif isinstance(joint_def, PrismaticJointDef):
-        return create_prismatic_joint(world_id, joint_def)
-    elif isinstance(joint_def, WheelJointDef):
-        return create_wheel_joint(world_id, joint_def)
-    elif isinstance(joint_def, NullJointDef):
-        return create_null_joint(world_id, joint_def)
-    elif isinstance(joint_def, PulleyJointDef):
-        return create_pulley_joint(world_id, joint_def)
-    elif isinstance(joint_def, GearJointDef):
-        return create_gear_joint(world_id, joint_def)
-    elif isinstance(joint_def, MouseJointDef):
-        return create_mouse_joint(world_id, joint_def)
-    else:
-        raise ValueError(f"joint {joint_def} not recognized")
 
 
 class DebugDraw(DebugDrawBase):

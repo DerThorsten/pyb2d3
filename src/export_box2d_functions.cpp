@@ -121,8 +121,17 @@ void export_world_class(nb::module_& m)
         )
         .def("set_joint_tuning", &WorldView::SetJointTuning, nb::arg("hertz"), nb::arg("damping_ratio"))
         .def("create_body_from_def", &WorldView::CreateBodyId, nb::arg("def"))
-        // .def("create_body_id_from_def", &WorldView::CreateBodyId, nb::arg("def"))
-        ;
+
+        // extra functions to create joints
+        .def("create_distance_joint", &WorldView::CreateDistanceJoint, nb::arg("def"))
+        .def("create_filter_joint", &WorldView::CreateFilterJoint, nb::arg("def"))
+        .def("create_motor_joint", &WorldView::CreateMotorJoint, nb::arg("def"))
+        .def("create_mouse_joint", &WorldView::CreateMouseJoint, nb::arg("def"))
+        .def("create_prismatic_joint", &WorldView::CreatePrismaticJoint, nb::arg("def"))
+        .def("create_revolute_joint", &WorldView::CreateRevoluteJoint, nb::arg("def"))
+        .def("create_weld_joint", &WorldView::CreateWeldJoint, nb::arg("def"))
+        .def("create_wheel_joint", &WorldView::CreateWheelJoint, nb::arg("def"));
+
 
     m.def(
         "create_world_id",
