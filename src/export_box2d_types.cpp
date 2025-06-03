@@ -1,7 +1,7 @@
 #include <nanobind/nanobind.h>
 #include <pyb2d/py_converter.hpp>
 
-#include "py_chain_def.hpp"
+#include "pyb2d/py_chain_def.hpp"
 
 // C
 
