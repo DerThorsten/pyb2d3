@@ -17,30 +17,12 @@ endif()
 
 
 
-# # since enkits is linked in statically
-# set(ENKITS_BUILD_EXAMPLES OFF CACHE BOOL "Build enkiTS examples")
-# FetchContent_Declare(
-#     enkits
-#     GIT_REPOSITORY https://github.com/dougbinks/enkiTS.git
-#     GIT_TAG master
-#     GIT_SHALLOW TRUE
-#     GIT_PROGRESS TRUE
-# )
-# FetchContent_MakeAvailable(enkits)
-
-
-
-
-
-
-
 
 if(EMSCRIPTEN)
     set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
     set(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "-s SIDE_MODULE=1")
     set(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "-s SIDE_MODULE=1")
     set(CMAKE_STRIP FALSE)  # used by default in pybind11 on .so modules
-
 
     # Create a target that holds Python module information
     add_library(MyFakePythonModule INTERFACE)
@@ -70,8 +52,6 @@ endif()
 find_package(box2d REQUIRED)
 find_package(nanobind CONFIG REQUIRED)
 
-# add compile definitions
-add_compile_definitions(B2_DISABLE_CXX_OPERATORS)
 
 
 SET(PY_SOURCES
@@ -90,7 +70,11 @@ endif()
 nanobind_add_module(_pyb2d ${PY_SOURCES})
 
 
-
+if(NOT PYB2D_NO_THREADING)
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
+    target_link_libraries(_pyb2d PRIVATE Threads::Threads)
+endif()
 
 # include directories
 target_include_directories(_pyb2d
