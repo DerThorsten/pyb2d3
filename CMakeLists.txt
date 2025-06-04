@@ -9,16 +9,10 @@ OPTION(PYB2D_NO_THREADING "Disable threading support" OFF)
 
 # this is only relevant if we are building box2d
 # (ie if FETCH_BOX2D is ON)
-OPTION(FETCH_BOX2D          "Download/Fetch Box2D" ON)
-OPTION(SHARED_BOX2D         "Build Box2D as a shared library" OFF)
+OPTION(FETCH_BOX2D          "Download/Fetch Box2D" OFF)
 option(BUILD_SHARED_LIBS    "Build using shared libraries" OFF)
 
-
-
 if(FETCH_BOX2D)
-    # declare global property to controll the default of shared-vs-static libraries
-
-
     FetchContent_Declare(
         box2d
         GIT_REPOSITORY https://github.com/erincatto/box2d.git
@@ -28,12 +22,6 @@ if(FETCH_BOX2D)
     )
     FetchContent_MakeAvailable(box2d)
 endif()
-
-
-
-
-
-
 
 
 if(DEFINED SKBUILD)
