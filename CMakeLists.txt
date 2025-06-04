@@ -4,8 +4,7 @@ include(FetchContent)
 
 
 OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-
-
+OPTION(PYB2D_NO_THREADING "Disable threading support" OFF)
 
 if(DEFINED SKBUILD)
     SET(CMAKE_INSTALL_LIBDIR ${SKBUILD_PROJECT_NAME}/lib)
@@ -13,6 +12,28 @@ else()
     SET(INSTALL_DIR  ${CMAKE_INSTALL_PREFIX})
     SET(CMAKE_INSTALL_LIBDIR lib)
 endif()
+
+
+
+
+
+# # since enkits is linked in statically
+# set(ENKITS_BUILD_EXAMPLES OFF CACHE BOOL "Build enkiTS examples")
+# FetchContent_Declare(
+#     enkits
+#     GIT_REPOSITORY https://github.com/dougbinks/enkiTS.git
+#     GIT_TAG master
+#     GIT_SHALLOW TRUE
+#     GIT_PROGRESS TRUE
+# )
+# FetchContent_MakeAvailable(enkits)
+
+
+
+
+
+
+
 
 if(EMSCRIPTEN)
     set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
@@ -52,7 +73,8 @@ find_package(nanobind CONFIG REQUIRED)
 # add compile definitions
 add_compile_definitions(B2_DISABLE_CXX_OPERATORS)
 
-nanobind_add_module(_pyb2d
+
+SET(PY_SOURCES
     src/main.cpp
     src/export_box2d_types.cpp
     src/export_box2d_wrapper_structs.cpp
@@ -60,10 +82,24 @@ nanobind_add_module(_pyb2d
     src/export_math_functions.cpp
     src/py_debug_draw.cpp
 )
+if(NOT PYB2D_NO_THREADING)
+    # if not emscripten, add the main.cpp file
+    list(APPEND PY_SOURCES src/export_threadpool.cpp)
+endif()
+
+nanobind_add_module(_pyb2d ${PY_SOURCES})
+
+
+
 
 # include directories
 target_include_directories(_pyb2d
     PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
+#add definitions
+if(PYB2D_NO_THREADING)
+    target_compile_definitions(_pyb2d PRIVATE PYB2D_NO_THREADING)
+endif()
 
 # link box2d
 target_link_libraries(_pyb2d PRIVATE box2d::box2d)
