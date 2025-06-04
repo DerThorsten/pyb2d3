@@ -1,5 +1,6 @@
 #include <nanobind/nanobind.h>
 #include <pyb2d/py_converter.hpp>
+#include <pyb2d/threadpool.hpp>
 
 #include "pyb2d/py_chain_def.hpp"
 
@@ -71,6 +72,50 @@ void export_ray_result(py::module_& m)
         }                                                \
     )
 
+class FutureHolder
+{
+public:
+
+    FutureHolder() = default;
+
+    explicit FutureHolder(std::future<void> future)
+        : future_(std::move(future))
+    {
+    }
+
+    // Move constructor
+    FutureHolder(FutureHolder&& other) noexcept
+        : future_(std::move(other.future_))
+    {
+    }
+
+    // Deleted copy constructor and copy assignment (std::future is non-copyable)
+    FutureHolder(const FutureHolder&) = delete;
+    FutureHolder& operator=(const FutureHolder&) = delete;
+
+    // Move assignment
+    FutureHolder& operator=(FutureHolder&& other) noexcept
+    {
+        if (this != &other)
+        {
+            future_ = std::move(other.future_);
+        }
+        return *this;
+    }
+
+    void wait()
+    {
+        if (future_.valid())
+        {
+            future_.wait();
+        }
+    }
+
+private:
+
+    std::future<void> future_;
+};
+
 void export_world_def(py::module_& m)
 {
     // b2WorldDef
@@ -91,12 +136,64 @@ void export_world_def(py::module_& m)
         .def_rw("joint_hertz", &b2WorldDef::jointHertz)
         .def_rw("joint_damping_ratio", &b2WorldDef::jointDampingRatio)
         .def_rw("maximum_linear_speed", &b2WorldDef::maximumLinearSpeed)
-        // .def_rw("friction_mixing_rule", &b2WorldDef::frictionMixingRule)
-        // .def_rw("restitution_mixing_ru_le", &b2WorldDef::restitutionMixingRule)
+        .def_rw("internal_value", &b2WorldDef::internalValue) EXPORT_USER_DATA(b2WorldDef)
+#ifndef PYB2D_NO_THREADING
         // .def_rw("enqueue_task", &b2WorldDef::enqueueTask)
         // .def_rw("finish_task", &b2WorldDef::finishTask)
         // .def_rw("user_task_context", &b2WorldDef::userTaskContext)
-        .def_rw("internal_value", &b2WorldDef::internalValue) EXPORT_USER_DATA(b2WorldDef);
+
+        .def(
+            "_install_thread_pool",
+            [](b2WorldDef& self, ThreadPool& threadpool)
+            {
+                self.userTaskContext = static_cast<void*>(&threadpool);
+
+
+                self.enqueueTask =
+                    [](b2TaskCallback* task, int itemCount, int minRange, void* taskContext, void* userContext)
+                {
+                    // std::cout<<"enqueueTask called with itemCount: " << itemCount << ", minRange: " <<
+                    // minRange << std::endl;
+                    ThreadPool* threadpool = static_cast<ThreadPool*>(userContext);
+
+
+                    if (itemCount < minRange)
+                    {
+                        minRange = itemCount;
+                    }
+
+                    std::vector<std::future<void>>* futures = new std::vector<std::future<void>>();
+                    for (int i = 0; i < itemCount; i += minRange)
+                    {
+                        int endIndex = std::min(i + minRange, itemCount);
+                        auto future = threadpool->enqueue(
+                            [task, i, endIndex, taskContext](const std::size_t worker_index)
+                            {
+                                task(i, endIndex, worker_index, taskContext);
+                            }
+                        );
+                        futures->emplace_back(std::move(future));
+                    }
+                    return static_cast<void*>(futures);
+                };
+
+                self.finishTask = [](void* userTask, void* userContext)
+                {
+                    std::vector<std::future<void>>* futures = static_cast<std::vector<std::future<void>>*>(userTask
+                    );
+                    for (auto& future : *futures)
+                    {
+                        future.get();
+                    }
+                    // std::cout<<"finishedTask called"<<std::endl;
+                    delete futures;
+                };
+
+                self.workerCount = threadpool.nThreads();
+            }
+        )
+#endif
+        ;
 }
 
 void export_body_def(py::module_& m)

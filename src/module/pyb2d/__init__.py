@@ -1,15 +1,17 @@
 import numpy as np  # type: ignore
 from ._pyb2d import *
-from .compound_shape import CompoundShape
 from functools import partial, partialmethod
 
 
 class World(WorldView):
     # only the constructor (and __del__) is allowed to be added to this class.
     # All other methods are added to the WorldView class
-    def __init__(self, /, **kwargs):
+    def __init__(self, /, thread_pool=None, **kwargs):
         d = world_def(**kwargs)
+        if thread_pool is not None:
+            d._install_thread_pool(thread_pool)
         world_id = create_world_id(d)
+
         super().__init__(world_id)
 
     def __del__(self):
