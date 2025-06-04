@@ -6,17 +6,30 @@ include(FetchContent)
 OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 OPTION(PYB2D_NO_THREADING "Disable threading support" OFF)
 
+
+# this is only relevant if we are building box2d
+# (ie if FETCH_BOX2D is ON)
+OPTION(FETCH_BOX2D          "Download/Fetch Box2D" OFF)
+option(BUILD_SHARED_LIBS    "Build using shared libraries" OFF)
+
+if(FETCH_BOX2D)
+    FetchContent_Declare(
+        box2d
+        GIT_REPOSITORY https://github.com/erincatto/box2d.git
+        GIT_TAG main
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE
+    )
+    FetchContent_MakeAvailable(box2d)
+endif()
+
+
 if(DEFINED SKBUILD)
     SET(CMAKE_INSTALL_LIBDIR ${SKBUILD_PROJECT_NAME}/lib)
 else()
     SET(INSTALL_DIR  ${CMAKE_INSTALL_PREFIX})
     SET(CMAKE_INSTALL_LIBDIR lib)
 endif()
-
-
-
-
-
 
 if(EMSCRIPTEN)
     set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
@@ -49,9 +62,10 @@ else()
     find_package(Python COMPONENTS Interpreter Development REQUIRED)
 endif()
 
+
+
 find_package(box2d REQUIRED)
 find_package(nanobind CONFIG REQUIRED)
-
 
 
 SET(PY_SOURCES
