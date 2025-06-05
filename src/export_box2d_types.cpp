@@ -75,50 +75,6 @@ void export_ray_result(py::module_& m)
         }                                                \
     )
 
-class FutureHolder
-{
-public:
-
-    FutureHolder() = default;
-
-    explicit FutureHolder(std::future<void> future)
-        : future_(std::move(future))
-    {
-    }
-
-    // Move constructor
-    FutureHolder(FutureHolder&& other) noexcept
-        : future_(std::move(other.future_))
-    {
-    }
-
-    // Deleted copy constructor and copy assignment (std::future is non-copyable)
-    FutureHolder(const FutureHolder&) = delete;
-    FutureHolder& operator=(const FutureHolder&) = delete;
-
-    // Move assignment
-    FutureHolder& operator=(FutureHolder&& other) noexcept
-    {
-        if (this != &other)
-        {
-            future_ = std::move(other.future_);
-        }
-        return *this;
-    }
-
-    void wait()
-    {
-        if (future_.valid())
-        {
-            future_.wait();
-        }
-    }
-
-private:
-
-    std::future<void> future_;
-};
-
 void export_world_def(py::module_& m)
 {
     // b2WorldDef
@@ -140,11 +96,8 @@ void export_world_def(py::module_& m)
         .def_rw("joint_damping_ratio", &b2WorldDef::jointDampingRatio)
         .def_rw("maximum_linear_speed", &b2WorldDef::maximumLinearSpeed)
         .def_rw("internal_value", &b2WorldDef::internalValue) EXPORT_USER_DATA(b2WorldDef)
-#ifndef PYB2D_NO_THREADING
-        // .def_rw("enqueue_task", &b2WorldDef::enqueueTask)
-        // .def_rw("finish_task", &b2WorldDef::finishTask)
-        // .def_rw("user_task_context", &b2WorldDef::userTaskContext)
 
+#ifndef PYB2D_NO_THREADING
         .def(
             "_install_thread_pool",
             [](b2WorldDef& self, ThreadPool& threadpool)
@@ -188,7 +141,6 @@ void export_world_def(py::module_& m)
                     {
                         future.get();
                     }
-                    // std::cout<<"finishedTask called"<<std::endl;
                     delete futures;
                 };
 
