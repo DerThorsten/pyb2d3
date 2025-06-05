@@ -76,7 +76,7 @@ SET(PY_SOURCES
     src/export_math_functions.cpp
     src/py_debug_draw.cpp
 )
-if(NOT PYB2D_NO_THREADING AND NOT EMSCRIPTEN)
+if(NOT PYB2D_NO_THREADING)
     # if not emscripten, add the main.cpp file
     list(APPEND PY_SOURCES src/export_threadpool.cpp)
 endif()
@@ -84,7 +84,7 @@ endif()
 nanobind_add_module(_pyb2d ${PY_SOURCES})
 
 
-if(NOT PYB2D_NO_THREADING AND NOT EMSCRIPTEN)
+if(NOT PYB2D_NO_THREADING)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
     target_link_libraries(_pyb2d PRIVATE Threads::Threads)
@@ -95,7 +95,7 @@ target_include_directories(_pyb2d
     PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 #add definitions
-if(PYB2D_NO_THREADING AND NOT EMSCRIPTEN)
+if(PYB2D_NO_THREADING)
     target_compile_definitions(_pyb2d PRIVATE PYB2D_NO_THREADING)
 endif()
 
