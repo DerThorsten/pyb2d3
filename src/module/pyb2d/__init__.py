@@ -23,6 +23,7 @@ class World(WorldView):
         d = world_def(**kwargs)
         if thread_pool is not None:
             d._install_thread_pool(thread_pool)
+            self._threadpool = thread_pool
         world_id = create_world_id(d)
 
         super().__init__(world_id)

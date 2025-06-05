@@ -173,12 +173,15 @@ void export_body_class(nb::module_& m)
             }
         )
         .def("is_valid", &Body::IsValid)
+        .def("destroy", &Body::Destroy)
 
         .def_prop_rw("type", &Body::GetType, &Body::SetType, nb::arg("type"))
         .def_prop_ro("position", &Body::GetPosition)
+        .def_prop_ro("angle", &Body::GetAngle)
+        .def_prop_ro("rotation", &Body::GetRotation)
 
         .def_prop_rw("linear_velocity", &Body::GetLinearVelocity, &Body::SetLinearVelocity, nb::arg("velocity"))
-        .def_prop_ro("linear_velocity_magnitude", &Body::GetLinearVelocityMagnitude)
+        .def("linear_velocity_magnitude", &Body::GetLinearVelocityMagnitude)
         .def_prop_rw("angular_velocity", &Body::GetAngularVelocity, &Body::SetAngularVelocity, nb::arg("velocity"))
 
         // forces
@@ -202,6 +205,8 @@ void export_body_class(nb::module_& m)
         .def("rotational_inertia", &Body::GetRotationalInertia)
         .def("local_center_of_mass", &Body::GetLocalCenterOfMass)
         .def("world_center_of_mass", &Body::GetWorldCenterOfMass)
+        .def_prop_rw("gravity_scale", &Body::GetGravityScale, &Body::SetGravityScale, nb::arg("gravity_scale"))
+        .def_prop_ro("mass", &Body::GetMass)
         .def_prop_rw("mass_data", &Body::GetMassData, &Body::SetMassData, nb::arg("mass_data"))
         .def("apply_mass_from_shapes", &Body::ApplyMassFromShapes)
         .def_prop_rw("linear_damping", &Body::GetLinearDamping, &Body::SetLinearDamping, nb::arg("linear_damping"))
@@ -264,13 +269,16 @@ void export_body_class(nb::module_& m)
 
 
         // Shape creation methods
-        .def("create_circle_shape", &Body::CreateCircleShape, nb::arg("def"), nb::arg("circle"))
-        .def("create_segment_shape", &Body::CreateSegmentShape, nb::arg("def"), nb::arg("segment"))
-        .def("create_capsule_shape", &Body::CreateCapsuleShape, nb::arg("def"), nb::arg("capsule"))
-        .def("create_polygon_shape", &Body::CreatePolygonShape, nb::arg("def"), nb::arg("polygon"))
+        .def("create_circle_shape", &Body::CreateCircleShape, nb::arg("shape_def"), nb::arg("circle"))
+        .def("create_segment_shape", &Body::CreateSegmentShape, nb::arg("shape_def"), nb::arg("segment"))
+        .def("create_capsule_shape", &Body::CreateCapsuleShape, nb::arg("shape_def"), nb::arg("capsule"))
+        .def("create_polygon_shape", &Body::CreatePolygonShape, nb::arg("shape_def"), nb::arg("polygon"))
 
         // chain
-        .def("create_chain", &Body::CreateChain, nb::arg("def"))
+        .def("create_chain", &Body::CreateChain, nb::arg("chain_def"))
+
+        // some convienient extra methods
+        .def("get_distance_to", &Body::GetDistanceTo, nb::arg("point"))
 
         // operator == and !=
         .def(
@@ -489,6 +497,7 @@ void export_joint_classes(nb::module_& m)
             }
         )
         .def_prop_ro("is_valid", &Joint::IsValid)
+        .def("destroy", &Joint::Destroy)
         .def_prop_ro("type", &Joint::GetType)
         .def_prop_ro("body_a", &Joint::GetBodyA)
         .def_prop_ro("body_b", &Joint::GetBodyB)
