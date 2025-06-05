@@ -727,6 +727,7 @@ void export_joint_classes(nb::module_& m)
         );
 }
 
+// Export all Box2D related functions
 void export_box2d_functions(nb::module_& m)
 {
     export_world_class(m);
