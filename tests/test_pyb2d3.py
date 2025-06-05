@@ -2,7 +2,7 @@ import pytest
 from pytest import approx
 
 import numpy as np
-import pyb2d as b2d
+import pyb2d3 as b2d
 
 from .test_utils import DebugDrawTest
 

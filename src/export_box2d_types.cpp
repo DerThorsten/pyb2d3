@@ -1,11 +1,11 @@
 #include <nanobind/nanobind.h>
-#include <pyb2d/py_converter.hpp>
+#include <pyb2d3/py_converter.hpp>
 
 #ifndef PYB2D_NO_THREADING
-#    include <pyb2d/threadpool.hpp>
+#    include <pyb2d3/threadpool.hpp>
 #endif
 
-#include "pyb2d/py_chain_def.hpp"
+#include "pyb2d3/py_chain_def.hpp"
 
 // C
 

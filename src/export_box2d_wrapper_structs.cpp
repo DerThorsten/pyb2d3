@@ -1,10 +1,10 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/vector.h>
-#include <pyb2d/py_converter.hpp>
+#include <pyb2d3/py_converter.hpp>
 
 #include "py_debug_draw.hpp"
-#include "pyb2d/py_chain_def.hpp"
-#include "pyb2d/wrapper_structs.hpp"
+#include "pyb2d3/py_chain_def.hpp"
+#include "pyb2d3/wrapper_structs.hpp"
 
 
 // C

@@ -1,5 +1,5 @@
 #include <nanobind/nanobind.h>
-// #include <pyb2d/py_converter.hpp>
+// #include <pyb2d3/py_converter.hpp>
 
 namespace py = nanobind;
 
@@ -17,7 +17,7 @@ struct Pyb2dConfig
 {
 };
 
-NB_MODULE(_pyb2d, m)
+NB_MODULE(_pyb2d3, m)
 {
     export_box2d_types(m);
     export_box2d_functions(m);

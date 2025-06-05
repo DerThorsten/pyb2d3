@@ -1,5 +1,5 @@
 #include <nanobind/nanobind.h>
-#include <pyb2d/threadpool.hpp>
+#include <pyb2d3/threadpool.hpp>
 
 // nanobind namespace
 namespace nb = nanobind;

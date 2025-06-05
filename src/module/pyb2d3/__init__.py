@@ -1,6 +1,6 @@
 import numpy as np  # type: ignore
-from ._pyb2d import *
-from . import _pyb2d  # type: ignore
+from ._pyb2d3 import *
+from . import _pyb2d3  # type: ignore
 from functools import partial, partialmethod
 
 
@@ -235,7 +235,7 @@ def _extend_world():
     WorldView.body_factory = body_factory
 
     def helper(joint_name):
-        def_cls = getattr(_pyb2d, f"{joint_name.capitalize()}JointDef")
+        def_cls = getattr(_pyb2d3, f"{joint_name.capitalize()}JointDef")
         def_func = globals()[f"{joint_name}_joint_def"]
         raw_function = getattr(WorldView, f"_create_{joint_name}_joint")
 
