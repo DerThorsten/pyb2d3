@@ -1,5 +1,5 @@
 #include <nanobind/nanobind.h>
-// #include <pyb2d/py_converter.hpp>
+// #include <pyb2d3/py_converter.hpp>
 
 namespace py = nanobind;
 
@@ -13,7 +13,11 @@ void export_math_functions(py::module_& m);
 void export_threadpool(py::module_& m);
 #endif
 
-NB_MODULE(_pyb2d, m)
+struct Pyb2dConfig
+{
+};
+
+NB_MODULE(_pyb2d3, m)
 {
     export_box2d_types(m);
     export_box2d_functions(m);
@@ -23,5 +27,14 @@ NB_MODULE(_pyb2d, m)
 
 #ifndef PYB2D_NO_THREADING
     export_threadpool(m);
+#endif
+
+
+    m.doc() = "Python bindings for Box2D, a 2D physics engine.";
+
+#ifdef PYB2D_NO_THREADING
+    m.attr("WITH_THREADING") = false;
+#else
+    m.attr("WITH_THREADING") = true;
 #endif
 }

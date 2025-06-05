@@ -1,10 +1,10 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/vector.h>
-#include <pyb2d/py_converter.hpp>
+#include <pyb2d3/py_converter.hpp>
 
 #include "py_debug_draw.hpp"
-#include "pyb2d/py_chain_def.hpp"
-#include "pyb2d/wrapper_structs.hpp"
+#include "pyb2d3/py_chain_def.hpp"
+#include "pyb2d3/wrapper_structs.hpp"
 
 
 // C
@@ -123,14 +123,31 @@ void export_world_class(nb::module_& m)
         .def("create_body_from_def", &WorldView::CreateBodyId, nb::arg("def"))
 
         // extra functions to create joints
-        .def("create_distance_joint", &WorldView::CreateDistanceJoint, nb::arg("def"))
-        .def("create_filter_joint", &WorldView::CreateFilterJoint, nb::arg("def"))
-        .def("create_motor_joint", &WorldView::CreateMotorJoint, nb::arg("def"))
-        .def("create_mouse_joint", &WorldView::CreateMouseJoint, nb::arg("def"))
-        .def("create_prismatic_joint", &WorldView::CreatePrismaticJoint, nb::arg("def"))
-        .def("create_revolute_joint", &WorldView::CreateRevoluteJoint, nb::arg("def"))
-        .def("create_weld_joint", &WorldView::CreateWeldJoint, nb::arg("def"))
-        .def("create_wheel_joint", &WorldView::CreateWheelJoint, nb::arg("def"));
+        .def("_create_distance_joint", &WorldView::CreateDistanceJoint, nb::arg("def"))
+        .def("_create_filter_joint", &WorldView::CreateFilterJoint, nb::arg("def"))
+        .def("_create_motor_joint", &WorldView::CreateMotorJoint, nb::arg("def"))
+        .def("_create_mouse_joint", &WorldView::CreateMouseJoint, nb::arg("def"))
+        .def("_create_prismatic_joint", &WorldView::CreatePrismaticJoint, nb::arg("def"))
+        .def("_create_revolute_joint", &WorldView::CreateRevoluteJoint, nb::arg("def"))
+        .def("_create_weld_joint", &WorldView::CreateWeldJoint, nb::arg("def"))
+        .def("_create_wheel_joint", &WorldView::CreateWheelJoint, nb::arg("def"))
+
+        .def(
+            "__eq__",
+            [](const WorldView& self, const WorldView& other)
+            {
+                return b2StoreWorldId(self.id) == b2StoreWorldId(other.id);
+            }
+        )
+        .def(
+            "__ne__",
+            [](const WorldView& self, const WorldView& other)
+            {
+                return b2StoreWorldId(self.id) != b2StoreWorldId(other.id);
+            }
+        )
+
+        ;
 
 
     m.def(
@@ -156,12 +173,15 @@ void export_body_class(nb::module_& m)
             }
         )
         .def("is_valid", &Body::IsValid)
+        .def("destroy", &Body::Destroy)
 
         .def_prop_rw("type", &Body::GetType, &Body::SetType, nb::arg("type"))
         .def_prop_ro("position", &Body::GetPosition)
+        .def_prop_ro("angle", &Body::GetAngle)
+        .def_prop_ro("rotation", &Body::GetRotation)
 
         .def_prop_rw("linear_velocity", &Body::GetLinearVelocity, &Body::SetLinearVelocity, nb::arg("velocity"))
-        .def_prop_ro("linear_velocity_magnitude", &Body::GetLinearVelocityMagnitude)
+        .def("linear_velocity_magnitude", &Body::GetLinearVelocityMagnitude)
         .def_prop_rw("angular_velocity", &Body::GetAngularVelocity, &Body::SetAngularVelocity, nb::arg("velocity"))
 
         // forces
@@ -185,6 +205,8 @@ void export_body_class(nb::module_& m)
         .def("rotational_inertia", &Body::GetRotationalInertia)
         .def("local_center_of_mass", &Body::GetLocalCenterOfMass)
         .def("world_center_of_mass", &Body::GetWorldCenterOfMass)
+        .def_prop_rw("gravity_scale", &Body::GetGravityScale, &Body::SetGravityScale, nb::arg("gravity_scale"))
+        .def_prop_ro("mass", &Body::GetMass)
         .def_prop_rw("mass_data", &Body::GetMassData, &Body::SetMassData, nb::arg("mass_data"))
         .def("apply_mass_from_shapes", &Body::ApplyMassFromShapes)
         .def_prop_rw("linear_damping", &Body::GetLinearDamping, &Body::SetLinearDamping, nb::arg("linear_damping"))
@@ -247,13 +269,32 @@ void export_body_class(nb::module_& m)
 
 
         // Shape creation methods
-        .def("create_circle_shape", &Body::CreateCircleShape, nb::arg("def"), nb::arg("circle"))
-        .def("create_segment_shape", &Body::CreateSegmentShape, nb::arg("def"), nb::arg("segment"))
-        .def("create_capsule_shape", &Body::CreateCapsuleShape, nb::arg("def"), nb::arg("capsule"))
-        .def("create_polygon_shape", &Body::CreatePolygonShape, nb::arg("def"), nb::arg("polygon"))
+        .def("create_circle_shape", &Body::CreateCircleShape, nb::arg("shape_def"), nb::arg("circle"))
+        .def("create_segment_shape", &Body::CreateSegmentShape, nb::arg("shape_def"), nb::arg("segment"))
+        .def("create_capsule_shape", &Body::CreateCapsuleShape, nb::arg("shape_def"), nb::arg("capsule"))
+        .def("create_polygon_shape", &Body::CreatePolygonShape, nb::arg("shape_def"), nb::arg("polygon"))
 
         // chain
-        .def("create_chain", &Body::CreateChain, nb::arg("def"));
+        .def("create_chain", &Body::CreateChain, nb::arg("chain_def"))
+
+        // some convienient extra methods
+        .def("get_distance_to", &Body::GetDistanceTo, nb::arg("point"))
+
+        // operator == and !=
+        .def(
+            "__eq__",
+            [](const Body& self, const Body& other)
+            {
+                return b2StoreBodyId(self.id) == b2StoreBodyId(other.id);
+            }
+        )
+        .def(
+            "__ne__",
+            [](const Body& self, const Body& other)
+            {
+                return b2StoreBodyId(self.id) != b2StoreBodyId(other.id);
+            }
+        );
 }
 
 void export_shape_class(nb::module_& m)
@@ -325,6 +366,20 @@ void export_shape_class(nb::module_& m)
             [](Shape& self)
             {
                 return GetCastedShape(self.id);
+            }
+        )
+        .def(
+            "__eq__",
+            [](const Shape& self, const Shape& other)
+            {
+                return b2StoreShapeId(self.id) == b2StoreShapeId(other.id);
+            }
+        )
+        .def(
+            "__ne__",
+            [](const Shape& self, const Shape& other)
+            {
+                return b2StoreShapeId(self.id) != b2StoreShapeId(other.id);
             }
         );
 
@@ -442,6 +497,7 @@ void export_joint_classes(nb::module_& m)
             }
         )
         .def_prop_ro("is_valid", &Joint::IsValid)
+        .def("destroy", &Joint::Destroy)
         .def_prop_ro("type", &Joint::GetType)
         .def_prop_ro("body_a", &Joint::GetBodyA)
         .def_prop_ro("body_b", &Joint::GetBodyB)
@@ -462,6 +518,20 @@ void export_joint_classes(nb::module_& m)
                 b2Joint_SetUserData(self.id, (void*) user_data);
             },
             nb::arg("user_data")
+        )
+        .def(
+            "__eq__",
+            [](const Joint& self, const Joint& other)
+            {
+                return b2StoreJointId(self.id) == b2StoreJointId(other.id);
+            }
+        )
+        .def(
+            "__ne__",
+            [](const Joint& self, const Joint& other)
+            {
+                return b2StoreJointId(self.id) != b2StoreJointId(other.id);
+            }
         );
 
 
@@ -639,8 +709,25 @@ void export_joint_classes(nb::module_& m)
             nb::arg("torque")
         )
         .def_prop_ro("motor_torque", &WheelJoint::GetMotorTorque);
+
+    // filter-joint
+    nb::class_<FilterJoint, Joint>(m, "FilterJoint")
+        .def(nb::init<uint64_t>(), nb::arg("joint_id"))
+        .def_prop_rw(
+            "user_data",
+            [](FilterJoint& self) -> user_data_uint
+            {
+                return (user_data_uint) b2Joint_GetUserData(self.id);
+            },
+            [](FilterJoint& self, user_data_uint user_data)
+            {
+                b2Joint_SetUserData(self.id, (void*) user_data);
+            },
+            nb::arg("user_data")
+        );
 }
 
+// Export all Box2D related functions
 void export_box2d_functions(nb::module_& m)
 {
     export_world_class(m);

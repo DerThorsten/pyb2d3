@@ -8,13 +8,12 @@ set -e
 
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-PYB2D_SRC_DIR=$DIR
-PYB2D_PLAYGROUND_SRC_DIR=$DIR/playground
+PYB2D3_SRC_DIR=$DIR
 BUILD_TYPE=Release
 
 if true; then
 
-    pushd $PYB2D_SRC_DIR
+    pushd $PYB2D3_SRC_DIR
     mkdir -p build
     pushd build
 
@@ -26,12 +25,12 @@ if true; then
     make -j$(nproc)
     popd
 
-    PYTHONPATH="$PYTHONPATH:$PYB2D_SRC_DIR/src/module" pytest
+    PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module" pytest
 
     popd
 
 fi
 
 
-PYTHONPATH="$PYTHONPATH:$PYB2D_SRC_DIR/src/module"
-PYTHONPATH="$PYTHONPATH:$PYB2D_PLAYGROUND_SRC_DIR/src/module"
+PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module"
+PYTHONPATH="$PYTHONPATH:$PYB2D3_PLAYGROUND_SRC_DIR/src/module"

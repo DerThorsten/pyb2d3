@@ -1,6 +1,19 @@
 import numpy as np  # type: ignore
-from ._pyb2d import *
+from ._pyb2d3 import *
+from . import _pyb2d3  # type: ignore
 from functools import partial, partialmethod
+
+
+# to auto generate a bunch of stuff
+_joint_names = [
+    "distance",
+    "filter",
+    "motor",
+    "mouse",
+    "prismatic",
+    "revolute",
+    "wheel",
+]
 
 
 class World(WorldView):
@@ -10,6 +23,7 @@ class World(WorldView):
         d = world_def(**kwargs)
         if thread_pool is not None:
             d._install_thread_pool(thread_pool)
+            self._threadpool = thread_pool
         world_id = create_world_id(d)
 
         super().__init__(world_id)
@@ -54,6 +68,62 @@ def shape_def(**kwargs):
     return shape
 
 
+def revolute_joint_def(**kwargs):
+    joint = RevoluteJointDef()
+    for k, v in kwargs.items():
+        setattr(joint, k, v)
+    return joint
+
+
+def distance_joint_def(**kwargs):
+    joint = DistanceJointDef()
+    for k, v in kwargs.items():
+        setattr(joint, k, v)
+    return joint
+
+
+def prismatic_joint_def(**kwargs):
+    joint = PrismaticJointDef()
+    for k, v in kwargs.items():
+        setattr(joint, k, v)
+    return joint
+
+
+def filter_joint_def(**kwargs):
+    joint = FilterJointDef()
+    for k, v in kwargs.items():
+        setattr(joint, k, v)
+    return joint
+
+
+def gear_joint_def(**kwargs):
+    joint = GearJointDef()
+    for k, v in kwargs.items():
+        setattr(joint, k, v)
+    return joint
+
+
+def wheel_joint_def(**kwargs):
+    joint = WheelJointDef()
+    for k, v in kwargs.items():
+        setattr(joint, k, v)
+    return joint
+
+
+def mouse_joint_def(**kwargs):
+    joint = MouseJointDef()
+    for k, v in kwargs.items():
+        setattr(joint, k, v)
+    return joint
+
+
+def motor_joint_def(**kwargs):
+    joint = MotorJointDef()
+    for k, v in kwargs.items():
+        setattr(joint, k, v)
+    return joint
+
+
 _shape_def_f = shape_def
 _surface_material_f = surface_material
 
@@ -93,7 +163,7 @@ class BodyFactory(object):
         self.body_def.type = BodyType.KINEMATIC
         return self
 
-    def __call__(self):
+    def create(self):
         body = self.world.create_body(self.body_def)
         body.create_shapes(self._shape_def, self._s)
         return body
@@ -163,6 +233,39 @@ def _extend_world():
         return BodyFactory(self)
 
     WorldView.body_factory = body_factory
+
+    def helper(joint_name):
+        def_cls = getattr(_pyb2d3, f"{joint_name.capitalize()}JointDef")
+        def_func = globals()[f"{joint_name}_joint_def"]
+        raw_function = getattr(WorldView, f"_create_{joint_name}_joint")
+
+        def create_joint(self, *args, **kwargs):
+            na = len(args)
+            nka = len(kwargs)
+            joint_def = None
+
+            # from just a joint_def
+            if na == 0:
+                return raw_function(self, def_func(**kwargs))
+            elif na == 1:
+                return raw_function(self, args[0])
+            elif na == 2:
+                return raw_function(
+                    self, def_func(body_a=args[0], body_b=args[1], **kwargs)
+                )
+            else:
+                raise ValueError(
+                    """ the un-named arguments can be either:
+                1. a joint_def (and no kwargs)
+                2. two bodies (and and additional kwargs)
+                3. just kwargs"""
+                )
+
+        create_joint.__name__ = f"create_{joint_name}_joint"
+        return create_joint
+
+    for joint_name in _joint_names:
+        setattr(WorldView, f"create_{joint_name}_joint", helper(joint_name))
 
     def create_joint(self, joint_def):
         if isinstance(joint_def, RevoluteJointDef):
@@ -321,56 +424,6 @@ def aabb_arround_point(point, radius):
     lower_bound = (point[0] - radius, point[1] - radius)
     upper_bound = (point[0] + radius, point[1] + radius)
     return aabb(lower_bound, upper_bound)
-
-
-# joints
-def revolute_joint_def(**kwargs):
-    joint = RevoluteJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def distance_joint_def(**kwargs):
-    joint = DistanceJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def prismatic_joint_def(**kwargs):
-    joint = PrismaticJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def pulley_joint_def(**kwargs):
-    joint = PulleyJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def gear_joint_def(**kwargs):
-    joint = GearJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def wheel_joint_def(**kwargs):
-    joint = WheelJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def mouse_joint_def(**kwargs):
-    joint = MouseJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
 
 
 class DebugDraw(DebugDrawBase):

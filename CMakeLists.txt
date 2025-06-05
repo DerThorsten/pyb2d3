@@ -81,37 +81,37 @@ if(NOT PYB2D_NO_THREADING)
     list(APPEND PY_SOURCES src/export_threadpool.cpp)
 endif()
 
-nanobind_add_module(_pyb2d ${PY_SOURCES})
+nanobind_add_module(_pyb2d3 ${PY_SOURCES})
 
 
 if(NOT PYB2D_NO_THREADING)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
-    target_link_libraries(_pyb2d PRIVATE Threads::Threads)
+    target_link_libraries(_pyb2d3 PRIVATE Threads::Threads)
 endif()
 
 # include directories
-target_include_directories(_pyb2d
+target_include_directories(_pyb2d3
     PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 #add definitions
 if(PYB2D_NO_THREADING)
-    target_compile_definitions(_pyb2d PRIVATE PYB2D_NO_THREADING)
+    target_compile_definitions(_pyb2d3 PRIVATE PYB2D_NO_THREADING)
 endif()
 
 # link box2d
-target_link_libraries(_pyb2d PRIVATE box2d::box2d)
+target_link_libraries(_pyb2d3 PRIVATE box2d::box2d)
 
 # after each build, copy the extension to the python package directory
-add_custom_command(TARGET _pyb2d POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_pyb2d> ${CMAKE_SOURCE_DIR}/src/module/pyb2d
-    COMMENT "Copying _pyb2d to python package directory"
+add_custom_command(TARGET _pyb2d3 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_pyb2d3> ${CMAKE_SOURCE_DIR}/src/module/pyb2d3
+    COMMENT "Copying _pyb2d3 to python package directory"
 )
 
 if(NOT DEFINED SKBUILD)
     # on mac or linux, set the shared library suffix to .so
     if(APPLE OR UNIX)
-        set_target_properties(_pyb2d PROPERTIES SUFFIX ".so")
+        set_target_properties(_pyb2d3 PROPERTIES SUFFIX ".so")
     endif()
 else()
     message(STATUS "using SKBUILD" ${SKBUILD})
@@ -122,8 +122,8 @@ endif()
 # if SKBUILD is defined, install to the python package directory
 if(DEFINED SKBUILD)
     message(STATUS "using SKBUILD" ${SKBUILD})
-    install(TARGETS _pyb2d LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME})
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/module/pyb2d/ DESTINATION ${SKBUILD_PROJECT_NAME})
+    install(TARGETS _pyb2d3 LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME})
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/module/pyb2d3/ DESTINATION ${SKBUILD_PROJECT_NAME})
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION ${SKBUILD_PROJECT_NAME}/include)
 else()
     message(STATUS "not using SKBUILD")

@@ -139,6 +139,12 @@ struct Joint
         return b2Joint_IsValid(id);
     }
 
+    inline void Destroy()
+    {
+        b2DestroyJoint(id);
+        id = b2_nullJointId;
+    }
+
     inline b2JointType GetType() const
     {
         return b2Joint_GetType(id);
@@ -1088,6 +1094,12 @@ struct Body
     {
     }
 
+    inline void Destroy()
+    {
+        b2DestroyBody(id);
+        id = b2_nullBodyId;  // Invalidate the ID after destruction
+    }
+
     inline bool IsValid() const
     {
         return b2Body_IsValid(id);
@@ -1273,9 +1285,19 @@ struct Body
         return b2Body_GetPosition(id);
     }
 
+    inline float GetDistanceTo(b2Vec2 point) const
+    {
+        return b2Length(b2Sub(b2Body_GetPosition(id), point));
+    }
+
     inline b2Rot GetRotation() const
     {
         return b2Body_GetRotation(id);
+    }
+
+    inline float GetAngle() const
+    {
+        return b2Rot_GetAngle(b2Body_GetRotation(id));
     }
 
     inline b2Transform GetWorldTransform() const
@@ -1460,6 +1482,7 @@ struct WorldView
         if (b2World_IsValid(id))
         {
             b2DestroyWorld(id);
+            id = b2_nullWorldId;  // Invalidate the ID after destruction
         }
     }
 

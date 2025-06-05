@@ -1,8 +1,11 @@
 #include <nanobind/nanobind.h>
-#include <pyb2d/py_converter.hpp>
-#include <pyb2d/threadpool.hpp>
+#include <pyb2d3/py_converter.hpp>
 
-#include "pyb2d/py_chain_def.hpp"
+#ifndef PYB2D_NO_THREADING
+#    include <pyb2d3/threadpool.hpp>
+#endif
+
+#include "pyb2d3/py_chain_def.hpp"
 
 // C
 
@@ -72,50 +75,6 @@ void export_ray_result(py::module_& m)
         }                                                \
     )
 
-class FutureHolder
-{
-public:
-
-    FutureHolder() = default;
-
-    explicit FutureHolder(std::future<void> future)
-        : future_(std::move(future))
-    {
-    }
-
-    // Move constructor
-    FutureHolder(FutureHolder&& other) noexcept
-        : future_(std::move(other.future_))
-    {
-    }
-
-    // Deleted copy constructor and copy assignment (std::future is non-copyable)
-    FutureHolder(const FutureHolder&) = delete;
-    FutureHolder& operator=(const FutureHolder&) = delete;
-
-    // Move assignment
-    FutureHolder& operator=(FutureHolder&& other) noexcept
-    {
-        if (this != &other)
-        {
-            future_ = std::move(other.future_);
-        }
-        return *this;
-    }
-
-    void wait()
-    {
-        if (future_.valid())
-        {
-            future_.wait();
-        }
-    }
-
-private:
-
-    std::future<void> future_;
-};
-
 void export_world_def(py::module_& m)
 {
     // b2WorldDef
@@ -137,11 +96,8 @@ void export_world_def(py::module_& m)
         .def_rw("joint_damping_ratio", &b2WorldDef::jointDampingRatio)
         .def_rw("maximum_linear_speed", &b2WorldDef::maximumLinearSpeed)
         .def_rw("internal_value", &b2WorldDef::internalValue) EXPORT_USER_DATA(b2WorldDef)
-#ifndef PYB2D_NO_THREADING
-        // .def_rw("enqueue_task", &b2WorldDef::enqueueTask)
-        // .def_rw("finish_task", &b2WorldDef::finishTask)
-        // .def_rw("user_task_context", &b2WorldDef::userTaskContext)
 
+#ifndef PYB2D_NO_THREADING
         .def(
             "_install_thread_pool",
             [](b2WorldDef& self, ThreadPool& threadpool)
@@ -185,7 +141,6 @@ void export_world_def(py::module_& m)
                     {
                         future.get();
                     }
-                    // std::cout<<"finishedTask called"<<std::endl;
                     delete futures;
                 };
 
@@ -443,6 +398,7 @@ void export_joint_defs(py::module_& m)
         .value("WELD_JOINT", b2JointType::b2_weldJoint)
         .value("WHEEL_JOINT", b2JointType::b2_wheelJoint);
 
+
     py::class_<b2DistanceJointDef>(m, "DistanceJointDef")
         .def(
             "__init__",
@@ -451,8 +407,8 @@ void export_joint_defs(py::module_& m)
                 new (t) b2DistanceJointDef(b2DefaultDistanceJointDef());
             }
         )
-        .def_rw("body_id_a", &b2DistanceJointDef::bodyIdA)
-        .def_rw("body_id_b", &b2DistanceJointDef::bodyIdB)
+        .def_rw("body_a", &b2DistanceJointDef::bodyIdA)
+        .def_rw("body_b", &b2DistanceJointDef::bodyIdB)
         .def_rw("local_anchor_a", &b2DistanceJointDef::localAnchorA)
         .def_rw("local_anchor_b", &b2DistanceJointDef::localAnchorB)
         .def_rw("length", &b2DistanceJointDef::length)
@@ -477,8 +433,8 @@ void export_joint_defs(py::module_& m)
                 new (t) b2MotorJointDef(b2DefaultMotorJointDef());
             }
         )
-        .def_rw("body_id_a", &b2MotorJointDef::bodyIdA)
-        .def_rw("body_id_b", &b2MotorJointDef::bodyIdB)
+        .def_rw("body_a", &b2MotorJointDef::bodyIdA)
+        .def_rw("body_b", &b2MotorJointDef::bodyIdB)
         .def_rw("linear_offset", &b2MotorJointDef::linearOffset)
         .def_rw("angular_offset", &b2MotorJointDef::angularOffset)
         .def_rw("max_force", &b2MotorJointDef::maxForce)
@@ -494,14 +450,13 @@ void export_joint_defs(py::module_& m)
                 new (t) b2MouseJointDef(b2DefaultMouseJointDef());
             }
         )
-        .def_rw("body_id_a", &b2MouseJointDef::bodyIdA)
-        .def_rw("body_id_b", &b2MouseJointDef::bodyIdB)
+        .def_rw("body_a", &b2MouseJointDef::bodyIdA)
+        .def_rw("body_b", &b2MouseJointDef::bodyIdB)
         .def_rw("target", &b2MouseJointDef::target)
         .def_rw("max_force", &b2MouseJointDef::maxForce)
         .def_rw("hertz", &b2MouseJointDef::hertz)
         .def_rw("damping_ratio", &b2MouseJointDef::dampingRatio)
-        .def_rw("collide_connected", &b2MouseJointDef::collideConnected)
-        .def_rw("internal_value", &b2MouseJointDef::internalValue) EXPORT_USER_DATA(b2MouseJointDef);
+        .def_rw("collide_connected", &b2MouseJointDef::collideConnected) EXPORT_USER_DATA(b2MouseJointDef);
 
 
     py::class_<b2PrismaticJointDef>(m, "PrismaticJointDef")
@@ -512,8 +467,8 @@ void export_joint_defs(py::module_& m)
                 new (t) b2PrismaticJointDef(b2DefaultPrismaticJointDef());
             }
         )
-        .def_rw("body_id_a", &b2PrismaticJointDef::bodyIdA)
-        .def_rw("body_id_b", &b2PrismaticJointDef::bodyIdB)
+        .def_rw("body_a", &b2PrismaticJointDef::bodyIdA)
+        .def_rw("body_b", &b2PrismaticJointDef::bodyIdB)
         .def_rw("local_anchor_a", &b2PrismaticJointDef::localAnchorA)
         .def_rw("local_anchor_b", &b2PrismaticJointDef::localAnchorB)
         .def_rw("local_axis_a", &b2PrismaticJointDef::localAxisA)
@@ -528,7 +483,7 @@ void export_joint_defs(py::module_& m)
         .def_rw("max_motor_force", &b2PrismaticJointDef::maxMotorForce)
         .def_rw("motor_speed", &b2PrismaticJointDef::motorSpeed)
         .def_rw("collide_connected", &b2PrismaticJointDef::collideConnected)
-        .def_rw("internal_value", &b2PrismaticJointDef::internalValue) EXPORT_USER_DATA(b2PrismaticJointDef);
+            EXPORT_USER_DATA(b2PrismaticJointDef);
 
     py::class_<b2RevoluteJointDef>(m, "RevoluteJointDef")
         .def(
@@ -538,8 +493,8 @@ void export_joint_defs(py::module_& m)
                 new (t) b2RevoluteJointDef(b2DefaultRevoluteJointDef());
             }
         )
-        .def_rw("body_id_a", &b2RevoluteJointDef::bodyIdA)
-        .def_rw("body_id_b", &b2RevoluteJointDef::bodyIdB)
+        .def_rw("body_a", &b2RevoluteJointDef::bodyIdA)
+        .def_rw("body_b", &b2RevoluteJointDef::bodyIdB)
         .def_rw("local_anchor_a", &b2RevoluteJointDef::localAnchorA)
         .def_rw("local_anchor_b", &b2RevoluteJointDef::localAnchorB)
         .def_rw("reference_angle", &b2RevoluteJointDef::referenceAngle)
@@ -554,7 +509,7 @@ void export_joint_defs(py::module_& m)
         .def_rw("motor_speed", &b2RevoluteJointDef::motorSpeed)
         .def_rw("draw_size", &b2RevoluteJointDef::drawSize)
         .def_rw("collide_connected", &b2RevoluteJointDef::collideConnected)
-        .def_rw("internal_value", &b2RevoluteJointDef::internalValue) EXPORT_USER_DATA(b2RevoluteJointDef);
+            EXPORT_USER_DATA(b2RevoluteJointDef);
 
     py::class_<b2WeldJointDef>(m, "WeldJointDef")
         .def(
@@ -564,8 +519,8 @@ void export_joint_defs(py::module_& m)
                 new (t) b2WeldJointDef(b2DefaultWeldJointDef());
             }
         )
-        .def_rw("body_id_a", &b2WeldJointDef::bodyIdA)
-        .def_rw("body_id_b", &b2WeldJointDef::bodyIdB)
+        .def_rw("body_a", &b2WeldJointDef::bodyIdA)
+        .def_rw("body_b", &b2WeldJointDef::bodyIdB)
         .def_rw("local_anchor_a", &b2WeldJointDef::localAnchorA)
         .def_rw("local_anchor_b", &b2WeldJointDef::localAnchorB)
         .def_rw("reference_angle", &b2WeldJointDef::referenceAngle)
@@ -573,8 +528,7 @@ void export_joint_defs(py::module_& m)
         .def_rw("angular_hertz", &b2WeldJointDef::angularHertz)
         .def_rw("linear_damping_ratio", &b2WeldJointDef::linearDampingRatio)
         .def_rw("angular_damping_ratio", &b2WeldJointDef::angularDampingRatio)
-        .def_rw("collide_connected", &b2WeldJointDef::collideConnected)
-        .def_rw("internal_value", &b2WeldJointDef::internalValue) EXPORT_USER_DATA(b2WeldJointDef);
+        .def_rw("collide_connected", &b2WeldJointDef::collideConnected) EXPORT_USER_DATA(b2WeldJointDef);
 
     py::class_<b2WheelJointDef>(m, "WheelJointDef")
         .def(
@@ -584,8 +538,8 @@ void export_joint_defs(py::module_& m)
                 new (t) b2WheelJointDef(b2DefaultWheelJointDef());
             }
         )
-        .def_rw("body_id_a", &b2WheelJointDef::bodyIdA)
-        .def_rw("body_id_b", &b2WheelJointDef::bodyIdB)
+        .def_rw("body_a", &b2WheelJointDef::bodyIdA)
+        .def_rw("body_b", &b2WheelJointDef::bodyIdB)
         .def_rw("local_anchor_a", &b2WheelJointDef::localAnchorA)
         .def_rw("local_anchor_b", &b2WheelJointDef::localAnchorB)
         .def_rw("local_axis_a", &b2WheelJointDef::localAxisA)
@@ -598,8 +552,19 @@ void export_joint_defs(py::module_& m)
         .def_rw("enable_motor", &b2WheelJointDef::enableMotor)
         .def_rw("max_motor_torque", &b2WheelJointDef::maxMotorTorque)
         .def_rw("motor_speed", &b2WheelJointDef::motorSpeed)
-        .def_rw("collide_connected", &b2WheelJointDef::collideConnected)
-        .def_rw("internal_value", &b2WheelJointDef::internalValue) EXPORT_USER_DATA(b2WheelJointDef);
+        .def_rw("collide_connected", &b2WheelJointDef::collideConnected) EXPORT_USER_DATA(b2WheelJointDef);
+
+
+    py::class_<b2FilterJointDef>(m, "FilterJointDef")
+        .def(
+            "__init__",
+            [](b2FilterJointDef* t)
+            {
+                new (t) b2FilterJointDef(b2DefaultFilterJointDef());
+            }
+        )
+        .def_rw("body_a", &b2FilterJointDef::bodyIdA)
+        .def_rw("body_b", &b2FilterJointDef::bodyIdB) EXPORT_USER_DATA(b2FilterJointDef);
 }
 
 void export_explosion_def(py::module_& m)

@@ -12,7 +12,7 @@
 #include <box2d/collision.h>
 #include <box2d/math_functions.h>
 
-#include "pyb2d/wrapper_structs.hpp"
+#include "pyb2d3/wrapper_structs.hpp"
 // }
 
 namespace nb = nanobind;
