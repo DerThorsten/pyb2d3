@@ -1,11 +1,11 @@
-# pyb2d
-python bindings for Box2D.
+# pyb2d3
+python bindings for Box2D 3
 
 
 # badges
-[![pixi](https://github.com/DerThorsten/bb2d/actions/workflows/pixi.yml/badge.svg)](https://github.com/DerThorsten/bb2d/actions/workflows/pixi.yml)
-[![micromamba](https://github.com/DerThorsten/bb2d/actions/workflows/mm.yaml/badge.svg)](https://github.com/DerThorsten/bb2d/actions/workflows/mm.yaml)
-[![raw-cmake](https://github.com/DerThorsten/bb2d/actions/workflows/raw-cmake.yaml/badge.svg)](https://github.com/DerThorsten/bb2d/actions/workflows/raw-cmake.yaml)
+[![pixi](https://github.com/DerThorsten/pyb2d3/actions/workflows/pixi.yml/badge.svg)](https://github.com/DerThorsten/pyb2d3/actions/workflows/pixi.yml)
+[![micromamba](https://github.com/DerThorsten/pyb2d3/actions/workflows/mm.yaml/badge.svg)](https://github.com/DerThorsten/pyb2d3/actions/workflows/mm.yaml)
+[![raw-cmake](https://github.com/DerThorsten/pyb2d3/actions/workflows/raw-cmake.yaml/badge.svg)](https://github.com/DerThorsten/pyb2d3/actions/workflows/raw-cmake.yaml)
 
 # Building
 This may not work on windows!
@@ -22,11 +22,6 @@ Activate the environment with:
 micromamba activate pyb2d
 ```
 
-Run the script to dowload and patch build
-and install box2d:ß
-```bash
-./build_box2d.sh
-```
 ### pip
 
 Install the python bindings with:
