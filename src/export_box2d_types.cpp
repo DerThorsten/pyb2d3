@@ -1,7 +1,7 @@
 #include <nanobind/nanobind.h>
 #include <pyb2d3/py_converter.hpp>
 
-#ifndef PYB2D_NO_THREADING
+#ifndef PYB2D3_NO_THREADING
 #    include <pyb2d3/threadpool.hpp>
 #endif
 
@@ -97,7 +97,7 @@ void export_world_def(py::module_& m)
         .def_rw("maximum_linear_speed", &b2WorldDef::maximumLinearSpeed)
         .def_rw("internal_value", &b2WorldDef::internalValue) EXPORT_USER_DATA(b2WorldDef)
 
-#ifndef PYB2D_NO_THREADING
+#ifndef PYB2D3_NO_THREADING
         .def(
             "_install_thread_pool",
             [](b2WorldDef& self, ThreadPool& threadpool)

@@ -9,7 +9,7 @@ void export_collision(py::module_& m);
 void export_py_debug_draw(py::module_& m);
 void export_math_functions(py::module_& m);
 
-#ifndef PYB2D_NO_THREADING
+#ifndef PYB2D3_NO_THREADING
 void export_threadpool(py::module_& m);
 #endif
 
@@ -25,14 +25,14 @@ NB_MODULE(_pyb2d3, m)
     export_py_debug_draw(m);
     export_math_functions(m);
 
-#ifndef PYB2D_NO_THREADING
+#ifndef PYB2D3_NO_THREADING
     export_threadpool(m);
 #endif
 
 
     m.doc() = "Python bindings for Box2D, a 2D physics engine.";
 
-#ifdef PYB2D_NO_THREADING
+#ifdef PYB2D3_NO_THREADING
     m.attr("WITH_THREADING") = false;
 #else
     m.attr("WITH_THREADING") = true;

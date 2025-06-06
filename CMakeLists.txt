@@ -4,7 +4,7 @@ include(FetchContent)
 
 
 OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-OPTION(PYB2D_NO_THREADING "Disable threading support" OFF)
+OPTION(PYB2D3_NO_THREADING "Disable threading support" OFF)
 
 
 # this is only relevant if we are building box2d
@@ -32,31 +32,32 @@ else()
 endif()
 
 if(EMSCRIPTEN)
-    set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
-    set(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "-s SIDE_MODULE=1")
-    set(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "-s SIDE_MODULE=1")
-    set(CMAKE_STRIP FALSE)  # used by default in pybind11 on .so modules
+    # set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
+    # set(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "-s SIDE_MODULE=1")
+    # set(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "-s SIDE_MODULE=1")
+    # set(CMAKE_STRIP FALSE)  # used by default in pybind11 on .so modules
 
-    # Create a target that holds Python module information
-    add_library(MyFakePythonModule INTERFACE)
+    # # Create a target that holds Python module information
+    # add_library(MyFakePythonModule INTERFACE)
 
-    # Define the include directories
-    set_target_properties(MyFakePythonModule PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${Python_INCLUDE_DIRS}"
-    )
+    # # Define the include directories
+    # set_target_properties(MyFakePythonModule PROPERTIES
+    #     INTERFACE_INCLUDE_DIRECTORIES "${Python_INCLUDE_DIRS}"
+    # )
 
-    # Define the link libraries (the actual Python library)
-    set_target_properties(MyFakePythonModule PROPERTIES
-        INTERFACE_LINK_LIBRARIES "${Python_LIBRARIES}"
-    )
+    # # Define the link libraries (the actual Python library)
+    # set_target_properties(MyFakePythonModule PROPERTIES
+    #     INTERFACE_LINK_LIBRARIES "${Python_LIBRARIES}"
+    # )
 
-    # Optionally, if nanobind uses the Python executable path:
-    set_target_properties(MyFakePythonModule PROPERTIES
-        INTERFACE_COMPILE_DEFINITIONS "PYTHON_EXECUTABLE=\"${Python_EXECUTABLE}\""
-    )
+    # # Optionally, if nanobind uses the Python executable path:
+    # set_target_properties(MyFakePythonModule PROPERTIES
+    #     INTERFACE_COMPILE_DEFINITIONS "PYTHON_EXECUTABLE=\"${Python_EXECUTABLE}\""
+    # )
 
-    # Attempt to create an alias (might not fully satisfy the check)
-    add_library(Python::Module ALIAS MyFakePythonModule)
+    # # Attempt to create an alias (might not fully satisfy the check)
+    # add_library(Python::Module ALIAS MyFakePythonModule)
+    find_package(Python COMPONENTS Interpreter Development REQUIRED)
 else()
     # Find Python
     find_package(Python COMPONENTS Interpreter Development REQUIRED)
@@ -76,7 +77,7 @@ SET(PY_SOURCES
     src/export_math_functions.cpp
     src/py_debug_draw.cpp
 )
-if(NOT PYB2D_NO_THREADING)
+if(NOT PYB2D3_NO_THREADING)
     # if not emscripten, add the main.cpp file
     list(APPEND PY_SOURCES src/export_threadpool.cpp)
 endif()
@@ -84,7 +85,7 @@ endif()
 nanobind_add_module(_pyb2d3 ${PY_SOURCES})
 
 
-if(NOT PYB2D_NO_THREADING)
+if(NOT PYB2D3_NO_THREADING)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
     target_link_libraries(_pyb2d3 PRIVATE Threads::Threads)
@@ -95,8 +96,8 @@ target_include_directories(_pyb2d3
     PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 #add definitions
-if(PYB2D_NO_THREADING)
-    target_compile_definitions(_pyb2d3 PRIVATE PYB2D_NO_THREADING)
+if(PYB2D3_NO_THREADING)
+    target_compile_definitions(_pyb2d3 PRIVATE PYB2D3_NO_THREADING)
 endif()
 
 # link box2d
