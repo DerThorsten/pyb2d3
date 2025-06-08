@@ -75,6 +75,7 @@ SET(PY_SOURCES
     src/export_box2d_wrapper_structs.cpp
     src/export_collision.cpp
     src/export_math_functions.cpp
+    src/export_batch_api.cpp
     src/py_debug_draw.cpp
 )
 if(NOT PYB2D3_NO_THREADING)

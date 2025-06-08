@@ -91,11 +91,94 @@ def test_joints(joint_name):
     world = b2d.World(gravity=(0, -10))
     factory = world.body_factory()
     factory.dynamic().shape(density=1).add_box(1, 1)
-    body_a = factory.position((0, 0)).create()
-    body_b = factory.position((2, 0)).create()
+    body_a = factory.position((-1, 1)).create()
+    body_b = factory.position((2, -2)).create()
 
     joint = world_func(world, body_a, body_b)
 
     assert isinstance(joint, joint_cls)
     assert joint.body_a == body_a
     assert joint.body_b == body_b
+
+
+def test_batch_api():
+
+    world = b2d.World(gravity=(0, -10))
+    factory = world.body_factory()
+    factory.dynamic().shape(density=1).add_box(1, 1)
+    body_list = [factory.position((i, -i)).create() for i in range(10)]
+    bodies = b2d.Bodies()
+    for body in body_list:
+        bodies.append(body)
+    n_bodies = len(bodies)
+    assert n_bodies == len(body_list)
+
+    world.step(1 / 60, 4)
+
+    # from pre-allocated positions object
+    positions = np.zeros((n_bodies, 2), dtype=np.float32)
+    pos = bodies.get_positions(positions)
+
+    # ensure positions are filled correctly
+    for i in range(n_bodies):
+        assert pos[i, 0] == approx(body_list[i].position[0])
+        assert pos[i, 1] == approx(body_list[i].position[1])
+
+    # ensure output "pos" is the same as "positions"
+    assert pos is positions
+
+    pos2 = bodies.get_positions()
+    assert pos2.shape == (n_bodies, 2)
+    for i in range(n_bodies):
+        assert pos2[i, 0] == approx(body_list[i].position[0])
+        assert pos2[i, 1] == approx(body_list[i].position[1])
+
+    # get velocities
+    velocities = np.zeros((n_bodies, 2), dtype=np.float32)
+    vel = bodies.get_linear_velocities(velocities)
+    assert vel is velocities
+    vel2 = bodies.get_linear_velocities()
+
+    # ensure velocities are filled correctly
+    for i in range(n_bodies):
+        assert vel[i, 0] == approx(body_list[i].linear_velocity[0])
+        assert vel[i, 1] == approx(body_list[i].linear_velocity[1])
+        assert vel2[i, 0] == approx(body_list[i].linear_velocity[0])
+        assert vel2[i, 1] == approx(body_list[i].linear_velocity[1])
+
+    # get_angular_velocities
+    angular_velocities = np.zeros(n_bodies, dtype=np.float32)
+    ang_vel = bodies.get_angular_velocities(angular_velocities)
+    assert ang_vel is angular_velocities
+    ang_vel2 = bodies.get_angular_velocities()
+
+    # ensure angular velocities are filled correctly
+    for i in range(n_bodies):
+        assert ang_vel[i] == approx(body_list[i].angular_velocity)
+        assert ang_vel2[i] == approx(body_list[i].angular_velocity)
+
+    # set agular velocities
+    new_angular_velocities = np.array([i for i in range(n_bodies)], dtype=np.float32)
+    bodies.set_angular_velocities(new_angular_velocities)
+
+    # ensure angular velocities are set correctly
+    for i in range(n_bodies):
+        assert body_list[i].angular_velocity == approx(new_angular_velocities[i])
+
+    # set from scalar
+    bodies.set_angular_velocities(1.0)
+    for i in range(n_bodies):
+        assert body_list[i].angular_velocity == approx(1.0)
+
+    # set from array with 1 value
+    bodies.set_angular_velocities(np.array([3.0], dtype=np.float32))
+    for i in range(n_bodies):
+        assert body_list[i].angular_velocity == approx(3.0)
+
+    # get_linear_velocities_magnitude
+    linear_velocities_magnitude = bodies.get_linear_velocities_magnitude()
+    assert linear_velocities_magnitude.shape == (n_bodies,)
+    for i in range(n_bodies):
+        assert linear_velocities_magnitude[i] == approx(
+            np.linalg.norm(body_list[i].linear_velocity)
+        )

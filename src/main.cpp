@@ -8,14 +8,12 @@ void export_box2d_functions(py::module_& m);
 void export_collision(py::module_& m);
 void export_py_debug_draw(py::module_& m);
 void export_math_functions(py::module_& m);
+void export_batch_api(py::module_& m);
 
 #ifndef PYB2D3_NO_THREADING
 void export_threadpool(py::module_& m);
 #endif
 
-struct Pyb2dConfig
-{
-};
 
 NB_MODULE(_pyb2d3, m)
 {
@@ -24,6 +22,7 @@ NB_MODULE(_pyb2d3, m)
     export_collision(m);
     export_py_debug_draw(m);
     export_math_functions(m);
+    export_batch_api(m);
 
 #ifndef PYB2D3_NO_THREADING
     export_threadpool(m);
