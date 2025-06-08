@@ -353,67 +353,33 @@ void export_body_batch_api(nb::module_& m)
     // constructors, appned / push_back, size
     export_batch_core(body_cls);
 
+    // clang-format off
 
-    export_batch_r<uint8_t>(
-        body_cls,
-        "is_valid",
-        [](b2BodyId bodyId) -> uint8_t
-        {
-            return b2Body_IsValid(bodyId) ? 1 : 0;
-        }
-    );
-    export_batch_rw<uint8_t>(
-        body_cls,
-        "types",
-        [](b2BodyId bodyId) -> uint8_t
-        {
-            return static_cast<uint8_t>(b2Body_GetType(bodyId));
-        },
-        [](b2BodyId bodyId, uint8_t type)
-        {
-            b2Body_SetType(bodyId, static_cast<b2BodyType>(type));
-        }
-    );
 
+
+    export_batch_r<uint8_t>(body_cls, "is_valid", [](b2BodyId bodyId) -> uint8_t {return b2Body_IsValid(bodyId) ? 1 : 0;});
+    export_batch_rw<uint8_t>(body_cls, "types",
+        [](b2BodyId bodyId) -> uint8_t { return static_cast<uint8_t>(b2Body_GetType(bodyId)); },
+        [](b2BodyId bodyId, uint8_t type) { b2Body_SetType(bodyId, static_cast<b2BodyType>(type)); });
 
     // user data
-    export_batch_rw<uint64_t>(
-        body_cls,
-        "user_data",
-        [](b2BodyId bodyId) -> uint64_t
-        {
-            return reinterpret_cast<uint64_t>(b2Body_GetUserData(bodyId));
-        },
-        [](b2BodyId bodyId, uint64_t user_data)
-        {
-            b2Body_SetUserData(bodyId, reinterpret_cast<void*>(user_data));
-        }
-    );
+    export_batch_rw<uint64_t>(body_cls, "user_data",
+        [](b2BodyId bodyId) -> uint64_t {return reinterpret_cast<uint64_t>(b2Body_GetUserData(bodyId));},
+        [](b2BodyId bodyId, uint64_t user_data) { b2Body_SetUserData(bodyId, reinterpret_cast<void*>(user_data));});
 
-    export_batch_r<b2Vec2>(body_cls, "positions", &b2Body_GetPosition);
-    export_batch_r<b2Rot>(body_cls, "rotations", &b2Body_GetRotation);
+    export_batch_r<b2Vec2>(body_cls,"positions",&b2Body_GetPosition);
+    export_batch_r<b2Rot>(body_cls,"rotations",&b2Body_GetRotation);
 
     // transform is a b2Vec2 + b2Rot
-    export_batch_rw<b2Transform>(
-        body_cls,
-        "transforms",
-        &b2Body_GetTransform,
-        [](b2BodyId bodyId, const b2Transform& transform)
-        {
-            b2Body_SetTransform(bodyId, transform.p, transform.q);  // why box2d, why?
-        }
-    );
+    export_batch_rw<b2Transform>(body_cls,"transforms",&b2Body_GetTransform, [](b2BodyId bodyId, const b2Transform & transform) {
+        b2Body_SetTransform(bodyId, transform.p, transform.q); // why box2d, why?
+    });
 
-    export_batch_rw<b2Vec2>(body_cls, "linear_velocities", &b2Body_GetLinearVelocity, &b2Body_SetLinearVelocity);
-    export_batch_r<float>(
-        body_cls,
-        "linear_velocities_magnitude",
-        [](b2BodyId bodyId) -> float
-        {
-            return b2Length(b2Body_GetLinearVelocity(bodyId));
-        }
-    );
+    export_batch_rw<b2Vec2>(body_cls,"linear_velocities",&b2Body_GetLinearVelocity, &b2Body_SetLinearVelocity);
+    export_batch_r<float>(body_cls, "linear_velocities_magnitude", [](b2BodyId bodyId) -> float { return b2Length(b2Body_GetLinearVelocity(bodyId));});
     export_batch_rw<float>(body_cls, "angular_velocities", &b2Body_GetAngularVelocity, &b2Body_SetAngularVelocity);
+
+    // clang-format on
 }
 
 void export_batch_api(nb::module_& m)
