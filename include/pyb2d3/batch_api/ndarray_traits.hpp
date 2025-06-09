@@ -19,6 +19,10 @@
 // | b2AABB     | (N, 2, 2)| axis aligned bounding box for each body in the batch (lower, upper)        |
 // | b2Transform| (N, 3, 2)| transform value for each body in the batch (p.x,p.y,c,s)                   |
 
+#include <array>
+#include <cstddef>
+#include <cstdint>
+
 #include <pyb2d3/numpy_utils.hpp>
 
 template <class TYPE>
