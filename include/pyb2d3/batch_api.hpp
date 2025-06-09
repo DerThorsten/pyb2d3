@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 
 #include <box2d/box2d.h>
@@ -44,20 +45,3 @@ using Bodies = Ids<Body>;
 using Shapes = Ids<Shape>;
 using Chains = Ids<Chain>;
 using Joints = Ids<Joint>;
-
-
-// struct Bodies : Ids<b2BodyId>
-// {
-
-
-//     inline void GetPositions(ArrayVec2 & out_positions) const
-//     {
-//         for (std::size_t i = 0; i < this->size(); ++i)
-//         {
-//             b2Vec2 pos = b2Body_GetPosition(Get(i));
-//             out_positions[i][0] = pos.x;
-//             out_positions[i][1] = pos.y;
-//         }
-//     }
-
-// };

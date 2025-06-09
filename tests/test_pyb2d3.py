@@ -182,3 +182,25 @@ def test_batch_api():
         assert linear_velocities_magnitude[i] == approx(
             np.linalg.norm(body_list[i].linear_velocity)
         )
+
+    # get_local_points from world points
+    world_points = np.array([(i, i + 1) for i in range(len(bodies))], dtype=np.float32)
+    assert world_points.shape == (len(bodies), 2)
+    local_points = bodies.get_local_points(world_points)
+    assert local_points.shape == world_points.shape
+
+    for i in range(len(world_points)):
+        assert local_points[i, 0] == approx(
+            body_list[i].local_point(world_points[i])[0]
+        )
+        assert local_points[i, 1] == approx(
+            body_list[i].local_point(world_points[i])[1]
+        )
+
+    # get_local_points from **single** world point
+    world_point = np.array((1, 2), dtype=np.float32)
+    local_points = bodies.get_local_points(world_points=world_point)
+    assert local_points.shape == (len(bodies), 2)
+    for i in range(len(bodies)):
+        assert local_points[i, 0] == approx(body_list[i].local_point(world_point)[0])
+        assert local_points[i, 1] == approx(body_list[i].local_point(world_point)[1])
