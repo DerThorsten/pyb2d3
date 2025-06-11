@@ -28,7 +28,7 @@ build-verbosity = 1
 [tool.scikit-build]
 cmake.source-dir = "."
 sdist.exclude = [".pixi"]
-wheel.packages = ["pyb2d"]
+wheel.packages = ["pyb2d3"]
 # # Build stable ABI wheels for CPython 3.12+
 wheel.py-api = "cp312"
 

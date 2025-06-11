@@ -92,8 +92,6 @@ void export_world_def(py::module_& m)
         .def_rw("hit_event_threshold", &b2WorldDef::hitEventThreshold)
         .def_rw("contact_hertz", &b2WorldDef::contactHertz)
         .def_rw("contact_damping_ratio", &b2WorldDef::contactDampingRatio)
-        .def_rw("joint_hertz", &b2WorldDef::jointHertz)
-        .def_rw("joint_damping_ratio", &b2WorldDef::jointDampingRatio)
         .def_rw("maximum_linear_speed", &b2WorldDef::maximumLinearSpeed)
         .def_rw("internal_value", &b2WorldDef::internalValue) EXPORT_USER_DATA(b2WorldDef)
 

@@ -232,6 +232,17 @@ struct Joint
     {
         return b2Joint_GetConstraintTorque(id);
     }
+
+    // get and set reference angle
+    inline float GetReferenceAngle() const
+    {
+        return b2Joint_GetReferenceAngle(id);
+    }
+
+    inline void SetReferenceAngle(float angle)
+    {
+        b2Joint_SetReferenceAngle(id, angle);
+    }
 };
 
 struct DistanceJoint : public Joint
@@ -658,16 +669,6 @@ struct WeldJoint : public Joint
 {
     using Joint::Joint;
 
-    inline float GetReferenceAngle() const
-    {
-        return b2WeldJoint_GetReferenceAngle(id);
-    }
-
-    inline void SetReferenceAngle(float angleInRadians)
-    {
-        b2WeldJoint_SetReferenceAngle(id, angleInRadians);
-    }
-
     inline void SetLinearHertz(float hertz)
     {
         b2WeldJoint_SetLinearHertz(id, hertz);
@@ -804,17 +805,17 @@ struct WheelJoint : public Joint
     }
 };
 
-// for consitency with the other IDs
-inline uint64_t b2StoreWorldId(b2WorldId id)
-{
-    return ((uint64_t) id.index1 << 16) | ((uint64_t) id.generation);
-}
+// // for consitency with the other IDs
+// inline uint64_t b2StoreWorldId(b2WorldId id)
+// {
+//     return ((uint64_t) id.index1 << 16) | ((uint64_t) id.generation);
+// }
 
-inline b2WorldId b2LoadWorldId(uint64_t x)
-{
-    b2WorldId id = {(uint16_t) (x >> 16), (uint16_t) (x)};
-    return id;
-}
+// inline b2WorldId b2LoadWorldId(uint64_t x)
+// {
+//     b2WorldId id = {(uint16_t) (x >> 16), (uint16_t) (x)};
+//     return id;
+// }
 
 struct Shape
 {
@@ -1681,11 +1682,6 @@ struct WorldView
     inline void SetContactTuning(float hertz, float dampingRatio, float pushSpeed)
     {
         b2World_SetContactTuning(id, hertz, dampingRatio, pushSpeed);
-    }
-
-    inline void SetJointTuning(float hertz, float dampingRatio)
-    {
-        b2World_SetJointTuning(id, hertz, dampingRatio);
     }
 
     inline void SetMaximumLinearSpeed(float maximumLinearSpeed)

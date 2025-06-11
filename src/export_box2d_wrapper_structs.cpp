@@ -119,7 +119,6 @@ void export_world_class(nb::module_& m)
             nb::arg("damping_ratio"),
             nb::arg("push_velocity")
         )
-        .def("set_joint_tuning", &WorldView::SetJointTuning, nb::arg("hertz"), nb::arg("damping_ratio"))
         .def("create_body_from_def", &WorldView::CreateBodyId, nb::arg("def"))
 
         // extra functions to create joints
@@ -496,6 +495,7 @@ void export_joint_classes(nb::module_& m)
                 return b2StoreJointId(self.id);
             }
         )
+
         .def_prop_ro("is_valid", &Joint::IsValid)
         .def("destroy", &Joint::Destroy)
         .def_prop_ro("type", &Joint::GetType)
@@ -666,12 +666,6 @@ void export_joint_classes(nb::module_& m)
     nb::class_<WeldJoint, Joint>(m, "WeldJoint")
         .def(nb::init<uint64_t>(), nb::arg("joint_id"))
         .def_prop_ro("reference_angle", &WeldJoint::GetReferenceAngle)
-        .def_prop_rw(
-            "reference_angle",
-            &WeldJoint::GetReferenceAngle,
-            &WeldJoint::SetReferenceAngle,
-            nb::arg("angle_in_radians")
-        )
         .def_prop_rw("linear_hertz", &WeldJoint::GetLinearHertz, &WeldJoint::SetLinearHertz, nb::arg("hertz"))
         .def_prop_rw(
             "linear_damping_ratio",

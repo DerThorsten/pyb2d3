@@ -590,14 +590,6 @@ void export_math_functions(py::module_& m)
     );
 
     m.def(
-        "unwind_large_angle",
-        [](float angle)
-        {
-            return b2UnwindLargeAngle(angle);
-        }
-    );
-
-    m.def(
         "rotate_vector",
         [](b2Rot q, b2Vec2 v)
         {
