@@ -25,8 +25,7 @@ jobs:
       - name: build
         shell: bash -el {0}
         run: |
-          export CMAKE_ARGS="-DDFETCH_BOX2D=OFF"
-
+          export CMAKE_ARGS="-DFETCH_BOX2D=OFF"
           uv pip install .
 
       - name: test
