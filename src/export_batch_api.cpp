@@ -1,9 +1,11 @@
 #include <string>
 
+#include <nanobind/make_iterator.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/optional.h>
 #include <pyb2d3/batch_api.hpp>
 #include <pyb2d3/batch_api/batch_exporters.hpp>
+#include <pyb2d3/transform_iter.hpp>
 
 
 // nanobind namespace
@@ -12,10 +14,29 @@ namespace nb = nanobind;
 template <class ENTITY_TYPE>
 void export_batch_core(nb::class_<Ids<ENTITY_TYPE>>& cls)
 {
+    using exported_type = Ids<ENTITY_TYPE>;
     // Export the Ids struct
     cls.def(nb::init<>())
         .def("append", &Ids<ENTITY_TYPE>::push_back, nb::arg("id"), "Append an item to the batch")
         .def("__len__", &Ids<ENTITY_TYPE>::size, "Get the number of items in the batch");
+
+    // make ids iterable
+    cls.def(
+        "id_iter",
+        [](Ids<ENTITY_TYPE>& self)
+        {
+            return nb::make_iterator(nb::type<exported_type>(), "iterator", self.ids.begin(), self.ids.end());
+        },
+        nb::keep_alive<0, 1>()
+    );
+    // cls.def(
+    //     "__iter__",
+    //     [](Ids<ENTITY_TYPE>& self)
+    //     {
+    //         nb::object iter = nb::make_iterator(nb::type<exported_type>(), "iterator", tbegin, tend);
+    //     },
+    //     nb::keep_alive<0, 1>()
+    // );
 }
 
 void export_body_batch_api(nb::module_& m)

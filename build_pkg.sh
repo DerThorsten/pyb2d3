@@ -27,10 +27,8 @@ if true; then
 
     PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module" pytest
 
+    PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module" pytest benchmark
+
     popd
 
 fi
-
-
-PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module"
-PYTHONPATH="$PYTHONPATH:$PYB2D3_PLAYGROUND_SRC_DIR/src/module"

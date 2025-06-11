@@ -23,6 +23,10 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <box2d/box2d.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/optional.h>
 #include <pyb2d3/numpy_utils.hpp>
 
 template <class TYPE>
