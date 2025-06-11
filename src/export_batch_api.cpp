@@ -17,16 +17,23 @@ void export_batch_core(nb::class_<Ids<ENTITY_TYPE>>& cls)
     // Export the Ids struct
     cls.def(nb::init<>())
         .def("append", &Ids<ENTITY_TYPE>::push_back, nb::arg("id"), "Append an item to the batch")
-        .def("__len__", &Ids<ENTITY_TYPE>::siz
-        // make ids iterable
-    cls.def(
-        "id_iter",
-        [](Ids<ENTITY_TYPE>& self)
-        {
-        return nb::make_iterator(nb::type<exported_type>(), "iterator", self.ids.begin(), self.ids.end());
-        }
-        , nb::keep_alive<0, 1>()
-    );
+        .def("__len__", &Ids<ENTITY_TYPE>::size, "Get the size of the batch")
+        .def(
+            "__bool__",
+            [](const exported_type& self)
+            {
+                return !self.ids.empty();
+            },
+            "Check if the batch is not empty"
+        )
+        .def(
+            "id_iter",
+            [](Ids<ENTITY_TYPE>& self)
+            {
+                return nb::make_iterator(nb::type<exported_type>(), "iterator", self.ids.begin(), self.ids.end());
+            },
+            nb::keep_alive<0, 1>()
+        );
 }
 
 void export_body_batch_api(nb::module_& m)
