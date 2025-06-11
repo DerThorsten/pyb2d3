@@ -57,6 +57,18 @@ B2_API bool b2Chain_IsValid( b2ChainId id );
 */
 struct Chain
 {
+    using id_type = b2ChainId;
+
+    static auto int_to_id(uint64_t id) -> id_type
+    {
+        return b2LoadChainId(id);
+    }
+
+    static auto id_to_int(id_type id) -> uint64_t
+    {
+        return b2StoreChainId(id);
+    }
+
     b2ChainId id;
 
     inline Chain(b2ChainId chainId)
@@ -123,6 +135,17 @@ struct Chain
 struct Joint
 {
     b2JointId id;
+    using id_type = b2JointId;
+
+    static auto int_to_id(uint64_t id) -> id_type
+    {
+        return b2LoadJointId(id);
+    }
+
+    static auto id_to_int(id_type id) -> uint64_t
+    {
+        return b2StoreJointId(id);
+    }
 
     inline Joint(b2JointId jointId)
         : id(jointId)
@@ -797,6 +820,18 @@ struct Shape
 {
     b2ShapeId id;
 
+    using id_type = b2ShapeId;
+
+    static auto int_to_id(uint64_t id) -> id_type
+    {
+        return b2LoadShapeId(id);
+    }
+
+    static auto id_to_int(id_type id) -> uint64_t
+    {
+        return b2StoreShapeId(id);
+    }
+
     inline Shape(b2ShapeId shapeId)
         : id(shapeId)
     {
@@ -1082,6 +1117,18 @@ inline nb::object GetCastedJoint(b2JointId jointId)
 struct Body
 {
     b2BodyId id;
+
+    using id_type = b2BodyId;
+
+    static auto int_to_id(uint64_t id) -> id_type
+    {
+        return b2LoadBodyId(id);
+    }
+
+    static auto id_to_int(id_type id) -> uint64_t
+    {
+        return b2StoreBodyId(id);
+    }
 
     // inline Body() { id = b2InvalidBodyId; }
     inline Body(b2BodyId bodyId)
@@ -1460,6 +1507,18 @@ struct Body
 struct WorldView
 {
     b2WorldId id;
+
+    using id_type = b2WorldId;
+
+    static auto int_to_id(uint64_t id) -> id_type
+    {
+        return b2LoadWorldId(id);
+    }
+
+    static auto id_to_int(id_type id) -> uint64_t
+    {
+        return b2StoreWorldId(id);
+    }
 
     // inline WorldView() { id = b2CreateWorld(nullptr); }
     WorldView(b2WorldId worldId)

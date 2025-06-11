@@ -34,15 +34,23 @@ namespace nanobind::detail
         // Python -> C++
         bool from_python(nb::handle src, uint8_t flags, cleanup_list*) noexcept
         {
-            if (!nb::isinstance<nb::tuple>(src) || nb::len(src) != 2)
-            {
-                return false;
-            }
+            using arr_type = nb::ndarray<float, nb::numpy, nb::shape<2>>;
 
-            auto x = nb::cast<float>(src[0]);
-            auto y = nb::cast<float>(src[1]);
-            value = b2Vec2{x, y};
-            return true;
+            if (nb::isinstance<nb::tuple>(src) && nb::len(src) == 2)
+            {
+                auto x = nb::cast<float>(src[0]);
+                auto y = nb::cast<float>(src[1]);
+                value = b2Vec2{x, y};
+                return true;
+            }
+            else if (nb::isinstance<arr_type>(src))
+            {
+                auto arr = nb::cast<arr_type>(src);
+                auto view = arr.view();
+                value = b2Vec2{view(0), view(1)};
+                return true;
+            }
+            return false;  // Not a valid input type
         }
 
         // C++ -> Python

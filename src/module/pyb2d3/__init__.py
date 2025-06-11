@@ -620,3 +620,18 @@ class HexColor(Enum):
     Box2DBlue = 0x30AEBF
     Box2DGreen = 0x8CC924
     Box2DYellow = 0xFFEE8C
+
+
+def extend_batch_api():
+    IdClasses = [(Bodies, Body)]
+
+    for batch_cls, single_cls in IdClasses:
+
+        def __iter__(self):
+            return map(single_cls, self.id_iter())
+
+        batch_cls.__iter__ = __iter__
+
+
+extend_batch_api()
+del extend_batch_api
