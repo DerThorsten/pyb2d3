@@ -9,18 +9,20 @@ OPTION(PYB2D3_NO_THREADING "Disable threading support" OFF)
 
 # this is only relevant if we are building box2d
 # (ie if FETCH_BOX2D is ON)
-OPTION(FETCH_BOX2D          "Download/Fetch Box2D" OFF)
+OPTION(FETCH_BOX2D          "Download/Fetch Box2D" ON)
 option(BUILD_SHARED_LIBS    "Build using shared libraries" OFF)
 
 if(FETCH_BOX2D)
     FetchContent_Declare(
         box2d
         GIT_REPOSITORY https://github.com/erincatto/box2d.git
-        GIT_TAG main
+        GIT_TAG v3.1.0
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
     )
     FetchContent_MakeAvailable(box2d)
+else()
+    find_package(box2d REQUIRED)
 endif()
 
 
@@ -65,7 +67,7 @@ endif()
 
 
 
-find_package(box2d REQUIRED)
+# find_package(box2d REQUIRED)
 find_package(nanobind CONFIG REQUIRED)
 
 

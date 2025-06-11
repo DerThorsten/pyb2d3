@@ -20,6 +20,7 @@ if true; then
     cmake .. \
         -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
         -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+        -DFETCH_BOX2D=OFF \
         -Dnanobind_DIR=$(python -m nanobind --cmake_dir)
 
     make -j$(nproc)
