@@ -422,17 +422,33 @@ def make_filter(**kwargs):
     return filter
 
 
-def circle(**kwargs):
+def circle(center=(0, 0), radius=1):
     c = Circle()
-    for k, v in kwargs.items():
-        setattr(c, k, v)
+    c.center = center
+    c.radius = radius
     return c
 
 
-def capsule(**kwargs):
+def capsule(center1, center2, radius):
     c = Capsule()
-    for k, v in kwargs.items():
-        setattr(c, k, v)
+    c.center1 = center1
+    c.center2 = center2
+    c.radius = radius
+    return c
+
+
+def segment(point1, point2):
+    s = Segment()
+    s.point1 = point1
+    s.point2 = point2
+    return s
+
+
+def chain_segment(segment, ghost1, ghost2):
+    c = ChainSegment()
+    c.segment = segment
+    c.ghost1 = ghost1
+    c.ghost2 = ghost2
     return c
 
 

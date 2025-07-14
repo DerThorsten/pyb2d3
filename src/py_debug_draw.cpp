@@ -45,7 +45,7 @@ void PyDrawSolidPolygon(
 void PyDrawCircle(b2Vec2 center, float radius, b2HexColor color, void* context)
 {
     PyDebugDraw* draw = (PyDebugDraw*) context;
-    draw->m_py_class.attr("draw_circle")(center.x, center.y, radius, static_cast<int>(color));
+    draw->m_py_class.attr("draw_circle")(center, radius, static_cast<int>(color));
 }
 
 /// Draw a solid circle.
