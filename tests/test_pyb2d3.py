@@ -204,3 +204,44 @@ def test_batch_api():
     for i in range(len(bodies)):
         assert local_points[i, 0] == approx(body_list[i].local_point(world_point)[0])
         assert local_points[i, 1] == approx(body_list[i].local_point(world_point)[1])
+
+
+def test_query_callback_with_chains():
+
+    world = b2d.World(gravity=(0, -10))
+    w = 100
+    ground_points = np.array(
+        [
+            (-w, 1.0),
+            (w, 0.0),
+            (-w, 0.0),
+            (-w, 0.1),
+        ]
+    )
+
+    material = b2d.surface_material(restitution=1.0, friction=0.0)
+
+    chain_def = b2d.chain_def(
+        points=ground_points,
+        materials=[material, material, material, material],
+    )
+
+    ground = world.create_static_body(position=(0, 0))
+    ground.create_chain(chain_def)
+
+    # create aabb around the point
+    world_point = (0, 0)
+    aabb = b2d.aabb_arround_point(point=world_point, radius=10)
+
+    def callback(shape):
+        # check if the world point is inside the shape
+        if shape.body.type != b2d.BodyType.STATIC:
+            return b2d.CONTINUE_QUERY
+        return b2d.STOP_QUERY
+
+    world.overlap_aabb(aabb, callback)
+
+    # callback = QueryCallback()
+    # world.query_aabb(callback, body.aabb)
+
+    # assert callback.hit_count == 1

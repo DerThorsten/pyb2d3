@@ -4,6 +4,10 @@ from . import _pyb2d3  # type: ignore
 from functools import partial, partialmethod
 
 
+# some constats
+STOP_QUERY = False
+CONTINUE_QUERY = True
+
 # to auto generate a bunch of stuff
 _joint_names = [
     "distance",
@@ -228,6 +232,25 @@ def _extend_world():
     WorldView.create_kinematic_body = partialmethod(
         WorldView.create_body, type=BodyType.KINEMATIC
     )
+
+    def overlap_aabb(self, aabb, callback, query_filter=None, wrap_callback=True):
+        if query_filter is None:
+            query_filter = QueryFilter()
+
+        if wrap_callback:
+
+            def wrapped_cb(shape):
+                res = callback(shape)
+                if res is None:
+                    return True
+                else:
+                    return bool(res)
+
+        else:
+            wrapped_cb = callback
+        return self._overlap_aabb(aabb, query_filter, wrapped_cb)
+
+    WorldView.overlap_aabb = overlap_aabb
 
     def body_factory(self):
         return BodyFactory(self)

@@ -1,3 +1,5 @@
+#include <optional>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/vector.h>
 #include <pyb2d3/py_converter.hpp>
@@ -5,7 +7,6 @@
 #include "py_debug_draw.hpp"
 #include "pyb2d3/py_chain_def.hpp"
 #include "pyb2d3/wrapper_structs.hpp"
-
 
 // C
 // extern "C"
@@ -44,14 +45,16 @@ void export_world_class(nb::module_& m)
         .def("get_sensor_events", &WorldView::GetSensorEvents)
         .def("get_contact_events", &WorldView::GetContactEvents)
         .def(
-            "overlap_aabb",
+            "_overlap_aabb",
             [](WorldView& self, b2AABB aabb, b2QueryFilter filter, nanobind::object& fcn)
             {
                 // lambda without captures st. we can pass it to the C function
                 auto fcn_lambda = [](b2ShapeId shape_id, void* context) -> bool
                 {
                     auto callable = static_cast<nanobind::object*>(context);
-                    return nanobind::cast<bool>(callable->operator()(shape_id));
+                    auto result = callable->operator()(shape_id);
+                    const bool casted_result = nanobind::cast<bool>(result);
+                    return casted_result;
                 };
 
                 void* context = &fcn;
@@ -62,6 +65,14 @@ void export_world_class(nb::module_& m)
             nb::arg("filter"),
             nb::arg("fcn")
         )
+        .def(
+            "shape_at_point",
+            &WorldView::ShapeAtPoint,
+            nb::arg("point"),
+            nb::arg("filter") = b2DefaultQueryFilter()
+        )
+        .def("body_at_point", &WorldView::BodyAtPoint, nb::arg("point"), nb::arg("filter") = b2DefaultQueryFilter())
+
         .def(
             "cast_ray",
             &WorldView::CastRay,
@@ -451,6 +462,24 @@ void export_shape_class(nb::module_& m)
         },
         nb::arg("shape_id")
     );
+
+    // chain segment shape
+    nb::class_<ChainSegmentShape, Shape>(m, "ChainSegmentShape")
+        .def(nb::init<uint64_t>(), nb::arg("shape_id"))
+        .def_prop_ro(
+            "segment",
+            [](ChainSegmentShape& self)
+            {
+                return b2Shape_GetSegment(self.id);
+            }
+        )
+        .def_prop_ro(
+            "parent_chain",
+            [](ChainSegmentShape& self)
+            {
+                return b2Shape_GetParentChain(self.id);
+            }
+        );
 }
 
 void export_chain_class(nb::module_& m)
