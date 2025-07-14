@@ -33,3 +33,15 @@ if true; then
     popd
 
 fi
+
+
+# if true; then
+
+#     pushd $PYB2D3_SRC_DIR
+
+#     PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module" python sandbox/tp.py
+
+
+#     popd
+
+# fi

@@ -1581,6 +1581,53 @@ struct WorldView
         return b2World_OverlapAABB(id, aabb, filter, fcn, context);
     }
 
+    inline std::optional<b2ShapeId> ShapeAtPoint(b2Vec2 point, b2QueryFilter filter)
+    {
+        // create a tiny aabb around the point
+        b2AABB aabb;
+        aabb.lowerBound = b2Sub(point, b2Vec2{0.001f, 0.001f});
+        aabb.upperBound = b2Add(point, b2Vec2{0.001f, 0.001f});
+
+        // make the point itself and the result the context
+        using ctx_type = std::tuple<b2Vec2, b2ShapeId, bool>;
+        ctx_type context = {point, b2ShapeId{}, false};
+
+        auto fcn_lambda = [](b2ShapeId shape_id, void* void_context) -> bool
+        {
+            auto ctx = static_cast<ctx_type*>(void_context);
+            const auto& p = std::get<0>(*ctx);  // get the point from the context
+            if (b2Shape_TestPoint(shape_id, p))
+            {
+                std::get<1>(*ctx) = shape_id;  // store the shape id in the context
+                return true;                   // stop searching after the first hit
+            }
+            return false;  // continue searching
+        };
+
+        void* void_context = &context;
+        b2World_OverlapAABB(this->id, aabb, filter, fcn_lambda, static_cast<void*>(&context));
+        if (std::get<2>(context))  // if we found a shape
+        {
+            return std::make_optional(std::get<1>(context));  // return the shape id
+        }
+        else
+        {
+            return std::nullopt;  // no shape found at the point
+        }
+    }
+
+    inline std::optional<b2BodyId> BodyAtPoint(b2Vec2 point, b2QueryFilter filter)
+    {
+        auto res = ShapeAtPoint(point, filter);
+        if (res.has_value())
+        {
+            b2ShapeId shapeId = res.value();
+            b2BodyId bodyId = b2Shape_GetBody(shapeId);
+            return std::make_optional(bodyId);
+        }
+        return std::nullopt;
+    }
+
     inline b2TreeStats
     OverlapShape(const b2ShapeProxy* proxy, b2QueryFilter filter, b2OverlapResultFcn* fcn, void* context)
     {

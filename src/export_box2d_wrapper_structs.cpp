@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/vector.h>
 #include <pyb2d3/py_converter.hpp>
@@ -5,7 +7,6 @@
 #include "py_debug_draw.hpp"
 #include "pyb2d3/py_chain_def.hpp"
 #include "pyb2d3/wrapper_structs.hpp"
-
 
 // C
 // extern "C"
@@ -44,24 +45,55 @@ void export_world_class(nb::module_& m)
         .def("get_sensor_events", &WorldView::GetSensorEvents)
         .def("get_contact_events", &WorldView::GetContactEvents)
         .def(
-            "overlap_aabb",
+            "_overlap_aabb",
             [](WorldView& self, b2AABB aabb, b2QueryFilter filter, nanobind::object& fcn)
             {
+                std::cout << "Overlap AABB called with aabb: " << aabb.lowerBound.x << ", "
+                          << aabb.lowerBound.y << " to " << aabb.upperBound.x << ", " << aabb.upperBound.y
+                          << std::endl;
                 // lambda without captures st. we can pass it to the C function
                 auto fcn_lambda = [](b2ShapeId shape_id, void* context) -> bool
                 {
+                    // check if this is a valid shape id
+                    if (!b2Shape_IsValid(shape_id))
+                    {
+                        std::cout << "Invalid shape id: " << b2StoreShapeId(shape_id) << std::endl;
+                        return false;  // skip this shape
+                    }
+                    std::cout << "Overlap AABB callback for shape id: " << b2StoreShapeId(shape_id)
+                              << std::endl;
                     auto callable = static_cast<nanobind::object*>(context);
-                    return nanobind::cast<bool>(callable->operator()(shape_id));
+                    std::cout << "Calling Python callback with shape id: " << b2StoreShapeId(shape_id)
+                              << std::endl;
+                    auto result = callable->operator()(shape_id);
+                    std::cout << "Python callback returned: " << std::endl;
+
+
+                    const bool casted_result = nanobind::cast<bool>(result);
+                    std::cout << "Python callback returned: " << casted_result << std::endl;
+                    return casted_result;
                 };
 
                 void* context = &fcn;
+                std::cout << "Calling overlap_aabb with aabb: " << aabb.lowerBound.x << ", "
+                          << aabb.lowerBound.y << " to " << aabb.upperBound.x << ", " << aabb.upperBound.y
+                          << std::endl;
                 b2TreeStats stats = b2World_OverlapAABB(self.id, aabb, filter, fcn_lambda, context);
+                std::cout << "return " << std::endl;
                 return stats;
             },
             nb::arg("aabb"),
             nb::arg("filter"),
             nb::arg("fcn")
         )
+        .def(
+            "shape_at_point",
+            &WorldView::ShapeAtPoint,
+            nb::arg("point"),
+            nb::arg("filter") = b2DefaultQueryFilter()
+        )
+        .def("body_at_point", &WorldView::BodyAtPoint, nb::arg("point"), nb::arg("filter") = b2DefaultQueryFilter())
+
         .def(
             "cast_ray",
             &WorldView::CastRay,
@@ -451,6 +483,24 @@ void export_shape_class(nb::module_& m)
         },
         nb::arg("shape_id")
     );
+
+    // chain segment shape
+    nb::class_<ChainSegmentShape, Shape>(m, "ChainSegmentShape")
+        .def(nb::init<uint64_t>(), nb::arg("shape_id"))
+        .def_prop_ro(
+            "segment",
+            [](ChainSegmentShape& self)
+            {
+                return b2Shape_GetSegment(self.id);
+            }
+        )
+        .def_prop_ro(
+            "parent_chain",
+            [](ChainSegmentShape& self)
+            {
+                return b2Shape_GetParentChain(self.id);
+            }
+        );
 }
 
 void export_chain_class(nb::module_& m)
