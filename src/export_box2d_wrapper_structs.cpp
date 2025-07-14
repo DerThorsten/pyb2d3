@@ -1,4 +1,4 @@
-#include <iostream>
+#include <optional>
 
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/vector.h>
@@ -48,38 +48,17 @@ void export_world_class(nb::module_& m)
             "_overlap_aabb",
             [](WorldView& self, b2AABB aabb, b2QueryFilter filter, nanobind::object& fcn)
             {
-                std::cout << "Overlap AABB called with aabb: " << aabb.lowerBound.x << ", "
-                          << aabb.lowerBound.y << " to " << aabb.upperBound.x << ", " << aabb.upperBound.y
-                          << std::endl;
                 // lambda without captures st. we can pass it to the C function
                 auto fcn_lambda = [](b2ShapeId shape_id, void* context) -> bool
                 {
-                    // check if this is a valid shape id
-                    if (!b2Shape_IsValid(shape_id))
-                    {
-                        std::cout << "Invalid shape id: " << b2StoreShapeId(shape_id) << std::endl;
-                        return false;  // skip this shape
-                    }
-                    std::cout << "Overlap AABB callback for shape id: " << b2StoreShapeId(shape_id)
-                              << std::endl;
                     auto callable = static_cast<nanobind::object*>(context);
-                    std::cout << "Calling Python callback with shape id: " << b2StoreShapeId(shape_id)
-                              << std::endl;
                     auto result = callable->operator()(shape_id);
-                    std::cout << "Python callback returned: " << std::endl;
-
-
                     const bool casted_result = nanobind::cast<bool>(result);
-                    std::cout << "Python callback returned: " << casted_result << std::endl;
                     return casted_result;
                 };
 
                 void* context = &fcn;
-                std::cout << "Calling overlap_aabb with aabb: " << aabb.lowerBound.x << ", "
-                          << aabb.lowerBound.y << " to " << aabb.upperBound.x << ", " << aabb.upperBound.y
-                          << std::endl;
                 b2TreeStats stats = b2World_OverlapAABB(self.id, aabb, filter, fcn_lambda, context);
-                std::cout << "return " << std::endl;
                 return stats;
             },
             nb::arg("aabb"),
