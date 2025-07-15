@@ -1,9 +1,12 @@
-extern "C"
-{
+#pragma once
+
+// extern "C"
+// {
 #include <box2d/box2d.h>
 #include <box2d/math_functions.h>
 #include <box2d/types.h>
-}
+
+// }
 
 namespace pyb2d
 {
@@ -12,7 +15,7 @@ namespace pyb2d
         template <class CLS>
         void GenericDrawPolygon(const b2Vec2* vertices, int vertexCount, b2HexColor color, void* context)
         {
-            reinterpret_cast<CLS*>(context)->DrawPolygon(vertices, vertexCount, color);
+            reinterpret_cast<CLS*>(context)->draw_polygon(vertices, vertexCount, color);
         }
 
         template <class CLS>
@@ -25,49 +28,49 @@ namespace pyb2d
             void* context
         )
         {
-            reinterpret_cast<CLS*>(context)->DrawSolidPolygon(transform, vertices, vertexCount, radius, color);
+            reinterpret_cast<CLS*>(context)->draw_solid_polygon(transform, vertices, vertexCount, radius, color);
         }
 
         template <class CLS>
         void GenericDrawCircle(b2Vec2 center, float radius, b2HexColor color, void* context)
         {
-            reinterpret_cast<CLS*>(context)->DrawCircle(center, radius, color);
+            reinterpret_cast<CLS*>(context)->draw_circle(center, radius, color);
         }
 
         template <class CLS>
         void GenericDrawSolidCircle(b2Transform transform, float radius, b2HexColor color, void* context)
         {
-            reinterpret_cast<CLS*>(context)->DrawSolidCircle(transform, radius, color);
+            reinterpret_cast<CLS*>(context)->draw_solid_cirlce(transform, radius, color);
         }
 
         template <class CLS>
         void GenericDrawSolidCapsule(b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color, void* context)
         {
-            reinterpret_cast<CLS*>(context)->DrawSolidCapsule(p1, p2, radius, color);
+            reinterpret_cast<CLS*>(context)->draw_solid_capsule(p1, p2, radius, color);
         }
 
         template <class CLS>
         void GenericDrawSegment(b2Vec2 p1, b2Vec2 p2, b2HexColor color, void* context)
         {
-            reinterpret_cast<CLS*>(context)->DrawSegment(p1, p2, color);
+            reinterpret_cast<CLS*>(context)->draw_segment(p1, p2, color);
         }
 
         template <class CLS>
         void GenericDrawTransform(b2Transform transform, void* context)
         {
-            reinterpret_cast<CLS*>(context)->DrawTransform(transform);
+            reinterpret_cast<CLS*>(context)->draw_transform(transform);
         }
 
         template <class CLS>
         void GenericDrawPoint(b2Vec2 p, float size, b2HexColor color, void* context)
         {
-            reinterpret_cast<CLS*>(context)->DrawPoint(p, size, color);
+            reinterpret_cast<CLS*>(context)->draw_point(p, size, color);
         }
 
         template <class CLS>
-        void GenericDrawString(b2Vec2 p, const char* s, void* context)
+        void GenericDrawString(b2Vec2 p, const char* s, b2HexColor color, void* context)
         {
-            reinterpret_cast<CLS*>(context)->DrawString(p, s);
+            reinterpret_cast<CLS*>(context)->draw_string(p, s, color);
         }
     }  // namespace detail
 
@@ -78,67 +81,62 @@ namespace pyb2d
 
         DebugDraw()
         {
-            this->DrawPolygon = detail::GenericDrawPolygon<Derived>;
-            this->DrawSolidPolygon = detail::GenericDrawSolidPolygon<Derived>;
-            this->DrawCircle = detail::GenericDrawCircle<Derived>;
-            this->DrawSolidCircle = detail::GenericDrawSolidCircle<Derived>;
-            this->DrawSolidCapsule = detail::GenericDrawSolidCapsule<Derived>;
-            this->DrawSegment = detail::GenericDrawSegment<Derived>;
-            this->DrawTransform = detail::GenericDrawTransform<Derived>;
-            this->DrawPoint = GenericDrawPoint<Derived>;
-            this->DrawString = detail::GenericDrawString<Derived>;
+            this->DrawPolygonFcn = detail::GenericDrawPolygon<Derived>;
+            this->DrawSolidPolygonFcn = detail::GenericDrawSolidPolygon<Derived>;
+            this->DrawCircleFcn = detail::GenericDrawCircle<Derived>;
+            this->DrawSolidCircleFcn = detail::GenericDrawSolidCircle<Derived>;
+            this->DrawSolidCapsuleFcn = detail::GenericDrawSolidCapsule<Derived>;
+            this->DrawSegmentFcn = detail::GenericDrawSegment<Derived>;
+            this->DrawTransformFcn = detail::GenericDrawTransform<Derived>;
+            this->DrawPointFcn = detail::GenericDrawPoint<Derived>;
+            this->DrawStringFcn = detail::GenericDrawString<Derived>;
             this->context = reinterpret_cast<void*>(this);
         }
 
-        void draw_polygon(const b2Vec2* vertices, int vertexCount, b2HexColor color) override
+        void draw_polygon(const b2Vec2* vertices, int vertexCount, b2HexColor color)
         {
             this->derived_cast()->draw_polygon(vertices, vertexCount, color);
         }
 
-        void draw_solid_polygon(
-            b2Transform transform,
-            const b2Vec2* vertices,
-            int vertexCount,
-            float radius,
-            b2HexColor color
-        ) override
+        void
+        draw_solid_polygon(b2Transform transform, const b2Vec2* vertices, int vertexCount, float radius, b2HexColor color)
         {
             this->derived_cast()->draw_solid_polygon(transform, vertices, vertexCount, radius, color);
         }
 
-        void draw_circle(b2Vec2 center, float radius, b2HexColor color) override
+        void draw_circle(b2Vec2 center, float radius, b2HexColor color)
         {
             this->derived_cast()->draw_circle(center, radius, color);
         }
 
-        void draw_solid_cirlce(b2Transform transform, float radius, b2HexColor color) override
+        void draw_solid_cirlce(b2Transform transform, float radius, b2HexColor color)
         {
             this->derived_cast()->draw_solid_cirlce(transform, radius, color);
         }
 
-        void draw_solid_capsule(b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color) override
+        void draw_solid_capsule(b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color)
         {
             this->derived_cast()->draw_solid_capsule(p1, p2, radius, color);
         }
 
-        void draw_segment(b2Vec2 p1, b2Vec2 p2, b2HexColor color) override
+        void draw_segment(b2Vec2 p1, b2Vec2 p2, b2HexColor color)
         {
             this->derived_cast()->draw_segment(p1, p2, color);
         }
 
-        void draw_transform(b2Transform transform) override
+        void draw_transform(b2Transform transform)
         {
             this->derived_cast()->draw_transform(transform);
         }
 
-        void draw_point(b2Vec2 p, float size, b2HexColor color) override
+        void draw_point(b2Vec2 p, float size, b2HexColor color)
         {
             this->derived_cast()->draw_point(p, size, color);
         }
 
-        void draw_string(b2Vec2 p, const char* s) override
+        void draw_string(b2Vec2 p, const char* s, b2HexColor color)
         {
-            this->derived_cast()->draw_string(p, s);
+            this->derived_cast()->draw_string(p, s, color);
         }
 
     private:

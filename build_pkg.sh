@@ -11,7 +11,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 PYB2D3_SRC_DIR=$DIR
 BUILD_TYPE=Release
 
-if false; then
+if true; then
 
     pushd $PYB2D3_SRC_DIR
     mkdir -p build
@@ -29,18 +29,6 @@ if false; then
     PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module" pytest
 
     PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module" pytest benchmark
-
-    popd
-
-fi
-
-
-if true; then
-
-    pushd $PYB2D3_SRC_DIR
-
-    PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module" python sandbox/pygame_dd.py
-
 
     popd
 

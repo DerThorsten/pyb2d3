@@ -66,33 +66,33 @@ struct CanvasWorldTransform
     float ppm;
     std::array<float, 2> offset;
 
-    CanvasWorldTransform(std::array<std::size_t, 2> shape, float pixels_per_meter, std::array<float, 2> offset)
+    inline CanvasWorldTransform(std::array<std::size_t, 2> shape, float pixels_per_meter, std::array<float, 2> offset)
         : canvas_shape(shape)
         , ppm(pixels_per_meter)
         , offset(offset)
     {
     }
 
-    b2Vec2 world_to_canvas(const b2Vec2& p) const
+    inline b2Vec2 world_to_canvas(const b2Vec2& p) const
     {
         float x = (p.x + offset[0]) * ppm;
         float y = canvas_shape[1] - ((p.y + offset[1]) * ppm);
         return b2Vec2{x, y};
     }
 
-    b2Vec2 canvas_to_world(const b2Vec2& p) const
+    inline b2Vec2 canvas_to_world(const b2Vec2& p) const
     {
         float x = (p.x / ppm) - offset[0];
         float y = -((p.y - canvas_shape[1]) / ppm) - offset[1];
         return b2Vec2{x, y};
     }
 
-    float scale_world_to_canvas(float s) const
+    inline float scale_world_to_canvas(float s) const
     {
         return s * ppm;
     }
 
-    float scale_canvas_to_world(float s) const
+    inline float scale_canvas_to_world(float s) const
     {
         return s / ppm;
     }

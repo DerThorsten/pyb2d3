@@ -62,14 +62,11 @@ class PygameDebugDraw(DebugDraw):
         )
 
     def draw_solid_polygon(self, transform, vertices, radius, color):
-
-        # 1 transform the raw vertices according to "tranform" ie center p and rotation q
         vertices = [
             self.world_to_canvas(transform_point(transform, v)) for v in vertices
         ]
 
         if radius == 0:
-
             pygame.draw.polygon(self.screen, color, vertices, 0)
         else:
             # Draw rounded polygon

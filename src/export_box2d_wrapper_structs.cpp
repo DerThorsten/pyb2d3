@@ -1,6 +1,7 @@
 #include <optional>
 
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/vector.h>
 #include <pyb2d3/py_converter.hpp>
 
@@ -41,6 +42,15 @@ void export_world_class(nb::module_& m)
             },
             nb::arg("draw")
         )
+        .def(
+            "draw",
+            [](WorldView& self, PyTransformDebugDraw* py_draw)
+            {
+                b2DebugDraw* draw = static_cast<b2DebugDraw*>(py_draw);
+                self.Draw(draw);
+            },
+            nb::arg("draw")
+        )
         .def("get_body_events", &WorldView::GetBodyEvents)
         .def("get_sensor_events", &WorldView::GetSensorEvents)
         .def("get_contact_events", &WorldView::GetContactEvents)
@@ -71,7 +81,19 @@ void export_world_class(nb::module_& m)
             nb::arg("point"),
             nb::arg("filter") = b2DefaultQueryFilter()
         )
+        .def(
+            "dyanmic_body_shape_at_point",
+            &WorldView::ShapeAtPoint,
+            nb::arg("point"),
+            nb::arg("filter") = b2DefaultQueryFilter()
+        )
         .def("body_at_point", &WorldView::BodyAtPoint, nb::arg("point"), nb::arg("filter") = b2DefaultQueryFilter())
+        .def(
+            "dynamic_body_at_point",
+            &WorldView::DynamicBodyAtPoint,
+            nb::arg("point"),
+            nb::arg("filter") = b2DefaultQueryFilter()
+        )
 
         .def(
             "cast_ray",
