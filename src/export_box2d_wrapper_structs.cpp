@@ -33,24 +33,7 @@ void export_world_class(nb::module_& m)
         .def("destroy", &WorldView::Destroy)
         .def("is_valid", &WorldView::IsValid)
         .def("step", &WorldView::Step, nb::arg("time_step"), nb::arg("sub_step_count"))
-        .def(
-            "draw",
-            [](WorldView& self, PyDebugDraw* py_draw)
-            {
-                b2DebugDraw* draw = static_cast<b2DebugDraw*>(py_draw);
-                self.Draw(draw);
-            },
-            nb::arg("draw")
-        )
-        .def(
-            "draw",
-            [](WorldView& self, PyTransformDebugDraw* py_draw)
-            {
-                b2DebugDraw* draw = static_cast<b2DebugDraw*>(py_draw);
-                self.Draw(draw);
-            },
-            nb::arg("draw")
-        )
+        .def("draw", &WorldView::Draw, nb::arg("debug_draw"))
         .def("get_body_events", &WorldView::GetBodyEvents)
         .def("get_sensor_events", &WorldView::GetSensorEvents)
         .def("get_contact_events", &WorldView::GetContactEvents)

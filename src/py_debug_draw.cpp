@@ -18,20 +18,29 @@ namespace nb = nanobind;
 
 void export_py_debug_draw(nb::module_& m)
 {
-    nb::class_<PyDebugDraw>(m, "DebugDrawBase")
-        .def(nb::init<nb::object>())
-
+    // b2DebugDraw itself
+    nb::class_<b2DebugDraw>(m, "DebugDraw")
         .def_rw("drawing_bounds", &PyDebugDraw::drawingBounds)
-        .def_rw("use_drawing_bounds", &PyDebugDraw::useDrawingBounds)
         .def_rw("draw_shapes", &PyDebugDraw::drawShapes)
         .def_rw("draw_joints", &PyDebugDraw::drawJoints)
         .def_rw("draw_joint_extras", &PyDebugDraw::drawJointExtras)
-        // .def_rw("draw_aabbs", &PyDebugDraw::drawAABBs)
-        .def_rw("draw_mass", &PyDebugDraw::drawMass);
+        .def_rw("draw_bounds", &PyDebugDraw::drawBounds)
+        .def_rw("draw_mass", &PyDebugDraw::drawMass)
+        .def_rw("draw_body_names", &PyDebugDraw::drawBodyNames)
+        .def_rw("draw_contacts", &PyDebugDraw::drawContacts)
+        .def_rw("draw_graph_colors", &PyDebugDraw::drawGraphColors)
+        .def_rw("draw_contact_normals", &PyDebugDraw::drawContactNormals)
+        .def_rw("draw_contact_impulses", &PyDebugDraw::drawContactImpulses)
+        .def_rw("draw_contact_features", &PyDebugDraw::drawContactFeatures)
+        .def_rw("draw_friction_impulses", &PyDebugDraw::drawFrictionImpulses)
+        .def_rw("draw_islands", &PyDebugDraw::drawIslands);
+
+
+    nb::class_<PyDebugDraw, b2DebugDraw>(m, "DebugDrawBase").def(nb::init<nb::object>());
 
 
     // PyTransformDebugDraw
-    nb::class_<PyTransformDebugDraw>(m, "TransformDebugDrawBase")
+    nb::class_<PyTransformDebugDraw, b2DebugDraw>(m, "TransformDebugDrawBase")
         .def(
             "__init__",
             [](PyTransformDebugDraw* t, const CanvasWorldTransform& arg0, nb::handle arg1)
@@ -41,14 +50,5 @@ void export_py_debug_draw(nb::module_& m)
             nb::arg("transform"),
             nb::arg("py_class")
 
-        )
-        .def("draw_polygon", &PyTransformDebugDraw::draw_polygon)
-        .def("draw_solid_polygon", &PyTransformDebugDraw::draw_solid_polygon)
-        .def("draw_circle", &PyTransformDebugDraw::draw_circle)
-        .def("draw_solid_cirlce", &PyTransformDebugDraw::draw_solid_cirlce)
-        .def("draw_solid_capsule", &PyTransformDebugDraw::draw_solid_capsule)
-        .def("draw_segment", &PyTransformDebugDraw::draw_segment)
-        .def("draw_transform", &PyTransformDebugDraw::draw_transform)
-        .def("draw_point", &PyTransformDebugDraw::draw_point)
-        .def("draw_string", &PyTransformDebugDraw::draw_string);
+        );
 }
