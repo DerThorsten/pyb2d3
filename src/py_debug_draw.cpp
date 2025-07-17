@@ -16,10 +16,19 @@
 // nanobind namespace
 namespace nb = nanobind;
 
+
+// c++ class enum for color formats
+enum class DebugDrawColorFormat
+{
+    HexaColorFormat,
+    RgbFloatFormat,
+    RgbUInt8Format
+};
+
 void export_py_debug_draw(nb::module_& m)
 {
     // b2DebugDraw itself
-    nb::class_<b2DebugDraw>(m, "DebugDraw")
+    nb::class_<b2DebugDraw>(m, "_DebugDrawRawBase")
         .def_rw("drawing_bounds", &PyDebugDraw::drawingBounds)
         .def_rw("draw_shapes", &PyDebugDraw::drawShapes)
         .def_rw("draw_joints", &PyDebugDraw::drawJoints)
@@ -39,16 +48,49 @@ void export_py_debug_draw(nb::module_& m)
     nb::class_<PyDebugDraw, b2DebugDraw>(m, "DebugDrawBase").def(nb::init<nb::object>());
 
 
-    // PyTransformDebugDraw
-    nb::class_<PyTransformDebugDraw, b2DebugDraw>(m, "TransformDebugDrawBase")
-        .def(
-            "__init__",
-            [](PyTransformDebugDraw* t, const CanvasWorldTransform& arg0, nb::handle arg1)
-            {
-                new (t) PyTransformDebugDraw(arg0, arg1);
-            },
-            nb::arg("transform"),
-            nb::arg("py_class")
+    // enum for color formats
+    nb::enum_<DebugDrawColorFormat>(m, "DebugDrawColorFormat")
+        .value("HexaColorFormat", DebugDrawColorFormat::HexaColorFormat)
+        .value("RgbFloatFormat", DebugDrawColorFormat::RgbFloatFormat)
+        .value("RgbUInt8Format", DebugDrawColorFormat::RgbUInt8Format)
+        .export_values();
 
+
+    // PyTransformDebugDraw
+    nb::class_<PyTransformDebugDraw<CanvasWorldTransform, HexaColorFormat>, b2DebugDraw>(
+        m,
+        "TransformDebugDrawBaseHexaColorFormat"
+    )
+        .def(
+            nb::init<const CanvasWorldTransform&, nb::handle>(),
+            nb::keep_alive<0, 1>(),
+            nb::keep_alive<0, 2>(),
+            nb::arg("transform"),
+            nb::arg("py_object")
+        )
+
+        ;
+
+    nb::class_<PyTransformDebugDraw<CanvasWorldTransform, RgbFloatFormat>, b2DebugDraw>(
+        m,
+        "TransformDebugDrawBaseRgbFloatFormat"
+    )
+        .def(
+            nb::init<const CanvasWorldTransform&, nb::handle>(),
+            nb::keep_alive<0, 1>(),
+            nb::keep_alive<0, 2>(),
+            nb::arg("transform"),
+            nb::arg("py_object")
+        );
+    nb::class_<PyTransformDebugDraw<CanvasWorldTransform, RgbUInt8Format>, b2DebugDraw>(
+        m,
+        "TransformDebugDrawBaseRgbUInt8Format"
+    )
+        .def(
+            nb::init<const CanvasWorldTransform&, nb::handle>(),
+            nb::keep_alive<0, 1>(),
+            nb::keep_alive<0, 2>(),
+            nb::arg("transform"),
+            nb::arg("py_object")
         );
 }

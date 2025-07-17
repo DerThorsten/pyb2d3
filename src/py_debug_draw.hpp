@@ -80,13 +80,52 @@ public:
     py::handle m_py_class;
 };
 
+struct HexaColorFormat
+{
+    using type = int;
+
+    static type convert(const b2HexColor& color)
+    {
+        return static_cast<type>(color);
+    }
+};
+
+struct RgbFloatFormat
+{
+    using type = std::array<float, 3>;
+
+    static type convert(const b2HexColor& color)
+    {
+        return {
+            static_cast<float>((color >> 16) & 0xFF) / 255.0f,
+            static_cast<float>((color >> 8) & 0xFF) / 255.0f,
+            static_cast<float>(color & 0xFF) / 255.0f
+        };
+    }
+};
+
+struct RgbUInt8Format
+{
+    using type = std::array<uint8_t, 3>;
+
+    static type convert(const b2HexColor& color)
+    {
+        return {
+            static_cast<uint8_t>((color >> 16) & 0xFF),
+            static_cast<uint8_t>((color >> 8) & 0xFF),
+            static_cast<uint8_t>(color & 0xFF)
+        };
+    }
+};
+
 // apply a transformation to each point before calling to
 // the python class methods
-class PyTransformDebugDraw : public pyb2d::DebugDraw<PyTransformDebugDraw>
+template <class TRANSFORM, class COLOR_FORMAT>
+class PyTransformDebugDraw : public pyb2d::DebugDraw<PyTransformDebugDraw<TRANSFORM, COLOR_FORMAT>>
 {
 public:
 
-    inline PyTransformDebugDraw(const CanvasWorldTransform& transform, py::handle py_class)
+    inline PyTransformDebugDraw(const TRANSFORM& transform, py::handle py_class)
         : pyb2d::DebugDraw<PyTransformDebugDraw>()
         , m_transform(transform)
         , m_py_class(py_class)
@@ -105,7 +144,7 @@ public:
             m_points_buffer.data(),
             {static_cast<std::size_t>(vertexCount), static_cast<std::size_t>(2)}
         );
-        m_py_class.attr("draw_polygon")(points, static_cast<int>(color));
+        m_py_class.attr("draw_polygon")(points, COLOR_FORMAT::convert(color));
     }
 
     void
@@ -120,7 +159,11 @@ public:
             m_points_buffer.data(),
             {static_cast<std::size_t>(vertexCount), static_cast<std::size_t>(2)}
         );
-        m_py_class.attr("draw_solid_polygon")(points, radius, static_cast<int>(color));
+        m_py_class.attr("draw_solid_polygon")(
+            points,
+            m_transform.scale_world_to_canvas(radius),
+            COLOR_FORMAT::convert(color)
+        );
     }
 
     void draw_circle(b2Vec2 center, float radius, b2HexColor color)
@@ -129,37 +172,36 @@ public:
         m_py_class.attr("draw_circle")(
             canvas_center,
             m_transform.scale_world_to_canvas(radius),
-            static_cast<int>(color)
+            COLOR_FORMAT::convert(color)
         );
     }
 
     void draw_solid_cirlce(b2Transform transform, float radius, b2HexColor color)
     {
-        b2Vec2 canvas_center = m_transform.world_to_canvas(transform.p);
         m_py_class.attr("draw_solid_circle")(
-            canvas_center,
+            m_transform.world_to_canvas(transform.p),
             m_transform.scale_world_to_canvas(radius),
-            static_cast<int>(color)
+            COLOR_FORMAT::convert(color)
         );
     }
 
     void draw_solid_capsule(b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color)
     {
-        b2Vec2 canvas_p1 = m_transform.world_to_canvas(p1);
-        b2Vec2 canvas_p2 = m_transform.world_to_canvas(p2);
         m_py_class.attr("draw_solid_capsule")(
-            canvas_p1,
-            canvas_p2,
+            m_transform.world_to_canvas(p1),
+            m_transform.world_to_canvas(p2),
             m_transform.scale_world_to_canvas(radius),
-            static_cast<int>(color)
+            COLOR_FORMAT::convert(color)
         );
     }
 
     void draw_segment(b2Vec2 p1, b2Vec2 p2, b2HexColor color)
     {
-        b2Vec2 canvas_p1 = m_transform.world_to_canvas(p1);
-        b2Vec2 canvas_p2 = m_transform.world_to_canvas(p2);
-        m_py_class.attr("draw_segment")(canvas_p1, canvas_p2, static_cast<int>(color));
+        m_py_class.attr("draw_segment")(
+            m_transform.world_to_canvas(p1),
+            m_transform.world_to_canvas(p2),
+            COLOR_FORMAT::convert(color)
+        );
     }
 
     void draw_transform(b2Transform transform)
@@ -174,19 +216,21 @@ public:
 
     void draw_point(b2Vec2 p, float size, b2HexColor color)
     {
-        b2Vec2 canvas_p = m_transform.world_to_canvas(p);
-        m_py_class.attr("draw_point")(canvas_p, m_transform.scale_world_to_canvas(size), static_cast<int>(color));
+        m_py_class.attr("draw_point")(
+            m_transform.world_to_canvas(p),
+            m_transform.scale_world_to_canvas(size),
+            COLOR_FORMAT::convert(color)
+        );
     }
 
     void draw_string(b2Vec2 p, const char* s, b2HexColor color)
     {
-        b2Vec2 canvas_p = m_transform.world_to_canvas(p);
-        m_py_class.attr("draw_string")(canvas_p, s, static_cast<int>(color));
+        m_py_class.attr("draw_string")(m_transform.world_to_canvas(p), s, COLOR_FORMAT::convert(color));
     }
 
 private:
 
-    const CanvasWorldTransform& m_transform;
+    const TRANSFORM& m_transform;
     py::handle m_py_class;
     std::vector<b2Vec2> m_points_buffer;
 };

@@ -1,5 +1,6 @@
 from .debug_draw import DebugDraw
 from .._pyb2d3 import transform_point
+from .debug_draw import TransformDebugDrawHexaColorFormat
 import pygame
 import math
 
@@ -24,20 +25,23 @@ def rounded_polygon(surface, vertices, radius, color):
         perp_y = ux
 
         # Offset corners by radius along perpendicular
-        corner1 = (p1[0] + perp_x * radius, p1[1] + perp_y * radius)
-        corner2 = (p2[0] + perp_x * radius, p2[1] + perp_y * radius)
-        corner3 = (p2[0] - perp_x * radius, p2[1] - perp_y * radius)
-        corner4 = (p1[0] - perp_x * radius, p1[1] - perp_y * radius)
+        corner1 = (float(p1[0] + perp_x * radius), float(p1[1] + perp_y * radius))
+        corner2 = (float(p2[0] + perp_x * radius), float(p2[1] + perp_y * radius))
+        corner3 = (float(p2[0] - perp_x * radius), float(p2[1] - perp_y * radius))
+        corner4 = (float(p1[0] - perp_x * radius), float(p1[1] - perp_y * radius))
 
         # Draw rectangle as polygon
         pygame.draw.polygon(surface, color, [corner1, corner2, corner3, corner4])
 
     # Draw circles at corners
     for p in vertices:
-        pygame.draw.circle(surface, color, (p[0], p[1]), radius)
+        pygame.draw.circle(surface, color, (float(p[0]), float(p[1])), radius)
 
     # draw the inner part of the polygon
-    pygame.draw.polygon(surface, color, vertices, 0)
+    if isinstance(vertices, list):
+        pygame.draw.polygon(surface, color, vertices, 0)
+    else:
+        pygame.draw.polygon(surface, color, vertices.astype("int"), 0)
 
 
 class PygameDebugDraw(DebugDraw):
@@ -166,3 +170,81 @@ class PygameDebugDraw(DebugDraw):
             ),
             1,
         )
+
+
+# no need to transform color or coordinates, its all done in the base class!!!
+
+
+class PygameTransformDebugDraw(TransformDebugDrawHexaColorFormat):
+    def __init__(self, transform, screen):
+        super().__init__(transform=transform)
+        self.screen = screen
+
+    def draw_polygon(self, vertices, color):
+        pygame.draw.polygon(self.screen, color, vertices, 1)
+
+    def draw_solid_polygon(self, vertices, radius, color):
+        if radius == 0:
+            pygame.draw.polygon(self.screen, color, vertices.astype("int"), 0)
+        else:
+            # Draw rounded polygon
+            rounded_polygon(self.screen, vertices, radius, color)
+
+    def draw_circle(self, center, radius, color):
+        pygame.draw.circle(self.screen, color, center, radius, 1)
+
+    def draw_solid_circle(self, center, radius, color):
+        pygame.draw.circle(self.screen, color, center, radius, 0)
+
+    def draw_solid_capsule(self, p1, p2, radius, color):
+
+        #  width of the line is 2*canvas_radius + 1
+        surface = self.screen  # or replace with the surface you want to draw on
+
+        x1, y1 = p1
+        x2, y2 = p2
+
+        dx = x2 - x1
+        dy = y2 - y1
+        length = math.hypot(dx, dy)
+
+        if length <= 0.01:
+            # Degenerate case: just draw a circle
+            pygame.draw.circle(surface, color, (x1, y1), canvas_radius)
+            return
+
+        # Unit vector along p1->p2
+        ux = dx / length
+        uy = dy / length
+
+        # Perpendicular vector
+        px = -uy
+        py = ux
+
+        # Four corners of the rectangle part
+        corner1 = (x1 + px * radius, y1 + py * radius)
+        corner2 = (x2 + px * radius, y2 + py * radius)
+        corner3 = (x2 - px * radius, y2 - py * radius)
+        corner4 = (x1 - px * radius, y1 - py * radius)
+
+        # Draw central rectangle
+        pygame.draw.polygon(surface, color, [corner1, corner2, corner3, corner4])
+
+        # Draw end circles
+        pygame.draw.circle(surface, color, (x1, y1), radius)
+        pygame.draw.circle(surface, color, (x2, y2), radius)
+
+    def draw_segment(self, p1, p2, color):
+        pygame.draw.line(self.screen, color, p1, p2, 1)
+
+    def draw_transform(self, transform):
+        pass
+
+    def draw_point(self, p, size, color):
+        pass
+
+    def draw_string(self, x, y, string):
+        pass
+
+    def draw_aabb(self, aabb, color):
+        pass
