@@ -1,4 +1,5 @@
-from .._pyb2d3 import DebugDrawBase
+from .._pyb2d3 import DebugDrawBase, transform_point
+import math
 
 
 class DebugDraw(DebugDrawBase):
@@ -52,11 +53,11 @@ class DebugDraw(DebugDrawBase):
 
     def draw_solid_rounded_polygon(self, points, radius, color):
         """Draw a filled polygon with rounded corners directly on the surface."""
-        n = len(vertices)
+        n = len(points)
 
         for i in range(n):
-            p1 = vertices[i]
-            p2 = vertices[(i + 1) % n]
+            p1 = points[i]
+            p2 = points[(i + 1) % n]
 
             # Vector from p1 to p2
             dx = p2[0] - p1[0]
@@ -82,11 +83,11 @@ class DebugDraw(DebugDrawBase):
             )
 
         # Draw circles at corners
-        for p in vertices:
+        for p in points:
             # pygame.draw.circle(surface, color, (float(p[0]), float(p[1])), radius)
-            self.draw_circle(center=p, radius=radius, color=color)
+            self.draw_solid_circle(center=p, radius=radius, color=color)
         # draw the inner part of the polygon
-        self.draw_solid_polygon(points=vertices, color=color)
+        self.draw_solid_polygon(points=points, color=color)
 
     def draw_solid_capsule(self, p1, p2, radius, color):
 
@@ -131,11 +132,11 @@ class DebugDraw(DebugDrawBase):
         self.draw_polygon(vertices, color, line_width=1, width_in_pixels=True)
 
     def _draw_solid_polygon(self, transform, vertices, radius, color):
-        vertices = [transform.transform_point(v) for v in vertices]
+        vertices = [transform_point(transform, v) for v in vertices]
         if radius == 0:
-            self.draw_solid_polygon(vertices, radius, color)
+            self.draw_solid_polygon(vertices, color)
         else:
-            self.draw_solid_rounded_polygon(vertices, radius, color)
+            self.draw_solid_rounded_polygon(vertices, radius=radius, color=color)
 
     def _draw_circle(self, center, radius, color):
         self.draw_circle(
