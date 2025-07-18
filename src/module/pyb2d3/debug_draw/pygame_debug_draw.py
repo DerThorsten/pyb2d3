@@ -59,113 +59,71 @@ class PygameDebugDraw(DebugDraw):
     def world_to_canvas(self, world_point):
         return self.transform.world_to_canvas(world_point)
 
-    def _draw_polygon(self, vertices, color):
+    # def draw_rect(self, center, shape, line_width, color, width_in_pixels):
+    #     if not width_in_pixels:
+    #         line_width = self.transform.scale_world_to_canvas(line_width)
+
+    #     canvas_width  = self.transform.scale_world_to_canvas(shape[0])
+    #     canvas_height = self.transform.scale_world_to_canvas(shape[1])
+    #     canvas_center = self.world_to_canvas(center)
+
+    #     pygame.draw.rect(
+    #         self.screen,
+    #         color,
+    #         pygame.Rect(
+    #             canvas_center[0] - canvas_width / 2,
+    #             canvas_center[1] - canvas_height / 2,
+    #             canvas_width,
+    #             canvas_height
+    #         ),
+    #         round(line_width)
+    #     )
+
+    def draw_polygon(self, vertices, color, line_width, width_in_pixels=False):
+        if not width_in_pixels:
+            line_width = self.transform.scale_world_to_canvas(line_width)
         pygame.draw.polygon(
-            self.screen, color, [self.world_to_canvas(v) for v in vertices], 1
+            self.screen,
+            color,
+            [self.world_to_canvas(v) for v in vertices],
+            round(line_width),
         )
 
-    def _draw_solid_polygon(self, transform, vertices, radius, color):
-        vertices = [
-            self.world_to_canvas(transform_point(transform, v)) for v in vertices
-        ]
+    def draw_solid_polygon(self, vertices, color):
+        pygame.draw.polygon(
+            self.screen, color, [self.world_to_canvas(v) for v in vertices], 0
+        )
 
-        if radius == 0:
-            pygame.draw.polygon(self.screen, color, vertices, 0)
-        else:
-            # Draw rounded polygon
-            rounded_polygon(
-                self.screen,
-                vertices,
-                self.transform.scale_world_to_canvas(radius),
-                color,
-            )
+    def draw_circle(self, center, radius, line_width, color, width_in_pixels=False):
 
-    def _draw_circle(self, center, radius, color):
+        if not width_in_pixels:
+            line_width = self.transform.scale_world_to_canvas(line_width)
+
         pygame.draw.circle(
             self.screen,
             color,
             self.world_to_canvas(center),
             self.transform.scale_world_to_canvas(radius),
-            1,
+            round(line_width),
         )
 
-    def _draw_solid_circle(self, transform, radius, color):
+    def draw_solid_circle(self, center, radius, color):
         pygame.draw.circle(
             self.screen,
             color,
-            self.world_to_canvas(transform.p),
+            self.world_to_canvas(center),
             self.transform.scale_world_to_canvas(radius),
             0,
         )
 
-    def _draw_solid_capsule(self, p1, p2, radius, color):
-        canvas_radius = self.transform.scale_world_to_canvas(radius)
-        canvas_p1 = self.world_to_canvas(p1)
-        canvas_p2 = self.world_to_canvas(p2)
+    def draw_line(self, p1, p2, line_width, color, width_in_pixels=False):
+        if not width_in_pixels:
+            line_width = self.transform.scale_world_to_canvas(line_width)
 
-        #  width of the line is 2*canvas_radius + 1
-        surface = self.screen  # or replace with the surface you want to draw on
-
-        x1, y1 = canvas_p1
-        x2, y2 = canvas_p2
-
-        dx = x2 - x1
-        dy = y2 - y1
-        length = math.hypot(dx, dy)
-
-        if length <= 0.01:
-            # Degenerate case: just draw a circle
-            pygame.draw.circle(surface, color, (x1, y1), canvas_radius)
-            return
-
-        # Unit vector along p1->p2
-        ux = dx / length
-        uy = dy / length
-
-        # Perpendicular vector
-        px = -uy
-        py = ux
-
-        # Four corners of the rectangle part
-        corner1 = (x1 + px * canvas_radius, y1 + py * canvas_radius)
-        corner2 = (x2 + px * canvas_radius, y2 + py * canvas_radius)
-        corner3 = (x2 - px * canvas_radius, y2 - py * canvas_radius)
-        corner4 = (x1 - px * canvas_radius, y1 - py * canvas_radius)
-
-        # Draw central rectangle
-        pygame.draw.polygon(surface, color, [corner1, corner2, corner3, corner4])
-
-        # Draw end circles
-        pygame.draw.circle(surface, color, (x1, y1), canvas_radius)
-        pygame.draw.circle(surface, color, (x2, y2), canvas_radius)
-
-    def _draw_segment(self, p1, p2, color):
         pygame.draw.line(
-            self.screen, color, self.world_to_canvas(p1), self.world_to_canvas(p2), 1
-        )
-
-    def _draw_transform(self, transform):
-        pass
-
-    def _draw_point(self, p, size, color):
-        pass
-
-    def _draw_string(self, x, y, string):
-        font = pygame.font.Font(None, 24)
-        text_surface = font.render(string, True, (0, 0, 0))
-        self.screen.blit(text_surface, self.world_to_canvas((x, y)))
-
-    def _draw_aabb(self, aabb, color):
-        lower_bound = self.world_to_canvas(aabb.lower_bound)
-        upper_bound = self.world_to_canvas(aabb.upper_bound)
-        pygame.draw.rect(
             self.screen,
             color,
-            (
-                lower_bound[0],
-                lower_bound[1],
-                upper_bound[0] - lower_bound[0],
-                upper_bound[1] - lower_bound[1],
-            ),
-            1,
+            self.world_to_canvas(p1),
+            self.world_to_canvas(p2),
+            round(line_width),
         )
