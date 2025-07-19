@@ -21,10 +21,84 @@ class EngineSettings:
     substeps: int = 20
     ppm: float = 40.0  # Pixels per meter
     debug_draw: DebugDrawSettings = field(default_factory=DebugDrawSettings)
-    double_click_time_ms: int = 500  # Time in milliseconds to consider a double click
+    multi_click_delay_ms: int = 250  # Delay in milliseconds to wait for multi-clicks
 
 
-# same as above, but with abstract methods
+# helper class to handle click/double click/triple click events
+# st. the click / double click /  events can be "delayed" by a certain time
+# st. we can wait for a double click or triple click
+# and don't fire click->double click->triple click events
+
+
+class MultiClickHandler:
+    def __init__(
+        self, delayed_time_ms, on_click, on_double_click=None, on_triple_click=None
+    ):
+        self.delayed_time = delayed_time_ms / 1000.0
+        self.first_click_time = None
+        self.second_click_time = None
+
+        self.on_click = on_click
+        self.on_double_click = on_double_click
+        self.on_triple_click = on_triple_click
+        self.last_pos = None
+
+    def update(self):
+        if self.on_double_click is None and self.on_triple_click is None:
+            return
+
+        current_time = time.time()
+
+        # check if times out
+        if self.first_click_time is not None:
+            if current_time - self.first_click_time > self.delayed_time:
+                #  chance for a second click timed out, we can call the first click handler
+                self.on_click(self.last_pos)
+                self.first_click_time = None
+                self.second_click_time = None
+            # else # we are still waiting for a second click
+
+        if self.second_click_time is not None:
+            if current_time - self.second_click_time > self.delayed_time:
+                # chance for a triple click timed out, we can call the second click handler
+                self.on_double_click(self.last_pos)
+                self.first_click_time = None
+                self.second_click_time = None
+
+    def handle_click(self, pos):
+        if self.on_double_click is None and self.on_triple_click is None:
+            # if we don't have a double or triple click handler, we can just call the click handler
+            self.on_click(pos)
+            return
+
+        self.last_pos = pos
+
+        # if we have already a second click
+        if self.second_click_time is not None:
+            # this is a potential tripple click if
+            # the time frame is still valid
+            if time.time() - self.second_click_time <= self.delayed_time:
+                self.on_triple_click(pos)
+            self.first_click_time = None
+            self.second_click_time = None
+            return
+        else:
+            if self.first_click_time is not None:
+                # click is in time frame for a second click
+                if self.on_triple_click is None:
+                    self.on_double_click(pos)
+                    self.first_click_time = None
+                    self.second_click_time = None
+                else:
+                    self.second_click_time = time.time()
+                    self.first_click_time = None
+
+            else:
+                # this is the first click
+                self.first_click_time = time.time()
+                self.second_click_time = None
+
+
 class FrontendBase(ABC):
 
     Settings = EngineSettings
@@ -42,11 +116,29 @@ class FrontendBase(ABC):
         # sample update time
         self.sample_update_time = None
 
-    def run(self, sample_class):
-        self.sample_class = sample_class
+        self._multi_click_handler = None
+
+    def set_new_sample(self, sample_class):
+
         # construct the sample
         self.sample = self.sample_class()
         self.sample.frontend = self
+
+        on_double_click = getattr(self.sample, "on_double_click", None)
+        on_triple_click = getattr(self.sample, "on_triple_click", None)
+
+        # install the click handlers
+        self._multi_click_handler = MultiClickHandler(
+            delayed_time_ms=self.settings.multi_click_delay_ms,
+            on_click=self.sample.on_click,
+            on_double_click=on_double_click,
+            on_triple_click=on_triple_click,
+        )
+
+    def run(self, sample_class):
+        self.sample_class = sample_class
+
+        self.set_new_sample(sample_class)
 
         # call sample.update in a loop
         # depending on the frontend, this can
@@ -54,6 +146,10 @@ class FrontendBase(ABC):
         self.main_loop()
 
     def update_and_draw(self, dt):
+
+        # click handler update
+        if self._multi_click_handler:
+            self._multi_click_handler.update()
 
         # update sample
         self.sample.pre_update(dt)

@@ -7,39 +7,6 @@ import time
 import sys
 
 
-def center(sample, transform, canvas_shape):
-    aabb = sample.aabb()
-    world_lower_bound = aabb.lower_bound
-    world_upper_bound = aabb.upper_bound
-
-    canvas_lower_bound = transform.world_to_canvas(world_lower_bound)
-    canvas_upper_bound = transform.world_to_canvas(world_upper_bound)
-    canvas_lower_bound_new = min(canvas_lower_bound[0], canvas_upper_bound[0]), min(
-        canvas_lower_bound[1], canvas_upper_bound[1]
-    )
-    canvas_upper_bound_new = max(canvas_lower_bound[0], canvas_upper_bound[0]), max(
-        canvas_lower_bound[1], canvas_upper_bound[1]
-    )
-    canvas_lower_bound = canvas_lower_bound_new
-    canvas_upper_bound = canvas_upper_bound_new
-
-    needed_canvas_width = canvas_upper_bound[0] - canvas_lower_bound[0]
-    needed_canvas_height = canvas_upper_bound[1] - canvas_lower_bound[1]
-    lower_bound_should = (canvas_shape[0] - needed_canvas_width) // 2, (
-        canvas_shape[1] - needed_canvas_height
-    ) // 2
-    world_lower_bound_should = (
-        lower_bound_should[0] / transform.ppm,
-        lower_bound_should[1] / transform.ppm,
-    )
-    world_delta = (
-        world_lower_bound_should[0] - world_lower_bound[0],
-        world_lower_bound_should[1] - world_lower_bound[1],
-    )
-
-    transform.offset = world_delta
-
-
 class PygameFrontend(FrontendBase):
 
     Settings = FrontendBase.Settings
@@ -157,43 +124,15 @@ class PygameFrontend(FrontendBase):
             # mouse events
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # only for left and right mouse buttons
-                if event.button not in (1, 3):
+                if event.button not in (1,):
                     continue
 
                 # check for tripple-click first, then double-click
-                current_time = pygame.time.get_ticks()
-                if (
-                    self._last_double_click_time is not None
-                    and current_time - self._last_double_click_time
-                    < self.settings.double_click_time_ms
-                ):
-                    # tripple click detected
-                    self.sample.on_triple_click(
-                        self.transform.canvas_to_world(pygame.mouse.get_pos())
-                    )
-                    # prevent further double/triple clicks
-                    self._last_double_click_time = None
-                    self._last_click_time = None
-                elif (
-                    self._last_click_time is not None
-                    and current_time - self._last_click_time
-                    < self.settings.double_click_time_ms
-                ):
-                    # double click detected
-                    self.sample.on_double_click(
-                        self.transform.canvas_to_world(pygame.mouse.get_pos())
-                    )
-                    self._last_double_click_time = current_time
-                    # prevent further double clicks
-                    self._last_click_time = None
-                else:
-                    # single click detected
-                    self._last_click_time = current_time
-                    self._last_double_click_time = None
-
                 mouse_pos = pygame.mouse.get_pos()
                 self._last_canvas_mouse_pos = mouse_pos
                 world_pos = self.transform.canvas_to_world(mouse_pos)
+                self._multi_click_handler.handle_click(world_pos)
+
                 self.sample.on_mouse_down(world_pos)
             elif event.type == pygame.MOUSEBUTTONUP:
                 mouse_pos = pygame.mouse.get_pos()

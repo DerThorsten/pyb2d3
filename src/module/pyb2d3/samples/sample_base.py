@@ -70,11 +70,14 @@ class SampleBase(object):
         # Post-debug draw logic, if any
         pass
 
-    def on_double_click(self, pos):
+    def on_click(self, pos):
         pass
 
-    def on_triple_click(self, pos):
-        pass
+    # def on_double_click(self, pos):
+    #     pass
+
+    # def on_triple_click(self, pos):
+    #     pass
 
     def on_mouse_down(self, pos):
         self.is_mouse_down = True
