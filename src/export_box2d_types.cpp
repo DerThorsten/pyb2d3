@@ -43,7 +43,7 @@ void export_b2Vec2(py::module_& m)
 void export_ray_result(py::module_& m)
 {
     py::class_<b2RayResult>(m, "RayResult")
-        .def_rw("shape_id", &b2RayResult::shapeId)
+        .def_rw("shape", &b2RayResult::shapeId)
         .def_rw("point", &b2RayResult::point)
         .def_rw("normal", &b2RayResult::normal)
         .def_rw("fraction", &b2RayResult::fraction)
@@ -261,8 +261,7 @@ void export_shape_def(py::module_& m)
         .def_rw("enable_hit_events", &b2ShapeDef::enableHitEvents)
         .def_rw("enable_pre_solve_events", &b2ShapeDef::enablePreSolveEvents)
         .def_rw("invoke_contact_creation", &b2ShapeDef::invokeContactCreation)
-        .def_rw("update_body_mass", &b2ShapeDef::updateBodyMass)
-        .def_rw("internal_value", &b2ShapeDef::internalValue) EXPORT_USER_DATA(b2ShapeDef);
+        .def_rw("update_body_mass", &b2ShapeDef::updateBodyMass) EXPORT_USER_DATA(b2ShapeDef);
 }
 
 void export_chain_def(py::module_& m)
@@ -445,7 +444,7 @@ void export_joint_defs(py::module_& m)
             "__init__",
             [](b2MouseJointDef* t)
             {
-                new (t) b2MouseJointDef(b2DefaultMouseJ ointDef());
+                new (t) b2MouseJointDef(b2DefaultMouseJointDef());
             }
         )
         .def_rw("body_a", &b2MouseJointDef::bodyIdA)

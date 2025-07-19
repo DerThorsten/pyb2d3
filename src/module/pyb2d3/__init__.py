@@ -333,29 +333,6 @@ def _extend_world():
 
     WorldView.create_joint = create_joint
 
-    def create_shape(self, shape_def, shape):
-
-        if isinstance(shape, Circle):
-            return self.create_circle_shape(shape_def, shape)
-        elif isinstance(shape, Polygon):
-            return self.create_polygon_shape(shape_def, shape)
-        elif isinstance(shape, Capsule):
-            return self.create_capsule_shape(shape_def, shape)
-        elif isinstance(shape, Segment):
-            return self.create_segment_shape(shape_def, shape)
-        else:
-            raise ValueError(f"shape {shape} not recognized")
-
-    Body.create_shape = create_shape
-
-    def create_shapes(self, shape_def, shapes):
-        res = []
-        for shape in shapes:
-            res.append(self.create_shape(shape_def, shape))
-        return res
-
-    Body.create_shapes = create_shapes
-
 
 _extend_world()
 del _extend_world
@@ -441,6 +418,18 @@ def make_filter(**kwargs):
     for k, v in kwargs.items():
         setattr(filter, k, v)
     return filter
+
+
+def make_query_filter(**kwargs):
+    query_filter = QueryFilter()
+    for k, v in kwargs.items():
+        setattr(query_filter, k, v)
+    return query_filter
+
+
+def query_filter(**kwargs):
+    """Create a QueryFilter object with the given keyword arguments."""
+    return make_query_filter(**kwargs)
 
 
 def circle(center=(0, 0), radius=1):

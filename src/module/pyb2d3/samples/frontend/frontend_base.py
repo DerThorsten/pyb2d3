@@ -154,7 +154,9 @@ class FrontendBase(ABC):
         # update sample
         self.sample.pre_update(dt)
         t0 = time.time()
+
         self.sample.update(dt)
+
         self.sample_update_time = time.time() - t0
         self.sample.post_update(dt)
 

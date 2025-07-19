@@ -59,7 +59,7 @@ namespace nanobind::detail
         }
     };
 
-#define MY_CASTER(ID_TYPE, STRUCT_TYPE, LOADER)                                         \
+#define MY_CASTER(ID_TYPE, STRUCT_TYPE, LOADER, IS_VALID)                               \
     template <>                                                                         \
     struct type_caster<ID_TYPE>                                                         \
     {                                                                                   \
@@ -88,15 +88,19 @@ namespace nanobind::detail
         }                                                                               \
         static nb::handle from_cpp(const ID_TYPE& src, rv_policy policy, cleanup_list*) \
         {                                                                               \
+            if (!IS_VALID(src))                                                         \
+            {                                                                           \
+                return nb::none().release();                                            \
+            }                                                                           \
             auto thing = STRUCT_TYPE(src);                                              \
             return nb::cast(thing).release();                                           \
         }                                                                               \
     }
 
 
-    MY_CASTER(b2BodyId, Body, b2LoadBodyId);
-    MY_CASTER(b2WorldId, WorldView, b2LoadWorldId);
-    MY_CASTER(b2ChainId, Chain, b2LoadChainId);
+    MY_CASTER(b2BodyId, Body, b2LoadBodyId, b2Body_IsValid);
+    MY_CASTER(b2WorldId, WorldView, b2LoadWorldId, b2World_IsValid);
+    MY_CASTER(b2ChainId, Chain, b2LoadChainId, b2Chain_IsValid);
 
 #undef MY_CASTER
 
@@ -133,6 +137,11 @@ namespace nanobind::detail
         // C++ -> Python (to int)
         static nb::handle from_cpp(const b2ShapeId& src, rv_policy policy, cleanup_list*)
         {
+            // is valid? // if not, return None
+            if (!b2Shape_IsValid(src))
+            {
+                return nb::none().release();
+            }
             return GetCastedShape(src).release();
         }
     };
@@ -170,6 +179,11 @@ namespace nanobind::detail
         // C++ -> Python (to int)
         static nb::handle from_cpp(const b2JointId& src, rv_policy policy, cleanup_list*)
         {
+            // is valid? // if not, return None
+            if (!b2Joint_IsValid(src))
+            {
+                return nb::none().release();
+            }
             return GetCastedJoint(src).release();
         }
     };

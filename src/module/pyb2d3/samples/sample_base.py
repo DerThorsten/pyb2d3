@@ -40,6 +40,10 @@ class SampleBase(object):
 
         self.frontend = None
 
+        # world time (ie time in the simulation)
+        self.world_time = 0.0
+        self.world_iteration = 0
+
     # some properties for the frontend
     @property
     def debug_draw(self):
@@ -53,6 +57,8 @@ class SampleBase(object):
     def update(self, dt):
         # Update the world with the given time step
         self.world.step(dt, self.frontend.settings.substeps)
+        self.world_time += dt
+        self.world_iteration += 1
 
     def pre_update(self, dt):
         # Pre-update logic, if any

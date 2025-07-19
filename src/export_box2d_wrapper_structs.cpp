@@ -92,7 +92,7 @@ void export_world_class(nb::module_& m)
             &WorldView::CastRayClosest,
             nb::arg("origin"),
             nb::arg("translation"),
-            nb::arg("filter")
+            nb::arg("filter") = b2DefaultQueryFilter()
         )
         .def_prop_rw("sleeping_enabled", &WorldView::IsSleepingEnabled, &WorldView::EnableSleeping, nb::arg("flag"))
         .def_prop_rw(
