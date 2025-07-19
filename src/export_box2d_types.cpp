@@ -445,7 +445,7 @@ void export_joint_defs(py::module_& m)
             "__init__",
             [](b2MouseJointDef* t)
             {
-                new (t) b2MouseJointDef(b2DefaultMouseJointDef());
+                new (t) b2MouseJointDef(b2DefaultMouseJ ointDef());
             }
         )
         .def_rw("body_a", &b2MouseJointDef::bodyIdA)

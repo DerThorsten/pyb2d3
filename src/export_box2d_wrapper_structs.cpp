@@ -127,7 +127,7 @@ void export_world_class(nb::module_& m)
             nb::arg("user_data")
         )
 
-        .def("explode", &WorldView::Explode, nb::arg("explosion_def"))
+        .def("_explode", &WorldView::Explode, nb::arg("explosion_def"))
         .def(
             "set_contact_tuning",
             &WorldView::SetContactTuning,

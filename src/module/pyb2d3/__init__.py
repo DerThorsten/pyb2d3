@@ -128,6 +128,13 @@ def motor_joint_def(**kwargs):
     return joint
 
 
+def explosion_def(**kwargs):
+    explosion = ExplosionDef()
+    for k, v in kwargs.items():
+        setattr(explosion, k, v)
+    return explosion
+
+
 _shape_def_f = shape_def
 _surface_material_f = surface_material
 
@@ -232,6 +239,20 @@ def _extend_world():
     WorldView.create_kinematic_body = partialmethod(
         WorldView.create_body, type=BodyType.KINEMATIC
     )
+
+    ##########################
+    # explode
+    ##########################
+    _mk_explosion_def = explosion_def
+
+    def explode(self, explosion_def=None, **kwargs):
+        if explosion_def is None:
+            explosion_def = _mk_explosion_def(**kwargs)
+        for k, v in kwargs.items():
+            setattr(explosion_def, k, v)
+        return self._explode(explosion_def)
+
+    WorldView.explode = explode
 
     def overlap_aabb(self, aabb, callback, query_filter=None, wrap_callback=True):
         if query_filter is None:
@@ -501,6 +522,11 @@ class DebugDraw(DebugDrawBase):
 
 
 from enum import Enum
+
+
+def rgb_to_hex_color(r, g, b):
+    """Convert RGB values to a hexadecimal integer."""
+    return (r << 16) | (g << 8) | b
 
 
 class HexColor(Enum):
