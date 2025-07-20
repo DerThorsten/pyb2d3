@@ -43,12 +43,13 @@ void export_b2Vec2(py::module_& m)
 void export_ray_result(py::module_& m)
 {
     py::class_<b2RayResult>(m, "RayResult")
-        .def_rw("shape", &b2RayResult::shapeId)
-        .def_rw("point", &b2RayResult::point)
-        .def_rw("normal", &b2RayResult::normal)
-        .def_rw("fraction", &b2RayResult::fraction)
-        .def_rw("node_visits", &b2RayResult::nodeVisits)
-        .def_rw("leaf_visits", &b2RayResult::leafVisits);
+        .def_ro("shape", &b2RayResult::shapeId)
+        .def_ro("point", &b2RayResult::point)
+        .def_ro("normal", &b2RayResult::normal)
+        .def_ro("fraction", &b2RayResult::fraction)
+        .def_ro("node_visits", &b2RayResult::nodeVisits)
+        .def_ro("leaf_visits", &b2RayResult::leafVisits)
+        .def_ro("hit", &b2RayResult::hit);
 }
 
 // void export_mixing_rule(py::module_& m)
@@ -314,8 +315,6 @@ void export_chain_def(py::module_& m)
             }
         )
 
-
-        // // .def_rw("materials", &b2ChainDef::materials) //TODO
         .def_prop_rw(
             "filter",
             [](PyChainDef* self)

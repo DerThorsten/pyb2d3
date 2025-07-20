@@ -368,6 +368,57 @@ _extend_body()
 del _extend_body
 
 
+def _extend_ray_result():
+    def reflect_vector(D, P1, P2):
+        # Line direction
+        L = P2 - P1
+        L_unit = L / np.linalg.norm(L)
+
+        # Projection of D onto L
+        proj_length = np.dot(D, L_unit)
+        proj = proj_length * L_unit
+
+        # Reflection formula
+        R = 2 * proj - D
+
+        # normalize the reflected vector
+        R_length = np.linalg.norm(R)
+        if R_length > 0:
+            R = R / R_length
+
+        R *= -1
+
+        return R
+
+    def compute_normal(self, ray_direction):
+        shape = self.shape
+        if not isinstance(shape, ChainSegmentShape):
+            return self.normal
+        else:
+            body = self.shape.body
+            angle = body.angle
+
+            segment = shape.segment
+            p0 = segment.point1
+            p1 = segment.point2
+
+            # get points in world coordinates
+            p0_world = body.world_point(p0)
+            p1_world = body.world_point(p1)
+
+            return reflect_vector(
+                ray_direction,
+                np.array(p0_world),
+                np.array(p1_world),
+            )
+
+    RayResult.compute_normal = compute_normal
+
+
+_extend_ray_result()
+del _extend_ray_result
+
+
 # shorthand for body types
 dynamic_body_def = partial(body_def, type=BodyType.DYNAMIC)
 static_body_def = partial(body_def, type=BodyType.STATIC)
@@ -460,6 +511,19 @@ def chain_segment(segment, ghost1, ghost2):
     c.ghost1 = ghost1
     c.ghost2 = ghost2
     return c
+
+
+def chain_box(center, hx, hy):
+    """Create a chain shape that represents a box centered at `center` with half-width `hx` and half-height `hy`."""
+    points = np.array(
+        [
+            (center[0] - hx, center[1] - hy),
+            (center[0] - hx, center[1] + hy),
+            (center[0] + hx, center[1] + hy),
+            (center[0] + hx, center[1] - hy),
+        ]
+    )
+    return chain_def(points=points, is_loop=True)
 
 
 def aabb(lower_bound, upper_bound):

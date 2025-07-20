@@ -15,7 +15,9 @@ class PygameFrontend(FrontendBase):
         super().__init__(settings)
 
         pygame.init()
-        self.screen = pygame.display.set_mode(self.settings.canvas_shape)
+        self.screen = pygame.display.set_mode(
+            self.settings.canvas_shape, pygame.SRCALPHA
+        )
         self.clock = pygame.time.Clock()
         self.transform = b2d.CanvasWorldTransform(
             canvas_shape=self.settings.canvas_shape,

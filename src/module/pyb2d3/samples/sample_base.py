@@ -44,6 +44,10 @@ class SampleBase(object):
         self.world_time = 0.0
         self.world_iteration = 0
 
+        self.mouse_joint_hertz = 100.0
+        self.mouse_joint_force_multiplier = 500.0
+        self.mouse_joint_damping_ratio = 1.0
+
     # some properties for the frontend
     @property
     def debug_draw(self):
@@ -97,8 +101,10 @@ class SampleBase(object):
                 body_a=self.anchor_body,
                 body_b=self._mouse_joint_body,
                 target=pos,
-                hertz=100.0,
-                max_force=500.0 * self._mouse_joint_body.mass,
+                hertz=self.mouse_joint_hertz,
+                max_force=self._mouse_joint_body.mass
+                * self.mouse_joint_force_multiplier,
+                damping_ratio=self.mouse_joint_damping_ratio,
             )
         else:
             self._camera_drag = True
