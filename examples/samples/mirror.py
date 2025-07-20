@@ -96,48 +96,35 @@ class Mirror(SampleBase):
         # by construction the ray should hit the box
         last_ray_result = ray_result
 
-        if ray_result.hit:
-            draw_laser_line(
-                pos,
-                ray_result.point,
+        if not ray_result.hit:
+            return
+
+        draw_laser_line(
+            pos,
+            ray_result.point,
+        )
+
+        for i in range(3):
+
+            # NOTE: RayResult.normal seems to be broken for chain shapes therefore we use a pyb2d3 custom compute_normal function
+            # which computes the normal "by hand" when RayResult.shape is a ChainSegmentShape
+            normal = last_ray_result.compute_normal(translation)
+
+            # reflect the translation vector
+            translation = (normal[0] * ray_length, normal[1] * ray_length)
+            # cast the reflected ray
+            ray_result = self.world.cast_ray_closest(
+                origin=last_ray_result.point, translation=translation
             )
 
-            for i in range(3):
-
-                assert (
-                    last_ray_result.shape is not None
-                ), "Ray result should have a shape"
-
-                # NOTE: RayResult.normal seems to be broken for chain shapes therefore we use a pyb2d3 custom compute_normal function
-                # which computes the normal "by hand" when RayResult.shape is a ChainSegmentShape
-                normal = last_ray_result.compute_normal(translation)
-
-                # reflect the translation vector
-                translation = (normal[0] * ray_length, normal[1] * ray_length)
-                # cast the reflected ray
-                ray_result = self.world.cast_ray_closest(
-                    origin=last_ray_result.point, translation=translation
+            if ray_result.hit:
+                draw_laser_line(
+                    last_ray_result.point,
+                    ray_result.point,
+                    reflection_count=i + 1,
                 )
-
-                if ray_result.hit:
-                    draw_laser_line(
-                        last_ray_result.point,
-                        ray_result.point,
-                        reflection_count=i + 1,
-                    )
-                    body_angle += math.pi
-                else:
-                    print("stopping ray casting, no hit")
-                    draw_laser_line(
-                        last_ray_result.point,
-                        (
-                            last_ray_result.point[0] + translation[0],
-                            last_ray_result.point[1] + translation[1],
-                        ),
-                        reflection_count=i + 1,
-                        color=(0, 255, 0),  # green for no hit
-                    )
-                last_ray_result = ray_result
+                body_angle += math.pi
+            last_ray_result = ray_result
 
 
 if __name__ == "__main__":

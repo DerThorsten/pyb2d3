@@ -6,8 +6,13 @@ class DebugDraw(DebugDrawBase):
     def __init__(self):
         super().__init__(self)
 
+    def begin_draw(self):
+        pass
+
+    def end_draw(self):
+        pass
+
     def draw_solid_rect(self, center, shape, color):
-        print("draw_solid_rect", center, shape, color)
         # via draw solid_polygon
         hw, hh = shape[0] / 2, shape[1] / 2
         vertices = [

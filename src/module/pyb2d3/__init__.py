@@ -240,6 +240,13 @@ def _extend_world():
         WorldView.create_body, type=BodyType.KINEMATIC
     )
 
+    def draw(self, debug_draw=None):
+        debug_draw.begin_draw()
+        self._draw(debug_draw)
+        debug_draw.end_draw()
+
+    WorldView.draw = draw
+
     ##########################
     # explode
     ##########################

@@ -124,6 +124,8 @@ class FrontendBase(ABC):
         self.sample = self.sample_class()
         self.sample.frontend = self
 
+        self.center_sample(self.sample, self.transform)
+
         on_double_click = getattr(self.sample, "on_double_click", None)
         on_triple_click = getattr(self.sample, "on_triple_click", None)
 
