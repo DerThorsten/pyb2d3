@@ -43,6 +43,178 @@ def hex_to_rgb_array(hex_colors):
     return np.stack((r, g, b), axis=-1)
 
 
+class BatchPolygons:
+    def __init__(self, canvas, transform):
+        self.canvas = canvas
+        self.transform = transform
+        self._reset_lists()
+
+    def _reset_lists(self):
+        self.points = []
+        self.colors = []
+        self.sizes = []
+
+    def add(self, points, color):
+        self.points.append(points)
+        self.colors.append(color)
+        self.sizes.append(len(points))
+
+    def draw(self):
+        if not self.points:
+            return
+
+        points = np.concatenate(self.points)
+        points = self.transform.batch_world_to_canvas(points)
+        colors = hex_to_rgb_array(np.array(self.colors))
+
+        self.canvas.line_width = 1
+        self.canvas.stroke_styled_polygons(
+            points=points,
+            color=colors,
+            points_per_polygon=self.sizes,
+        )
+
+        self._reset_lists()
+
+
+class BatchSolidPolygons:
+    def __init__(self, canvas, transform):
+        self.canvas = canvas
+        self.transform = transform
+        self._reset_lists()
+
+    def _reset_lists(self):
+        self.points = []
+        self.colors = []
+        self.sizes = []
+
+    def add(self, points, color):
+        self.points.append(points)
+        self.colors.append(color)
+        self.sizes.append(len(points))
+
+    def draw(self):
+        if not self.points:
+            return
+
+        points = np.concatenate(self.points)
+        points = self.transform.batch_world_to_canvas(points)
+        colors = hex_to_rgb_array(np.array(self.colors))
+
+        self.canvas.fill_styled_polygons(
+            points=points,
+            color=colors,
+            points_per_polygon=self.sizes,
+        )
+
+        self._reset_lists()
+
+
+class BatchLines:
+    def __init__(self, canvas, transform):
+        self.canvas = canvas
+        self.transform = transform
+        self._reset_lists()
+
+    def _reset_lists(self):
+        self.points = []
+        self.colors = []
+
+    def add(self, p1, p2, color):
+        self.points.append((p1, p2))
+        self.colors.append(color)
+
+    def draw(self):
+        if not self.points:
+            return
+
+        points = np.array(self.points)
+        points = self.transform.batch_world_to_canvas(points.reshape(-1, 2))
+        colors = hex_to_rgb_array(np.array(self.colors))
+
+        self.canvas.line_width = 1
+        self.canvas.stroke_styled_line_segments(
+            points=points,
+            color=colors,
+            points_per_line_segment=np.ones(len(self.points), dtype=np.int32) * 2,
+        )
+
+        self._reset_lists()
+
+
+class BatchSolidCircles:
+    def __init__(self, canvas, transform):
+        self.canvas = canvas
+        self.transform = transform
+        self._reset_lists()
+
+    def _reset_lists(self):
+        self.centers = []
+        self.radii = []
+        self.colors = []
+
+    def add(self, center, radius, color):
+        self.centers.append(center)
+        self.radii.append(radius)
+        self.colors.append(color)
+
+    def draw(self):
+        if not self.centers:
+            return
+
+        centers = np.array(self.centers)
+        radii = np.array(self.radii)
+        colors = hex_to_rgb_array(np.array(self.colors))
+
+        centers = self.transform.batch_world_to_canvas(centers)
+
+        self.canvas.fill_styled_circles(
+            x=centers[:, 0],
+            y=centers[:, 1],
+            radius=self.transform.scale_world_to_canvas(radii),
+            color=colors,
+        )
+
+        self._reset_lists()
+
+
+class BatchCircles:
+    def __init__(self, canvas, transform):
+        self.canvas = canvas
+        self.transform = transform
+        self._reset_lists()
+
+    def _reset_lists(self):
+        self.centers = []
+        self.radii = []
+        self.colors = []
+
+    def add(self, center, radius, color):
+        self.centers.append(center)
+        self.radii.append(radius)
+        self.colors.append(color)
+
+    def draw(self):
+        if not self.centers:
+            return
+
+        centers = np.array(self.centers)
+        radii = np.array(self.radii)
+        colors = hex_to_rgb_array(np.array(self.colors))
+
+        centers = self.transform.batch_world_to_canvas(centers)
+
+        self.canvas.stroke_styled_circles(
+            x=centers[:, 0],
+            y=centers[:, 1],
+            radius=self.transform.scale_world_to_canvas(radii),
+            color=colors,
+            line_width=1,
+        )
+
+        self._reset_lists()
+
+
 class IpycanvasDebugDraw(DebugDraw):
     def __init__(self, transform, canvas, output_widget):
         self.canvas = canvas
@@ -53,31 +225,11 @@ class IpycanvasDebugDraw(DebugDraw):
 
         self._in_debug_draw = False
 
-        self._draw_polygon_points = []
-        self._draw_polygon_sizes = []
-        self._draw_polygon_colors = []
-        self._draw_polygon_line_widths = []
-        self._draw_polygon_width_in_pixels = []
-        self._draw_solid_polygon_points = []
-
-        self._draw_solid_polygon_points = []
-        self._draw_solid_polygon_sizes = []
-        self._draw_solid_polygon_colors = []
-
-        self._draw_circle_centers = []
-        self._draw_circle_radii = []
-        self._draw_circle_colors = []
-        self._draw_circle_line_widths = []
-        self._draw_circle_width_in_pixels = []
-
-        self._draw_solid_circle_centers = []
-        self._draw_solid_circle_radii = []
-        self._draw_solid_circle_colors = []
-
-        self._draw_line_points = []
-        self._draw_line_colors = []
-        self._draw_line_widths = []
-        self._draw_line_width_in_pixels = []
+        self._batch_polygons = BatchPolygons(canvas, transform)
+        self._batch_solid_polygons = BatchSolidPolygons(canvas, transform)
+        self._batch_lines = BatchLines(canvas, transform)
+        self._batch_solid_circles = BatchSolidCircles(canvas, transform)
+        self._batch_circles = BatchCircles(canvas, transform)
 
     def world_to_canvas(self, world_point):
         return self.transform.world_to_canvas(world_point)
@@ -89,55 +241,19 @@ class IpycanvasDebugDraw(DebugDraw):
     def end_draw(self):
         self._in_debug_draw = False
 
-        # draw solid polygons
-        solid_polygon_points = np.concatenate(self._draw_solid_polygon_points)
-        solid_polygon_points = self.transform.batch_world_to_canvas(
-            solid_polygon_points
-        )
-        solid_polygon_colors = hex_to_rgb_array(
-            np.array(self._draw_solid_polygon_colors)
-        )
-
-        self.canvas.fill_styled_polygons(
-            points=solid_polygon_points,
-            color=solid_polygon_colors,
-            points_per_polygon=self._draw_solid_polygon_sizes,
-        )
-
-        # clear the lists
-        self._draw_polygon_points = []
-        self._draw_polygon_sizes = []
-        self._draw_polygon_colors = []
-        self._draw_polygon_line_widths = []
-        self._draw_polygon_width_in_pixels = []
-        self._draw_solid_polygon_points = []
-
-        self._draw_solid_polygon_points = []
-        self._draw_solid_polygon_sizes = []
-        self._draw_solid_polygon_colors = []
-
-        self._draw_circle_centers = []
-        self._draw_circle_radii = []
-        self._draw_circle_colors = []
-        self._draw_circle_line_widths = []
-        self._draw_circle_width_in_pixels = []
-
-        self._draw_solid_circle_centers = []
-        self._draw_solid_circle_radii = []
-        self._draw_solid_circle_colors = []
-
-        self._draw_line_points = []
-        self._draw_line_colors = []
-        self._draw_line_widths = []
-        self._draw_line_width_in_pixels = []
+        self._batch_polygons.draw()
+        self._batch_solid_polygons.draw()
+        self._batch_solid_circles.draw()
+        self._batch_circles.draw()
+        self._batch_solid_circles.draw()
+        self._batch_lines.draw()
 
     def draw_polygon(self, points, color, line_width, width_in_pixels=False):
+        assert 0
         if self._in_debug_draw:
-            self._draw_polygon_points.append(points)
-            self._draw_polygon_sizes.append(len(points))
-            self._draw_polygon_colors.append(color)
-            self._draw_polygon_line_widths.append(line_width)
-            self._draw_polygon_width_in_pixels.append(width_in_pixels)
+            assert width_in_pixels
+            assert line_width == 1
+            self._batch_polygons.add(points, color)
         else:
             self.canvas.stroke_style = html_color(color)
             if not width_in_pixels:
@@ -147,20 +263,16 @@ class IpycanvasDebugDraw(DebugDraw):
 
     def draw_solid_polygon(self, points, color):
         if self._in_debug_draw:
-            self._draw_solid_polygon_points.append(points)
-            self._draw_solid_polygon_sizes.append(len(points))
-            self._draw_solid_polygon_colors.append(color)
+            self._batch_solid_polygons.add(points, color)
         else:
             self.canvas.fill_style = html_color(color)
             self.canvas.fill_polygon([self.world_to_canvas(v) for v in points])
 
     def draw_circle(self, center, radius, line_width, color, width_in_pixels=False):
         if self._in_debug_draw:
-            self._draw_circle_centers.append(center)
-            self._draw_circle_radii.append(radius)
-            self._draw_circle_colors.append(color)
-            self._draw_circle_line_widths.append(line_width)
-            self._draw_circle_width_in_pixels.append(width_in_pixels)
+            assert width_in_pixels
+            assert line_width == 1
+            self._batch_circles.add(center, radius, color)
         else:
             self.canvas.stroke_style = html_color(color)
             if not width_in_pixels:
@@ -173,9 +285,7 @@ class IpycanvasDebugDraw(DebugDraw):
 
     def draw_solid_circle(self, center, radius, color):
         if self._in_debug_draw:
-            self._draw_solid_circle_centers.append(center)
-            self._draw_solid_circle_radii.append(radius)
-            self._draw_solid_circle_colors.append(color)
+            self._batch_solid_circles.add(center, radius, color)
         else:
             self.canvas.fill_style = html_color(color)
             self.canvas.fill_circle(
@@ -185,10 +295,9 @@ class IpycanvasDebugDraw(DebugDraw):
 
     def draw_line(self, p1, p2, line_width, color, width_in_pixels=False):
         if self._in_debug_draw:
-            self._draw_line_points.append((p1, p2))
-            self._draw_line_colors.append(color)
-            self._draw_line_widths.append(line_width)
-            self._draw_line_width_in_pixels.append(width_in_pixels)
+            assert width_in_pixels
+            assert line_width == 1
+            self._batch_lines.add(p1, p2, color)
         else:
             self.canvas.stroke_style = html_color(color)
             if not width_in_pixels:
