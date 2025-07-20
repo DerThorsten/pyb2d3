@@ -308,12 +308,21 @@ class IpycanvasDebugDraw(DebugDraw):
             )
 
 
+last_frontend = [None]
+
+
 class IpycanvasFrontend(FrontendBase):
 
     Settings = FrontendBase.Settings
 
+    def __del__(self):
+        if self.cancel_loop is not None:
+            self.cancel_loop()
+
     def __init__(self, settings):
+        global last_frontend
         try:
+
             super().__init__(settings)
 
             self.canvas = Canvas(
@@ -321,6 +330,15 @@ class IpycanvasFrontend(FrontendBase):
                 height=self.settings.canvas_shape[1],
             )
             self.output_widget = Output()
+
+            # if a cell is re-executed, we need to cancel the previous loop,
+            # otherwise we will have multiple loops running
+            if (
+                last_frontend[0] is not None
+                and last_frontend[0].cancel_loop is not None
+            ):
+                last_frontend[0].cancel_loop()
+            last_frontend[0] = self
 
             self.transform = b2d.CanvasWorldTransform(
                 canvas_shape=self.settings.canvas_shape,
