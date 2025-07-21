@@ -9,8 +9,8 @@ import math
 
 
 class Tumbler(SampleBase):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, settings):
+        super().__init__(settings)
 
         # physical world
         box_diameter = 20

@@ -1,24 +1,35 @@
 import pyb2d3 as b2d
 from .frontend import run
 
+from dataclasses import dataclass
+
+
+@dataclass
+class SampleBaseSettings:
+    gravity: tuple = (0, -10)
+
+    def set_gravity(self, gravity):
+        self.gravity = gravity
+        return self
+
 
 class SampleBase(object):
 
+    Settings = SampleBaseSettings
+
     # classmethod
     @classmethod
-    def run(cls, frontend_class=None, settings=None):
-        """
-        Run the sample with the specified frontend class and settings.
-        If no frontend class is provided, it defaults to the DefaultFrontend.
-        """
-        if frontend_class is None:
-            from .frontend import DefaultFrontend
+    def run(cls, sample_settings=None, frontend_class=None, frontend_settings=None):
+        run(
+            sample_class=cls,
+            sample_settings=sample_settings,
+            frontend_class=frontend_class,
+            frontend_settings=frontend_settings,
+        )
 
-            frontend_class = DefaultFrontend
+    def __init__(self, settings=SampleBaseSettings(), world=None):
 
-        run(sample_class=cls, frontend_class=frontend_class, settings=settings)
-
-    def __init__(self, world=None, gravity=(0, -10)):
+        self.settings = settings
         self.world = world
 
         if b2d.WITH_THREADING:
@@ -26,7 +37,7 @@ class SampleBase(object):
         else:
             pool = None
         if self.world is None:
-            self.world = b2d.World(gravity=gravity, thread_pool=pool)
+            self.world = b2d.World(gravity=settings.gravity, thread_pool=pool)
 
         # create an anchor body for joints
         self.anchor_body = self.world.create_static_body(position=(0, 0))

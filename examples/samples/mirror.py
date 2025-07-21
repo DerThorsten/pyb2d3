@@ -9,8 +9,8 @@ import math
 
 
 class Mirror(SampleBase):
-    def __init__(self):
-        super().__init__(gravity=(0, 0))
+    def __init__(self, settings):
+        super().__init__(settings.set_gravity((0, 0)))
         self.box_radius = 10
 
         # attach the chain shape to a static body

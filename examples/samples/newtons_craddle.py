@@ -9,8 +9,8 @@ import math
 
 
 class NetwonsCradle(SampleBase):
-    def __init__(self):
-        super().__init__(gravity=(0, -10))
+    def __init__(self, settings):
+        super().__init__(settings)
 
         # physical world
         self.n_balls = 10

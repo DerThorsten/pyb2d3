@@ -15,7 +15,7 @@ class DebugDrawSettings:
 
 
 @dataclass
-class EngineSettings:
+class FrontendBaseSettings:
     canvas_shape: tuple = (1200, 1200)
     fps: int = 60
     substeps: int = 20
@@ -58,6 +58,9 @@ class MultiClickHandler:
                 self.second_click_time = None
             # else # we are still waiting for a second click
 
+        if self.on_double_click is None:
+            # if we don't have a double click handler, we can just call the click handler
+            return
         if self.second_click_time is not None:
             if current_time - self.second_click_time > self.delayed_time:
                 # chance for a triple click timed out, we can call the second click handler
@@ -101,11 +104,15 @@ class MultiClickHandler:
 
 class FrontendBase(ABC):
 
-    Settings = EngineSettings
+    Settings = FrontendBaseSettings
 
-    def __init__(self, settings: EngineSettings):
+    def __init__(self, settings):
         self.settings = settings
+
         self.sample_class = None
+        self.sample_settings = None
+        self.change_sample_class_requested = False
+
         self.sample = None
 
         self.iteration = 0
@@ -118,10 +125,15 @@ class FrontendBase(ABC):
 
         self._multi_click_handler = None
 
-    def set_new_sample(self, sample_class):
+    def set_sample(self, sample_class, sample_settings=None):
+        self.sample_class = sample_class
+        self.sample_settings = sample_settings
+        self.change_sample_class_requested = True
+
+    def set_new_sample(self, sample_class, sample_settings):
 
         # construct the sample
-        self.sample = self.sample_class()
+        self.sample = self.sample_class(self.sample_settings)
         self.sample.frontend = self
 
         self.center_sample(self.sample, self.transform)
@@ -137,10 +149,11 @@ class FrontendBase(ABC):
             on_triple_click=on_triple_click,
         )
 
-    def run(self, sample_class):
+    def run(self, sample_class, sample_settings):
         self.sample_class = sample_class
+        self.sample_settings = sample_settings
 
-        self.set_new_sample(sample_class)
+        self.set_new_sample(sample_class, sample_settings)
 
         # call sample.update in a loop
         # depending on the frontend, this can
@@ -148,6 +161,11 @@ class FrontendBase(ABC):
         self.main_loop()
 
     def update_and_draw(self, dt):
+
+        # do we need to change the sample class?
+        if self.change_sample_class_requested:
+            self.change_sample_class_requested = False
+            self.set_new_sample(self.sample_class, self.sample_settings)
 
         # click handler update
         if self._multi_click_handler:
@@ -171,7 +189,7 @@ class FrontendBase(ABC):
         self.sample.post_debug_draw()
         self.iteration += 1
 
-    def center_sample(self, sample, transform):
+    def center_sample(self, sample, transform, margin_px=10):
         canvas_shape = self.settings.canvas_shape
         aabb = sample.aabb()
 
@@ -179,6 +197,25 @@ class FrontendBase(ABC):
         # assumes that there is a transform attribute in the sample
         world_lower_bound = aabb.lower_bound
         world_upper_bound = aabb.upper_bound
+
+        world_shape = (
+            world_upper_bound[0] - world_lower_bound[0],
+            world_upper_bound[1] - world_lower_bound[1],
+        )
+
+        # add a margin
+        needed_canvas_shape = (
+            world_shape[0] * transform.ppm + margin_px * 2,
+            world_shape[1] * transform.ppm + margin_px * 2,
+        )
+        # print(f"canvas_shape shape: {canvas_shape}, needed canvas shape: {needed_canvas_shape}")
+        # if needed_canvas_shape[0] > canvas_shape[0] or needed_canvas_shape[1] > canvas_shape[1]:
+        # get the factor to scale the current ppm
+        factor = max(
+            needed_canvas_shape[0] / canvas_shape[0],
+            needed_canvas_shape[1] / canvas_shape[1],
+        )
+        transform.ppm /= factor
 
         canvas_lower_bound = transform.world_to_canvas(world_lower_bound)
         canvas_upper_bound = transform.world_to_canvas(world_upper_bound)
@@ -193,6 +230,11 @@ class FrontendBase(ABC):
 
         needed_canvas_width = canvas_upper_bound[0] - canvas_lower_bound[0]
         needed_canvas_height = canvas_upper_bound[1] - canvas_lower_bound[1]
+
+        print(
+            f"Canvas shape: {canvas_shape}, needed canvas size: {needed_canvas_width}x{needed_canvas_height}"
+        )
+
         lower_bound_should = (canvas_shape[0] - needed_canvas_width) // 2, (
             canvas_shape[1] - needed_canvas_height
         ) // 2

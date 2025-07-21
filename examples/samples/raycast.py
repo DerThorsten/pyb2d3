@@ -9,8 +9,8 @@ import math
 
 
 class Raycast(SampleBase):
-    def __init__(self):
-        super().__init__(gravity=(0, 0))
+    def __init__(self, settings):
+        super().__init__(settings.set_gravity((0, 0)))
         self.box_radius = 10
 
         # attach the chain shape to a static body
@@ -58,6 +58,9 @@ class Raycast(SampleBase):
             lower_bound=(-self.box_radius, -self.box_radius),
             upper_bound=(self.box_radius, self.box_radius),
         )
+
+    def on_triple_click(self, pos):
+        self.frontend.set_sample(Raycast, self.settings)
 
     def post_update(self, dt):
         pos = self.ball_body.position

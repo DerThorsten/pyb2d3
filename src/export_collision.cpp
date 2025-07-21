@@ -140,10 +140,10 @@ void export_collision(py::module_& m)
         .def_rw("ghost2", &b2ChainSegment::ghost2);
 
     m.def("is_valid_ray", &b2IsValidRay, py::arg("input"));
-    m.def("make_polygon", &b2MakePolygon, py::arg("hull"), py::arg("radius"));
-    m.def("make_offset_polygon", &b2MakeOffsetPolygon, py::arg("hull"), py::arg("position"), py::arg("rotation"));
+    m.def("_make_polygon", &b2MakePolygon, py::arg("hull"), py::arg("radius"));
+    m.def("_make_offset_polygon", &b2MakeOffsetPolygon, py::arg("hull"), py::arg("position"), py::arg("rotation"));
     m.def(
-        "make_offset_rounded_polygon",
+        "_make_offset_rounded_polygon",
         &b2MakeOffsetRoundedPolygon,
         py::arg("hull"),
         py::arg("position"),

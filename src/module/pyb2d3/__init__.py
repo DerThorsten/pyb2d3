@@ -471,6 +471,13 @@ create_static_body = partial(create_body, type=BodyType.STATIC)
 create_kinematic_body = partial(create_body, type=BodyType.KINEMATIC)
 
 
+# def hull(points):
+#     """Create a Hull object from a list of points."""
+#     hull = b2d.Hull()
+#     hull.points = np.require(points, dtype=np.float32, requirements="C")
+#     return hull
+
+
 def make_filter(**kwargs):
     filter = Filter()
     for k, v in kwargs.items():
@@ -518,6 +525,36 @@ def chain_segment(segment, ghost1, ghost2):
     c.ghost1 = ghost1
     c.ghost2 = ghost2
     return c
+
+
+def make_polygon(points=None, hull=None, radius=None, position=None, rotation=None):
+    if int(hull is not None) + int(points is not None) != 1:
+        raise ValueError("either hull or points should be provided, but not both")
+    if hull is None:
+        n_points = len(points)
+        if n_points < 3 or n_points > 8:
+            raise ValueError(
+                "the number of points should be between 3 and 8, but got {n_points}"
+            )
+        points = np.require(points, dtype=np.float32, requirements="C")
+        hull = compute_hull(points)
+
+    if position and rotation is not None:
+        if radius is None:
+            radius = 0.0
+        return b2d._make_polygon(hull, radius)
+    else:
+        if position is None:
+            position = (0, 0)
+        if rotation is None:
+            rotation = 0.0
+
+        if radius is None:
+            return _pyb2d3._make_offset_polygon(hull, position, rotation)
+        else:
+            return _pyb2d3._make_offset_rounded_polygon(
+                hull, position, rotation, radius
+            )
 
 
 def chain_box(center, hx, hy):

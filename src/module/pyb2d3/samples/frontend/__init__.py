@@ -1,17 +1,22 @@
-from .frontend_base import FrontendBase, EngineSettings
 from .default_frontend import DefaultFrontend
 
 
-def run(sample_class, frontend_class=DefaultFrontend, settings=None):
+def run(
+    sample_class, sample_settings=None, frontend_class=None, frontend_settings=None
+):
     """
-    Run a sample with the specified frontend.
+    Run a sample with the specified sample settings, frontend class, and frontend settings.
 
-    :param sample_class: The sample class to run.
-    :param frontend_class: The frontend class to use (default is DefaultFrontend).
-    :param settings: Optional settings for the frontend.
+
     """
-    if settings is None:
-        settings = frontend_class.Settings()
+    if sample_settings is None:
+        sample_settings = sample_class.Settings()
 
-    frontend = frontend_class(settings=settings)
-    frontend.run(sample_class)
+    if frontend_class is None:
+        frontend_class = DefaultFrontend
+
+    if frontend_settings is None:
+        frontend_settings = frontend_class.Settings()
+
+    frontend = frontend_class(settings=frontend_settings)
+    frontend.run(sample_class, sample_settings=sample_settings)

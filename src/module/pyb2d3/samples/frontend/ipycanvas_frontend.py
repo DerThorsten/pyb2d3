@@ -376,6 +376,7 @@ class IpycanvasFrontend(FrontendBase):
                 )
                 d.on_dom_event(self._dispatch_events)
             else:
+                raise NotImplementedError("lite is not yet finished..stay tuned!")
                 self.canvas.on_mouse_move(self.on_mouse_move)
                 self.canvas.on_mouse_down(self.on_mouse_down)
                 self.canvas.on_mouse_up(self.on_mouse_up)
