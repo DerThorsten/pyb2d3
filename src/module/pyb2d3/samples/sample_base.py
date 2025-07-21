@@ -94,6 +94,12 @@ class SampleBase(object):
     def on_click(self, pos):
         pass
 
+    # on_double_click and  on_triple_click can be implemented in derived classes
+    # but if these methods are not present, we dont need to delay
+    # the "on_click" event to wait for a possible double/triple click.
+    # To be able to perform the check if the user has implemented these methods,
+    # we wont implement them here.
+
     # def on_double_click(self, pos):
     #     pass
 

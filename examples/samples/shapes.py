@@ -8,7 +8,8 @@ import time
 import math
 
 
-# get vertices of a  circle with n segments
+# helper function to create shapes like
+# a circle, triangle, pentagon, hexagon, etc.
 def approx_circle(radius, n_segments):
     angle = 2 * math.pi / n_segments
     return np.array(
@@ -17,12 +18,6 @@ def approx_circle(radius, n_segments):
             for i in range(n_segments)
         ]
     )
-
-
-def rgb_to_hex_color(rgb):
-    """Convert an RGB tuple to a hexadecimal color integer."""
-    r, g, b = rgb
-    return (r << 16) | (g << 8) | b
 
 
 class Shapes(SampleBase):
@@ -38,32 +33,24 @@ class Shapes(SampleBase):
             )
         )
 
-        # a helper to get a random point in the box (with some margin)
-        margin = 1
+        # a helper to get a random point in the box (with some margin)\
+        # st. we can place shapes at random positions in the box
+        margin = 2
         r = self.outer_box_radius - margin
         random_point_in_box = lambda: (random.uniform(-r, r), random.uniform(-r, r))
-
-        blue = rgb_to_hex_color((10, 10, 255))
-        shape_def = b2d.shape_def(
-            density=1, material=b2d.surface_material(restitution=0.5, custom_color=blue)
-        )
 
         # lambda to create shape def with random rgb color
         random_color_shape_def = lambda: b2d.shape_def(
             density=1,
             material=b2d.surface_material(
                 restitution=0.5,
-                custom_color=rgb_to_hex_color(
-                    (
-                        random.randint(0, 255),
-                        random.randint(0, 255),
-                        random.randint(0, 255),
-                    )
-                ),
+                custom_color=b2d.random_hex_color(),
             ),
         )
 
-        for i in range(4):
+        # create a lot of different shapes n-times
+        n = 4
+        for i in range(n):
 
             # a ball
             self.ball_body = self.world.create_dynamic_body(
@@ -89,7 +76,7 @@ class Shapes(SampleBase):
             )
             rectangle_body.create_shape(
                 random_color_shape_def(),
-                b2d.make_box(hx=0.5, hy=1.0),
+                b2d.box(hx=0.5, hy=1.0),
             )
 
             # a rounded rectangle
@@ -98,7 +85,7 @@ class Shapes(SampleBase):
             )
             rounded_rectangle_body.create_shape(
                 random_color_shape_def(),
-                b2d.make_rounded_box(hx=0.5, hy=1.0, radius=0.5),
+                b2d.box(hx=0.5, hy=1.0, radius=0.5),
             )
 
             # an arbitary convex polygon with optional radius
@@ -113,22 +100,16 @@ class Shapes(SampleBase):
             ]
             triangle_body.create_shape(
                 random_color_shape_def(),
-                b2d.make_polygon(points=points, radius=0.1),
+                b2d.polygon(points=points, radius=0.1),
             )
 
             # pentagon
             pentagon_body = self.world.create_dynamic_body(
                 position=random_point_in_box(), linear_damping=0.2, angular_damping=0.2
             )
-            points = [
-                (-0.5, -0.5),
-                (0.5, -0.5),
-                (0.75, 0.5),
-                (0, 1.0),
-                (-0.75, 0.5),
-            ]
+            points = approx_circle(radius=0.5, n_segments=5)
             pentagon_body.create_shape(
-                random_color_shape_def(), b2d.make_polygon(points=points, radius=0.1)
+                random_color_shape_def(), b2d.polygon(points=points, radius=0.1)
             )
 
             # hexagon
@@ -137,7 +118,7 @@ class Shapes(SampleBase):
             )
             points = approx_circle(radius=0.5, n_segments=6)
             hexagon_body.create_shape(
-                random_color_shape_def(), b2d.make_polygon(points=points, radius=0.1)
+                random_color_shape_def(), b2d.polygon(points=points, radius=0.1)
             )
 
             # 8 sided polygon
@@ -148,7 +129,7 @@ class Shapes(SampleBase):
             points[:, 1] *= 0.5  # make it a bit more flat
             eight_sided.create_shape(
                 random_color_shape_def(),
-                b2d.make_polygon(points=points, radius=0.1),
+                b2d.polygon(points=points, radius=0.1),
             )
 
             # compound shapes (ie combining multiple shapes into one body)
@@ -158,11 +139,11 @@ class Shapes(SampleBase):
             )
             plus_shape_body.create_shape(
                 shape_def,
-                b2d.make_box(hx=0.5, hy=1.0),
+                b2d.box(hx=0.5, hy=1.0),
             )
             plus_shape_body.create_shape(
                 shape_def,
-                b2d.make_box(hx=1.0, hy=0.5),
+                b2d.box(hx=1.0, hy=0.5),
             )
 
             shape_def = random_color_shape_def()
@@ -175,7 +156,7 @@ class Shapes(SampleBase):
             )
             lollipop_shape_body.create_shape(
                 shape_def,
-                b2d.make_offset_box(hx=0.1, hy=1.0, center=(0, -0.5), rotation=0),
+                b2d.box(hx=0.1, hy=1.0, center=(0, -0.5), rotation=0),
             )
 
             shape_def = random_color_shape_def()
@@ -184,7 +165,7 @@ class Shapes(SampleBase):
             )
             dumbell_shape_body.create_shape(
                 shape_def,
-                b2d.make_offset_box(hx=0.1, hy=1.1, center=(0, 0), rotation=0),
+                b2d.box(hx=0.1, hy=1.1, center=(0, 0), rotation=0),
             )
             dumbell_shape_body.create_shape(
                 shape_def,

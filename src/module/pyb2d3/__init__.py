@@ -1,4 +1,5 @@
 import numpy as np  # type: ignore
+import random
 from ._pyb2d3 import *
 from . import _pyb2d3  # type: ignore
 from functools import partial, partialmethod
@@ -180,8 +181,7 @@ class BodyFactory(object):
         return body
 
     def add_circle(self, *args, **kwargs):
-        circle = make_circle(*args, **kwargs)
-        self._s.append(circle)
+        self._s.append(circle(*args, **kwargs))
         return self
 
     def add_capsule(self, *args, **kwargs):
@@ -190,13 +190,11 @@ class BodyFactory(object):
         return self
 
     def add_polygon(self, *args, **kwargs):
-        polygon = make_polygon(*args, **kwargs)
-        self._s.append(polygon)
+        self._s.append(polygon(*args, **kwargs))
         return self
 
     def add_box(self, *args, **kwargs):
-        box = make_box(*args, **kwargs)
-        self._s.append(box)
+        self._s.append(box(*args, **kwargs))
         return self
 
     # chain all properties of body_def st.
@@ -527,7 +525,7 @@ def chain_segment(segment, ghost1, ghost2):
     return c
 
 
-def make_polygon(points=None, hull=None, radius=None, position=None, rotation=None):
+def polygon(points=None, hull=None, radius=None, position=None, rotation=None):
     if int(hull is not None) + int(points is not None) != 1:
         raise ValueError("either hull or points should be provided, but not both")
     if hull is None:
@@ -555,6 +553,23 @@ def make_polygon(points=None, hull=None, radius=None, position=None, rotation=No
             return _pyb2d3._make_offset_rounded_polygon(
                 hull, position, rotation, radius
             )
+
+
+def box(hx, hy, center=None, rotation=None, radius=None):
+    if center is None and rotation is None:
+        if radius is None:
+            return _pyb2d3._make_box(hx, hy)
+        else:
+            return _pyb2d3._make_rounded_box(hx, hy, radius)
+    else:
+        if center is None:
+            center = (0, 0)
+        if rotation is None:
+            rotation = 0.0
+        if radius is None:
+            return _pyb2d3._make_offset_box(hx, hy, center, rotation)
+        else:
+            return _pyb2d3._make_offset_rounded_box(hx, hy, radius, center, rotation)
 
 
 def chain_box(center, hx, hy):
@@ -624,6 +639,26 @@ from enum import Enum
 def rgb_to_hex_color(r, g, b):
     """Convert RGB values to a hexadecimal integer."""
     return (r << 16) | (g << 8) | b
+
+
+def hex_color(*args):
+    """Create a HexColor object from RGB values."""
+    if len(args) == 1:
+        return args[0]  # assume it's already a hex color integer
+    elif len(args) == 3:
+        return (args[0] << 16) | (args[1] << 8) | args[2]
+    else:
+        raise ValueError(
+            "hex_color expects either a single integer or three RGB values."
+        )
+
+
+def random_hex_color():
+    """Generate a random hexadecimal color integer."""
+    r = random.randint(0, 255)
+    g = random.randint(0, 255)
+    b = random.randint(0, 255)
+    return rgb_to_hex_color(r, g, b)
 
 
 class HexColor(Enum):

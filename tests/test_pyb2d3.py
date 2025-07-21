@@ -32,7 +32,7 @@ def test_world_cls():
     material = b2d.surface_material(friction=0.5, restitution=0.3)
     shape_def = b2d.shape_def(density=1, material=material, user_data=400)
 
-    shapes = [b2d.make_box(1, 1), b2d.make_circle(radius=0.5)]
+    shapes = [b2d.box(1, 1), b2d.circle(radius=0.5)]
 
     for i in range(10):
         body = world.create_body(body_def)
