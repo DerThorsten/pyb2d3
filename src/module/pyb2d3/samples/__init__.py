@@ -1,2 +1,2 @@
 from .sample_base import SampleBase
-from .frontend import run, DefaultFrontend
+from .frontend import run

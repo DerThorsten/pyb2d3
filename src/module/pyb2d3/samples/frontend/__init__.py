@@ -1,4 +1,4 @@
-from .default_frontend import DefaultFrontend
+from .default_frontend import get_default_frontend
 
 
 def run(
@@ -13,7 +13,7 @@ def run(
         sample_settings = sample_class.Settings()
 
     if frontend_class is None:
-        frontend_class = DefaultFrontend
+        frontend_class = get_default_frontend()
 
     if frontend_settings is None:
         frontend_settings = frontend_class.Settings()
