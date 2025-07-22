@@ -156,7 +156,7 @@ class PygameFrontend(FrontendBase):
         iteration = 0
         acc_draw_time = 0.0
 
-        while True:
+        while not self.sample.is_done():
             if self.settings.debug_draw.draw_background:
                 self.screen.fill(self.settings.debug_draw.background_color)
 
@@ -186,6 +186,12 @@ class PygameFrontend(FrontendBase):
             pygame.display.update()
 
             iteration += 1
+
+        self.sample.post_run()
+
+    def center_sample(self, sample, margin_px=10):
+        # center the sample in the canvas
+        self.center_sample_with_transform(sample, self.transform, margin_px)
 
     def _dispatch_events(self):
 

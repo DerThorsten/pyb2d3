@@ -130,13 +130,13 @@ class FrontendBase(ABC):
         self.sample_settings = sample_settings
         self.change_sample_class_requested = True
 
-    def set_new_sample(self, sample_class, sample_settings):
+    def _set_new_sample(self, sample_class, sample_settings):
 
         # construct the sample
         self.sample = self.sample_class(self.sample_settings)
         self.sample.frontend = self
 
-        self.center_sample(self.sample, self.transform)
+        self.center_sample(self.sample, margin_px=10)
 
         on_double_click = getattr(self.sample, "on_double_click", None)
         on_triple_click = getattr(self.sample, "on_triple_click", None)
@@ -153,7 +153,7 @@ class FrontendBase(ABC):
         self.sample_class = sample_class
         self.sample_settings = sample_settings
 
-        self.set_new_sample(sample_class, sample_settings)
+        self._set_new_sample(sample_class, sample_settings)
 
         # call sample.update in a loop
         # depending on the frontend, this can
@@ -165,7 +165,9 @@ class FrontendBase(ABC):
         # do we need to change the sample class?
         if self.change_sample_class_requested:
             self.change_sample_class_requested = False
-            self.set_new_sample(self.sample_class, self.sample_settings)
+            self.sample.post_run()
+
+            self._set_new_sample(self.sample_class, self.sample_settings)
 
         # click handler update
         if self._multi_click_handler:
@@ -189,7 +191,13 @@ class FrontendBase(ABC):
         self.sample.post_debug_draw()
         self.iteration += 1
 
-    def center_sample(self, sample, transform, margin_px=10):
+    def center_sample(self, sample, margin_px=10):
+        raise NotImplementedError(
+            "The center_sample method must be implemented in the derived class."
+        )
+
+    # this may not be applicable to all frontends
+    def center_sample_with_transform(self, sample, transform, margin_px=10):
         canvas_shape = self.settings.canvas_shape
         aabb = sample.aabb()
 
@@ -230,10 +238,6 @@ class FrontendBase(ABC):
 
         needed_canvas_width = canvas_upper_bound[0] - canvas_lower_bound[0]
         needed_canvas_height = canvas_upper_bound[1] - canvas_lower_bound[1]
-
-        print(
-            f"Canvas shape: {canvas_shape}, needed canvas size: {needed_canvas_width}x{needed_canvas_height}"
-        )
 
         lower_bound_should = (canvas_shape[0] - needed_canvas_width) // 2, (
             canvas_shape[1] - needed_canvas_height

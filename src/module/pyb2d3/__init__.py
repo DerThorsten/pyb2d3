@@ -566,6 +566,7 @@ def box(hx, hy, center=None, rotation=None, radius=None):
             center = (0, 0)
         if rotation is None:
             rotation = 0.0
+
         if radius is None:
             return _pyb2d3._make_offset_box(hx, hy, center, rotation)
         else:

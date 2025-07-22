@@ -36,7 +36,7 @@ class Mirror(SampleBase):
                     restitution=0.5, custom_color=b2d.rgb_to_hex_color(255, 240, 40)
                 ),
             ),
-            b2d.make_box(hx=0.4, hy=1.0),
+            b2d.box(hx=0.4, hy=1.0),
         )
 
         # n random boxes
@@ -54,7 +54,7 @@ class Mirror(SampleBase):
                 b2d.shape_def(
                     density=1, material=b2d.surface_material(restitution=0.5)
                 ),
-                b2d.make_box(hx=0.5, hy=1.0),
+                b2d.box(hx=0.5, hy=1.0),
             )
 
         # we make the mouse joint(created in the base class) more stiff

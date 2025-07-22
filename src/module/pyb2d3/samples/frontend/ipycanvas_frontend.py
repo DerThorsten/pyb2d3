@@ -389,6 +389,10 @@ class IpycanvasFrontend(FrontendBase):
             self.output_widget.append_stdout(traceback.format_exc())
             raise e
 
+    def center_sample(self, sample, margin_px=10):
+        # center the sample in the canvas
+        self.center_sample_with_transform(sample, self.transform, margin_px)
+
     def drag_camera(self, delta):
         # drag the camera by the given delta
         self.transform.offset = (
@@ -427,6 +431,10 @@ class IpycanvasFrontend(FrontendBase):
     def main_loop(self):
         def f(dt):
             try:
+                if self.sample.is_done():
+                    self.cancel_loop()
+                    self.sample.post_run()
+                    return
                 self.canvas.clear()
                 self.update_and_draw(dt)
             except Exception as e:

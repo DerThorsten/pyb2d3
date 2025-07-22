@@ -8,7 +8,7 @@ import time
 import math
 
 
-class NetwonsCradle(SampleBase):
+class NetwonsCraddle(SampleBase):
     def __init__(self, settings):
         super().__init__(settings)
 
@@ -33,7 +33,7 @@ class NetwonsCradle(SampleBase):
             material = b2d.surface_material(
                 restitution=1.0,
                 friction=0.0,
-                custom_color=b2d.rgb_to_hex_color(100, 0, 200),
+                custom_color=b2d.hex_color(100, 0, 200),
             )
             ball_body.create_shape(
                 b2d.shape_def(density=1, material=material),
@@ -65,4 +65,4 @@ class NetwonsCradle(SampleBase):
 
 
 if __name__ == "__main__":
-    NetwonsCradle.run()
+    NetwonsCraddle.run()

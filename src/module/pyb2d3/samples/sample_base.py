@@ -17,6 +17,12 @@ class SampleBase(object):
 
     Settings = SampleBaseSettings
 
+    subclasses = []
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        SampleBase.subclasses.append(cls)
+
     # classmethod
     @classmethod
     def run(cls, sample_settings=None, frontend_class=None, frontend_settings=None):
@@ -91,8 +97,16 @@ class SampleBase(object):
         # Post-debug draw logic, if any
         pass
 
+    def post_run(self):
+        # Post-run logic, if any
+        pass
+
     def on_click(self, pos):
         pass
+
+    # this is only used
+    def is_done(self):
+        return False
 
     # on_double_click and  on_triple_click can be implemented in derived classes
     # but if these methods are not present, we dont need to delay
