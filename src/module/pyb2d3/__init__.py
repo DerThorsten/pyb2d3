@@ -1,9 +1,9 @@
-import numpy as np  # type: ignore
+import numpy as np
 import random
-from ._pyb2d3 import *
-from . import _pyb2d3  # type: ignore
+from ._pyb2d3 import *  # noqa: F403
+from . import _pyb2d3
 from functools import partial, partialmethod
-
+from enum import Enum
 
 # some constats
 STOP_QUERY = False
@@ -52,10 +52,12 @@ def body_def(**kwargs):
     return body
 
 
-def chain_def(**kwargs):
+def chain_def(points, materials=None, is_loop=False, filter=None):
     chain = ChainDef()
-    for k, v in kwargs.items():
-        setattr(chain, k, v)
+    chain.points = np.require(points, dtype=np.float32, requirements="C")
+    chain.is_loop = is_loop
+    if materials is not None:
+        chain.materials = materials
     return chain
 
 
@@ -284,15 +286,12 @@ def _extend_world():
     WorldView.body_factory = body_factory
 
     def helper(joint_name):
-        def_cls = getattr(_pyb2d3, f"{joint_name.capitalize()}JointDef")
+        # def_cls = getattr(_pyb2d3, f"{joint_name.capitalize()}JointDef")
         def_func = globals()[f"{joint_name}_joint_def"]
         raw_function = getattr(WorldView, f"_create_{joint_name}_joint")
 
         def create_joint(self, *args, **kwargs):
             na = len(args)
-            nka = len(kwargs)
-            joint_def = None
-
             # from just a joint_def
             if na == 0:
                 return raw_function(self, def_func(**kwargs))
@@ -344,9 +343,7 @@ del _extend_world
 
 
 def _extend_body():
-
     def create_shape(self, shape_def, shape):
-
         if isinstance(shape, Circle):
             return self.create_circle_shape(shape_def, shape)
         elif isinstance(shape, Polygon):
@@ -401,8 +398,6 @@ def _extend_ray_result():
             return self.normal
         else:
             body = self.shape.body
-            angle = body.angle
-
             segment = shape.segment
             p0 = segment.point1
             p1 = segment.point2
@@ -634,9 +629,6 @@ class DebugDraw(DebugDrawBase):
         pass
 
 
-from enum import Enum
-
-
 def rgb_to_hex_color(r, g, b):
     """Convert RGB values to a hexadecimal integer."""
     return (r << 16) | (g << 8) | b
@@ -663,7 +655,6 @@ def random_hex_color():
 
 
 class HexColor(Enum):
-
     AliceBlue = 0xF0F8FF
     AntiqueWhite = 0xFAEBD7
     Aquamarine = 0x7FFFD4

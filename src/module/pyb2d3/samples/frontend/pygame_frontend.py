@@ -2,14 +2,10 @@ from .frontend_base import FrontendBase
 
 import pyb2d3 as b2d
 import pygame
-import time
 import sys
 
 
 from ...debug_draw import DebugDraw
-from ..._pyb2d3 import transform_point
-import pygame
-import math
 
 
 class PygameDebugDraw(DebugDraw):
@@ -44,7 +40,6 @@ class PygameDebugDraw(DebugDraw):
         )
 
     def draw_circle(self, center, radius, line_width, color, width_in_pixels=False):
-
         if not width_in_pixels:
             line_width = self.transform.scale_world_to_canvas(line_width)
 
@@ -79,7 +74,6 @@ class PygameDebugDraw(DebugDraw):
 
 
 class PygameFrontend(FrontendBase):
-
     Settings = FrontendBase.Settings
 
     def __init__(self, settings):
@@ -107,10 +101,6 @@ class PygameFrontend(FrontendBase):
 
         self._last_click_time = None
         self._last_double_click_time = None
-
-        print(
-            f"Debug draw shapes: {self.debug_draw.draw_shapes}, joints: {self.debug_draw.draw_joints}"
-        )
 
     def drag_camera(self, delta):
         # drag the camera by the given delta
@@ -154,7 +144,6 @@ class PygameFrontend(FrontendBase):
         text_rect = text_surface.get_rect(center=(320, 240))  # center on screen
 
         iteration = 0
-        acc_draw_time = 0.0
 
         while not self.sample.is_done():
             if self.settings.debug_draw.draw_background:
@@ -194,7 +183,6 @@ class PygameFrontend(FrontendBase):
         self.center_sample_with_transform(sample, self.transform, margin_px)
 
     def _dispatch_events(self):
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -240,7 +228,6 @@ class PygameFrontend(FrontendBase):
             # mouse-wheel
             elif event.type == pygame.MOUSEWHEEL:
                 self.sample.on_mouse_wheel(event.y / 10.0)
-                print(self.transform.ppm)  # scale down the wheel delta
             # window leave
             elif event.type == pygame.WINDOWLEAVE:
                 self.sample.on_mouse_leave()

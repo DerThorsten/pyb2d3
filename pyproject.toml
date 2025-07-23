@@ -37,3 +37,8 @@ minversion = "6.2.5"
 testpaths = [
     "tests"
 ]
+
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["F405", "E501"]

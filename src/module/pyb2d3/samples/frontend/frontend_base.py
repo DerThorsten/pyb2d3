@@ -21,7 +21,7 @@ class FrontendBaseSettings:
     substeps: int = 20
     ppm: float = 40.0  # Pixels per meter
     debug_draw: DebugDrawSettings = field(default_factory=DebugDrawSettings)
-    multi_click_delay_ms: int = 250  # Delay in milliseconds to wait for multi-clicks
+    multi_click_delay_ms: int = 350  # Delay in milliseconds to wait for multi-clicks
 
 
 # helper class to handle click/double click/triple click events
@@ -103,7 +103,6 @@ class MultiClickHandler:
 
 
 class FrontendBase(ABC):
-
     Settings = FrontendBaseSettings
 
     def __init__(self, settings):
@@ -131,7 +130,6 @@ class FrontendBase(ABC):
         self.change_sample_class_requested = True
 
     def _set_new_sample(self, sample_class, sample_settings):
-
         # construct the sample
         self.sample = self.sample_class(self.sample_settings)
         self.sample.frontend = self
@@ -161,7 +159,6 @@ class FrontendBase(ABC):
         self.main_loop()
 
     def update_and_draw(self, dt):
-
         # do we need to change the sample class?
         if self.change_sample_class_requested:
             self.change_sample_class_requested = False
@@ -227,11 +224,13 @@ class FrontendBase(ABC):
 
         canvas_lower_bound = transform.world_to_canvas(world_lower_bound)
         canvas_upper_bound = transform.world_to_canvas(world_upper_bound)
-        canvas_lower_bound_new = min(canvas_lower_bound[0], canvas_upper_bound[0]), min(
-            canvas_lower_bound[1], canvas_upper_bound[1]
+        canvas_lower_bound_new = (
+            min(canvas_lower_bound[0], canvas_upper_bound[0]),
+            min(canvas_lower_bound[1], canvas_upper_bound[1]),
         )
-        canvas_upper_bound_new = max(canvas_lower_bound[0], canvas_upper_bound[0]), max(
-            canvas_lower_bound[1], canvas_upper_bound[1]
+        canvas_upper_bound_new = (
+            max(canvas_lower_bound[0], canvas_upper_bound[0]),
+            max(canvas_lower_bound[1], canvas_upper_bound[1]),
         )
         canvas_lower_bound = canvas_lower_bound_new
         canvas_upper_bound = canvas_upper_bound_new
@@ -239,9 +238,10 @@ class FrontendBase(ABC):
         needed_canvas_width = canvas_upper_bound[0] - canvas_lower_bound[0]
         needed_canvas_height = canvas_upper_bound[1] - canvas_lower_bound[1]
 
-        lower_bound_should = (canvas_shape[0] - needed_canvas_width) // 2, (
-            canvas_shape[1] - needed_canvas_height
-        ) // 2
+        lower_bound_should = (
+            (canvas_shape[0] - needed_canvas_width) // 2,
+            (canvas_shape[1] - needed_canvas_height) // 2,
+        )
         world_lower_bound_should = (
             lower_bound_should[0] / transform.ppm,
             lower_bound_should[1] / transform.ppm,
