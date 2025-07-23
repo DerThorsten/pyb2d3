@@ -4,7 +4,6 @@ from pyb2d3.debug_draw import DebugDraw
 
 import random
 
-# dataclass for settings
 from dataclasses import dataclass
 from pyb2d3.samples.frontend import run
 
@@ -30,7 +29,6 @@ class NoopDebugDraw(DebugDraw):
 
 
 class HeadlessTestFrontend(FrontendBase):
-
     @dataclass
     class Settings(FrontendBase.Settings):
         world_time_limit: float = 5.0
@@ -62,7 +60,6 @@ class HeadlessTestFrontend(FrontendBase):
         pass
 
     def main_loop(self):
-
         fps = self.settings.fps
         if fps == 0:
             fps = 60
@@ -81,7 +78,6 @@ class HeadlessTestFrontend(FrontendBase):
         self.sample.post_run()
 
     def fire_random_event(self):
-
         # 30% for no event
         if random.random() < 0.3:
             return
@@ -103,7 +99,6 @@ class HeadlessTestFrontend(FrontendBase):
 
         # 50 % chance for a mouse move event
         if random.random() < 0.70:
-
             left_margin = self.mouse_pos[0]
             right_margin = self.settings.canvas_shape[0] - self.mouse_pos[0]
             top_margin = self.mouse_pos[1]
@@ -161,7 +156,6 @@ class HeadlessTestFrontend(FrontendBase):
                 return
 
     def center_sample(self, sample, margin_px=10):
-
         self.center_sample_with_transform(
             sample, transform=self.transform, margin_px=margin_px
         )
@@ -171,7 +165,6 @@ def run_in_headless_test_frontend(sample_class, sample_settings=None, repeats=10
     frontend_settings = HeadlessTestFrontend.Settings()
 
     for _ in range(repeats):
-
         run(
             sample_class=sample_class,
             sample_settings=sample_settings,

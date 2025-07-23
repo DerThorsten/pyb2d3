@@ -1,22 +1,21 @@
 #pragma once
 
 
-#include <nanobind/nanobind.h>
-#include <nanobind/ndarray.h>
+#include <iostream>
 
-// C
-// extern "C"
-// {
 #include <box2d/box2d.h>
 #include <box2d/collision.h>
 #include <box2d/math_functions.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
 
 #include "pyb2d3/wrapper_structs.hpp"
-// }
+
 
 namespace nb = nanobind;
 
 using ArrayVec2 = nb::ndarray<float, nb::numpy, nb::shape<-1, 2>, nb::c_contig>;
+using ArrayDoubleVec2 = nb::ndarray<double, nb::numpy, nb::shape<-1, 2>, nb::c_contig>;
 using ConstArrayVec2 = nb::ndarray<const float, nb::numpy, nb::shape<-1, 2>, nb::c_contig>;
 // typedef user_data_int = //  unsiged integer with size of ptr
 using user_data_uint = std::uintptr_t;
@@ -33,7 +32,8 @@ namespace nanobind::detail
         // Python -> C++
         bool from_python(nb::handle src, uint8_t flags, cleanup_list*) noexcept
         {
-            using arr_type = nb::ndarray<float, nb::numpy, nb::shape<2>>;
+            using arr_float_type = nb::ndarray<float, nb::numpy, nb::shape<2>>;
+            using arr_double_type = nb::ndarray<double, nb::numpy, nb::shape<2>>;
 
             if (nb::isinstance<nb::tuple>(src) && nb::len(src) == 2)
             {
@@ -42,12 +42,23 @@ namespace nanobind::detail
                 value = b2Vec2{x, y};
                 return true;
             }
-            else if (nb::isinstance<arr_type>(src))
+            else if (nb::isinstance<arr_float_type>(src))
             {
-                auto arr = nb::cast<arr_type>(src);
+                auto arr = nb::cast<arr_float_type>(src);
                 auto view = arr.view();
                 value = b2Vec2{view(0), view(1)};
                 return true;
+            }
+            else if (nb::isinstance<arr_double_type>(src))
+            {
+                auto arr = nb::cast<arr_double_type>(src);
+                auto view = arr.view();
+                value = b2Vec2{float(view(0)), float(view(1))};
+                return true;
+            }
+            else
+            {
+                return false;  // Not a valid input type
             }
             return false;  // Not a valid input type
         }

@@ -52,7 +52,12 @@ def body_def(**kwargs):
     return body
 
 
-def chain_def(points, materials=None, is_loop=False, filter=None):
+def chain_def(points, materials=None, material=None, is_loop=False, filter=None):
+    if material is not None and materials is not None:
+        raise ValueError("Either material or materials can be set, not both.")
+    if material is not None:
+        materials = [material]
+
     chain = ChainDef()
     chain.points = np.require(points, dtype=np.float32, requirements="C")
     chain.is_loop = is_loop

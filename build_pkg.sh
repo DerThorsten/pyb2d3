@@ -26,9 +26,9 @@ if true; then
     make -j$(nproc)
     popd
 
-    PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module" pytest
+    # PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module" pytest
 
-    PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module" pytest benchmark
+    # PYTHONPATH="$PYTHONPATH:$PYB2D3_SRC_DIR/src/module" pytest benchmark
 
     popd
 

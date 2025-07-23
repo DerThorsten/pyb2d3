@@ -227,7 +227,7 @@ class PygameFrontend(FrontendBase):
                 self.sample.on_mouse_move(world_pos, delta_world)
             # mouse-wheel
             elif event.type == pygame.MOUSEWHEEL:
-                self.sample.on_mouse_wheel(event.y / 10.0)
+                self.sample.on_mouse_wheel(event.y / 5.0)
             # window leave
             elif event.type == pygame.WINDOWLEAVE:
                 self.sample.on_mouse_leave()
