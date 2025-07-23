@@ -1,5 +1,16 @@
 import pyb2d3 as b2d
-from pyb2d3.samples.frontend.frontend_base import FrontendBase
+from pyb2d3.samples.frontend.frontend_base import (
+    FrontendBase,
+    MouseDownEvent,
+    MouseUpEvent,
+    MouseMoveEvent,
+    MouseLeaveEvent,
+    MouseEnterEvent,
+    ClickEvent,
+    DoubleClickEvent,
+    TripleClickEvent,
+)
+
 from pyb2d3.debug_draw import DebugDraw
 
 import random
@@ -12,19 +23,46 @@ class NoopDebugDraw(DebugDraw):
     def __init__(self):
         super().__init__()
 
-    def draw_polygon(self, vertices, color, line_width, width_in_pixels=False):
+    def begin_draw(self):
         pass
 
-    def draw_solid_polygon(self, points, color):
+    def end_draw(self):
         pass
 
-    def draw_circle(self, center, radius, line_width, color, width_in_pixels=False):
+    def draw_polygon(
+        self,
+        vertices,
+        color,
+        line_width,
+        width_in_pixels=False,
+        world_coordinates=False,
+    ):
         pass
 
-    def draw_solid_circle(self, center, radius, color):
+    def draw_solid_polygon(
+        self, points, color, width_in_pixels=False, world_coordinates=False
+    ):
         pass
 
-    def draw_line(self, p1, p2, line_width, color, width_in_pixels=False):
+    def draw_circle(
+        self,
+        center,
+        radius,
+        line_width,
+        color,
+        width_in_pixels=False,
+        world_coordinates=False,
+    ):
+        pass
+
+    def draw_solid_circle(
+        self, center, radius, color, width_in_pixels=False, world_coordinates=False
+    ):
+        pass
+
+    def draw_line(
+        self, p1, p2, line_width, color, width_in_pixels=False, world_coordinates=False
+    ):
         pass
 
 
@@ -86,14 +124,14 @@ class HeadlessTestFrontend(FrontendBase):
         if not self.mouse_in:
             # 90 % chance for a mouse enter event
             if random.random() < 0.9:
-                self.sample.on_mouse_enter()
+                self.sample.on_mouse_enter(MouseEnterEvent())
                 self.mouse_in = True
 
             return
         else:
             # 10 % chance for a mouse leave event
             if random.random() < 0.1:
-                self.sample.on_mouse_leave()
+                self.sample.on_mouse_leave(MouseLeaveEvent())
                 self.mouse_in = False
                 return
 
@@ -123,36 +161,65 @@ class HeadlessTestFrontend(FrontendBase):
             self.mouse_pos = new_pos
 
             self.sample.on_mouse_move(
-                self.transform.canvas_to_world(self.mouse_pos), world_delta
+                MouseMoveEvent(
+                    world_position=self.transform.canvas_to_world(new_pos),
+                    canvas_position=new_pos,
+                    world_delta=world_delta,
+                    canvas_delta=delta,
+                )
             )
             return
 
         # 30 % for a tripple click if the sample has "on_triple_click" method
         if hasattr(self.sample, "on_triple_click") and random.random() < 0.3:
             # tripple click
-            self.sample.on_triple_click(self.transform.canvas_to_world(self.mouse_pos))
+
+            self.sample.on_triple_click(
+                TripleClickEvent(
+                    world_position=self.transform.canvas_to_world(self.mouse_pos),
+                    canvas_position=self.mouse_pos,
+                )
+            )
             return
 
         # 30 % for a double click if the sample has "on_double_click" method
         if hasattr(self.sample, "on_double_click") and random.random() < 0.3:
             # double click
-            self.sample.on_double_click(self.transform.canvas_to_world(self.mouse_pos))
+            self.sample.on_double_click(
+                DoubleClickEvent(
+                    world_position=self.transform.canvas_to_world(self.mouse_pos),
+                    canvas_position=self.mouse_pos,
+                )
+            )
             return
 
         if self.mouse_down:
             # 20 % chance for a mouse up event
             if random.random() < 0.2:
                 self.mouse_down = False
-                self.sample.on_mouse_up(self.transform.canvas_to_world(self.mouse_pos))
+                self.sample.on_mouse_up(
+                    MouseUpEvent(
+                        world_position=self.transform.canvas_to_world(self.mouse_pos),
+                        canvas_position=self.mouse_pos,
+                    )
+                )
                 return
         else:
             # 20 % chance for a mouse down event
             if random.random() < 0.2:
                 self.mouse_down = True
                 self.sample.on_mouse_down(
-                    self.transform.canvas_to_world(self.mouse_pos)
+                    MouseDownEvent(
+                        world_position=self.transform.canvas_to_world(self.mouse_pos),
+                        canvas_position=self.mouse_pos,
+                    )
                 )
-                self.sample.on_click(self.transform.canvas_to_world(self.mouse_pos))
+                self.sample.on_click(
+                    ClickEvent(
+                        world_position=self.transform.canvas_to_world(self.mouse_pos),
+                        canvas_position=self.mouse_pos,
+                    )
+                )
                 return
 
     def center_sample(self, sample, margin_px=10):

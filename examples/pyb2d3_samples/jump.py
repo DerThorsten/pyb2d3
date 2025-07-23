@@ -14,8 +14,8 @@ def grid_iterate(shape):
 
 
 class Jump(SampleBase):
-    def __init__(self, settings):
-        super().__init__(settings.set_gravity((0, -50)))
+    def __init__(self, frontend, settings):
+        super().__init__(frontend, settings.set_gravity((0, -50)))
         self.outer_box_radius = 100
 
         # attach the chain shape to a static body
@@ -106,8 +106,10 @@ class Jump(SampleBase):
             self.balls_added += 1
 
     # create explosion on double click
-    def on_double_click(self, pos):
-        self.world.explode(position=pos, radius=70, impulse_per_length=200)
+    def on_double_click(self, event):
+        self.world.explode(
+            position=event.world_position, radius=70, impulse_per_length=200
+        )
 
     def aabb(self):
         eps = 0.01

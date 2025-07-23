@@ -1,4 +1,12 @@
-from .frontend_base import FrontendBase
+from .frontend_base import (
+    FrontendBase,
+    MouseDownEvent,
+    MouseUpEvent,
+    MouseMoveEvent,
+    MouseWheelEvent,
+    MouseLeaveEvent,
+    MouseEnterEvent,
+)
 
 import pyb2d3 as b2d
 import pygame
@@ -21,54 +29,86 @@ class PygameDebugDraw(DebugDraw):
         b = hex_color & 0xFF
         return (r, g, b)
 
-    def world_to_canvas(self, world_point):
-        return self.transform.world_to_canvas(world_point)
+    def world_to_canvas(self, point, world_coordinates=True):
+        return self.transform.world_to_canvas(point)
 
-    def draw_polygon(self, vertices, color, line_width, width_in_pixels=False):
-        if not width_in_pixels:
+    def maybe_world_to_canvas(self, point, world_coordinates=True):
+        if not world_coordinates:
+            return point
+        return self.transform.world_to_canvas(point)
+
+    def maybe_scale(self, value, world_coordinates=True):
+        if world_coordinates:
+            return self.transform.scale_world_to_canvas(value)
+        return value
+
+    def draw_polygon(
+        self, vertices, color, line_width, width_in_pixels=False, world_coordinates=True
+    ):
+        if not width_in_pixels and world_coordinates:
             line_width = self.transform.scale_world_to_canvas(line_width)
+        if world_coordinates:
+            vertices = [self.world_to_canvas(v) for v in vertices]
         pygame.draw.polygon(
             self.screen,
             color,
-            [self.world_to_canvas(v) for v in vertices],
+            vertices,
             round(line_width),
         )
 
-    def draw_solid_polygon(self, points, color):
-        pygame.draw.polygon(
-            self.screen, color, [self.world_to_canvas(v) for v in points], 0
-        )
+    def draw_solid_polygon(self, points, color, world_coordinates=True):
+        if world_coordinates:
+            points = [self.world_to_canvas(v) for v in points]
+        pygame.draw.polygon(self.screen, color, points, 0)
 
-    def draw_circle(self, center, radius, line_width, color, width_in_pixels=False):
-        if not width_in_pixels:
+    def draw_circle(
+        self,
+        center,
+        radius,
+        line_width,
+        color,
+        width_in_pixels=False,
+        world_coordinates=True,
+    ):
+        if not width_in_pixels and world_coordinates:
             line_width = self.transform.scale_world_to_canvas(line_width)
+        if world_coordinates:
+            center = self.world_to_canvas(center)
+            radius = self.transform.scale_world_to_canvas(radius)
 
         pygame.draw.circle(
             self.screen,
             color,
-            self.world_to_canvas(center),
-            self.transform.scale_world_to_canvas(radius),
+            center,
+            radius,
             round(line_width),
         )
 
-    def draw_solid_circle(self, center, radius, color):
+    def draw_solid_circle(self, center, radius, color, world_coordinates=True):
+        if world_coordinates:
+            center = self.world_to_canvas(center)
+            radius = self.transform.scale_world_to_canvas(radius)
         pygame.draw.circle(
             self.screen,
             color,
-            self.world_to_canvas(center),
-            self.transform.scale_world_to_canvas(radius),
+            center,
+            radius,
             0,
         )
 
-    def draw_line(self, p1, p2, line_width, color, width_in_pixels=False):
-        if not width_in_pixels:
+    def draw_line(
+        self, p1, p2, line_width, color, width_in_pixels=False, world_coordinates=True
+    ):
+        if not width_in_pixels and world_coordinates:
             line_width = self.transform.scale_world_to_canvas(line_width)
-
+        if world_coordinates:
+            p1 = self.world_to_canvas(p1)
+            p2 = self.world_to_canvas(p2)
         pygame.draw.line(
             self.screen,
             color,
-            self.world_to_canvas(p1),
-            self.world_to_canvas(p2),
+            p1,
+            p2,
             round(line_width),
         )
 
@@ -195,42 +235,74 @@ class PygameFrontend(FrontendBase):
                     continue
 
                 # check for tripple-click first, then double-click
-                mouse_pos = pygame.mouse.get_pos()
-                self._last_canvas_mouse_pos = mouse_pos
-                world_pos = self.transform.canvas_to_world(mouse_pos)
-                self._multi_click_handler.handle_click(world_pos)
-
-                self.sample.on_mouse_down(world_pos)
-            elif event.type == pygame.MOUSEBUTTONUP:
-                mouse_pos = pygame.mouse.get_pos()
-                self._last_canvas_mouse_pos = mouse_pos
-                world_pos = self.transform.canvas_to_world(mouse_pos)
-                self.sample.on_mouse_up(world_pos)
-            elif event.type == pygame.MOUSEMOTION:
-                mouse_pos = pygame.mouse.get_pos()
-                if self._last_canvas_mouse_pos is None:
-                    self._last_canvas_mouse_pos = mouse_pos
-                delta = (
-                    mouse_pos[0] - self._last_canvas_mouse_pos[0],
-                    mouse_pos[1] - self._last_canvas_mouse_pos[1],
+                canvas_position = pygame.mouse.get_pos()
+                self._last_canvas_mouse_pos = canvas_position
+                world_pos = self.transform.canvas_to_world(canvas_position)
+                self._multi_click_handler.handle_click(
+                    world_position=world_pos, canvas_position=canvas_position
                 )
-                self._last_canvas_mouse_pos = mouse_pos
+                self.sample.on_mouse_down(
+                    MouseDownEvent(
+                        world_position=world_pos, canvas_position=canvas_position
+                    )
+                )
+            elif event.type == pygame.MOUSEBUTTONUP:
+                canvas_position = pygame.mouse.get_pos()
+                self._last_canvas_mouse_pos = canvas_position
+                world_pos = self.transform.canvas_to_world(canvas_position)
+                self.sample.on_mouse_up(
+                    MouseUpEvent(
+                        world_position=world_pos, canvas_position=canvas_position
+                    )
+                )
+            elif event.type == pygame.MOUSEMOTION:
+                canvas_position = pygame.mouse.get_pos()
+                if self._last_canvas_mouse_pos is None:
+                    self._last_canvas_mouse_pos = canvas_position
+                canvas_delta = (
+                    canvas_position[0] - self._last_canvas_mouse_pos[0],
+                    canvas_position[1] - self._last_canvas_mouse_pos[1],
+                )
+                self._last_canvas_mouse_pos = canvas_position
 
-                world_pos = self.transform.canvas_to_world(mouse_pos)
+                world_pos = self.transform.canvas_to_world(canvas_position)
 
                 # convert delta to world coordinates
                 delta_world = (
-                    delta[0] / self.transform.ppm,
-                    -delta[1] / self.transform.ppm,
+                    canvas_delta[0] / self.transform.ppm,
+                    -canvas_delta[1] / self.transform.ppm,
                 )
 
-                self.sample.on_mouse_move(world_pos, delta_world)
+                self.sample.on_mouse_move(
+                    MouseMoveEvent(
+                        world_position=world_pos,
+                        canvas_position=canvas_position,
+                        world_delta=delta_world,
+                        canvas_delta=canvas_delta,
+                    )
+                )
             # mouse-wheel
             elif event.type == pygame.MOUSEWHEEL:
-                self.sample.on_mouse_wheel(event.y / 5.0)
+                # self.sample.on_mouse_wheel(event.y / 5.0)
+                canvas_position = pygame.mouse.get_pos()
+                self._last_canvas_mouse_pos = canvas_position
+                world_pos = self.transform.canvas_to_world(canvas_position)
+                self.sample.on_mouse_wheel(
+                    MouseWheelEvent(
+                        world_position=world_pos,
+                        canvas_position=canvas_position,
+                        delta=event.y / 5.0,
+                    )
+                )
             # window leave
             elif event.type == pygame.WINDOWLEAVE:
-                self.sample.on_mouse_leave()
+                # self.sample.on_mouse_leave()
+                self.sample.on_mouse_leave(MouseLeaveEvent())
+                self._last_canvas_mouse_pos = None
+                self._last_world_mouse_pos = None
+
             # window enter
             elif event.type == pygame.WINDOWENTER:
-                self.sample.on_mouse_enter()
+                self.sample.on_mouse_enter(MouseEnterEvent())
+                self._last_canvas_mouse_pos = None
+                self._last_world_mouse_pos = None

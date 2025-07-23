@@ -12,7 +12,7 @@ class DebugDraw(DebugDrawBase):
     def end_draw(self):
         pass
 
-    def draw_solid_rect(self, center, shape, color):
+    def draw_solid_rect(self, center, shape, color, world_coordinates=True):
         # via draw solid_polygon
         hw, hh = shape[0] / 2, shape[1] / 2
         vertices = [
@@ -23,7 +23,15 @@ class DebugDraw(DebugDrawBase):
         ]
         self.draw_solid_polygon(vertices, color)
 
-    def draw_rect(self, center, shape, line_width, color, width_in_pixels=False):
+    def draw_rect(
+        self,
+        center,
+        shape,
+        line_width,
+        color,
+        width_in_pixels=False,
+        world_coordinates=True,
+    ):
         # via draw solid_polygon
         hw, hh = shape[0] / 2, shape[1] / 2
         vertices = [
@@ -39,7 +47,9 @@ class DebugDraw(DebugDrawBase):
             width_in_pixels=width_in_pixels,
         )
 
-    def draw_polygon(self, points, line_width, color, width_in_pixels=False):
+    def draw_polygon(
+        self, points, line_width, color, width_in_pixels=False, world_coordinates=True
+    ):
         raise NotImplementedError("draw_polygon must be implemented in a subclass")
 
     def draw_solid_polygon(self, points, color):
@@ -47,16 +57,26 @@ class DebugDraw(DebugDrawBase):
             "draw_solid_polygon must be implemented in a subclass"
         )
 
-    def draw_circle(self, center, radius, line_width, color, width_in_pixels=False):
+    def draw_circle(
+        self,
+        center,
+        radius,
+        line_width,
+        color,
+        width_in_pixels=False,
+        world_coordinates=True,
+    ):
         raise NotImplementedError("draw_circle must be implemented in a subclass")
 
-    def draw_solid_circle(self, center, radius, color):
+    def draw_solid_circle(self, center, radius, color, world_coordinates=True):
         raise NotImplementedError("draw_solid_circle must be implemented in a subclass")
 
-    def draw_line(self, p1, p2, line_width, color, width_in_pixels=False):
+    def draw_line(
+        self, p1, p2, line_width, color, width_in_pixels=False, world_coordinates=True
+    ):
         raise NotImplementedError("draw_line must be implemented in a subclass")
 
-    def draw_solid_rounded_polygon(self, points, radius, color):
+    def draw_solid_rounded_polygon(self, points, radius, color, world_coordinates=True):
         """Draw a filled polygon with rounded corners directly on the surface."""
         n = len(points)
 
@@ -84,18 +104,26 @@ class DebugDraw(DebugDrawBase):
             # Draw rectangle as polygon
             # pygame.draw.polygon(surface, color, [corner1, corner2, corner3, corner4])
             self.draw_solid_polygon(
-                points=[corner1, corner2, corner3, corner4], color=color
+                points=[corner1, corner2, corner3, corner4],
+                color=color,
+                world_coordinates=world_coordinates,
             )
 
         # Draw circles at corners
         for p in points:
             # pygame.draw.circle(surface, color, (float(p[0]), float(p[1])), radius)
-            self.draw_solid_circle(center=p, radius=radius, color=color)
+            self.draw_solid_circle(
+                center=p,
+                radius=radius,
+                color=color,
+                world_coordinates=world_coordinates,
+            )
         # draw the inner part of the polygon
-        self.draw_solid_polygon(points=points, color=color)
+        self.draw_solid_polygon(
+            points=points, color=color, world_coordinates=world_coordinates
+        )
 
-    def draw_solid_capsule(self, p1, p2, radius, color):
-
+    def draw_solid_capsule(self, p1, p2, radius, color, world_coordinates=True):
         x1, y1 = p1
         x2, y2 = p2
 
@@ -126,22 +154,38 @@ class DebugDraw(DebugDrawBase):
         # Draw central rectangle
         # pygame.draw.polygon(surface, color, [corner1, corner2, corner3, corner4])
         self.draw_solid_polygon(
-            points=[corner1, corner2, corner3, corner4], color=color
+            points=[corner1, corner2, corner3, corner4],
+            color=color,
+            world_coordinates=world_coordinates,
         )
 
         # Draw end circles
-        self.draw_solid_circle(center=(x1, y1), radius=radius, color=color)
-        self.draw_solid_circle(center=(x2, y2), radius=radius, color=color)
+        self.draw_solid_circle(
+            center=(x1, y1),
+            radius=radius,
+            color=color,
+            world_coordinates=world_coordinates,
+        )
+        self.draw_solid_circle(
+            center=(x2, y2),
+            radius=radius,
+            color=color,
+            world_coordinates=world_coordinates,
+        )
 
     def _draw_polygon(self, vertices, color):
-        self.draw_polygon(vertices, color, line_width=1, width_in_pixels=True)
+        self.draw_polygon(
+            vertices, color, line_width=1, width_in_pixels=True, world_coordinates=True
+        )
 
     def _draw_solid_polygon(self, transform, vertices, radius, color):
         vertices = [transform_point(transform, v) for v in vertices]
         if radius == 0:
-            self.draw_solid_polygon(vertices, color)
+            self.draw_solid_polygon(vertices, color, world_coordinates=True)
         else:
-            self.draw_solid_rounded_polygon(vertices, radius=radius, color=color)
+            self.draw_solid_rounded_polygon(
+                vertices, radius=radius, color=color, world_coordinates=True
+            )
 
     def _draw_circle(self, center, radius, color):
         self.draw_circle(
@@ -150,16 +194,28 @@ class DebugDraw(DebugDrawBase):
             line_width=1,
             color=color,
             width_in_pixels=True,
+            world_coordinates=True,
         )
 
     def _draw_solid_circle(self, transform, radius, color):
-        self.draw_solid_circle(center=transform.p, radius=radius, color=color)
+        self.draw_solid_circle(
+            center=transform.p, radius=radius, color=color, world_coordinates=True
+        )
 
     def _draw_solid_capsule(self, p1, p2, radius, color):
-        self.draw_solid_capsule(p1=p1, p2=p2, radius=radius, color=color)
+        self.draw_solid_capsule(
+            p1=p1, p2=p2, radius=radius, color=color, world_coordinates=True
+        )
 
     def _draw_segment(self, p1, p2, color):
-        self.draw_line(p1=p1, p2=p2, line_width=1, color=color, width_in_pixels=True)
+        self.draw_line(
+            p1=p1,
+            p2=p2,
+            line_width=1,
+            color=color,
+            width_in_pixels=True,
+            world_coordinates=True,
+        )
 
     def _draw_transform(self, transform):
         pass

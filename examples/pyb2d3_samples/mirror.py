@@ -3,19 +3,16 @@ from pyb2d3.samples import SampleBase
 
 
 import random
-import numpy as np
-import time
 import math
 
 
 class Mirror(SampleBase):
-    def __init__(self, settings):
-        super().__init__(settings.set_gravity((0, 0)))
+    def __init__(self, frontend, settings):
+        super().__init__(frontend, settings.set_gravity((0, 0)))
         self.box_radius = 10
 
         # attach the chain shape to a static body
         self.box_body = self.world.create_static_body(position=(0, 0))
-        material = b2d.surface_material(restitution=0.0, friction=0.0)
         chain_def = b2d.chain_box(center=(0, 0), hx=self.box_radius, hy=self.box_radius)
         chain_def.filter = b2d.make_filter(category_bits=0x0001, mask_bits=0x0001)
         self.box_body.create_chain(
@@ -68,12 +65,10 @@ class Mirror(SampleBase):
         )
 
     def pre_update(self, dt):
-
         ray_length = self.box_radius * 2 * math.sqrt(2)
         ray_length = max(ray_length, 1)
 
         def draw_laser_line(start, end, reflection_count=0, color=(255, 40, 40)):
-
             width = int(math.exp(-reflection_count / 30.0) * 10)
             width = max(width, 1)
             self.debug_draw.draw_line(
@@ -105,7 +100,6 @@ class Mirror(SampleBase):
         )
 
         for i in range(3):
-
             # NOTE: RayResult.normal seems to be broken for chain shapes therefore we use a pyb2d3 custom compute_normal function
             # which computes the normal "by hand" when RayResult.shape is a ChainSegmentShape
             normal = last_ray_result.compute_normal(translation)

@@ -573,7 +573,7 @@ def box(hx, hy, center=None, rotation=None, radius=None):
             return _pyb2d3._make_offset_rounded_box(hx, hy, radius, center, rotation)
 
 
-def chain_box(center, hx, hy):
+def chain_box(hx, hy, center=(0, 0), angle=None):
     """Create a chain shape that represents a box centered at `center` with half-width `hx` and half-height `hy`."""
     points = np.array(
         [
@@ -583,6 +583,12 @@ def chain_box(center, hx, hy):
             (center[0] + hx, center[1] - hy),
         ]
     )
+    if angle is not None:
+        # rotate the points around the center
+        cos_angle = np.cos(angle)
+        sin_angle = np.sin(angle)
+        rotation_matrix = np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]])
+        points = np.dot(points - center, rotation_matrix) + center
     return chain_def(points=points, is_loop=True)
 
 

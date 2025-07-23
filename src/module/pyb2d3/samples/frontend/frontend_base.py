@@ -24,10 +24,61 @@ class FrontendBaseSettings:
     multi_click_delay_ms: int = 350  # Delay in milliseconds to wait for multi-clicks
 
 
-# helper class to handle click/double click/triple click events
-# st. the click / double click /  events can be "delayed" by a certain time
-# st. we can wait for a double click or triple click
-# and don't fire click->double click->triple click events
+@dataclass(kw_only=True)
+class Event:
+    is_handled: bool = False
+
+
+@dataclass
+class MouseEvent(Event):
+    world_position: tuple
+    canvas_position: tuple
+
+
+@dataclass
+class MouseLeaveEvent(Event):
+    pass
+
+
+@dataclass
+class MouseEnterEvent(Event):
+    pass
+
+
+@dataclass
+class MouseWheelEvent(MouseEvent):
+    delta: int
+
+
+@dataclass
+class MouseDownEvent(MouseEvent):
+    pass
+
+
+@dataclass
+class MouseUpEvent(MouseEvent):
+    pass
+
+
+@dataclass
+class MouseMoveEvent(MouseEvent):
+    world_delta: tuple
+    canvas_delta: tuple
+
+
+@dataclass
+class ClickEvent(MouseEvent):
+    pass
+
+
+@dataclass
+class DoubleClickEvent(MouseEvent):
+    pass
+
+
+@dataclass
+class TripleClickEvent(MouseEvent):
+    pass
 
 
 class MultiClickHandler:
@@ -41,7 +92,8 @@ class MultiClickHandler:
         self.on_click = on_click
         self.on_double_click = on_double_click
         self.on_triple_click = on_triple_click
-        self.last_pos = None
+        self.last_canvas_pos = None
+        self.last_world_pos = None
 
     def update(self):
         if self.on_double_click is None and self.on_triple_click is None:
@@ -53,7 +105,12 @@ class MultiClickHandler:
         if self.first_click_time is not None:
             if current_time - self.first_click_time > self.delayed_time:
                 #  chance for a second click timed out, we can call the first click handler
-                self.on_click(self.last_pos)
+                self.on_click(
+                    ClickEvent(
+                        world_position=self.last_world_pos,
+                        canvas_position=self.last_canvas_pos,
+                    )
+                )
                 self.first_click_time = None
                 self.second_click_time = None
             # else # we are still waiting for a second click
@@ -64,24 +121,39 @@ class MultiClickHandler:
         if self.second_click_time is not None:
             if current_time - self.second_click_time > self.delayed_time:
                 # chance for a triple click timed out, we can call the second click handler
-                self.on_double_click(self.last_pos)
+                self.on_double_click(
+                    DoubleClickEvent(
+                        world_position=self.last_world_pos,
+                        canvas_position=self.last_canvas_pos,
+                    )
+                )
                 self.first_click_time = None
                 self.second_click_time = None
 
-    def handle_click(self, pos):
+    def handle_click(self, world_position, canvas_position):
         if self.on_double_click is None and self.on_triple_click is None:
             # if we don't have a double or triple click handler, we can just call the click handler
-            self.on_click(pos)
+            self.on_click(
+                ClickEvent(
+                    world_position=world_position, canvas_position=canvas_position
+                )
+            )
             return
 
-        self.last_pos = pos
+        self.last_canvas_pos = canvas_position
+        self.last_world_pos = world_position
 
         # if we have already a second click
         if self.second_click_time is not None:
             # this is a potential tripple click if
             # the time frame is still valid
             if time.time() - self.second_click_time <= self.delayed_time:
-                self.on_triple_click(pos)
+                self.on_triple_click(
+                    TripleClickEvent(
+                        world_position=self.last_world_pos,
+                        canvas_position=self.last_canvas_pos,
+                    )
+                )
             self.first_click_time = None
             self.second_click_time = None
             return
@@ -89,7 +161,12 @@ class MultiClickHandler:
             if self.first_click_time is not None:
                 # click is in time frame for a second click
                 if self.on_triple_click is None:
-                    self.on_double_click(pos)
+                    self.on_double_click(
+                        DoubleClickEvent(
+                            world_position=self.last_world_pos,
+                            canvas_position=self.last_canvas_pos,
+                        )
+                    )
                     self.first_click_time = None
                     self.second_click_time = None
                 else:
@@ -132,8 +209,7 @@ class FrontendBase(ABC):
     def _set_new_sample(self, sample_class, sample_settings):
         print("_set_new_sample called with", sample_class, sample_settings)
         # construct the sample
-        self.sample = self.sample_class(self.sample_settings)
-        self.sample.frontend = self
+        self.sample = self.sample_class(self, self.sample_settings)
 
         self.center_sample(self.sample, margin_px=10)
 

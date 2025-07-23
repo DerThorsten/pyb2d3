@@ -2,15 +2,9 @@ import pyb2d3 as b2d
 from pyb2d3.samples import SampleBase
 
 
-import random
-import numpy as np
-import time
-import math
-
-
 class NetwonsCraddle(SampleBase):
-    def __init__(self, settings):
-        super().__init__(settings)
+    def __init__(self, frontend, settings):
+        super().__init__(frontend, settings)
 
         # physical world
         self.n_balls = 10

@@ -13,8 +13,8 @@ def grid_iterate(shape):
 
 
 class Joints(SampleBase):
-    def __init__(self, settings):
-        super().__init__(settings)
+    def __init__(self, frontend, settings):
+        super().__init__(frontend, settings)
         self.outer_box_radius = 10
 
         # attach the chain shape to a static body
@@ -74,13 +74,17 @@ class Joints(SampleBase):
                 connect(bodies[flat_index(x, y)], bodies[flat_index(x - 1, y + 1)])
 
     # create explosion on double click
-    def on_double_click(self, pos):
-        self.world.explode(position=pos, radius=7, impulse_per_length=20)
+    def on_double_click(self, event):
+        self.world.explode(
+            position=event.world_position, radius=7, impulse_per_length=20
+        )
 
     # create "negative" explosion on triple click
     # this will pull bodies towards the click position
-    def on_triple_click(self, pos):
-        self.world.explode(position=pos, radius=7, impulse_per_length=-20)
+    def on_triple_click(self, event):
+        self.world.explode(
+            position=event.world_position, radius=7, impulse_per_length=-20
+        )
 
     def aabb(self):
         eps = 0.01

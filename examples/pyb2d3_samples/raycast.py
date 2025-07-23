@@ -3,19 +3,16 @@ from pyb2d3.samples import SampleBase
 
 
 import random
-import numpy as np
-import time
 import math
 
 
 class Raycast(SampleBase):
-    def __init__(self, settings):
-        super().__init__(settings.set_gravity((0, 0)))
+    def __init__(self, frontend, settings):
+        super().__init__(frontend, settings.set_gravity((0, 0)))
         self.box_radius = 10
 
         # attach the chain shape to a static body
         self.box_body = self.world.create_static_body(position=(0, 0))
-        material = b2d.surface_material(restitution=0.0, friction=0.0)
         chain_def = b2d.chain_box(center=(0, 0), hx=self.box_radius, hy=self.box_radius)
         chain_def.filter = b2d.make_filter(category_bits=0x0001, mask_bits=0x0001)
         self.box_body.create_chain(
@@ -59,9 +56,6 @@ class Raycast(SampleBase):
             upper_bound=(self.box_radius, self.box_radius),
         )
 
-    def on_triple_click(self, pos):
-        self.frontend.set_sample(Raycast, self.settings)
-
     def post_update(self, dt):
         pos = self.ball_body.position
         body_angle = self.ball_body.angle
@@ -73,12 +67,6 @@ class Raycast(SampleBase):
         for i in range(n_rays):
             angle = body_angle + 2 * math.pi * i / n_rays
             translation = (math.cos(angle) * ray_length, math.sin(angle) * ray_length)
-
-            end = (
-                pos[0] + translation[0],
-                pos[1] + translation[1],
-            )
-
             ray_result = self.world.cast_ray_closest(
                 origin=pos, translation=translation
             )

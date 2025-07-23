@@ -1,34 +1,38 @@
-from .frontend_base import FrontendBase
+from .frontend_base import (
+    FrontendBase,
+    MouseDownEvent,
+    MouseUpEvent,
+    MouseMoveEvent,
+    MouseWheelEvent,
+    MouseLeaveEvent,
+    MouseEnterEvent,
+)
 import sys
+
+# output widget from ipywidgets
+from ipywidgets import Output
+
+# display from IPython
+from IPython.display import display
+
+import pyb2d3 as b2d
+import numpy as np
+import traceback
+
+from ...debug_draw import DebugDraw
+
+from ipycanvas.compat import Canvas
+from ipycanvas.call_repeated import set_render_loop
+
 
 is_emscripten = sys.platform.startswith("emscripten")
 if not is_emscripten:
     from ipyevents import Event
 
 
-import pyb2d3 as b2d
-import time
-import sys
-import numpy as np
-import traceback
-
-from ...debug_draw import DebugDraw
-from ..._pyb2d3 import transform_point
-import math
-
-from ipycanvas.compat import Canvas
-from ipycanvas.call_repeated import set_render_loop
-
-# display from IPython
-from IPython.display import display
-
-# output widget from ipywidgets
-from ipywidgets import Output
-
-
 def html_color(color):
     if isinstance(color, int):
-        return "#{:06X}".format(color_int)
+        return "#{:06X}".format(color)
     elif isinstance(color, tuple) and len(color) == 3:
         return "rgb({}, {}, {})".format(*color)
     else:
@@ -235,7 +239,6 @@ class IpycanvasDebugDraw(DebugDraw):
         return self.transform.world_to_canvas(world_point)
 
     def begin_draw(self):
-
         self._in_debug_draw = True
 
     def end_draw(self):
@@ -248,71 +251,91 @@ class IpycanvasDebugDraw(DebugDraw):
         self._batch_solid_circles.draw()
         self._batch_lines.draw()
 
-    def draw_polygon(self, points, color, line_width, width_in_pixels=False):
+    def draw_polygon(
+        self, points, color, line_width, width_in_pixels=False, world_coordinates=True
+    ):
         assert 0
         if self._in_debug_draw:
             assert width_in_pixels
             assert line_width == 1
+            assert world_coordinates
+
             self._batch_polygons.add(points, color)
         else:
             self.canvas.stroke_style = html_color(color)
-            if not width_in_pixels:
+            if not width_in_pixels and world_coordinates:
                 line_width = self.transform.scale_world_to_canvas(line_width)
+            if not world_coordinates:
+                points = [self.transform.canvas_to_world(v) for v in points]
             self.canvas.line_width = line_width
-            self.canvas.stroke_polygon([self.world_to_canvas(v) for v in points])
+            self.canvas.stroke_polygon(points)
 
-    def draw_solid_polygon(self, points, color):
+    def draw_solid_polygon(self, points, color, world_coordinates=True):
         if self._in_debug_draw:
             self._batch_solid_polygons.add(points, color)
         else:
             self.canvas.fill_style = html_color(color)
-            self.canvas.fill_polygon([self.world_to_canvas(v) for v in points])
+            if not world_coordinates:
+                points = [self.transform.canvas_to_world(v) for v in points]
+            self.canvas.fill_polygon(points)
 
-    def draw_circle(self, center, radius, line_width, color, width_in_pixels=False):
+    def draw_circle(
+        self,
+        center,
+        radius,
+        line_width,
+        color,
+        width_in_pixels=False,
+        world_coordinates=True,
+    ):
         if self._in_debug_draw:
             assert width_in_pixels
             assert line_width == 1
+            assert world_coordinates
             self._batch_circles.add(center, radius, color)
         else:
             self.canvas.stroke_style = html_color(color)
-            if not width_in_pixels:
+            if not width_in_pixels and world_coordinates:
                 line_width = self.transform.scale_world_to_canvas(line_width)
+            if not world_coordinates:
+                center = self.transform.canvas_to_world(center)
+                radius = self.transform.scale_canvas_to_world(radius)
             self.canvas.line_width = line_width
-            self.canvas.stroke_circle(
-                *self.world_to_canvas(center),
-                self.transform.scale_world_to_canvas(radius),
-            )
+            self.canvas.stroke_circle(*center, radius)
 
-    def draw_solid_circle(self, center, radius, color):
+    def draw_solid_circle(self, center, radius, color, world_coordinates=True):
         if self._in_debug_draw:
             self._batch_solid_circles.add(center, radius, color)
         else:
             self.canvas.fill_style = html_color(color)
-            self.canvas.fill_circle(
-                *self.world_to_canvas(center),
-                self.transform.scale_world_to_canvas(radius),
-            )
+            if world_coordinates:
+                center = self.transform.world_to_canvas(center)
+                radius = self.transform.scale_world_to_canvas(radius)
+            self.canvas.fill_circle(*center, radius)
 
-    def draw_line(self, p1, p2, line_width, color, width_in_pixels=False):
+    def draw_line(
+        self, p1, p2, line_width, color, width_in_pixels=False, world_coordinates=True
+    ):
         if self._in_debug_draw:
             assert width_in_pixels
             assert line_width == 1
+            assert world_coordinates
             self._batch_lines.add(p1, p2, color)
         else:
             self.canvas.stroke_style = html_color(color)
-            if not width_in_pixels:
+            if not width_in_pixels and world_coordinates:
                 line_width = self.transform.scale_world_to_canvas(line_width)
             self.canvas.line_width = line_width
-            self.canvas.stroke_line(
-                *self.world_to_canvas(p1), *self.world_to_canvas(p2)
-            )
+            if not world_coordinates:
+                p1 = self.transform.canvas_to_world(p1)
+                p2 = self.transform.canvas_to_world(p2)
+            self.canvas.stroke_line(p1[0], p1[1], p2[0], p2[1])
 
 
 last_frontend = [None]
 
 
 class IpycanvasFrontend(FrontendBase):
-
     Settings = FrontendBase.Settings
 
     def __del__(self):
@@ -322,7 +345,6 @@ class IpycanvasFrontend(FrontendBase):
     def __init__(self, settings):
         global last_frontend
         try:
-
             super().__init__(settings)
 
             self.canvas = Canvas(
@@ -437,7 +459,7 @@ class IpycanvasFrontend(FrontendBase):
                     return
                 self.canvas.clear()
                 self.update_and_draw(dt)
-            except Exception as e:
+            except Exception:
                 self.output_widget.append_stdout(
                     f"Error in main loop: {traceback.format_exc()}\n"
                 )
@@ -446,7 +468,6 @@ class IpycanvasFrontend(FrontendBase):
         self.cancel_loop = set_render_loop(self.canvas, f, fps=self.settings.fps)
 
     def _dispatch_events(self, event):
-
         try:
             if event["type"] == "mousemove":
                 mouse_pos = (event["relativeX"], event["relativeY"])
@@ -458,35 +479,61 @@ class IpycanvasFrontend(FrontendBase):
                     mouse_pos[1] - self._last_canvas_mouse_pos[1],
                 )
                 # convert delta to world coordinates
-                delta = (
+                world_delta = (
                     self.transform.scale_canvas_to_world(delta[0]),
                     -self.transform.scale_canvas_to_world(delta[1]),
                 )
                 self._last_canvas_mouse_pos = mouse_pos
                 world_pos = self.transform.canvas_to_world(mouse_pos)
-                self.sample.on_mouse_move(world_pos, delta)
+                self.sample.on_mouse_move(
+                    MouseMoveEvent(
+                        world_position=world_pos,
+                        canvas_position=mouse_pos,
+                        canvas_delta=delta,
+                        world_delta=world_delta,
+                    )
+                )
 
             elif event["type"] == "mouseenter":
-                self.sample.on_mouse_enter()
+                self.sample.on_mouse_enter(MouseEnterEvent())
 
             elif event["type"] == "mouseleave":
-                self.sample.on_mouse_leave()
+                self.sample.on_mouse_leave(MouseLeaveEvent())
 
             elif event["type"] == "mousedown":
                 mouse_pos = (event["relativeX"], event["relativeY"])
                 self._last_canvas_mouse_pos = mouse_pos
                 world_pos = self.transform.canvas_to_world(mouse_pos)
 
-                self._multi_click_handler.handle_click(world_pos)
-                self.sample.on_mouse_down(world_pos)
-            elif event["type"] == "mouseup":
-                world_pos = self.transform.canvas_to_world(
-                    (event["relativeX"], event["relativeY"])
+                self._multi_click_handler.handle_click(
+                    world_position=world_pos, canvas_position=mouse_pos
                 )
-                self.sample.on_mouse_up(world_pos)
+                self.sample.on_mouse_down(
+                    MouseDownEvent(
+                        world_position=world_pos,
+                        canvas_position=mouse_pos,
+                    )
+                )
+            elif event["type"] == "mouseup":
+                canvas_pos = (event["relativeX"], event["relativeY"])
+                world_pos = self.transform.canvas_to_world(canvas_pos)
+                self.sample.on_mouse_up(
+                    MouseUpEvent(
+                        world_position=world_pos,
+                        canvas_position=canvas_pos,
+                    )
+                )
 
             elif event["type"] == "wheel":
-                self.sample.on_mouse_wheel(event["deltaY"] / 10.0)
+                canvas_pos = (event["relativeX"], event["relativeY"])
+                world_pos = self.transform.canvas_to_world(canvas_pos)
+                self.sample.on_mouse_wheel(
+                    MouseWheelEvent(
+                        world_position=world_pos,
+                        canvas_position=canvas_pos,
+                        delta=event["deltaY"] / 10.0,
+                    )
+                )
 
         except Exception as e:
             self.output_widget.append_stdout(f"Exception in event handler: {e}\n")

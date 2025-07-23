@@ -3,14 +3,11 @@ from pyb2d3.samples import SampleBase
 
 
 import random
-import numpy as np
-import time
-import math
 
 
 class Tumbler(SampleBase):
-    def __init__(self, settings):
-        super().__init__(settings)
+    def __init__(self, frontend, settings):
+        super().__init__(frontend, settings)
 
         # physical world
         box_diameter = 20
@@ -78,7 +75,6 @@ class Tumbler(SampleBase):
         n_balls = 200
         self.ball_radius = 0.1
         for i in range(n_balls):
-
             # radom position in the tumbler
             x = random.uniform(
                 -box_diameter / 2 + self.ball_radius,
@@ -169,11 +165,15 @@ class Tumbler(SampleBase):
                 ),
             )
 
-    def on_double_click(self, pos):
-        self.world.explode(position=pos, radius=20, impulse_per_length=10)
+    def on_double_click(self, event):
+        self.world.explode(
+            position=event.world_position, radius=20, impulse_per_length=10
+        )
 
-    def on_triple_click(self, pos):
-        self.world.explode(position=pos, radius=20, impulse_per_length=-10)
+    def on_triple_click(self, event):
+        self.world.explode(
+            position=event.world_position, radius=20, impulse_per_length=-10
+        )
 
     def aabb(self):
         return b2d.aabb(lower_bound=(-20, -20), upper_bound=(20, 20))

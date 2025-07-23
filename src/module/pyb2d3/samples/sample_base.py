@@ -14,7 +14,6 @@ class SampleBaseSettings:
 
 
 class SampleBase(object):
-
     Settings = SampleBaseSettings
 
     subclasses = []
@@ -33,8 +32,8 @@ class SampleBase(object):
             frontend_settings=frontend_settings,
         )
 
-    def __init__(self, settings=SampleBaseSettings(), world=None):
-
+    def __init__(self, frontend, settings=SampleBaseSettings(), world=None):
+        self.frontend = frontend
         self.settings = settings
         self.world = world
 
@@ -55,8 +54,6 @@ class SampleBase(object):
         self.is_mouse_down = False
         self.mouse_pos = None
 
-        self.frontend = None
-
         # world time (ie time in the simulation)
         self.world_time = 0.0
         self.world_iteration = 0
@@ -68,12 +65,11 @@ class SampleBase(object):
     # some properties for the frontend
     @property
     def debug_draw(self):
-        if self.frontend is not None:
-            return self.frontend.debug_draw
-        else:
-            raise ValueError(
-                "Frontend cannot be accesed in __init__ of the sample implementation"
-            )
+        return self.frontend.debug_draw
+
+    @property
+    def canvas_shape(self):
+        return self.frontend.settings.canvas_shape
 
     def update(self, dt):
         # Update the world with the given time step
@@ -120,10 +116,10 @@ class SampleBase(object):
     # def on_triple_click(self, pos):
     #     pass
 
-    def on_mouse_down(self, pos):
+    def on_mouse_down(self, event):
         self.is_mouse_down = True
-        self.mouse_pos = pos
-        body = self.world.dynamic_body_at_point(pos)
+        self.mouse_pos = event.world_position
+        body = self.world.dynamic_body_at_point(self.mouse_pos)
         if body:
             # wake body up
             body.awake = True
@@ -131,7 +127,7 @@ class SampleBase(object):
             self._mouse_joint = self.world.create_mouse_joint(
                 body_a=self.anchor_body,
                 body_b=self._mouse_joint_body,
-                target=pos,
+                target=self.mouse_pos,
                 hertz=self.mouse_joint_hertz,
                 max_force=self._mouse_joint_body.mass
                 * self.mouse_joint_force_multiplier,
@@ -146,37 +142,37 @@ class SampleBase(object):
             self._mouse_joint = None
             self.connected_body = None
 
-    def on_mouse_up(self, pos):
+    def on_mouse_up(self, event):
         # Handle mouse up events
-        self.mouse_pos = pos
+        self.mouse_pos = event.world_position
         self._camera_drag = False
         self.is_mouse_down = False
         self._destroy_mouse_joint()
 
-    def on_mouse_move(self, pos, delta):
+    def on_mouse_move(self, event):
         if self._mouse_joint is not None:
-            assert (
-                self.is_mouse_down
-            ), "Mouse joint should only be updated when mouse is down"
-            self._mouse_joint.target = pos
+            assert self.is_mouse_down, (
+                "Mouse joint should only be updated when mouse is down"
+            )
+            self._mouse_joint.target = event.world_position
         elif self._camera_drag:
             # If dragging the camera, update the camera position
             # delta = (pos[0] - self.mouse_pos[0], pos[1] - self.mouse_pos[1])
-            self.frontend.drag_camera(delta)
+            self.frontend.drag_camera(event.world_delta)
 
-        self.mouse_pos = pos
+        self.mouse_pos = event.world_position
 
-    def on_mouse_leave(self):
+    def on_mouse_leave(self, event):
         # Handle mouse leave events
         self.mouse_pos = None
         self.is_mouse_down = False
         self._camera_drag = False
         self._destroy_mouse_joint()
 
-    def on_mouse_enter(self):
+    def on_mouse_enter(self, event):
         # Handle mouse enter events
         pass
 
-    def on_mouse_wheel(self, delta):
+    def on_mouse_wheel(self, event):
         # Handle mouse wheel events
-        self.frontend.change_zoom(delta)
+        self.frontend.change_zoom(event.delta)

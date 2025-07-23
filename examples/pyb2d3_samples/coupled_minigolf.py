@@ -77,8 +77,8 @@ class CoupledMinigolf(SampleBase):
     class Settings(SampleBase.Settings):
         current_level: int = 0
 
-    def __init__(self, settings):
-        super().__init__(settings.set_gravity((0, 0)))
+    def __init__(self, frontend, settings):
+        super().__init__(frontend, settings.set_gravity((0, 0)))
         self.outer_box_radius = 100
 
         # data for the current level
@@ -128,18 +128,17 @@ class CoupledMinigolf(SampleBase):
         self.force_vector_length = 0
         self.ball_in_hole_time = None
 
-    def on_mouse_down(self, world_pos):
-        print("the frontned us:", self.frontend)
+    def on_mouse_down(self, event):
         if self.state == GolfState.WAITING_FOR_BALL_CLICK:
             # check if the user clicked on one of the balls
             for i, ball in enumerate(self.balls):
-                if self.balls_shape[i].test_point(world_pos):
+                if self.balls_shape[i].test_point(event.world_position):
                     self.state = GolfState.SET_DRAG_FORCE
                     self.dragged_ball_index = i
-                    self.drag_pos = world_pos
+                    self.drag_pos = event.world_position
                     return
 
-    def on_mouse_up(self, world_pos):
+    def on_mouse_up(self, event):
         if self.state == GolfState.SET_DRAG_FORCE:
             # we are setting the force, so we apply it now
             dragged_ball = self.balls[self.dragged_ball_index]
@@ -148,9 +147,9 @@ class CoupledMinigolf(SampleBase):
             dragged_ball.apply_force_to_center(force_vector, True)
             self.state = GolfState.WAITING_FOR_REST
 
-    def on_mouse_move(self, world_pos, delta_world):
+    def on_mouse_move(self, event):
         if self.state == GolfState.SET_DRAG_FORCE:
-            raw_drag_pos = world_pos
+            raw_drag_pos = event.world_position
 
             # limit the length of the force vector
             force_vector = np.array(raw_drag_pos) - np.array(

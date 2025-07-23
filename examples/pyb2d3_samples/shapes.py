@@ -4,7 +4,6 @@ from pyb2d3.samples import SampleBase
 
 import random
 import numpy as np
-import time
 import math
 
 
@@ -21,8 +20,8 @@ def approx_circle(radius, n_segments):
 
 
 class Shapes(SampleBase):
-    def __init__(self, settings):
-        super().__init__(settings)
+    def __init__(self, frontend, settings):
+        super().__init__(frontend, settings)
         self.outer_box_radius = 10
 
         # attach the chain shape to a static body
@@ -33,25 +32,26 @@ class Shapes(SampleBase):
             )
         )
 
-        # a helper to get a random point in the box (with some margin)\
+        # a helper to get a random point in the box (with some margin)
         # st. we can place shapes at random positions in the box
-        margin = 2
-        r = self.outer_box_radius - margin
-        random_point_in_box = lambda: (random.uniform(-r, r), random.uniform(-r, r))
+        def random_point_in_box():
+            margin = 2
+            r = self.outer_box_radius - margin
+            return (random.uniform(-r, r), random.uniform(-r, r))
 
         # lambda to create shape def with random rgb color
-        random_color_shape_def = lambda: b2d.shape_def(
-            density=1,
-            material=b2d.surface_material(
-                restitution=0.5,
-                custom_color=b2d.random_hex_color(),
-            ),
-        )
+        def random_color_shape_def():
+            return b2d.shape_def(
+                density=1,
+                material=b2d.surface_material(
+                    restitution=0.5,
+                    custom_color=b2d.random_hex_color(),
+                ),
+            )
 
         # create a lot of different shapes n-times
         n = 4
         for i in range(n):
-
             # a ball
             self.ball_body = self.world.create_dynamic_body(
                 position=random_point_in_box(), linear_damping=0.2, angular_damping=0.2
@@ -187,13 +187,17 @@ class Shapes(SampleBase):
             )
 
     # create explosion on double click
-    def on_double_click(self, pos):
-        self.world.explode(position=pos, radius=7, impulse_per_length=20)
+    def on_double_click(self, event):
+        self.world.explode(
+            position=event.world_position, radius=7, impulse_per_length=20
+        )
 
     # create "negative" explosion on triple click
     # this will pull bodies towards the click position
-    def on_triple_click(self, pos):
-        self.world.explode(position=pos, radius=7, impulse_per_length=-20)
+    def on_triple_click(self, event):
+        self.world.explode(
+            position=event.world_position, radius=7, impulse_per_length=-20
+        )
 
     def aabb(self):
         eps = 0.01
