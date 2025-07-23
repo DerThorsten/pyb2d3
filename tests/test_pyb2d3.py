@@ -4,7 +4,6 @@ from pytest import approx
 import numpy as np
 import pyb2d3 as b2d
 
-from .test_utils import DebugDrawTest
 
 from .conftest import *  # noqa
 
@@ -83,7 +82,6 @@ def test_threadpool():
 
 @pytest.mark.parametrize("joint_name", joint_names)
 def test_joints(joint_name):
-
     cls_name = f"{joint_name.capitalize()}Joint"
     joint_cls = getattr(b2d, cls_name, None)
     world_func = getattr(b2d.World, f"create_{joint_name}_joint", None)
@@ -102,7 +100,6 @@ def test_joints(joint_name):
 
 
 def test_batch_api():
-
     world = b2d.World(gravity=(0, -10))
     factory = world.body_factory()
     factory.dynamic().shape(density=1).add_box(1, 1)
@@ -207,7 +204,6 @@ def test_batch_api():
 
 
 def test_query_callback_with_chains():
-
     world = b2d.World(gravity=(0, -10))
     w = 100
     ground_points = np.array(
