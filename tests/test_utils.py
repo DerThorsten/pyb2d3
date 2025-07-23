@@ -1,4 +1,3 @@
-import pytest
 import numpy as np
 import pyb2d3 as b2d
 
