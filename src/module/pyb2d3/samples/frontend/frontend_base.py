@@ -26,7 +26,7 @@ class FrontendBaseSettings:
 
 @dataclass(kw_only=True)
 class Event:
-    is_handled: bool = False
+    handled: bool = False
 
 
 @dataclass
@@ -207,7 +207,7 @@ class FrontendBase(ABC):
         self.change_sample_class_requested = True
 
     def _set_new_sample(self, sample_class, sample_settings):
-        print("_set_new_sample called with", sample_class, sample_settings)
+        self.iteration = 0
         # construct the sample
         self.sample = self.sample_class(self, self.sample_settings)
 

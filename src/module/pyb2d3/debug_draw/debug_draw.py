@@ -173,6 +173,19 @@ class DebugDraw(DebugDrawBase):
             world_coordinates=world_coordinates,
         )
 
+    def draw_text(
+        self,
+        position,
+        text,
+        color,
+        font_size,
+        alignment="center",
+        world_coordinates=True,
+    ):
+        """Draw text on the debug surface."""
+        # This method should be implemented in a subclass to handle text rendering.
+        raise NotImplementedError("draw_text must be implemented in a subclass")
+
     def _draw_polygon(self, vertices, color):
         self.draw_polygon(
             vertices, color, line_width=1, width_in_pixels=True, world_coordinates=True

@@ -20,6 +20,8 @@ class PygameDebugDraw(DebugDraw):
     def __init__(self, transform, screen):
         self.screen = screen
         self.transform = transform
+
+        self.font_cache = {}
         super().__init__()
 
     def convert_hex_color(self, hex_color):
@@ -29,8 +31,8 @@ class PygameDebugDraw(DebugDraw):
         b = hex_color & 0xFF
         return (r, g, b)
 
-    def world_to_canvas(self, point, world_coordinates=True):
-        return self.transform.world_to_canvas(point)
+    def world_to_canvas(self, point):
+        return self.transform.world_to_canvas((float(point[0]), float(point[1])))
 
     def maybe_world_to_canvas(self, point, world_coordinates=True):
         if not world_coordinates:
@@ -112,6 +114,46 @@ class PygameDebugDraw(DebugDraw):
             round(line_width),
         )
 
+    def _get_font(self, font_size):
+        if font_size not in self.font_cache:
+            # create a new font
+            font = pygame.font.Font(None, font_size)
+            self.font_cache[font_size] = font
+        else:
+            font = self.font_cache[font_size]
+        return font
+
+    def draw_text(
+        self,
+        position,
+        text,
+        color,
+        font_size,
+        alignment="center",
+        world_coordinates=True,
+    ):
+        if world_coordinates:
+            position = self.world_to_canvas(position)
+            font_size = self.transform.scale_world_to_canvas(font_size)
+
+        font = self._get_font(font_size)
+        text_surface = font.render(text, True, color)
+        text_rect = text_surface.get_rect()
+        if alignment == "center":
+            text_rect.center = position
+        elif alignment == "left":
+            text_rect.topleft = position
+        elif alignment == "right":
+            text_rect.topright = position
+        elif alignment == "top":
+            text_rect.midtop = position
+        elif alignment == "bottom":
+            text_rect.midbottom = position
+        else:
+            raise ValueError(f"Unknown alignment: {alignment}")
+
+        self.screen.blit(text_surface, text_rect)
+
 
 class PygameFrontend(FrontendBase):
     Settings = FrontendBase.Settings
@@ -130,7 +172,7 @@ class PygameFrontend(FrontendBase):
             offset=(0, 0),
         )
 
-        pygame.display.set_caption("Hello World")
+        # pygame.display.set_caption("Hello World")
         self.debug_draw = PygameDebugDraw(transform=self.transform, screen=self.screen)
         self.debug_draw.draw_shapes = settings.debug_draw.draw_shapes
         self.debug_draw.draw_joints = settings.debug_draw.draw_joints
@@ -183,8 +225,6 @@ class PygameFrontend(FrontendBase):
         last_text = ""
         text_rect = text_surface.get_rect(center=(320, 240))  # center on screen
 
-        iteration = 0
-
         while not self.sample.is_done():
             if self.settings.debug_draw.draw_background:
                 self.screen.fill(self.settings.debug_draw.background_color)
@@ -201,7 +241,7 @@ class PygameFrontend(FrontendBase):
             fps = clock.get_fps()
 
             fps_rounded = round(fps, 2)
-            new_text = f"FPS: {fps_rounded:.2f}  Draw : {self.debug_draw_time:.5f}  Update : {self.sample_update_time:.5f} I: {iteration}"
+            new_text = f"FPS: {fps_rounded:.2f}  Draw : {self.debug_draw_time:.5f}  Update : {self.sample_update_time:.5f} I: {self.iteration}"
             if last_text != new_text:
                 last_text = new_text
                 text_surface = font.render(last_text, True, (255, 255, 255))
@@ -213,8 +253,6 @@ class PygameFrontend(FrontendBase):
             self._dispatch_events()
 
             pygame.display.update()
-
-            iteration += 1
 
         self.sample.post_run()
 
@@ -230,9 +268,10 @@ class PygameFrontend(FrontendBase):
 
             # mouse events
             if event.type == pygame.MOUSEBUTTONDOWN:
-                # only for left and right mouse buttons
+                # only for left
                 if event.button not in (1,):
                     continue
+                print("Mouse button down event", event.button)
 
                 # check for tripple-click first, then double-click
                 canvas_position = pygame.mouse.get_pos()
@@ -247,6 +286,9 @@ class PygameFrontend(FrontendBase):
                     )
                 )
             elif event.type == pygame.MOUSEBUTTONUP:
+                # only for left
+                if event.button not in (1,):
+                    continue
                 canvas_position = pygame.mouse.get_pos()
                 self._last_canvas_mouse_pos = canvas_position
                 world_pos = self.transform.canvas_to_world(canvas_position)

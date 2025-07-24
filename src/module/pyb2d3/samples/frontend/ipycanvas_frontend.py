@@ -175,7 +175,7 @@ class BatchSolidCircles:
         self.canvas.fill_styled_circles(
             x=centers[:, 0],
             y=centers[:, 1],
-            radius=self.transform.scale_world_to_canvas(radii),
+            radius=radii * self.transform.ppm,
             color=colors,
         )
 
@@ -254,7 +254,6 @@ class IpycanvasDebugDraw(DebugDraw):
     def draw_polygon(
         self, points, color, line_width, width_in_pixels=False, world_coordinates=True
     ):
-        assert 0
         if self._in_debug_draw:
             assert width_in_pixels
             assert line_width == 1
@@ -265,8 +264,11 @@ class IpycanvasDebugDraw(DebugDraw):
             self.canvas.stroke_style = html_color(color)
             if not width_in_pixels and world_coordinates:
                 line_width = self.transform.scale_world_to_canvas(line_width)
-            if not world_coordinates:
-                points = [self.transform.canvas_to_world(v) for v in points]
+            if world_coordinates:
+                points = [
+                    self.transform.world_to_canvas((float(v[0]), float(v[1])))
+                    for v in points
+                ]
             self.canvas.line_width = line_width
             self.canvas.stroke_polygon(points)
 
@@ -297,9 +299,9 @@ class IpycanvasDebugDraw(DebugDraw):
             self.canvas.stroke_style = html_color(color)
             if not width_in_pixels and world_coordinates:
                 line_width = self.transform.scale_world_to_canvas(line_width)
-            if not world_coordinates:
-                center = self.transform.canvas_to_world(center)
-                radius = self.transform.scale_canvas_to_world(radius)
+            if world_coordinates:
+                center = self.transform.world_to_canvas(center)
+                radius = self.transform.scale_world_to_canvas(radius)
             self.canvas.line_width = line_width
             self.canvas.stroke_circle(*center, radius)
 
@@ -326,10 +328,32 @@ class IpycanvasDebugDraw(DebugDraw):
             if not width_in_pixels and world_coordinates:
                 line_width = self.transform.scale_world_to_canvas(line_width)
             self.canvas.line_width = line_width
-            if not world_coordinates:
-                p1 = self.transform.canvas_to_world(p1)
-                p2 = self.transform.canvas_to_world(p2)
+            if world_coordinates:
+                p1 = self.transform.world_to_canvas(p1)
+                p2 = self.transform.world_to_canvas(p2)
             self.canvas.stroke_line(p1[0], p1[1], p2[0], p2[1])
+
+    def draw_text(
+        self,
+        text,
+        position,
+        font_size,
+        color,
+        world_coordinates=True,
+        alignment="center",
+    ):
+        if world_coordinates:
+            position = self.transform.world_to_canvas(position)
+            font_size = self.transform.scale_world_to_canvas(font_size)
+        font_size = round(font_size * 0.75)
+        self.canvas.fill_style = html_color(color)
+        self.canvas.font = f"{font_size}px sans-serif"
+        self.canvas.text_align = alignment
+        if alignment == "center":
+            self.canvas.text_baseline = "middle"
+        else:
+            self.canvas.text_baseline = "top"
+        self.canvas.fill_text(text, x=position[0], y=position[1])
 
 
 last_frontend = [None]
@@ -457,7 +481,19 @@ class IpycanvasFrontend(FrontendBase):
                     self.cancel_loop()
                     self.sample.post_run()
                     return
-                self.canvas.clear()
+                if self.settings.debug_draw.draw_background:
+                    self.canvas.fill_style = html_color(
+                        self.settings.debug_draw.background_color
+                    )
+                    self.canvas.fill_rect(
+                        0,
+                        0,
+                        self.settings.canvas_shape[0],
+                        self.settings.canvas_shape[1],
+                    )
+                else:
+                    self.canvas.clear()
+
                 self.update_and_draw(dt)
             except Exception:
                 self.output_widget.append_stdout(
@@ -531,7 +567,7 @@ class IpycanvasFrontend(FrontendBase):
                     MouseWheelEvent(
                         world_position=world_pos,
                         canvas_position=canvas_pos,
-                        delta=event["deltaY"] / 10.0,
+                        delta=-event["deltaY"] / 10.0,
                     )
                 )
 
