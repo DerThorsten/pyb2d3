@@ -18,6 +18,7 @@ _joint_names = [
     "prismatic",
     "revolute",
     "wheel",
+    "weld",
 ]
 
 
@@ -108,8 +109,8 @@ def filter_joint_def(**kwargs):
     return joint
 
 
-def gear_joint_def(**kwargs):
-    joint = GearJointDef()
+def weld_joint_def(**kwargs):
+    joint = WeldJointDef()
     for k, v in kwargs.items():
         setattr(joint, k, v)
     return joint
@@ -297,10 +298,15 @@ def _extend_world():
 
         def create_joint(self, *args, **kwargs):
             na = len(args)
-            # from just a joint_def
+            nk = len(kwargs)
+
             if na == 0:
                 return raw_function(self, def_func(**kwargs))
             elif na == 1:
+                if nk > 0:
+                    raise ValueError(
+                        "if only one argument is given, it should be a joint_def, no kwargs allowed"
+                    )
                 return raw_function(self, args[0])
             elif na == 2:
                 return raw_function(
@@ -333,7 +339,7 @@ def _extend_world():
             return self.create_null_joint(joint_def)
         elif isinstance(joint_def, PulleyJointDef):
             return self.create_pulley_joint(joint_def)
-        elif isinstance(joint_def, GearJointDef):
+        elif isinstance(joint_def, WeldJointDef):
             return self.create_gear_joint(joint_def)
         elif isinstance(joint_def, MouseJointDef):
             return self.create_mouse_joint(joint_def)
@@ -469,13 +475,6 @@ create_static_body = partial(create_body, type=BodyType.STATIC)
 create_kinematic_body = partial(create_body, type=BodyType.KINEMATIC)
 
 
-# def hull(points):
-#     """Create a Hull object from a list of points."""
-#     hull = b2d.Hull()
-#     hull.points = np.require(points, dtype=np.float32, requirements="C")
-#     return hull
-
-
 def make_filter(**kwargs):
     filter = Filter()
     for k, v in kwargs.items():
@@ -603,41 +602,6 @@ def aabb_arround_point(point, radius):
     lower_bound = (point[0] - radius, point[1] - radius)
     upper_bound = (point[0] + radius, point[1] + radius)
     return aabb(lower_bound, upper_bound)
-
-
-class DebugDraw(DebugDrawBase):
-    def __init__(self):
-        super().__init__(self)
-
-    def draw_polygon(self, vertices, color):
-        pass
-
-    def draw_solid_polygon(self, transform, vertices, radius, color):
-        pass
-
-    def draw_circle(self, center, radius, color):
-        pass
-
-    def draw_solid_circle(self, transform, radius, color):
-        pass
-
-    def draw_solid_capsule(self, p1, p2, radius, color):
-        pass
-
-    def draw_segment(self, p1, p2, color):
-        pass
-
-    def draw_transform(self, transform):
-        pass
-
-    def draw_point(self, p, size, color):
-        pass
-
-    def draw_string(self, x, y, string):
-        pass
-
-    def draw_aabb(self, aabb, color):
-        pass
 
 
 def rgb_to_hex_color(r, g, b):

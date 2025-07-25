@@ -6,3 +6,6 @@ from .jump import *  # noqa: F401, F403
 from .soft_bodies import *  # noqa: F401, F403
 from .shapes import *  # noqa: F401, F403
 from .coupled_minigolf import *  # noqa: F401, F403
+from .joints import *  # noqa: F401, F403
+from .goo import *  # noqa: F401, F403
+from .chain_builder import *  # noqa: F401, F403

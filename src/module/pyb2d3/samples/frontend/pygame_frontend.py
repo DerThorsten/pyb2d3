@@ -218,12 +218,11 @@ class PygameFrontend(FrontendBase):
         clock = self.clock
 
         # Set up font: None = default font
-        font = pygame.font.Font(None, 48)  # size 48
-
-        # Render the text to a surface
-        text_surface = font.render("", True, (255, 255, 255))  # white text
-        last_text = ""
-        text_rect = text_surface.get_rect(center=(320, 240))  # center on screen
+        # font = pygame.font.Font(None, 48)  # size 48
+        # # Render the text to a surface
+        # text_surface = font.render("", True, (255, 255, 255))  # white text
+        # last_text = ""
+        # text_rect = text_surface.get_rect(center=(320, 240))  # center on screen
 
         while not self.sample.is_done():
             if self.settings.debug_draw.draw_background:
@@ -231,24 +230,22 @@ class PygameFrontend(FrontendBase):
 
             dt = clock.tick_busy_loop(self.settings.fps)
             dt = dt / 1000.0  # convert to seconds
-            # print(f"FPS:{clock.get_fps() } dt: {dt}")
 
             # call the sample update methods (also pre and post update)
             # and call debug draw  (also pre and post debug draw)
             self.update_and_draw(dt)
 
             # draw fps  and average draw time
-            fps = clock.get_fps()
-
-            fps_rounded = round(fps, 2)
-            new_text = f"FPS: {fps_rounded:.2f}  Draw : {self.debug_draw_time:.5f}  Update : {self.sample_update_time:.5f} I: {self.iteration}"
-            if last_text != new_text:
-                last_text = new_text
-                text_surface = font.render(last_text, True, (255, 255, 255))
-                text_rect = text_surface.get_rect(
-                    center=(self.settings.canvas_shape[0] // 2, 30)
-                )
-            self.screen.blit(text_surface, text_rect)
+            # fps = clock.get_fps()
+            # fps_rounded = round(fps, 2)
+            # new_text = f"FPS: {fps_rounded:.2f}  Draw : {self.debug_draw_time:.5f}  Update : {self.sample_update_time:.5f} I: {self.iteration}"
+            # if last_text != new_text:
+            #     last_text = new_text
+            #     text_surface = font.render(last_text, True, (255, 255, 255))
+            #     text_rect = text_surface.get_rect(
+            #         center=(self.settings.canvas_shape[0] // 2, 30)
+            #     )
+            # self.screen.blit(text_surface, text_rect)
 
             self._dispatch_events()
 
@@ -271,7 +268,6 @@ class PygameFrontend(FrontendBase):
                 # only for left
                 if event.button not in (1,):
                     continue
-                print("Mouse button down event", event.button)
 
                 # check for tripple-click first, then double-click
                 canvas_position = pygame.mouse.get_pos()
