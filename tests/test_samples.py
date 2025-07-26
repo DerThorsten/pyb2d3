@@ -1,7 +1,6 @@
 import pytest
 import sys
 from pathlib import Path
-from pyb2d3.samples import SampleBase
 from .headless_test_frontend import run_in_headless_test_frontend
 
 
@@ -15,19 +14,18 @@ import pyb2d3_samples  # noqa: E402
 
 
 def test_import_samples():
-    assert pyb2d3_samples is not None, "Failed to import pyb2d3_samples"
+    assert pyb2d3_samples.all_examples is not None
 
-
-print(f"SampleBase subclasses: {SampleBase.subclasses}")
+    for example in pyb2d3_samples.all_examples:
+        assert example is not None
 
 
 def test_subclass_exists():
-    assert SampleBase.subclasses is not None
-    assert len(SampleBase.subclasses) > 0, "No subclasses of SampleBase found"
+    assert len(pyb2d3_samples.all_examples) > 0, "No examples found in pyb2d3_samples"
 
 
 # parametrize the test with all subclasses of SampleBase
-@pytest.mark.parametrize("sample_class", SampleBase.subclasses)
+@pytest.mark.parametrize("sample_class", pyb2d3_samples.all_examples)
 def test_sample_class(sample_class):
     run_in_headless_test_frontend(
         sample_class=sample_class, sample_settings=sample_class.Settings()

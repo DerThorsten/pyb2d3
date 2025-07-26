@@ -16,12 +16,6 @@ class SampleBaseSettings:
 class SampleBase(object):
     Settings = SampleBaseSettings
 
-    subclasses = []
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        SampleBase.subclasses.append(cls)
-
     # classmethod
     @classmethod
     def run(cls, sample_settings=None, frontend_class=None, frontend_settings=None):

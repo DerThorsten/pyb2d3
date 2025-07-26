@@ -2,7 +2,7 @@ import pyb2d3 as b2d
 from pyb2d3.samples import SampleBase
 
 
-class ChainBuilderExample(SampleBase):
+class ChainBuilder(SampleBase):
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
         self.box_radius = 50
@@ -115,4 +115,4 @@ class ChainBuilderExample(SampleBase):
 
 
 if __name__ == "__main__":
-    ChainBuilderExample.run()
+    ChainBuilder.run()

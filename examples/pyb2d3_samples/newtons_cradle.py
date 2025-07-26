@@ -2,7 +2,7 @@ import pyb2d3 as b2d
 from pyb2d3.samples import SampleBase
 
 
-class NetwonsCraddle(SampleBase):
+class NewtonsCradle(SampleBase):
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
 
@@ -59,4 +59,4 @@ class NetwonsCraddle(SampleBase):
 
 
 if __name__ == "__main__":
-    NetwonsCraddle.run()
+    NewtonsCradle.run()
