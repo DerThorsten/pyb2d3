@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include <box2d/box2d.h>
+#include <box2d/math_functions.h>
 #include <nanobind/stl/vector.h>
 
 // nanobind namespace
@@ -38,6 +39,147 @@ void export_id_types(py::module_& m)
 
 void export_b2Vec2(py::module_& m)
 {
+    py::class_<b2Vec2>(m, "Vec2")
+        .def(
+            "__init__",
+            [](b2Vec2* t, float x, float y)
+            {
+                new (t) b2Vec2();
+                t->x = x;
+                t->y = y;
+            }
+        )
+        // custom constructor from py::tuple
+        .def(
+            "__init__",
+            [](b2Vec2* t, py::tuple tup)
+            {
+                // std::cout << "b2Vec2 constructor from tuple called" << std::endl;
+                if (tup.size() != 2)
+                {
+                    throw std::runtime_error("Invalid tuple size");
+                }
+                new (t) b2Vec2();
+                t->x = py::cast<float>(tup[0]);
+                t->y = py::cast<float>(tup[1]);
+            }
+        )
+        // constructor from py::ndarray float
+        .def(
+            "__init__",
+            [](b2Vec2* t, py::ndarray<float, py::numpy, py::shape<2>> arr)
+            {
+                // std::cout << "b2Vec2 constructor from ndarray called" << std::endl;
+                if (arr.shape(0) != 2)
+                {
+                    throw std::runtime_error("Invalid ndarray shape");
+                }
+                new (t) b2Vec2();
+                t->x = arr(0);
+                t->y = arr(1);
+            }
+        )
+        // constructor from py::ndarray double
+        .def(
+            "__init__",
+            [](b2Vec2* t, py::ndarray<double, py::numpy, py::shape<2>> arr)
+            {
+                // std::cout << "b2Vec2 constructor from ndarray double called" << std::endl;
+                if (arr.shape(0) != 2)
+                {
+                    throw std::runtime_error("Invalid ndarray shape");
+                }
+                new (t) b2Vec2();
+                t->x = static_cast<float>(arr(0));
+                t->y = static_cast<float>(arr(1));
+            }
+        )
+
+        .def_rw("x", &b2Vec2::x)
+        .def_rw("y", &b2Vec2::y)
+        .def(
+            "__len__",
+            [](const b2Vec2& self)
+            {
+                return 2;  // length of the vector
+            }
+        )
+        .def(
+            "__getitem__",
+            [](const b2Vec2& self, int index)
+            {
+                if (index == 0)
+                {
+                    return self.x;
+                }
+                if (index == 1)
+                {
+                    return self.y;
+                }
+                throw std::out_of_range("Index out of range");
+            }
+        )
+        .def(
+            "__setitem__",
+            [](b2Vec2& self, int index, float value)
+            {
+                if (index == 0)
+                {
+                    self.x = value;
+                }
+                else if (index == 1)
+                {
+                    self.y = value;
+                }
+                else
+                {
+                    throw std::out_of_range("Index out of range");
+                }
+            }
+        )
+        .def(
+            "__repr__",
+            [](const b2Vec2& v)
+            {
+                return "b2Vec2(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")";
+            }
+        )
+        .def(
+            "__add__",
+            [](const b2Vec2& a, const b2Vec2& b)
+            {
+                return b2Add(a, b);
+            }
+        )
+        .def(
+            "__sub__",
+            [](const b2Vec2& a, const b2Vec2& b)
+            {
+                return b2Sub(a, b);
+            }
+        )
+        .def(
+            "__neg__",
+            [](const b2Vec2& a)
+            {
+                return b2Neg(a);
+            }
+        )
+        .def(
+            "__mul__",
+            [](const b2Vec2& a, float s)
+            {
+                return b2MulSV(s, a);
+            }
+        )
+
+        ;
+
+    // implicitly convert b2Vec2 to tuple
+    py::implicitly_convertible<py::tuple, b2Vec2>();
+    // implicitly convert b2Vec2 to ndarray
+    py::implicitly_convertible<py::ndarray<float, py::numpy, py::shape<2>>, b2Vec2>();
+    py::implicitly_convertible<py::ndarray<double, py::numpy, py::shape<2>>, b2Vec2>();
 }
 
 void export_ray_result(py::module_& m)

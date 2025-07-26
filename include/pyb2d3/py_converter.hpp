@@ -23,52 +23,52 @@ using user_data_uint = std::uintptr_t;
 namespace nanobind::detail
 {
 
-    // Custom type caster for b2Vec2
-    template <>
-    struct type_caster<b2Vec2>
-    {
-        NB_TYPE_CASTER(b2Vec2, const_name("b2Vec2"));
+    // // Custom type caster for b2Vec2
+    // template <>
+    // struct type_caster<b2Vec2>
+    // {
+    //     NB_TYPE_CASTER(b2Vec2, const_name("b2Vec2"));
 
-        // Python -> C++
-        bool from_python(nb::handle src, uint8_t flags, cleanup_list*) noexcept
-        {
-            using arr_float_type = nb::ndarray<float, nb::numpy, nb::shape<2>>;
-            using arr_double_type = nb::ndarray<double, nb::numpy, nb::shape<2>>;
+    //     // Python -> C++
+    //     bool from_python(nb::handle src, uint8_t flags, cleanup_list*) noexcept
+    //     {
+    //         using arr_float_type = nb::ndarray<float, nb::numpy, nb::shape<2>>;
+    //         using arr_double_type = nb::ndarray<double, nb::numpy, nb::shape<2>>;
 
-            if (nb::isinstance<nb::tuple>(src) && nb::len(src) == 2)
-            {
-                auto x = nb::cast<float>(src[0]);
-                auto y = nb::cast<float>(src[1]);
-                value = b2Vec2{x, y};
-                return true;
-            }
-            else if (nb::isinstance<arr_float_type>(src))
-            {
-                auto arr = nb::cast<arr_float_type>(src);
-                auto view = arr.view();
-                value = b2Vec2{view(0), view(1)};
-                return true;
-            }
-            else if (nb::isinstance<arr_double_type>(src))
-            {
-                auto arr = nb::cast<arr_double_type>(src);
-                auto view = arr.view();
-                value = b2Vec2{float(view(0)), float(view(1))};
-                return true;
-            }
-            else
-            {
-                return false;  // Not a valid input type
-            }
-            return false;  // Not a valid input type
-        }
+    //         if (nb::isinstance<nb::tuple>(src) && nb::len(src) == 2)
+    //         {
+    //             auto x = nb::cast<float>(src[0]);
+    //             auto y = nb::cast<float>(src[1]);
+    //             value = b2Vec2{x, y};
+    //             return true;
+    //         }
+    //         else if (nb::isinstance<arr_float_type>(src))
+    //         {
+    //             auto arr = nb::cast<arr_float_type>(src);
+    //             auto view = arr.view();
+    //             value = b2Vec2{view(0), view(1)};
+    //             return true;
+    //         }
+    //         else if (nb::isinstance<arr_double_type>(src))
+    //         {
+    //             auto arr = nb::cast<arr_double_type>(src);
+    //             auto view = arr.view();
+    //             value = b2Vec2{float(view(0)), float(view(1))};
+    //             return true;
+    //         }
+    //         else
+    //         {
+    //             return false;  // Not a valid input type
+    //         }
+    //         return false;  // Not a valid input type
+    //     }
 
-        // C++ -> Python
-        static nb::handle from_cpp(const b2Vec2& src, rv_policy policy, cleanup_list*)
-        {
-            return nb::make_tuple(src.x, src.y).release();
-        }
-    };
+    //     // C++ -> Python
+    //     static nb::handle from_cpp(const b2Vec2& src, rv_policy policy, cleanup_list*)
+    //     {
+    //         return nb::make_tuple(src.x, src.y).release();
+    //     }
+    // };
 
 #define MY_CASTER(ID_TYPE, STRUCT_TYPE, LOADER, IS_VALID)                               \
     template <>                                                                         \
