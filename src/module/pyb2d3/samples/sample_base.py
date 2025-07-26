@@ -48,7 +48,7 @@ class SampleBase(object):
         self.anchor_body = self.world.create_static_body(position=(0, 0))
 
         self._mouse_joint = None
-        self._mouse_joint_body = None
+        self.mouse_joint_body = None
         self._camera_drag = False
 
         self.is_mouse_down = False
@@ -123,34 +123,38 @@ class SampleBase(object):
         if body:
             # wake body up
             body.awake = True
-            self._mouse_joint_body = body
+            self.mouse_joint_body = body
             self._mouse_joint = self.world.create_mouse_joint(
                 body_a=self.anchor_body,
-                body_b=self._mouse_joint_body,
+                body_b=self.mouse_joint_body,
                 target=self.mouse_pos,
                 hertz=self.mouse_joint_hertz,
-                max_force=self._mouse_joint_body.mass
+                max_force=self.mouse_joint_body.mass
                 * self.mouse_joint_force_multiplier,
                 damping_ratio=self.mouse_joint_damping_ratio,
             )
         else:
             self._camera_drag = True
 
-    def _destroy_mouse_joint(self):
+    def destroy_mouse_joint(self):
         if self._mouse_joint is not None:
             self._mouse_joint.destroy()
-            self._mouse_joint = None
-            self.connected_body = None
+        self._mouse_joint = None
+        self.connected_body = None
 
     def on_mouse_up(self, event):
         # Handle mouse up events
         self.mouse_pos = event.world_position
         self._camera_drag = False
         self.is_mouse_down = False
-        self._destroy_mouse_joint()
+        self.destroy_mouse_joint()
 
     def on_mouse_move(self, event):
         if self._mouse_joint is not None:
+            if not self.mouse_joint_body.is_valid():
+                self.destroy_mouse_joint()
+                return
+
             assert self.is_mouse_down, (
                 "Mouse joint should only be updated when mouse is down"
             )
@@ -167,7 +171,7 @@ class SampleBase(object):
         self.mouse_pos = None
         self.is_mouse_down = False
         self._camera_drag = False
-        self._destroy_mouse_joint()
+        self.destroy_mouse_joint()
 
     def on_mouse_enter(self, event):
         # Handle mouse enter events
