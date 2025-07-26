@@ -4,7 +4,6 @@ from pytest import approx
 import numpy as np
 import pyb2d3 as b2d
 
-from .test_utils import DebugDrawTest
 
 from .conftest import *  # noqa
 
@@ -32,15 +31,16 @@ def test_world_cls():
     material = b2d.surface_material(friction=0.5, restitution=0.3)
     shape_def = b2d.shape_def(density=1, material=material, user_data=400)
 
-    shapes = [b2d.make_box(1, 1), b2d.make_circle(radius=0.5)]
+    shapes = [b2d.box(1, 1), b2d.circle(radius=0.5)]
 
     for i in range(10):
         body = world.create_body(body_def)
         for shape in shapes:
             shape_id = body.create_shape(shape_def, shape)
+            assert shape_id is not None
             # assert shape_id.user_data == 400
 
-    hl_shapes = body.create_shapes(shape_def, shapes)
+    # hl_shapes = body.create_shapes(shape_def, shapes)
 
 
 def test_body_builder():
@@ -62,6 +62,7 @@ def test_body_builder():
                 assert circle.radius == approx(1)
             elif isinstance(shape, b2d.PolygonShape):
                 polygon = shape.polygon
+                assert polygon is not None
 
 
 @pytest.mark.skipif(
@@ -77,13 +78,13 @@ def test_threadpool():
         rx = i % 10
         ry = i + 1 % 10
         body = factory.position((rx, ry)).create()
+        assert body is not None
     for i in range(20):
         world.step(1 / 60, 4)
 
 
 @pytest.mark.parametrize("joint_name", joint_names)
 def test_joints(joint_name):
-
     cls_name = f"{joint_name.capitalize()}Joint"
     joint_cls = getattr(b2d, cls_name, None)
     world_func = getattr(b2d.World, f"create_{joint_name}_joint", None)
@@ -102,7 +103,6 @@ def test_joints(joint_name):
 
 
 def test_batch_api():
-
     world = b2d.World(gravity=(0, -10))
     factory = world.body_factory()
     factory.dynamic().shape(density=1).add_box(1, 1)
@@ -207,7 +207,6 @@ def test_batch_api():
 
 
 def test_query_callback_with_chains():
-
     world = b2d.World(gravity=(0, -10))
     w = 100
     ground_points = np.array(
