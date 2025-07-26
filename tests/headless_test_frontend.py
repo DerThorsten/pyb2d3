@@ -65,6 +65,17 @@ class NoopDebugDraw(DebugDraw):
     ):
         pass
 
+    def draw_text(
+        self,
+        position,
+        text,
+        color,
+        font_size,
+        alignment="center",
+        world_coordinates=True,
+    ):
+        pass
+
 
 class HeadlessTestFrontend(FrontendBase):
     @dataclass
