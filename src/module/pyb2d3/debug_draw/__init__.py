@@ -1,1 +1,1 @@
-from .debug_draw import DebugDraw
+from .debug_draw import DebugDraw  # noqa: F401

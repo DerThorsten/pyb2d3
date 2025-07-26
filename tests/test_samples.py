@@ -1,7 +1,7 @@
 import pytest
 import sys
 from pathlib import Path
-
+from pyb2d3.samples import SampleBase
 from .headless_test_frontend import run_in_headless_test_frontend
 
 
@@ -11,7 +11,12 @@ examples_dir = pyb2d_dir / "examples"
 
 # add examples directory to the path
 sys.path.append(str(examples_dir))
-from pyb2d3.samples import SampleBase
+import pyb2d3_samples  # noqa: E402
+
+
+def test_import_samples():
+    assert pyb2d3_samples is not None, "Failed to import pyb2d3_samples"
+
 
 print(f"SampleBase subclasses: {SampleBase.subclasses}")
 

@@ -37,9 +37,10 @@ def test_world_cls():
         body = world.create_body(body_def)
         for shape in shapes:
             shape_id = body.create_shape(shape_def, shape)
+            assert shape_id is not None
             # assert shape_id.user_data == 400
 
-    hl_shapes = body.create_shapes(shape_def, shapes)
+    # hl_shapes = body.create_shapes(shape_def, shapes)
 
 
 def test_body_builder():
@@ -61,6 +62,7 @@ def test_body_builder():
                 assert circle.radius == approx(1)
             elif isinstance(shape, b2d.PolygonShape):
                 polygon = shape.polygon
+                assert polygon is not None
 
 
 @pytest.mark.skipif(
@@ -76,6 +78,7 @@ def test_threadpool():
         rx = i % 10
         ry = i + 1 % 10
         body = factory.position((rx, ry)).create()
+        assert body is not None
     for i in range(20):
         world.step(1 / 60, 4)
 
