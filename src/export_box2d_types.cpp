@@ -11,7 +11,11 @@
 
 #include <iostream>
 
+// to_string
+#include <string>
+
 #include <box2d/box2d.h>
+#include <box2d/math_functions.h>
 #include <nanobind/stl/vector.h>
 
 // nanobind namespace
@@ -38,17 +42,281 @@ void export_id_types(py::module_& m)
 
 void export_b2Vec2(py::module_& m)
 {
+    py::class_<b2Vec2>(m, "Vec2")
+        .def(
+            "__init__",
+            [](b2Vec2* t, float x, float y)
+            {
+                new (t) b2Vec2();
+                t->x = x;
+                t->y = y;
+            }
+        )
+        // custom constructor from py::tuple
+        .def(
+            "__init__",
+            [](b2Vec2* t, py::tuple tup)
+            {
+                // std::cout << "b2Vec2 constructor from tuple called" << std::endl;
+                if (tup.size() != 2)
+                {
+                    throw std::runtime_error("Invalid tuple size");
+                }
+                new (t) b2Vec2();
+                t->x = py::cast<float>(tup[0]);
+                t->y = py::cast<float>(tup[1]);
+            }
+        )
+        // constructor from py::ndarray float
+        .def(
+            "__init__",
+            [](b2Vec2* t, py::ndarray<float, py::numpy, py::shape<2>> arr)
+            {
+                // std::cout << "b2Vec2 constructor from ndarray called" << std::endl;
+                if (arr.shape(0) != 2)
+                {
+                    throw std::runtime_error("Invalid ndarray shape");
+                }
+                new (t) b2Vec2{arr(0), arr(1)};
+            }
+        )
+        // constructor from py::ndarray double
+        .def(
+            "__init__",
+            [](b2Vec2* t, py::ndarray<double, py::numpy, py::shape<2>> arr)
+            {
+                // std::cout << "b2Vec2 constructor from ndarray double called" << std::endl;
+                if (arr.shape(0) != 2)
+                {
+                    throw std::runtime_error("Invalid ndarray shape");
+                }
+                new (t) b2Vec2{float(arr(0)), float(arr(1))};
+            }
+        )
+
+        .def_rw("x", &b2Vec2::x)
+        .def_rw("y", &b2Vec2::y)
+        .def(
+            "__len__",
+            [](const b2Vec2& self)
+            {
+                return 2;  // length of the vector
+            }
+        )
+        .def(
+            "__getitem__",
+            [](const b2Vec2& self, int index)
+            {
+                if (index == 0)
+                {
+                    return self.x;
+                }
+                if (index == 1)
+                {
+                    return self.y;
+                }
+                throw std::out_of_range("Index out of range");
+            }
+        )
+        .def(
+            "__setitem__",
+            [](b2Vec2& self, int index, float value)
+            {
+                if (index == 0)
+                {
+                    self.x = value;
+                }
+                else if (index == 1)
+                {
+                    self.y = value;
+                }
+                else
+                {
+                    throw std::out_of_range("Index out of range");
+                }
+            }
+        )
+        .def(
+            "__repr__",
+            [](const b2Vec2& v)
+            {
+                return "b2Vec2(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")";
+            }
+        )
+        .def(
+            "__add__",
+            [](const b2Vec2& a, const b2Vec2& b)
+            {
+                return b2Add(a, b);
+            }
+        )
+        .def(
+            "__sub__",
+            [](const b2Vec2& a, const b2Vec2& b)
+            {
+                return b2Sub(a, b);
+            }
+        )
+        .def(
+            "__neg__",
+            [](const b2Vec2& a)
+            {
+                return b2Neg(a);
+            }
+        )
+        .def(
+            "__mul__",
+            [](const b2Vec2& a, float s)
+            {
+                return b2MulSV(s, a);
+            }
+        )
+        .def(
+            "__rmul__",
+            [](float s, const b2Vec2& a)
+            {
+                return b2MulSV(s, a);
+            }
+        )
+        // more operators
+        .def(
+            "__truediv__",
+            [](const b2Vec2& self, float s)
+            {
+                return b2MulSV(1.0f / s, self);
+            }
+        )
+        // for __floordiv__
+        .def(
+            "__floordiv__",
+            [](const b2Vec2& self, float s)
+            {
+                return b2Vec2{std::floor(self.x / s), std::floor(self.y / s)};
+            }
+        )
+
+
+        // __ceil__
+        .def(
+            "__ceil__",
+            [](const b2Vec2& self)
+            {
+                return b2Vec2{std::ceil(self.x), std::ceil(self.y)};
+            }
+        )
+        .def(
+            "__floor__",
+            [](const b2Vec2& self)
+            {
+                return b2Vec2{std::floor(self.x), std::floor(self.y)};
+            }
+        )
+
+
+        // inplace operators
+        .def(
+            "__iadd__",
+            [](b2Vec2& self, const b2Vec2& other)
+            {
+                self.x += other.x;
+                self.y += other.y;
+                return self;
+            }
+        )
+        .def(
+            "__iadd__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x += s;
+                self.y += s;
+                return self;
+            }
+        )
+        .def(
+            "__isub__",
+            [](b2Vec2& self, const b2Vec2& other)
+            {
+                self.x -= other.x;
+                self.y -= other.y;
+                return self;
+            }
+        )
+        .def(
+            "__isub__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x -= s;
+                self.y -= s;
+                return self;
+            }
+        )
+        .def(
+            "__imul__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x *= s;
+                self.y *= s;
+                return self;
+            }
+        )
+        .def(
+            "__itruediv__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x /= s;
+                self.y /= s;
+                return self;
+            }
+        )
+        .def(
+            "__ifloordiv__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x = std::floor(self.x / s);
+                self.y = std::floor(self.y / s);
+                return self;
+            }
+        )
+        .def(
+            "__imod__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x = std::fmod(self.x, s);
+                self.y = std::fmod(self.y, s);
+                return self;
+            }
+        )
+        .def(
+            "__ipow__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x = std::pow(self.x, s);
+                self.y = std::pow(self.y, s);
+                return self;
+            }
+        )
+
+
+        ;
+
+
+    // implicitly convert b2Vec2 to tuple
+    py::implicitly_convertible<py::tuple, b2Vec2>();
+    // implicitly convert b2Vec2 to ndarray
+    py::implicitly_convertible<py::ndarray<float, py::numpy, py::shape<2>>, b2Vec2>();
+    py::implicitly_convertible<py::ndarray<double, py::numpy, py::shape<2>>, b2Vec2>();
 }
 
 void export_ray_result(py::module_& m)
 {
     py::class_<b2RayResult>(m, "RayResult")
-        .def_rw("shape_id", &b2RayResult::shapeId)
-        .def_rw("point", &b2RayResult::point)
-        .def_rw("normal", &b2RayResult::normal)
-        .def_rw("fraction", &b2RayResult::fraction)
-        .def_rw("node_visits", &b2RayResult::nodeVisits)
-        .def_rw("leaf_visits", &b2RayResult::leafVisits);
+        .def_ro("shape", &b2RayResult::shapeId)
+        .def_ro("point", &b2RayResult::point)
+        .def_ro("normal", &b2RayResult::normal)
+        .def_ro("fraction", &b2RayResult::fraction)
+        .def_ro("node_visits", &b2RayResult::nodeVisits)
+        .def_ro("leaf_visits", &b2RayResult::leafVisits)
+        .def_ro("hit", &b2RayResult::hit);
 }
 
 // void export_mixing_rule(py::module_& m)
@@ -261,8 +529,7 @@ void export_shape_def(py::module_& m)
         .def_rw("enable_hit_events", &b2ShapeDef::enableHitEvents)
         .def_rw("enable_pre_solve_events", &b2ShapeDef::enablePreSolveEvents)
         .def_rw("invoke_contact_creation", &b2ShapeDef::invokeContactCreation)
-        .def_rw("update_body_mass", &b2ShapeDef::updateBodyMass)
-        .def_rw("internal_value", &b2ShapeDef::internalValue) EXPORT_USER_DATA(b2ShapeDef);
+        .def_rw("update_body_mass", &b2ShapeDef::updateBodyMass) EXPORT_USER_DATA(b2ShapeDef);
 }
 
 void export_chain_def(py::module_& m)
@@ -315,8 +582,6 @@ void export_chain_def(py::module_& m)
             }
         )
 
-
-        // // .def_rw("materials", &b2ChainDef::materials) //TODO
         .def_prop_rw(
             "filter",
             [](PyChainDef* self)

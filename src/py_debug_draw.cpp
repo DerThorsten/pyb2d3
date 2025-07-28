@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include <nanobind/nanobind.h>
+#include <pyb2d3/debug_draw.hpp>
 #include <pyb2d3/py_converter.hpp>
-
 // // C
 // extern "C"
 // {
@@ -14,108 +14,36 @@
 // }
 
 // nanobind namespace
-namespace py = nanobind;
+namespace nb = nanobind;
 
-/// Draw a closed polygon provided in CCW order.
-void PyDrawPolygon(const b2Vec2* vertices, int vertexCount, b2HexColor color, void* context)
+
+// c++ class enum for color formats
+enum class DebugDrawColorFormat
 {
-    PyDebugDraw* draw = reinterpret_cast<PyDebugDraw*>(context);
-    float* data = const_cast<float*>(reinterpret_cast<const float*>(vertices));
-    ArrayVec2 points(data, {static_cast<std::size_t>(vertexCount), static_cast<std::size_t>(2)});
-    draw->m_py_class.attr("draw_polygon")(points, static_cast<int>(color));
-}
+    HexaColorFormat,
+    RgbFloatFormat,
+    RgbUInt8Format
+};
 
-/// Draw a solid closed polygon provided in CCW order.
-void PyDrawSolidPolygon(
-    b2Transform transform,
-    const b2Vec2* vertices,
-    int vertexCount,
-    float radius,
-    b2HexColor color,
-    void* context
-)
+void export_py_debug_draw(nb::module_& m)
 {
-    PyDebugDraw* draw = reinterpret_cast<PyDebugDraw*>(context);
-    float* data = const_cast<float*>(reinterpret_cast<const float*>(vertices));
-    ArrayVec2 points(data, {static_cast<std::size_t>(vertexCount), static_cast<std::size_t>(2)});
-    draw->m_py_class.attr("draw_solid_polygon")(transform, points, radius, static_cast<int>(color));
-}
-
-/// Draw a circle.
-void PyDrawCircle(b2Vec2 center, float radius, b2HexColor color, void* context)
-{
-    PyDebugDraw* draw = (PyDebugDraw*) context;
-    draw->m_py_class.attr("draw_circle")(center.x, center.y, radius, static_cast<int>(color));
-}
-
-/// Draw a solid circle.
-void PyDrawSolidCircle(b2Transform transform, float radius, b2HexColor color, void* context)
-{
-    PyDebugDraw* draw = (PyDebugDraw*) context;
-    draw->m_py_class.attr("draw_solid_circle")(transform, radius, static_cast<int>(color));
-}
-
-/// Draw a solid capsule.
-void PyDrawSolidCapsule(b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color, void* context)
-{
-    PyDebugDraw* draw = (PyDebugDraw*) context;
-    draw->m_py_class.attr("draw_solid_capsule")(p1, p2, radius, static_cast<int>(color));
-}
-
-/// Draw a line segment.
-void PyDrawSegment(b2Vec2 p1, b2Vec2 p2, b2HexColor color, void* context)
-{
-    PyDebugDraw* draw = (PyDebugDraw*) context;
-    draw->m_py_class.attr("draw_segment")(p1, p2, static_cast<int>(color));
-}
-
-/// Draw a transform. Choose your own length scale.
-void PyDrawTransform(b2Transform transform, void* context)
-{
-    PyDebugDraw* draw = (PyDebugDraw*) context;
-    draw->m_py_class.attr("draw_transform")(transform);
-}
-
-/// Draw a point.
-void PyDrawPoint(b2Vec2 p, float size, b2HexColor color, void* context)
-{
-    PyDebugDraw* draw = (PyDebugDraw*) context;
-    draw->m_py_class.attr("draw_point")(p, size, static_cast<int>(color));
-}
-
-/// Draw a string.
-void PyDrawString(b2Vec2 p, const char* s, b2HexColor color, void* context)
-{
-    PyDebugDraw* draw = (PyDebugDraw*) context;
-    draw->m_py_class.attr("draw_string")(p, s, static_cast<int>(color));
-}
-
-PyDebugDraw::PyDebugDraw(py::handle py_class)
-    : b2DebugDraw(b2DefaultDebugDraw())
-    , m_py_class(py_class)
-{
-    this->DrawPolygonFcn = PyDrawPolygonGeneric<PyDebugDraw>;
-    this->DrawSolidPolygonFcn = PyDrawSolidPolygon;
-    this->DrawCircleFcn = PyDrawCircle;
-    this->DrawSolidCircleFcn = PyDrawSolidCircle;
-    this->DrawSolidCapsuleFcn = PyDrawSolidCapsule;
-    this->DrawSegmentFcn = PyDrawSegment;
-    this->DrawTransformFcn = PyDrawTransform;
-    this->DrawPointFcn = PyDrawPoint;
-    this->DrawStringFcn = PyDrawString;
-    this->context = reinterpret_cast<void*>(this);
-}
-
-void export_py_debug_draw(py::module_& m)
-{
-    py::class_<PyDebugDraw>(m, "DebugDrawBase")
-        .def(py::init<py::object>())
-
+    // b2DebugDraw itself
+    nb::class_<b2DebugDraw>(m, "_DebugDrawRawBase")
         .def_rw("drawing_bounds", &PyDebugDraw::drawingBounds)
-        .def_rw("use_drawing_bounds", &PyDebugDraw::useDrawingBounds)
         .def_rw("draw_shapes", &PyDebugDraw::drawShapes)
         .def_rw("draw_joints", &PyDebugDraw::drawJoints)
         .def_rw("draw_joint_extras", &PyDebugDraw::drawJointExtras)
-        // .def_rw("draw_aabbs", &PyDebugDraw::drawAABBs)
-        .def_rw("draw_mass", &PyDebugDraw::drawMass);
+        .def_rw("draw_bounds", &PyDebugDraw::drawBounds)
+        .def_rw("draw_mass", &PyDebugDraw::drawMass)
+        .def_rw("draw_body_names", &PyDebugDraw::drawBodyNames)
+        .def_rw("draw_contacts", &PyDebugDraw::drawContacts)
+        .def_rw("draw_graph_colors", &PyDebugDraw::drawGraphColors)
+        .def_rw("draw_contact_normals", &PyDebugDraw::drawContactNormals)
+        .def_rw("draw_contact_impulses", &PyDebugDraw::drawContactImpulses)
+        .def_rw("draw_contact_features", &PyDebugDraw::drawContactFeatures)
+        .def_rw("draw_friction_impulses", &PyDebugDraw::drawFrictionImpulses)
+        .def_rw("draw_islands", &PyDebugDraw::drawIslands);
+
+
+    nb::class_<PyDebugDraw, b2DebugDraw>(m, "DebugDrawBase").def(nb::init<nb::object>());
 }

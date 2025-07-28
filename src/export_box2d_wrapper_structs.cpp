@@ -1,6 +1,7 @@
 #include <optional>
 
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/vector.h>
 #include <pyb2d3/py_converter.hpp>
 
@@ -32,15 +33,7 @@ void export_world_class(nb::module_& m)
         .def("destroy", &WorldView::Destroy)
         .def("is_valid", &WorldView::IsValid)
         .def("step", &WorldView::Step, nb::arg("time_step"), nb::arg("sub_step_count"))
-        .def(
-            "draw",
-            [](WorldView& self, PyDebugDraw* py_draw)
-            {
-                b2DebugDraw* draw = static_cast<b2DebugDraw*>(py_draw);
-                self.Draw(draw);
-            },
-            nb::arg("draw")
-        )
+        .def("_draw", &WorldView::Draw, nb::arg("debug_draw"))
         .def("get_body_events", &WorldView::GetBodyEvents)
         .def("get_sensor_events", &WorldView::GetSensorEvents)
         .def("get_contact_events", &WorldView::GetContactEvents)
@@ -71,23 +64,35 @@ void export_world_class(nb::module_& m)
             nb::arg("point"),
             nb::arg("filter") = b2DefaultQueryFilter()
         )
-        .def("body_at_point", &WorldView::BodyAtPoint, nb::arg("point"), nb::arg("filter") = b2DefaultQueryFilter())
-
         .def(
-            "cast_ray",
-            &WorldView::CastRay,
-            nb::arg("origin"),
-            nb::arg("translation"),
-            nb::arg("filter"),
-            nb::arg("fcn"),
-            nb::arg("context")
+            "dyanmic_body_shape_at_point",
+            &WorldView::ShapeAtPoint,
+            nb::arg("point"),
+            nb::arg("filter") = b2DefaultQueryFilter()
         )
+        .def("body_at_point", &WorldView::BodyAtPoint, nb::arg("point"), nb::arg("filter") = b2DefaultQueryFilter())
+        .def(
+            "dynamic_body_at_point",
+            &WorldView::DynamicBodyAtPoint,
+            nb::arg("point"),
+            nb::arg("filter") = b2DefaultQueryFilter()
+        )
+
+        // .def(
+        //     "cast_ray",
+        //     &WorldView::CastRay,
+        //     nb::arg("origin"),
+        //     nb::arg("translation"),
+        //     nb::arg("filter"),
+        //     nb::arg("fcn"),
+        //     nb::arg("context")
+        // )
         .def(
             "cast_ray_closest",
             &WorldView::CastRayClosest,
             nb::arg("origin"),
             nb::arg("translation"),
-            nb::arg("filter")
+            nb::arg("filter") = b2DefaultQueryFilter()
         )
         .def_prop_rw("sleeping_enabled", &WorldView::IsSleepingEnabled, &WorldView::EnableSleeping, nb::arg("flag"))
         .def_prop_rw(
@@ -122,7 +127,7 @@ void export_world_class(nb::module_& m)
             nb::arg("user_data")
         )
 
-        .def("explode", &WorldView::Explode, nb::arg("explosion_def"))
+        .def("_explode", &WorldView::Explode, nb::arg("explosion_def"))
         .def(
             "set_contact_tuning",
             &WorldView::SetContactTuning,

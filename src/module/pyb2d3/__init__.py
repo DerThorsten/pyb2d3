@@ -1,8 +1,10 @@
-import numpy as np  # type: ignore
-from ._pyb2d3 import *
-from . import _pyb2d3  # type: ignore
+import numpy as np
+import random
+import math
+from ._pyb2d3 import *  # noqa: F403
+from . import _pyb2d3
 from functools import partial, partialmethod
-
+from enum import Enum
 
 # some constats
 STOP_QUERY = False
@@ -17,6 +19,7 @@ _joint_names = [
     "prismatic",
     "revolute",
     "wheel",
+    "weld",
 ]
 
 
@@ -51,10 +54,17 @@ def body_def(**kwargs):
     return body
 
 
-def chain_def(**kwargs):
+def chain_def(points, materials=None, material=None, is_loop=False, filter=None):
+    if material is not None and materials is not None:
+        raise ValueError("Either material or materials can be set, not both.")
+    if material is not None:
+        materials = [material]
+
     chain = ChainDef()
-    for k, v in kwargs.items():
-        setattr(chain, k, v)
+    chain.points = np.require(points, dtype=np.float32, requirements="C")
+    chain.is_loop = is_loop
+    if materials is not None:
+        chain.materials = materials
     return chain
 
 
@@ -100,8 +110,8 @@ def filter_joint_def(**kwargs):
     return joint
 
 
-def gear_joint_def(**kwargs):
-    joint = GearJointDef()
+def weld_joint_def(**kwargs):
+    joint = WeldJointDef()
     for k, v in kwargs.items():
         setattr(joint, k, v)
     return joint
@@ -126,6 +136,13 @@ def motor_joint_def(**kwargs):
     for k, v in kwargs.items():
         setattr(joint, k, v)
     return joint
+
+
+def explosion_def(**kwargs):
+    explosion = ExplosionDef()
+    for k, v in kwargs.items():
+        setattr(explosion, k, v)
+    return explosion
 
 
 _shape_def_f = shape_def
@@ -173,8 +190,7 @@ class BodyFactory(object):
         return body
 
     def add_circle(self, *args, **kwargs):
-        circle = make_circle(*args, **kwargs)
-        self._s.append(circle)
+        self._s.append(circle(*args, **kwargs))
         return self
 
     def add_capsule(self, *args, **kwargs):
@@ -183,13 +199,11 @@ class BodyFactory(object):
         return self
 
     def add_polygon(self, *args, **kwargs):
-        polygon = make_polygon(*args, **kwargs)
-        self._s.append(polygon)
+        self._s.append(polygon(*args, **kwargs))
         return self
 
     def add_box(self, *args, **kwargs):
-        box = make_box(*args, **kwargs)
-        self._s.append(box)
+        self._s.append(box(*args, **kwargs))
         return self
 
     # chain all properties of body_def st.
@@ -233,6 +247,27 @@ def _extend_world():
         WorldView.create_body, type=BodyType.KINEMATIC
     )
 
+    def draw(self, debug_draw=None):
+        debug_draw.begin_draw()
+        self._draw(debug_draw)
+        debug_draw.end_draw()
+
+    WorldView.draw = draw
+
+    ##########################
+    # explode
+    ##########################
+    _mk_explosion_def = explosion_def
+
+    def explode(self, explosion_def=None, **kwargs):
+        if explosion_def is None:
+            explosion_def = _mk_explosion_def(**kwargs)
+        for k, v in kwargs.items():
+            setattr(explosion_def, k, v)
+        return self._explode(explosion_def)
+
+    WorldView.explode = explode
+
     def overlap_aabb(self, aabb, callback, query_filter=None, wrap_callback=True):
         if query_filter is None:
             query_filter = QueryFilter()
@@ -258,19 +293,21 @@ def _extend_world():
     WorldView.body_factory = body_factory
 
     def helper(joint_name):
-        def_cls = getattr(_pyb2d3, f"{joint_name.capitalize()}JointDef")
+        # def_cls = getattr(_pyb2d3, f"{joint_name.capitalize()}JointDef")
         def_func = globals()[f"{joint_name}_joint_def"]
         raw_function = getattr(WorldView, f"_create_{joint_name}_joint")
 
         def create_joint(self, *args, **kwargs):
             na = len(args)
-            nka = len(kwargs)
-            joint_def = None
+            nk = len(kwargs)
 
-            # from just a joint_def
             if na == 0:
                 return raw_function(self, def_func(**kwargs))
             elif na == 1:
+                if nk > 0:
+                    raise ValueError(
+                        "if only one argument is given, it should be a joint_def, no kwargs allowed"
+                    )
                 return raw_function(self, args[0])
             elif na == 2:
                 return raw_function(
@@ -303,7 +340,7 @@ def _extend_world():
             return self.create_null_joint(joint_def)
         elif isinstance(joint_def, PulleyJointDef):
             return self.create_pulley_joint(joint_def)
-        elif isinstance(joint_def, GearJointDef):
+        elif isinstance(joint_def, WeldJointDef):
             return self.create_gear_joint(joint_def)
         elif isinstance(joint_def, MouseJointDef):
             return self.create_mouse_joint(joint_def)
@@ -312,38 +349,13 @@ def _extend_world():
 
     WorldView.create_joint = create_joint
 
-    def create_shape(self, shape_def, shape):
-
-        if isinstance(shape, Circle):
-            return self.create_circle_shape(shape_def, shape)
-        elif isinstance(shape, Polygon):
-            return self.create_polygon_shape(shape_def, shape)
-        elif isinstance(shape, Capsule):
-            return self.create_capsule_shape(shape_def, shape)
-        elif isinstance(shape, Segment):
-            return self.create_segment_shape(shape_def, shape)
-        else:
-            raise ValueError(f"shape {shape} not recognized")
-
-    Body.create_shape = create_shape
-
-    def create_shapes(self, shape_def, shapes):
-        res = []
-        for shape in shapes:
-            res.append(self.create_shape(shape_def, shape))
-        return res
-
-    Body.create_shapes = create_shapes
-
 
 _extend_world()
 del _extend_world
 
 
 def _extend_body():
-
     def create_shape(self, shape_def, shape):
-
         if isinstance(shape, Circle):
             return self.create_circle_shape(shape_def, shape)
         elif isinstance(shape, Polygon):
@@ -368,6 +380,55 @@ def _extend_body():
 
 _extend_body()
 del _extend_body
+
+
+def _extend_ray_result():
+    def reflect_vector(D, P1, P2):
+        # Line direction
+        L = P2 - P1
+        L_unit = L / np.linalg.norm(L)
+
+        # Projection of D onto L
+        proj_length = np.dot(D, L_unit)
+        proj = proj_length * L_unit
+
+        # Reflection formula
+        R = 2 * proj - D
+
+        # normalize the reflected vector
+        R_length = np.linalg.norm(R)
+        if R_length > 0:
+            R = R / R_length
+
+        R *= -1
+
+        return R
+
+    def compute_normal(self, ray_direction):
+        shape = self.shape
+        if not isinstance(shape, ChainSegmentShape):
+            return self.normal
+        else:
+            body = self.shape.body
+            segment = shape.segment
+            p0 = segment.point1
+            p1 = segment.point2
+
+            # get points in world coordinates
+            p0_world = body.world_point(p0)
+            p1_world = body.world_point(p1)
+
+            return reflect_vector(
+                ray_direction,
+                np.array(p0_world),
+                np.array(p1_world),
+            )
+
+    RayResult.compute_normal = compute_normal
+
+
+_extend_ray_result()
+del _extend_ray_result
 
 
 # shorthand for body types
@@ -422,18 +483,113 @@ def make_filter(**kwargs):
     return filter
 
 
-def circle(**kwargs):
+def make_query_filter(**kwargs):
+    query_filter = QueryFilter()
+    for k, v in kwargs.items():
+        setattr(query_filter, k, v)
+    return query_filter
+
+
+def query_filter(**kwargs):
+    """Create a QueryFilter object with the given keyword arguments."""
+    return make_query_filter(**kwargs)
+
+
+def circle(center=(0, 0), radius=1):
     c = Circle()
-    for k, v in kwargs.items():
-        setattr(c, k, v)
+    c.center = center
+    c.radius = radius
     return c
 
 
-def capsule(**kwargs):
+def capsule(center1, center2, radius):
     c = Capsule()
-    for k, v in kwargs.items():
-        setattr(c, k, v)
+    c.center1 = center1
+    c.center2 = center2
+    c.radius = radius
     return c
+
+
+def segment(point1, point2):
+    s = Segment()
+    s.point1 = point1
+    s.point2 = point2
+    return s
+
+
+def chain_segment(segment, ghost1, ghost2):
+    c = ChainSegment()
+    c.segment = segment
+    c.ghost1 = ghost1
+    c.ghost2 = ghost2
+    return c
+
+
+def polygon(points=None, hull=None, radius=None, position=None, rotation=None):
+    if int(hull is not None) + int(points is not None) != 1:
+        raise ValueError("either hull or points should be provided, but not both")
+    if hull is None:
+        n_points = len(points)
+        if n_points < 3 or n_points > 8:
+            raise ValueError(
+                "the number of points should be between 3 and 8, but got {n_points}"
+            )
+        points = np.require(points, dtype=np.float32, requirements="C")
+        hull = compute_hull(points)
+
+    if position and rotation is not None:
+        if radius is None:
+            radius = 0.0
+        return b2d._make_polygon(hull, radius)
+    else:
+        if position is None:
+            position = (0, 0)
+        if rotation is None:
+            rotation = 0.0
+
+        if radius is None:
+            return _pyb2d3._make_offset_polygon(hull, position, rotation)
+        else:
+            return _pyb2d3._make_offset_rounded_polygon(
+                hull, position, rotation, radius
+            )
+
+
+def box(hx, hy, center=None, rotation=None, radius=None):
+    if center is None and rotation is None:
+        if radius is None:
+            return _pyb2d3._make_box(hx, hy)
+        else:
+            return _pyb2d3._make_rounded_box(hx, hy, radius)
+    else:
+        if center is None:
+            center = (0, 0)
+        if rotation is None:
+            rotation = 0.0
+
+        if radius is None:
+            return _pyb2d3._make_offset_box(hx, hy, center, rotation)
+        else:
+            return _pyb2d3._make_offset_rounded_box(hx, hy, radius, center, rotation)
+
+
+def chain_box(hx, hy, center=(0, 0), angle=None):
+    """Create a chain shape that represents a box centered at `center` with half-width `hx` and half-height `hy`."""
+    points = np.array(
+        [
+            (center[0] - hx, center[1] - hy),
+            (center[0] - hx, center[1] + hy),
+            (center[0] + hx, center[1] + hy),
+            (center[0] + hx, center[1] - hy),
+        ]
+    )
+    if angle is not None:
+        # rotate the points around the center
+        cos_angle = np.cos(angle)
+        sin_angle = np.sin(angle)
+        rotation_matrix = np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]])
+        points = np.dot(points - center, rotation_matrix) + center
+    return chain_def(points=points, is_loop=True)
 
 
 def aabb(lower_bound, upper_bound):
@@ -449,46 +605,39 @@ def aabb_arround_point(point, radius):
     return aabb(lower_bound, upper_bound)
 
 
-class DebugDraw(DebugDrawBase):
-    def __init__(self):
-        super().__init__(self)
-
-    def draw_polygon(self, vertices, color):
-        pass
-
-    def draw_solid_polygon(self, transform, vertices, radius, color):
-        pass
-
-    def draw_circle(self, center, radius, color):
-        pass
-
-    def draw_solid_circle(self, transform, radius, color):
-        pass
-
-    def draw_solid_capsule(self, p1, p2, radius, color):
-        pass
-
-    def draw_segment(self, p1, p2, color):
-        pass
-
-    def draw_transform(self, transform):
-        pass
-
-    def draw_point(self, p, size, color):
-        pass
-
-    def draw_string(self, x, y, string):
-        pass
-
-    def draw_aabb(self, aabb, color):
-        pass
+def rgb_to_hex_color(r, g, b):
+    """Convert RGB values to a hexadecimal integer."""
+    # since we have 8 bits left, lets fill them with 255
+    return (r << 16) | (g << 8) | b
 
 
-from enum import Enum
+def rgba_to_hex_color(r, g, b, a):
+    """Convert RGBA values to a hexadecimal integer."""
+    # since we have 8 bits left, lets fill them with 255
+    return (r << 24) | (g << 16) | (b << 8) | a
+
+
+def hex_color(*args):
+    """Create a HexColor object from RGB values."""
+    if len(args) == 1:
+        return args[0]  # assume it's already a hex color integer
+    elif len(args) == 3:
+        return (args[0] << 16) | (args[1] << 8) | args[2]
+    else:
+        raise ValueError(
+            "hex_color expects either a single integer or three RGB values."
+        )
+
+
+def random_hex_color():
+    """Generate a random hexadecimal color integer."""
+    r = random.randint(0, 255)
+    g = random.randint(0, 255)
+    b = random.randint(0, 255)
+    return rgb_to_hex_color(r, g, b)
 
 
 class HexColor(Enum):
-
     AliceBlue = 0xF0F8FF
     AntiqueWhite = 0xFAEBD7
     Aquamarine = 0x7FFFD4
@@ -658,3 +807,111 @@ def extend_batch_api():
 
 extend_batch_api()
 del extend_batch_api
+
+
+class PathBuilder(object):
+    def __init__(self, start):
+        self.points = [start]
+
+    def chain_def(self, is_loop=False, material=None, reverse=False):
+        points = np.require(self.points, dtype=np.float32, requirements="C")
+        if reverse:
+            points = points[::-1]
+        return chain_def(points, is_loop=is_loop, material=material)
+
+    def _point(self, **point_args):
+        assert len(point_args) == 1, (
+            "Only one of point, delta, left, right, up, down must be given"
+        )
+        last_point = self.points[-1]
+        if "point" in point_args:
+            return point_args["point"]
+        elif "delta" in point_args:
+            return (
+                last_point[0] + point_args["delta"][0],
+                last_point[1] + point_args["delta"][1],
+            )
+        elif "left" in point_args:
+            return (last_point[0] - point_args["left"], last_point[1])
+        elif "right" in point_args:
+            return (last_point[0] + point_args["right"], last_point[1])
+        elif "up" in point_args:
+            return (last_point[0], last_point[1] + point_args["up"])
+        elif "down" in point_args:
+            return (last_point[0], last_point[1] - point_args["down"])
+        else:
+            raise ValueError("No valid point or delta provided")
+
+    def line_to(self, **point_args):
+        self.points.append(self._point(**point_args))
+
+    def arc_to(
+        self, /, radius, clockwise=True, segments=10, major_arc=False, **point_args
+    ):
+        from_point = self.points[-1]
+        to_point = self._point(**point_args)
+
+        dx = to_point[0] - from_point[0]
+        dy = to_point[1] - from_point[1]
+        chord_length = math.hypot(dx, dy)
+
+        if radius < chord_length / 2:
+            raise ValueError("Radius too small to form an arc between the points")
+
+        # Midpoint of the chord
+        mx = (from_point[0] + to_point[0]) / 2
+        my = (from_point[1] + to_point[1]) / 2
+
+        # Distance from midpoint to circle center (h)
+        h = math.sqrt(radius**2 - (chord_length / 2) ** 2)
+
+        # Perpendicular unit vector to the chord
+        perp_dx = -dy / chord_length
+        perp_dy = dx / chord_length
+
+        # Compute both possible centers
+        center1 = (mx + h * perp_dx, my + h * perp_dy)
+        center2 = (mx - h * perp_dx, my - h * perp_dy)
+
+        # Compute angles from centers to points
+        def arc_angle(center):
+            a1 = math.atan2(from_point[1] - center[1], from_point[0] - center[0])
+            a2 = math.atan2(to_point[1] - center[1], to_point[0] - center[0])
+            delta = (a2 - a1) % (2 * math.pi)
+            return delta if clockwise else (2 * math.pi - delta)
+
+        # Select center that gives the minor arc in the desired direction
+        angle1 = arc_angle(center1)
+        # angle2 = arc_angle(center2)
+
+        if (angle1 <= math.pi) == major_arc:
+            center = center1
+            start_angle = math.atan2(
+                from_point[1] - center[1], from_point[0] - center[0]
+            )
+            end_angle = math.atan2(to_point[1] - center[1], to_point[0] - center[0])
+        else:
+            center = center2
+            start_angle = math.atan2(
+                from_point[1] - center[1], from_point[0] - center[0]
+            )
+            end_angle = math.atan2(to_point[1] - center[1], to_point[0] - center[0])
+
+        # Normalize angle span to always go minor arc direction
+        if clockwise:
+            if end_angle > start_angle:
+                end_angle -= 2 * math.pi
+        else:
+            if end_angle < start_angle:
+                end_angle += 2 * math.pi
+
+        # Generate arc points
+        for i in range(1, segments + 1):
+            t = i / segments
+            angle = start_angle + (end_angle - start_angle) * t
+            x = center[0] + radius * math.cos(angle)
+            y = center[1] + radius * math.sin(angle)
+            self.points.append((x, y))
+
+        # helpfull
+        return center

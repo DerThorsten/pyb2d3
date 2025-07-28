@@ -13,10 +13,11 @@ OPTION(FETCH_BOX2D          "Download/Fetch Box2D" ON)
 option(BUILD_SHARED_LIBS    "Build using shared libraries" OFF)
 
 if(FETCH_BOX2D)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     FetchContent_Declare(
         box2d
         GIT_REPOSITORY https://github.com/erincatto/box2d.git
-        GIT_TAG v3.1.0
+        GIT_TAG v3.1.1
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
     )
@@ -62,7 +63,13 @@ if(EMSCRIPTEN)
     find_package(Python COMPONENTS Interpreter Development REQUIRED)
 else()
     # Find Python
-    find_package(Python COMPONENTS Interpreter Development REQUIRED)
+
+    find_package(Python 3.10
+        REQUIRED COMPONENTS Interpreter Development.Module
+        OPTIONAL_COMPONENTS Development.SABIModule)
+        # Import nanobind through CMake's find_package mechanism
+        find_package(nanobind CONFIG REQUIRED)
+
 endif()
 
 
@@ -86,7 +93,13 @@ if(NOT PYB2D3_NO_THREADING)
     list(APPEND PY_SOURCES src/export_threadpool.cpp)
 endif()
 
-nanobind_add_module(_pyb2d3 ${PY_SOURCES})
+
+if(NOT EMSCRIPTEN)
+    nanobind_add_module(_pyb2d3 STABLE_ABI ${PY_SOURCES})
+else()
+
+    nanobind_add_module(_pyb2d3 ${PY_SOURCES})
+endif()
 
 
 if(NOT PYB2D3_NO_THREADING)

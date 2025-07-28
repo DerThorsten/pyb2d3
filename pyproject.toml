@@ -4,7 +4,6 @@ requires = ["scikit-build-core", "nanobind"]
 
 [project]
 classifiers = [
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -12,7 +11,7 @@ classifiers = [
 ]
 description = "python box2d bindings for box2d >= 3.1"
 name = "pyb2d3"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 version = "0.4.0"
 
 dependencies = [
@@ -21,9 +20,6 @@ dependencies = [
 
 
 
-[tool.cibuildwheel]
-# Necessary to see build output from the actual compilation
-build-verbosity = 1
 
 [tool.scikit-build]
 cmake.source-dir = "."
@@ -32,8 +28,44 @@ wheel.packages = ["pyb2d3"]
 # # Build stable ABI wheels for CPython 3.12+
 wheel.py-api = "cp312"
 
+[tool.scikit-build.cmake.define]
+Python_EXECUTABLE = "{sys.executable}"
+
+
 [tool.pytest.ini_options]
 minversion = "6.2.5"
 testpaths = [
     "tests"
 ]
+
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["F405", "E501"]
+
+
+
+[tool.cibuildwheel]
+
+build = ["cp310-*", "cp311-*", "cp312-*", "cp313-*"]
+
+
+# Necessary to see build output from the actual compilation
+build-verbosity = 1
+
+# Optional: run pytest to ensure that the package was correctly built
+test-command = "pytest {project}"
+test-requires = "pytest"
+
+# # Skip CPython and PyPy 3.8 / 3.9
+# skip = [
+#   "cp38-*",
+#   "pp38-*",
+#   "cp39-*",
+#   "pp39-*",
+# ]
+archs = ["auto64"]          # Only target 64 bit architectures
+
+# Needed for full C++17 support on macOS
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "10.14"

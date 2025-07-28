@@ -53,3 +53,20 @@ dist/
 
 dependencies/
 sandbox/
+
+
+# jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+
+# .vscode directory
+.vscode/
+
+
+# ignore benchmark directory
+# (contains benchmark results and scripts)
+benchmark/
+
+# ignore custom scripts
+run.sh
+init.sh
