@@ -267,61 +267,66 @@ class FrontendBaseSettings:
     multi_click_delay_ms: int = 350  # Delay in milliseconds to wait for multi-clicks
 
 
-@dataclass(kw_only=True)
 class Event:
-    handled: bool = False
+    def __init__(self, handled=False):
+        self.handled = handled
 
 
-@dataclass
 class MouseEvent(Event):
-    world_position: tuple
-    canvas_position: tuple
+    def __init__(self, world_position, canvas_position, handled=False):
+        super().__init__(handled)
+        self.world_position = world_position
+        self.canvas_position = canvas_position
 
 
-@dataclass
 class MouseLeaveEvent(Event):
-    pass
+    def __init__(self, handled=False):
+        super().__init__(handled)
 
 
-@dataclass
 class MouseEnterEvent(Event):
-    pass
+    def __init__(self, handled=False):
+        super().__init__(handled)
 
 
-@dataclass
 class MouseWheelEvent(MouseEvent):
-    delta: int
+    def __init__(self, world_position, canvas_position, delta, handled=False):
+        super().__init__(world_position, canvas_position, handled)
+        self.delta = delta
 
 
-@dataclass
 class MouseDownEvent(MouseEvent):
-    pass
+    def __init__(self, world_position, canvas_position, handled=False):
+        super().__init__(world_position, canvas_position, handled)
 
 
-@dataclass
 class MouseUpEvent(MouseEvent):
-    pass
+    def __init__(self, world_position, canvas_position, handled=False):
+        super().__init__(world_position, canvas_position, handled)
 
 
-@dataclass
 class MouseMoveEvent(MouseEvent):
-    world_delta: tuple
-    canvas_delta: tuple
+    def __init__(
+        self, world_position, canvas_position, world_delta, canvas_delta, handled=False
+    ):
+        super().__init__(world_position, canvas_position, handled)
+        self.world_delta = world_delta
+        self.canvas_delta = canvas_delta
 
 
-@dataclass
 class ClickEvent(MouseEvent):
-    pass
+    def __init__(self, world_position, canvas_position, handled=False):
+        super().__init__(world_position, canvas_position, handled)
 
 
-@dataclass
 class DoubleClickEvent(MouseEvent):
-    pass
+    def __init__(self, world_position, canvas_position, handled=False):
+        super().__init__(world_position, canvas_position, handled)
 
 
-@dataclass
 class TripleClickEvent(MouseEvent):
-    pass
+    def __init__(self, world_position, canvas_position, handled=False):
+        super().__init__(world_position, canvas_position, handled)
 
 
 class MultiClickHandler:
