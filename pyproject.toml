@@ -28,6 +28,10 @@ wheel.packages = ["pyb2d3"]
 # # Build stable ABI wheels for CPython 3.12+
 wheel.py-api = "cp312"
 
+[tool.scikit-build.cmake.define]
+Python_EXECUTABLE = "{sys.executable}"
+
+
 [tool.pytest.ini_options]
 minversion = "6.2.5"
 testpaths = [
