@@ -7,10 +7,22 @@ python bindings for Box2D 3
 [![micromamba](https://github.com/DerThorsten/pyb2d3/actions/workflows/mm.yaml/badge.svg)](https://github.com/DerThorsten/pyb2d3/actions/workflows/mm.yaml)
 [![raw-cmake](https://github.com/DerThorsten/pyb2d3/actions/workflows/raw-cmake.yaml/badge.svg)](https://github.com/DerThorsten/pyb2d3/actions/workflows/raw-cmake.yaml)
 
-# Building
-This may not work on windows!
+# Installation
 
-## micromamba + uv / pip
+## pip
+Install the python bindings with:
+```bash
+pip install pyb2d3
+```
+
+# conda based package
+
+SOON!
+
+# Building from Source
+
+Note:
+This may not work on windows!
 
 Create the development environment with:
 ```bash
@@ -22,20 +34,16 @@ Activate the environment with:
 micromamba activate pyb2d
 ```
 
-### pip
 
 Install the python bindings with:
 ```bash
 pip install .
 ```
-### uv
 
-```bash
-uv pip install .
-```
-
-
-### raw cmake
+If you prefer to build the bindings with raw cmake, you can do so with.
+This is particular usefull for iterative development since
+the rebuild times are the fastest when building with raw cmake (instead
+of using pip which relies on scikit-build-core to invoke cmake).
 
 ```bash
 mkdir build
@@ -45,16 +53,10 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
 make -j$(nproc)
 ```
 
+For iterative development one needs to add
+the source directory to the `PYTHONPATH` so that the python bindings can be imported.
+That way, changes to the pure python code are immediately available without the need to rebuild the bindings.
 
-# Testing
-## micromamba + uv / pip
-Run the tests with:
-```bash
-pytest
-```
-
-## raw cmake
-Run the tests with:
 ```bash
 PYTHONPATH=$(pwd)/src/module pytest
 ```
