@@ -93,7 +93,13 @@ if(NOT PYB2D3_NO_THREADING)
     list(APPEND PY_SOURCES src/export_threadpool.cpp)
 endif()
 
-nanobind_add_module(_pyb2d3 ${PY_SOURCES})
+
+if(NOT EMSCRIPTEN)
+    nanobind_add_module(_pyb2d3 STABLE_ABI ${PY_SOURCES})
+else()
+
+    nanobind_add_module(_pyb2d3 ${PY_SOURCES})
+endif()
 
 
 if(NOT PYB2D3_NO_THREADING)

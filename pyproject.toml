@@ -41,3 +41,26 @@ testpaths = [
 [tool.ruff.lint]
 select = ["E", "F"]
 ignore = ["F405", "E501"]
+
+
+
+[tool.cibuildwheel]
+# Necessary to see build output from the actual compilation
+build-verbosity = 1
+
+# Optional: run pytest to ensure that the package was correctly built
+test-command = "pytest"
+test-requires = "pytest"
+
+# Skip CPython and PyPy 3.8 / 3.9
+skip = [
+  "cp38-*",
+  "pp38-*",
+  "cp39-*",
+  "pp39-*",
+]
+archs = ["auto64"]          # Only target 64 bit architectures
+
+# Needed for full C++17 support on macOS
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "10.14"
