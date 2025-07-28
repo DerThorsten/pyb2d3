@@ -11,8 +11,8 @@ classifiers = [
 ]
 description = "python box2d bindings for box2d >= 3.1"
 name = "pyb2d3"
-requires-python = ">=3.10"
-version = "0.5.3"
+requires-python = ">=3.9"
+version = "0.5.4"
 
 license = "MIT"
 license-files = [
@@ -54,7 +54,13 @@ ignore = ["F405", "E501"]
 
 [tool.cibuildwheel]
 
-build = ["cp310-*", "cp311-*", "cp312-*", "cp313-*"]
+build = [
+  "cp39-*",
+  "cp310-*",
+  "cp311-*",
+  "cp312-*",
+  "cp313-*"
+]
 
 
 # Necessary to see build output from the actual compilation

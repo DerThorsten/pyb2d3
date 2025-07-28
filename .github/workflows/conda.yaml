@@ -60,7 +60,8 @@ jobs:
           cd build
           cmake .. -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
                     -Dnanobind_DIR=$NANOBIND_CMAKE_DIR \
-                    -DFETCH_BOX2D=OFF
+                    -DFETCH_BOX2D=OFF \
+                    -DPYB2D_LINK_NANOBIND_STATICALLY=OFF \
 
           cmake --build . --config Release
 

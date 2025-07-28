@@ -21,7 +21,8 @@ if true; then
         -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
         -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
         -DFETCH_BOX2D=OFF \
-        -Dnanobind_DIR=$(python -m nanobind --cmake_dir)
+        -Dnanobind_DIR=$(python -m nanobind --cmake_dir)\
+        -DPYB2D_LINK_NANOBIND_STATICALLY=OFF
 
     make -j$(nproc)
     popd
