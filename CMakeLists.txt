@@ -62,7 +62,6 @@ if(EMSCRIPTEN)
     find_package(Python COMPONENTS Interpreter Development REQUIRED)
 else()
     # Find Python
-    find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
     find_package(Python 3.10
         REQUIRED COMPONENTS Interpreter Development.Module
