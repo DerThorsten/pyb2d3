@@ -64,7 +64,7 @@ if(EMSCRIPTEN)
 else()
     # Find Python
 
-    find_package(Python 3.10
+    find_package(Python 3.9
         REQUIRED COMPONENTS Interpreter Development.Module
         OPTIONAL_COMPONENTS Development.SABIModule)
         # Import nanobind through CMake's find_package mechanism
