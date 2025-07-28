@@ -78,15 +78,15 @@ void export_world_class(nb::module_& m)
             nb::arg("filter") = b2DefaultQueryFilter()
         )
 
-        .def(
-            "cast_ray",
-            &WorldView::CastRay,
-            nb::arg("origin"),
-            nb::arg("translation"),
-            nb::arg("filter"),
-            nb::arg("fcn"),
-            nb::arg("context")
-        )
+        // .def(
+        //     "cast_ray",
+        //     &WorldView::CastRay,
+        //     nb::arg("origin"),
+        //     nb::arg("translation"),
+        //     nb::arg("filter"),
+        //     nb::arg("fcn"),
+        //     nb::arg("context")
+        // )
         .def(
             "cast_ray_closest",
             &WorldView::CastRayClosest,
