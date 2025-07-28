@@ -450,7 +450,7 @@ class IpycanvasFrontend(FrontendBase):
         _last_canvas_mouse_pos = self._last_canvas_mouse_pos
         if self._last_canvas_mouse_pos is None:
             # use center of canvas as mouse position
-            _last_canvas_mouse_pos = (
+            _last_canvas_mouse_pos = b2d.Vec2(
                 self.settings.canvas_shape[0] // 2,
                 self.settings.canvas_shape[1] // 2,
             )
@@ -506,14 +506,11 @@ class IpycanvasFrontend(FrontendBase):
     def _dispatch_events(self, event):
         try:
             if event["type"] == "mousemove":
-                mouse_pos = (event["relativeX"], event["relativeY"])
+                mouse_pos = b2d.Vec2(event["relativeX"], event["relativeY"])
                 # get the delta \
                 if self._last_canvas_mouse_pos is None:
                     self._last_canvas_mouse_pos = mouse_pos
-                delta = (
-                    mouse_pos[0] - self._last_canvas_mouse_pos[0],
-                    mouse_pos[1] - self._last_canvas_mouse_pos[1],
-                )
+                delta = mouse_pos - self._last_canvas_mouse_pos
                 # convert delta to world coordinates
                 world_delta = (
                     self.transform.scale_canvas_to_world(delta[0]),
@@ -537,7 +534,7 @@ class IpycanvasFrontend(FrontendBase):
                 self.sample.on_mouse_leave(MouseLeaveEvent())
 
             elif event["type"] == "mousedown":
-                mouse_pos = (event["relativeX"], event["relativeY"])
+                mouse_pos = b2d.Vec2(event["relativeX"], event["relativeY"])
                 self._last_canvas_mouse_pos = mouse_pos
                 world_pos = self.transform.canvas_to_world(mouse_pos)
 
@@ -551,7 +548,7 @@ class IpycanvasFrontend(FrontendBase):
                     )
                 )
             elif event["type"] == "mouseup":
-                canvas_pos = (event["relativeX"], event["relativeY"])
+                canvas_pos = b2d.Vec2(event["relativeX"], event["relativeY"])
                 world_pos = self.transform.canvas_to_world(canvas_pos)
                 self.sample.on_mouse_up(
                     MouseUpEvent(
@@ -561,7 +558,7 @@ class IpycanvasFrontend(FrontendBase):
                 )
 
             elif event["type"] == "wheel":
-                canvas_pos = (event["relativeX"], event["relativeY"])
+                canvas_pos = b2d.Vec2(event["relativeX"], event["relativeY"])
                 world_pos = self.transform.canvas_to_world(canvas_pos)
                 self.sample.on_mouse_wheel(
                     MouseWheelEvent(

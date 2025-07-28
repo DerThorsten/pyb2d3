@@ -99,7 +99,7 @@ class HeadlessTestFrontend(FrontendBase):
         self.debug_draw.draw_joints = settings.debug_draw.draw_joints
 
         self.mouse_down = False
-        self.mouse_pos = (0, 0)
+        self.mouse_pos = b2d.Vec2(0, 0)
         self.mouse_in = False
 
     def drag_camera(self, delta):
@@ -153,15 +153,12 @@ class HeadlessTestFrontend(FrontendBase):
             top_margin = self.mouse_pos[1]
             bottom_margin = self.settings.canvas_shape[1] - self.mouse_pos[1]
 
-            delta = (
+            delta = b2d.Vec2(
                 random.randint(-min(left_margin, 10), min(right_margin, 10)),
                 random.randint(-min(top_margin, 10), min(bottom_margin, 10)),
             )
+            new_pos = self.mouse_pos + delta
 
-            new_pos = (
-                self.mouse_pos[0] + delta[0],
-                self.mouse_pos[1] + delta[1],
-            )
             assert 0 <= new_pos[0] < self.settings.canvas_shape[0]
             assert 0 <= new_pos[1] < self.settings.canvas_shape[1]
 

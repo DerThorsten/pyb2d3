@@ -199,13 +199,6 @@ class UserDataStore(object):
             raise KeyError(f"Key {key} not found in UserData")
 
 
-def mid_point_squared_distance(p1, p2, p3):
-    # compute the squared distance between the mid point of p1 and p2 and p3
-    mid_x = (p1[0] + p2[0]) / 2
-    mid_y = (p1[1] + p2[1]) / 2
-    return (mid_x - p3[0]) ** 2 + (mid_y - p3[1]) ** 2
-
-
 class Goo(object):
     def __init__(self, sample):
         self.sample = sample
@@ -286,9 +279,10 @@ class Goo(object):
                     if goo_a.is_conncted_to(goo_b):
                         continue
 
-                    d = mid_point_squared_distance(
+                    d = b2d.mid_point_squared_distance(
                         goo_a.get_position(), goo_b.get_position(), pos
                     )
+
                     if d < best_distance:
                         best_distance = d
                         best_pair = (goo_a, goo_b)
@@ -420,23 +414,10 @@ class Goo(object):
             left_pupil_pos = self.body.world_point(local_left_pupil_pos)
             right_pupil_pos = self.body.world_point(local_right_pupil_pos)
         else:
-            # add world pos to the local positions
-            left_eye_pos = (
-                world_pos[0] + local_left_eye_pos[0],
-                world_pos[1] + local_left_eye_pos[1],
-            )
-            right_eye_pos = (
-                world_pos[0] + local_right_eye_pos[0],
-                world_pos[1] + local_right_eye_pos[1],
-            )
-            left_pupil_pos = (
-                world_pos[0] + local_left_pupil_pos[0],
-                world_pos[1] + local_left_pupil_pos[1],
-            )
-            right_pupil_pos = (
-                world_pos[0] + local_right_pupil_pos[0],
-                world_pos[1] + local_right_pupil_pos[1],
-            )
+            left_eye_pos = world_pos + local_left_eye_pos
+            right_eye_pos = world_pos + local_right_eye_pos
+            left_pupil_pos = world_pos + local_left_pupil_pos
+            right_pupil_pos = world_pos + local_right_pupil_pos
 
         # draw the eyes
         self.debug_draw.draw_solid_circle(

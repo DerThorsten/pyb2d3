@@ -270,7 +270,7 @@ class PygameFrontend(FrontendBase):
                     continue
 
                 # check for tripple-click first, then double-click
-                canvas_position = pygame.mouse.get_pos()
+                canvas_position = b2d.Vec2(pygame.mouse.get_pos())
                 self._last_canvas_mouse_pos = canvas_position
                 world_pos = self.transform.canvas_to_world(canvas_position)
                 self._multi_click_handler.handle_click(
@@ -285,7 +285,7 @@ class PygameFrontend(FrontendBase):
                 # only for left
                 if event.button not in (1,):
                     continue
-                canvas_position = pygame.mouse.get_pos()
+                canvas_position = b2d.Vec2(pygame.mouse.get_pos())
                 self._last_canvas_mouse_pos = canvas_position
                 world_pos = self.transform.canvas_to_world(canvas_position)
                 self.sample.on_mouse_up(
@@ -294,13 +294,11 @@ class PygameFrontend(FrontendBase):
                     )
                 )
             elif event.type == pygame.MOUSEMOTION:
-                canvas_position = pygame.mouse.get_pos()
+                canvas_position = b2d.Vec2(pygame.mouse.get_pos())
                 if self._last_canvas_mouse_pos is None:
                     self._last_canvas_mouse_pos = canvas_position
-                canvas_delta = (
-                    canvas_position[0] - self._last_canvas_mouse_pos[0],
-                    canvas_position[1] - self._last_canvas_mouse_pos[1],
-                )
+
+                canvas_delta = canvas_position - self._last_canvas_mouse_pos
                 self._last_canvas_mouse_pos = canvas_position
 
                 world_pos = self.transform.canvas_to_world(canvas_position)

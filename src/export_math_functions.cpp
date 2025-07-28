@@ -702,4 +702,35 @@ void export_math_functions(py::module_& m)
     );
 
     nb::implicitly_convertible<double, b2Rot>();
+
+
+    m.def(
+        "mid_point",
+        [](b2Vec2 p1, b2Vec2 p2)
+        {
+            return (p1 + p2) * 0.5f;
+        }
+    );
+
+
+    // some additional functions that are not in the original Box2D
+    m.def(
+        "mid_point_squared_distance",
+        [](b2Vec2 p1, b2Vec2 p2, b2Vec2 p3)
+        {
+            // compute the squared distance between the mid point of p1 and p2 and p3
+            b2Vec2 mid = (p1 + p2) * 0.5f;
+            return b2DistanceSquared(mid, p3);
+        }
+    );
+
+    m.def(
+        "mid_point_distance",
+        [](b2Vec2 p1, b2Vec2 p2, b2Vec2 p3)
+        {
+            // compute the squared distance between the mid point of p1 and p2 and p3
+            b2Vec2 mid = (p1 + p2) * 0.5f;
+            return b2Distance(mid, p3);
+        }
+    );
 };

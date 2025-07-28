@@ -74,9 +74,7 @@ void export_b2Vec2(py::module_& m)
                 {
                     throw std::runtime_error("Invalid ndarray shape");
                 }
-                new (t) b2Vec2();
-                t->x = arr(0);
-                t->y = arr(1);
+                new (t) b2Vec2{arr(0), arr(1)};
             }
         )
         // constructor from py::ndarray double
@@ -89,9 +87,7 @@ void export_b2Vec2(py::module_& m)
                 {
                     throw std::runtime_error("Invalid ndarray shape");
                 }
-                new (t) b2Vec2();
-                t->x = static_cast<float>(arr(0));
-                t->y = static_cast<float>(arr(1));
+                new (t) b2Vec2{float(arr(0)), float(arr(1))};
             }
         )
 
@@ -172,8 +168,134 @@ void export_b2Vec2(py::module_& m)
                 return b2MulSV(s, a);
             }
         )
+        .def(
+            "__rmul__",
+            [](float s, const b2Vec2& a)
+            {
+                return b2MulSV(s, a);
+            }
+        )
+        // more operators
+        .def(
+            "__truediv__",
+            [](const b2Vec2& self, float s)
+            {
+                return b2MulSV(1.0f / s, self);
+            }
+        )
+        // for __floordiv__
+        .def(
+            "__floordiv__",
+            [](const b2Vec2& self, float s)
+            {
+                return b2Vec2{std::floor(self.x / s), std::floor(self.y / s)};
+            }
+        )
+
+
+        // __ceil__
+        .def(
+            "__ceil__",
+            [](const b2Vec2& self)
+            {
+                return b2Vec2{std::ceil(self.x), std::ceil(self.y)};
+            }
+        )
+        .def(
+            "__floor__",
+            [](const b2Vec2& self)
+            {
+                return b2Vec2{std::floor(self.x), std::floor(self.y)};
+            }
+        )
+
+
+        // inplace operators
+        .def(
+            "__iadd__",
+            [](b2Vec2& self, const b2Vec2& other)
+            {
+                self.x += other.x;
+                self.y += other.y;
+                return self;
+            }
+        )
+        .def(
+            "__iadd__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x += s;
+                self.y += s;
+                return self;
+            }
+        )
+        .def(
+            "__isub__",
+            [](b2Vec2& self, const b2Vec2& other)
+            {
+                self.x -= other.x;
+                self.y -= other.y;
+                return self;
+            }
+        )
+        .def(
+            "__isub__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x -= s;
+                self.y -= s;
+                return self;
+            }
+        )
+        .def(
+            "__imul__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x *= s;
+                self.y *= s;
+                return self;
+            }
+        )
+        .def(
+            "__itruediv__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x /= s;
+                self.y /= s;
+                return self;
+            }
+        )
+        .def(
+            "__ifloordiv__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x = std::floor(self.x / s);
+                self.y = std::floor(self.y / s);
+                return self;
+            }
+        )
+        .def(
+            "__imod__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x = std::fmod(self.x, s);
+                self.y = std::fmod(self.y, s);
+                return self;
+            }
+        )
+        .def(
+            "__ipow__",
+            [](b2Vec2& self, const float s)
+            {
+                self.x = std::pow(self.x, s);
+                self.y = std::pow(self.y, s);
+                return self;
+            }
+        )
+
 
         ;
+
 
     // implicitly convert b2Vec2 to tuple
     py::implicitly_convertible<py::tuple, b2Vec2>();
