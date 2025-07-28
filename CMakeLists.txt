@@ -13,6 +13,7 @@ OPTION(FETCH_BOX2D          "Download/Fetch Box2D" ON)
 option(BUILD_SHARED_LIBS    "Build using shared libraries" OFF)
 
 if(FETCH_BOX2D)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     FetchContent_Declare(
         box2d
         GIT_REPOSITORY https://github.com/erincatto/box2d.git
