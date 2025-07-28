@@ -63,6 +63,13 @@ if(EMSCRIPTEN)
 else()
     # Find Python
     find_package(Python COMPONENTS Interpreter Development REQUIRED)
+
+    find_package(Python 3.10
+        REQUIRED COMPONENTS Interpreter Development.Module
+        OPTIONAL_COMPONENTS Development.SABIModule)
+        # Import nanobind through CMake's find_package mechanism
+        find_package(nanobind CONFIG REQUIRED)
+
 endif()
 
 
