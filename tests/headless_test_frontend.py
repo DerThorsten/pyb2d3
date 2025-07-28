@@ -148,10 +148,10 @@ class HeadlessTestFrontend(FrontendBase):
 
         # 50 % chance for a mouse move event
         if random.random() < 0.70:
-            left_margin = self.mouse_pos[0]
-            right_margin = self.settings.canvas_shape[0] - self.mouse_pos[0]
-            top_margin = self.mouse_pos[1]
-            bottom_margin = self.settings.canvas_shape[1] - self.mouse_pos[1]
+            left_margin = int(self.mouse_pos[0])
+            right_margin = int(self.settings.canvas_shape[0] - self.mouse_pos[0])
+            top_margin = int(self.mouse_pos[1])
+            bottom_margin = int(self.settings.canvas_shape[1] - self.mouse_pos[1])
 
             delta = b2d.Vec2(
                 random.randint(-min(left_margin, 10), min(right_margin, 10)),
