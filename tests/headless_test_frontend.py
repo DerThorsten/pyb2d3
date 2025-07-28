@@ -1,5 +1,6 @@
 import pyb2d3 as b2d
 from pyb2d3.samples.frontend.frontend_base import (
+    FrontendDebugDraw,
     FrontendBase,
     MouseDownEvent,
     MouseUpEvent,
@@ -11,15 +12,13 @@ from pyb2d3.samples.frontend.frontend_base import (
     TripleClickEvent,
 )
 
-from pyb2d3.debug_draw import DebugDraw
-
 import random
 
 from dataclasses import dataclass
 from pyb2d3.samples.frontend import run
 
 
-class NoopDebugDraw(DebugDraw):
+class NoopDebugDraw(FrontendDebugDraw):
     def __init__(self):
         super().__init__()
 

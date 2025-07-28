@@ -1,4 +1,5 @@
 from .frontend_base import (
+    FrontendDebugDraw,
     FrontendBase,
     MouseDownEvent,
     MouseUpEvent,
@@ -13,10 +14,7 @@ import pygame
 import sys
 
 
-from ...debug_draw import DebugDraw
-
-
-class PygameDebugDraw(DebugDraw):
+class PygameDebugDraw(FrontendDebugDraw):
     def __init__(self, transform, screen):
         self.screen = screen
         self.transform = transform

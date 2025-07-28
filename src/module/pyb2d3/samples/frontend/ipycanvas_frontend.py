@@ -1,5 +1,6 @@
 from .frontend_base import (
     FrontendBase,
+    FrontendDebugDraw,
     MouseDownEvent,
     MouseUpEvent,
     MouseMoveEvent,
@@ -19,7 +20,6 @@ import pyb2d3 as b2d
 import numpy as np
 import traceback
 
-from ...debug_draw import DebugDraw
 
 from ipycanvas.compat import Canvas
 from ipycanvas.call_repeated import set_render_loop
@@ -219,7 +219,7 @@ class BatchCircles:
         self._reset_lists()
 
 
-class IpycanvasDebugDraw(DebugDraw):
+class IpycanvasDebugDraw(FrontendDebugDraw):
     def __init__(self, transform, canvas, output_widget):
         self.canvas = canvas
         self.output_widget = output_widget
