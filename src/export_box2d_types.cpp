@@ -401,7 +401,8 @@ void export_world_def(py::module_& m)
 
                 self.finishTask = [](void* userTask, void* userContext)
                 {
-                    std::vector<std::future<void>>* futures = static_cast<std::vector<std::future<void>>*>(userTask
+                    std::vector<std::future<void>>* futures = static_cast<std::vector<std::future<void>>*>(
+                        userTask
                     );
                     for (auto& future : *futures)
                     {
