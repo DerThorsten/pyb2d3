@@ -70,3 +70,9 @@ benchmark/
 # ignore custom scripts
 run.sh
 init.sh
+
+
+.benchmarks/
+.ruff_cache/
+.pytest_cache/
+.micromamba

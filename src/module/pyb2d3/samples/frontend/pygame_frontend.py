@@ -9,9 +9,11 @@ from .frontend_base import (
     MouseEnterEvent,
 )
 
+from dataclasses import dataclass, field
 import pyb2d3 as b2d
 import pygame
 import sys
+import os
 
 
 class PygameDebugDraw(FrontendDebugDraw):
@@ -153,25 +155,47 @@ class PygameDebugDraw(FrontendDebugDraw):
         self.screen.blit(text_surface, text_rect)
 
 
+@dataclass
+class PygameHeadlessSettings:
+    screenshot_callback: callable = None
+    world_time_limit: float = 5.0
+
+
+@dataclass
+class PygameFrontendSettings(FrontendBase.Settings):
+    headless_settings: PygameHeadlessSettings = field(
+        default_factory=PygameHeadlessSettings
+    )
+
+
 class PygameFrontend(FrontendBase):
     Settings = FrontendBase.Settings
 
     def __init__(self, settings):
         super().__init__(settings)
 
-        pygame.init()
-        self.screen = pygame.display.set_mode(
-            self.settings.canvas_shape, pygame.SRCALPHA
-        )
-        self.clock = pygame.time.Clock()
+        canvas_shape = settings.canvas_shape
+        ppm = settings.ppm
+
         self.transform = b2d.CanvasWorldTransform(
-            canvas_shape=self.settings.canvas_shape,
-            ppm=self.settings.ppm,
+            canvas_shape=canvas_shape,
+            ppm=ppm,
             offset=(0, 0),
         )
 
-        # pygame.display.set_caption("Hello World")
+        headless = settings.headless
+        if not headless:
+            pygame.init()
+            self.screen = pygame.display.set_mode(self.settings.canvas_shape)
+            self.clock = pygame.time.Clock()
+        else:
+            os.environ["SDL_VIDEODRIVER"] = "dummy"
+            pygame.init()
+            pygame.display.set_mode((1, 1))
+            self.screen = pygame.Surface(self.settings.canvas_shape)
+
         self.debug_draw = PygameDebugDraw(transform=self.transform, screen=self.screen)
+
         self.debug_draw.draw_shapes = settings.debug_draw.draw_shapes
         self.debug_draw.draw_joints = settings.debug_draw.draw_joints
 
@@ -211,17 +235,39 @@ class PygameFrontend(FrontendBase):
         )
 
     def main_loop(self):
+        if self.settings.headless:
+            self._main_loop_headless()
+        else:
+            self._main_loop_non_headless()
+
+    def _main_loop_headless(self):
+        dt = 1 / self.settings.fps if self.settings.fps > 0 else 1 / 60.0
+        iteration = 0
+        while not self.sample.is_done():
+            if (
+                self.sample.world_time
+                >= self.settings.headless_settings.world_time_limit
+            ):
+                break
+
+            if self.settings.debug_draw.draw_background:
+                self.screen.fill(self.settings.debug_draw.background_color)
+
+            self.update_and_draw(dt)
+
+            if self.settings.headless_settings.screenshot_callback:
+                self.settings.headless_settings.screenshot_callback(
+                    screen=self.screen,
+                    world_time=self.sample.world_time,
+                    iteration=iteration,
+                )
+            iteration += 1
+
+        self.sample.post_run()
+
+    def _main_loop_non_headless(self):
         # center the sample in the canvas
-
         clock = self.clock
-
-        # Set up font: None = default font
-        # font = pygame.font.Font(None, 48)  # size 48
-        # # Render the text to a surface
-        # text_surface = font.render("", True, (255, 255, 255))  # white text
-        # last_text = ""
-        # text_rect = text_surface.get_rect(center=(320, 240))  # center on screen
-
         while not self.sample.is_done():
             if self.settings.debug_draw.draw_background:
                 self.screen.fill(self.settings.debug_draw.background_color)
@@ -229,24 +275,8 @@ class PygameFrontend(FrontendBase):
             dt = clock.tick_busy_loop(self.settings.fps)
             dt = dt / 1000.0  # convert to seconds
 
-            # call the sample update methods (also pre and post update)
-            # and call debug draw  (also pre and post debug draw)
             self.update_and_draw(dt)
-
-            # draw fps  and average draw time
-            # fps = clock.get_fps()
-            # fps_rounded = round(fps, 2)
-            # new_text = f"FPS: {fps_rounded:.2f}  Draw : {self.debug_draw_time:.5f}  Update : {self.sample_update_time:.5f} I: {self.iteration}"
-            # if last_text != new_text:
-            #     last_text = new_text
-            #     text_surface = font.render(last_text, True, (255, 255, 255))
-            #     text_rect = text_surface.get_rect(
-            #         center=(self.settings.canvas_shape[0] // 2, 30)
-            #     )
-            # self.screen.blit(text_surface, text_rect)
-
             self._dispatch_events()
-
             pygame.display.update()
 
         self.sample.post_run()

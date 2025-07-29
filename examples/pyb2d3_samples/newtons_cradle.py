@@ -45,7 +45,7 @@ class NewtonsCradle(SampleBase):
                 enable_spring=False,
             )
 
-        impulse = (0.5, 0)
+        impulse = (-10, 0)
         ball_body.apply_linear_impulse_to_center(impulse, wake=True)
 
     def aabb(self):
