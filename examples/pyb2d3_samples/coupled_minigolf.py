@@ -128,6 +128,10 @@ class CoupledMinigolf(SampleBase):
         self.force_vector_length = 0
         self.ball_in_hole_time = None
 
+        if self.frontend.settings.headless:
+            self.balls[0].apply_linear_impulse_to_center((0.2, 0.01), wake=True)
+            self.state = GolfState.WAITING_FOR_REST
+
     def on_mouse_down(self, event):
         if self.state == GolfState.WAITING_FOR_BALL_CLICK:
             # check if the user clicked on one of the balls
