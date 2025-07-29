@@ -6,6 +6,98 @@ from . import _pyb2d3
 from functools import partial, partialmethod
 from enum import Enum
 
+
+# __all__ = [
+#     "Vec2",
+#     "World",
+#     "Body"
+#     # defs
+#     "WorldDef",
+#     "BodyDef",
+#     "ShapeDef",
+#     "ChainDef",
+#     # joints
+#     "RevoluteJointDef",
+#     "DistanceJointDef",
+#     "PrismaticJointDef",
+#     "FilterJointDef",
+#     "WeldJointDef",
+#     "WheelJointDef",
+#     "MouseJointDef",
+#     "MotorJointDef",
+#     # other defs and classes
+#     "ExplosionDef",
+#     "SurfaceMaterial",
+#     "Filter",
+#     "QueryFilter",
+#     "AABB",
+#     "RayResult",
+#     # shapes
+#     "Circle",
+#     "Capsule",
+#     "Segment",
+#     "ChainSegment",
+#     "Polygon",
+
+#     # classes for created things
+#     "Shape",
+#     "CircleShape",
+#     "CapsuleShape",
+#     "SegmentShape",
+#     "ChainSegmentShape",
+#     "PolygonShape",
+
+#     # factories
+#     "circle",
+#     "capsule",
+#     "segment",
+#     "chain_segment",
+#     "polygon",
+#     "chain_def",
+#     "box",
+#     "chain_box",
+#     "aabb",
+#     "aabb_arround_point",
+#     "rgb_to_hex_color",
+#     "rgba_to_hex_color",
+#     "hex_color",
+#     "random_hex_color",
+#     # "HexColor",
+#     "BodyFactory",
+#     # factory functions
+#     "world_def",
+#     "body_def",
+#     "shape_def",
+#     "surface_material",
+#     "revolute_joint_def",
+#     "distance_joint_def",
+#     "prismatic_joint_def",
+#     "filter_joint_def",
+#     "weld_joint_def",
+#     "wheel_joint_def",
+#     "mouse_joint_def",
+#     "motor_joint_def",
+#     "explosion_def",
+#     # constants
+#     "STOP_QUERY",
+#     "CONTINUE_QUERY",
+#     # utility functions
+#     "make_filter",
+#     "make_query_filter",
+#     "query_filter",
+#     "create_body",
+#     "create_joint",
+#     "create_shape",
+#     "create_explosion",
+#     "create_surface_material",
+#     "create_chain",
+#     "create_polygon",
+#     "create_circle",
+#     "create_capsule",
+#     "create_segment",
+#     "create_chain_segment"
+# ]
+
 # some constats
 STOP_QUERY = False
 CONTINUE_QUERY = True
@@ -637,6 +729,7 @@ def random_hex_color():
     return rgb_to_hex_color(r, g, b)
 
 
+# ignore in doc
 class HexColor(Enum):
     AliceBlue = 0xF0F8FF
     AntiqueWhite = 0xFAEBD7

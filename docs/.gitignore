@@ -1,0 +1,10 @@
+# the dir _static/videos
+_static/videos
+
+
+# the auto generated file
+src/samples/sample_videos.rst
+
+
+# the build dir
+_build/

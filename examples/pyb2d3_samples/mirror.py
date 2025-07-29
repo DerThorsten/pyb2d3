@@ -65,6 +65,11 @@ class Mirror(SampleBase):
         )
 
     def pre_update(self, dt):
+        if self.frontend.settings.headless:
+            # to have some movement when running headless (ie for rendering a video of the sample)
+            torque = 2
+            self.laser_body.apply_torque(torque, wake=True)
+
         ray_length = self.box_radius * 2 * math.sqrt(2)
         ray_length = max(ray_length, 1)
 

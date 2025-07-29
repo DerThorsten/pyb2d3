@@ -21,3 +21,11 @@ dependencies:
   - pytest-sugarå
   # utils
   - pre-commit
+  # frontend
+  - pygame
+  # docs
+  - sphinx
+  - sphinx_rtd_theme
+  - sphinxcontrib-video
+  - sphinx-design
+  - ffmpeg
