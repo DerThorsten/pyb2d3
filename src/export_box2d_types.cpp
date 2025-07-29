@@ -1,3 +1,4 @@
+#include <nanobind/make_iterator.h>
 #include <nanobind/nanobind.h>
 #include <pyb2d3/py_converter.hpp>
 
@@ -850,42 +851,81 @@ void export_explosion_def(py::module_& m)
 void export_events(py::module_& m)
 {
     py::class_<b2SensorBeginTouchEvent>(m, "SensorBeginTouchEvent")
-        .def_rw("sensor_shape_id", &b2SensorBeginTouchEvent::sensorShapeId)
-        .def_rw("visitor_shape_id", &b2SensorBeginTouchEvent::visitorShapeId);
+        .def_ro("sensor_shape_id", &b2SensorBeginTouchEvent::sensorShapeId)
+        .def_ro("visitor_shape_id", &b2SensorBeginTouchEvent::visitorShapeId);
 
     py::class_<b2SensorEndTouchEvent>(m, "SensorEndTouchEvent")
-        .def_rw("sensor_shape_id", &b2SensorEndTouchEvent::sensorShapeId)
-        .def_rw("visitor_shape_id", &b2SensorEndTouchEvent::visitorShapeId);
+        .def_ro("sensor_shape_id", &b2SensorEndTouchEvent::sensorShapeId)
+        .def_ro("visitor_shape_id", &b2SensorEndTouchEvent::visitorShapeId);
 
     py::class_<b2SensorEvents>(m, "SensorEvents")
-        //.def_rw("begin_events", &b2SensorEvents::beginEvents)
-        // .def_rw("end_events", &b2SensorEvents::endEvents)
-        .def_rw("begin_count", &b2SensorEvents::beginCount)
-        .def_rw("end_count", &b2SensorEvents::endCount);
+        //.def_ro("begin_events", &b2SensorEvents::beginEvents)
+        // .def_ro("end_events", &b2SensorEvents::endEvents)
+        .def_ro("begin_count", &b2SensorEvents::beginCount)
+        .def_ro("end_count", &b2SensorEvents::endCount);
 
     py::class_<b2ContactBeginTouchEvent>(m, "ContactBeginTouchEvent")
-        .def_rw("shape_id_a", &b2ContactBeginTouchEvent::shapeIdA)
-        .def_rw("shape_id_b", &b2ContactBeginTouchEvent::shapeIdB)
-        .def_rw("manifold", &b2ContactBeginTouchEvent::manifold);
+        .def_ro("shape_a", &b2ContactBeginTouchEvent::shapeIdA)
+        .def_ro("shape_b", &b2ContactBeginTouchEvent::shapeIdB)
+        .def_ro("manifold", &b2ContactBeginTouchEvent::manifold);
 
     py::class_<b2ContactEndTouchEvent>(m, "ContactEndTouchEvent")
-        .def_rw("shape_id_a", &b2ContactEndTouchEvent::shapeIdA)
-        .def_rw("shape_id_b", &b2ContactEndTouchEvent::shapeIdB);
+        .def_ro("shape_a", &b2ContactEndTouchEvent::shapeIdA)
+        .def_ro("shape_b", &b2ContactEndTouchEvent::shapeIdB);
 
     py::class_<b2ContactHitEvent>(m, "ContactHitEvent")
-        .def_rw("shape_id_a", &b2ContactHitEvent::shapeIdA)
-        .def_rw("shape_id_b", &b2ContactHitEvent::shapeIdB)
-        .def_rw("point", &b2ContactHitEvent::point)
-        .def_rw("normal", &b2ContactHitEvent::normal)
-        .def_rw("approach_speed", &b2ContactHitEvent::approachSpeed);
+        .def_ro("shape_a", &b2ContactHitEvent::shapeIdA)
+        .def_ro("shape_b", &b2ContactHitEvent::shapeIdB)
+        .def_ro("point", &b2ContactHitEvent::point)
+        .def_ro("normal", &b2ContactHitEvent::normal)
+        .def_ro("approach_speed", &b2ContactHitEvent::approachSpeed);
 
     py::class_<b2ContactEvents>(m, "ContactEvents")
-        //.def_rw("begin_events", &b2ContactEvents::beginEvents)
-        //.def_rw("end_events", &b2ContactEvents::endEvents)
-        .def_rw("hit_events", &b2ContactEvents::hitEvents)
-        .def_rw("begin_count", &b2ContactEvents::beginCount)
-        .def_rw("end_count", &b2ContactEvents::endCount)
-        .def_rw("hit_count", &b2ContactEvents::hitCount);
+
+
+        .def(
+            "begin_events",
+            [](const b2ContactEvents& v)
+            {
+                return nb::make_iterator(
+                    nb::type<b2ContactEvents>(),
+                    "iterator",
+                    v.beginEvents,
+                    v.beginEvents + v.beginCount
+                );
+            },
+            nb::keep_alive<0, 1>()
+        )
+        .def(
+            "end_events",
+            [](const b2ContactEvents& v)
+            {
+                return nb::make_iterator(
+                    nb::type<b2ContactEvents>(),
+                    "iterator",
+                    v.endEvents,
+                    v.endEvents + v.endCount
+                );
+            },
+            nb::keep_alive<0, 1>()
+        )
+        .def(
+            "hit_events",
+            [](const b2ContactEvents& v)
+            {
+                return nb::make_iterator(
+                    nb::type<b2ContactEvents>(),
+                    "iterator",
+                    v.hitEvents,
+                    v.hitEvents + v.hitCount
+                );
+            },
+            nb::keep_alive<0, 1>()
+        )
+
+        .def_ro("begin_count", &b2ContactEvents::beginCount)
+        .def_ro("end_count", &b2ContactEvents::endCount)
+        .def_ro("hit_count", &b2ContactEvents::hitCount);
 
     py::class_<b2BodyMoveEvent>(m, "BodyMoveEvent")
         .def_rw("transform", &b2BodyMoveEvent::transform)
@@ -901,8 +941,8 @@ void export_events(py::module_& m)
 void export_contact_data(py::module_& m)
 {
     py::class_<b2ContactData>(m, "ContactData")
-        .def_rw("shape_id_a", &b2ContactData::shapeIdA)
-        .def_rw("shape_id_b", &b2ContactData::shapeIdB)
+        .def_rw("shape_a", &b2ContactData::shapeIdA)
+        .def_rw("shape_b", &b2ContactData::shapeIdB)
         .def_rw("manifold", &b2ContactData::manifold);
 }
 

@@ -1,6 +1,8 @@
 #include <iostream>
 
+#include <nanobind/make_iterator.h>
 #include <nanobind/nanobind.h>
+
 // stl conversion
 // #include <nanobind/stl/arr
 
@@ -354,23 +356,43 @@ void export_collision(py::module_& m)
     // b2ManifoldPoint
     py::class_<b2ManifoldPoint>(m, "ManifoldPoint")
         .def(py::init<>())
-        .def_rw("point", &b2ManifoldPoint::point)
-        .def_rw("anchor_a", &b2ManifoldPoint::anchorA)
-        .def_rw("anchor_b", &b2ManifoldPoint::anchorB)
-        .def_rw("separation", &b2ManifoldPoint::separation)
-        .def_rw("normal_impulse", &b2ManifoldPoint::normalImpulse)
-        .def_rw("tangent_impulse", &b2ManifoldPoint::tangentImpulse)
-        .def_rw("total_normal_impulse", &b2ManifoldPoint::totalNormalImpulse)
-        .def_rw("normal_velocity", &b2ManifoldPoint::normalVelocity)
-        .def_rw("id", &b2ManifoldPoint::id)
-        .def_rw("persisted", &b2ManifoldPoint::persisted);
+        .def_ro("point", &b2ManifoldPoint::point)
+        .def_ro("anchor_a", &b2ManifoldPoint::anchorA)
+        .def_ro("anchor_b", &b2ManifoldPoint::anchorB)
+        .def_ro("separation", &b2ManifoldPoint::separation)
+        .def_ro("normal_impulse", &b2ManifoldPoint::normalImpulse)
+        .def_ro("tangent_impulse", &b2ManifoldPoint::tangentImpulse)
+        .def_ro("total_normal_impulse", &b2ManifoldPoint::totalNormalImpulse)
+        .def_ro("normal_velocity", &b2ManifoldPoint::normalVelocity)
+        .def_ro("id", &b2ManifoldPoint::id)
+        .def_ro("persisted", &b2ManifoldPoint::persisted);
 
     // b2Manifold
     py::class_<b2Manifold>(m, "Manifold")
         .def(py::init<>())
         // TODO MANIFOLD POINTS
         .def_ro("point_count", &b2Manifold::pointCount)
-        .def_rw("normal", &b2Manifold::normal);
+        .def_rw("normal", &b2Manifold::normal)
+        .def(
+            "__len__",
+            [](const b2Manifold& self)
+            {
+                return self.pointCount;
+            }
+        )
+        .def(
+            "points",
+            [](const b2Manifold& self)
+            {
+                return nb::make_iterator(
+                    nb::type<b2Manifold>(),
+                    "iterator",
+                    self.points,
+                    self.points + self.pointCount
+                );
+            },
+            nb::keep_alive<0, 1>()
+        );
 
     // b2TreeStats
 
