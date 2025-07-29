@@ -57,6 +57,12 @@ class Raycast(SampleBase):
         )
 
     def post_update(self, dt):
+        # to get some action for the headless frontend
+        # where we dont get mouse inputs
+        # (this is usefull when rendering videos for the docs)
+        if self.frontend.settings.headless:
+            self.ball_body.apply_force_to_center((40, -40), wake=True)
+
         pos = self.ball_body.position
         body_angle = self.ball_body.angle
         # print(f"Ball position: {pos}")
