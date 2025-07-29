@@ -17,6 +17,11 @@ html_static_path = docs_root / "_static"
 repo_root = docs_root.parent
 examples_dir = repo_root / "examples"
 
+
+github_url = "https://github.com/DerThorsten/pyb2d3"
+github_main_url = f"{github_url}/blob/main"
+
+
 # Add the examples directory to the system path
 sys.path.insert(0, str(examples_dir))
 import pyb2d3_samples  # noqa: E402
@@ -65,9 +70,10 @@ def create_sample_videos():
     #     :poster: _static/image.png
     #     :width: 100%
 
-    rst_content = [".. grid:: 2"]
+    rst_content = [".. grid:: 3"]
     template_str = """
     .. grid-item::
+
         .. video:: /_static/videos/{video_name}.mp4
             :nocontrols:
             :autoplay:
@@ -76,10 +82,25 @@ def create_sample_videos():
             :loop:
             :poster: ../../_static/videos/{video_name}.png
             :width: 100%
+
+
+
+
+        :octicon:`mark-github`  `Source <{url}>`_
+
+
+
     """
     for sample_class in pyb2d3_samples.all_examples:
         lower_name = sample_class.__name__.lower()
-        rst_content.append(template_str.format(video_name=lower_name))
+
+        filename = sys.modules[sample_class.__module__].__file__
+        # filename relative to examples_dir
+        filename = Path(filename).relative_to(examples_dir)
+
+        url = f"{github_main_url}/examples/{filename}"
+
+        rst_content.append(template_str.format(video_name=lower_name, url=url))
 
     rst_file = docs_root / "src" / "samples" / "sample_videos.rst"
     with rst_file.open("w") as f:
