@@ -2,10 +2,10 @@
 python bindings for Box2D 3
 
 
-# badges
-[![pixi](https://github.com/DerThorsten/pyb2d3/actions/workflows/pixi.yml/badge.svg)](https://github.com/DerThorsten/pyb2d3/actions/workflows/pixi.yml)
-[![micromamba](https://github.com/DerThorsten/pyb2d3/actions/workflows/mm.yaml/badge.svg)](https://github.com/DerThorsten/pyb2d3/actions/workflows/mm.yaml)
-[![raw-cmake](https://github.com/DerThorsten/pyb2d3/actions/workflows/raw-cmake.yaml/badge.svg)](https://github.com/DerThorsten/pyb2d3/actions/workflows/raw-cmake.yaml)
+# Documentation
+
+The documentation is avaialable at [derthorsten.github.io/pyb2d3](https://derthorsten.github.io/pyb2d3/).
+
 
 # Installation
 
