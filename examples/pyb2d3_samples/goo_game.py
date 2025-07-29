@@ -820,6 +820,15 @@ class Level1(GooGame):
         self.goo_balls[1].connect(self.goo_balls[2])
         self.goo_balls[2].connect(self.goo_balls[0])
 
+        # if we are in a headless mode, add one more goo to make it a bit whobbly
+        if self.frontend.settings.headless:
+            g = goo_cls(self)
+            g.create(self.world, (3.5, 3))
+            self.goo_balls.append(g)
+
+            self.goo_balls[1].connect(g)
+            self.goo_balls[2].connect(g)
+
 
 if __name__ == "__main__":
     Level1.run()
