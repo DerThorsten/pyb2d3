@@ -110,9 +110,13 @@ def sample_to_video(
     else:
         output = os.path.join(outdir, f"{outname}.gif")
 
-    create_gif_from_video(
-        video_output, output, fps=min(max_gif_fps, fps), scale_gif_width=scale_gif_width
-    )
+    if create_gif:
+        create_gif_from_video(
+            video_output,
+            output,
+            fps=min(max_gif_fps, fps),
+            scale_gif_width=scale_gif_width,
+        )
 
     # save the first frame as a thumbnail
     first_frame = os.path.join(frame_dir, "frame_0000.png")

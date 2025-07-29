@@ -55,8 +55,8 @@ def create_sample_videos():
             frontend_settings=frontend_settings,
             outdir=out_dir,
             outname=lower_name,
-            world_time_limit=5.0,
-            max_gif_fps=15,
+            world_time_limit=6.0,
+            create_gif=False,  # set to True to create a gif
         )
 
     # create a sphinx gallery for the videos / gifs
