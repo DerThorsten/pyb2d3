@@ -265,6 +265,7 @@ class FrontendBaseSettings:
     ppm: float = 40.0  # Pixels per meter
     debug_draw: DebugDrawSettings = field(default_factory=DebugDrawSettings)
     multi_click_delay_ms: int = 350  # Delay in milliseconds to wait for multi-clicks
+    headless: bool = False  # If True, run in headless mode (no GUI)
 
 
 class Event:
