@@ -1,0 +1,86 @@
+# this file
+from pathlib import Path
+import sys
+import pyb2d3  # noqa: F401
+
+from pyb2d3.samples.frontend.pygame_frontend import (
+    PygameFrontendSettings,
+    PygameHeadlessSettings,
+)
+from pyb2d3.samples.frontend.sample_to_video import sample_to_video
+
+
+this_file = Path(__file__).resolve()
+this_dir = this_file.parent
+docs_root = this_dir.parent
+html_static_path = docs_root / "_static"
+repo_root = docs_root.parent
+examples_dir = repo_root / "examples"
+
+# Add the examples directory to the system path
+sys.path.insert(0, str(examples_dir))
+import pyb2d3_samples  # noqa: E402
+
+
+def create_sample_videos():
+    out_dir = html_static_path / "videos"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    headless_settings = PygameHeadlessSettings(world_time_limit=5.0)
+    frontend_settings = PygameFrontendSettings(
+        canvas_shape=(500, 500),
+        headless=True,  # Use headless mode for video creation]
+        headless_settings=headless_settings,
+    )
+
+    for sample_class in pyb2d3_samples.all_examples:
+        lower_name = sample_class.__name__.lower()
+
+        print(f"Creating video for sample: {sample_class.__name__} ({lower_name})")
+
+        # if the file f"{lower_name}.mp4" already exists, skip it
+        video_output = out_dir / f"{lower_name}.mp4"
+        if video_output.exists():
+            print(f"Video {video_output} already exists, skipping.")
+            continue
+
+        sample_to_video(
+            sample_class=sample_class,
+            sample_settings=None,
+            frontend_settings=frontend_settings,
+            outdir=out_dir,
+            outname=lower_name,
+            world_time_limit=5.0,
+            max_gif_fps=15,
+        )
+
+    # create a sphinx gallery for the videos / gifs
+    # create an rst file
+    # .. video:: _static/video.mp4
+    #     :nocontrols:
+    #     :autoplay:
+    #     :playsinline:
+    #     :muted:
+    #     :loop:
+    #     :poster: _static/image.png
+    #     :width: 100%
+
+    rst_content = [".. grid:: 2"]
+    template_str = """
+    .. grid-item::
+        .. video:: /_static/videos/{video_name}.mp4
+            :nocontrols:
+            :autoplay:
+            :playsinline:
+            :muted:
+            :loop:
+            :poster: ../../_static/videos/{video_name}.png
+            :width: 100%
+    """
+    for sample_class in pyb2d3_samples.all_examples:
+        lower_name = sample_class.__name__.lower()
+        rst_content.append(template_str.format(video_name=lower_name))
+
+    rst_file = docs_root / "src" / "samples" / "sample_videos.rst"
+    with rst_file.open("w") as f:
+        f.write("\n".join(rst_content))

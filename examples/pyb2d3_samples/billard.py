@@ -189,7 +189,7 @@ class Billard(SampleBase):
         # in case of a headless frontend we do one shot
         if self.frontend.settings.headless or True:
             # we create a mouse joint for the white ball
-            self.balls[-1].body.apply_linear_impulse_to_center((10, 0), wake=True)
+            self.balls[-1].body.apply_linear_impulse_to_center((3.5, 0.1), wake=True)
             self.game_state = GameState.WAITING_FOR_BALLS_TO_REST
 
     def on_mouse_down(self, event):

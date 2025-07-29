@@ -1,0 +1,68 @@
+
+name: docs
+on:
+  push:
+  pull_request:
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: dev-environment.yaml
+          init-shell: >-
+            bash
+          cache-environment: true
+          post-cleanup: 'all'
+
+      - name: build
+        shell: bash -el {0}
+        run: |
+          NANOBIND_CMAKE_DIR=$(python -m nanobind --cmake_dir)
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
+                    -Dnanobind_DIR=$NANOBIND_CMAKE_DIR \
+                    -DFETCH_BOX2D=OFF \
+                    -DPYB2D_LINK_NANOBIND_STATICALLY=OFF \
+
+          cmake --build . --config Release
+
+      - name: build docs
+        shell: bash -el {0}
+        run: |
+          export PYTHONPATH=$(pwd)/src/module
+          cd docs
+          make html
+
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html
+
+  deploy:
+      needs: build
+      if: github.ref == 'refs/heads/main'
+      permissions:
+        pages: write
+        id-token: write
+
+      environment:
+        name: github-pages
+        url: ${{ steps.deployment.outputs.page_url }}
+
+      runs-on: ubuntu-latest
+      steps:
+        - name: Deploy to GitHub Pages
+          id: deployment
+          uses: actions/deploy-pages@v4
