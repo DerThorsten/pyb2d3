@@ -2,6 +2,7 @@ import pyb2d3 as b2d
 from .frontend import run
 
 from dataclasses import dataclass
+import weakref
 
 
 @dataclass
@@ -26,8 +27,17 @@ class SampleBase(object):
             frontend_settings=frontend_settings,
         )
 
+    def __del__(self):
+        self.world.destroy()
+        self.world = None
+
+    @property
+    def frontend(self):
+        return self._frontend()
+
     def __init__(self, frontend, settings=SampleBaseSettings(), world=None):
-        self.frontend = frontend
+        # this created a cycle, so we need to break it
+        self._frontend = weakref.ref(frontend)
         self.settings = settings
         self.world = world
 

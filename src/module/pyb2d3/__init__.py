@@ -1,10 +1,46 @@
 import numpy as np
 import random
 import math
+import sys
+import os
 from ._pyb2d3 import *  # noqa: F403
 from . import _pyb2d3
 from functools import partial, partialmethod
 from enum import Enum
+from contextlib import contextmanager
+import importlib
+
+
+@contextmanager
+def with_sys_path(path):
+    # if path is a file, use its directory
+    if os.path.isfile(path):
+        path = os.path.dirname(path)
+    path = os.path.abspath(path)
+    if path not in sys.path:
+        sys.path.insert(0, path)
+    try:
+        yield
+    finally:
+        if path in sys.path:
+            sys.path.remove(path)
+
+
+def add_to_sys_path(path):
+    """Add the directory of the given file to the sys.path."""
+    # if path is a file, use its directory
+    if os.path.isfile(path):
+        path = os.path.dirname(path)
+    path = os.path.abspath(path)
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+
+def import_local(path, module_name):
+    if os.path.isfile(path):
+        path = os.path.dirname(path)
+    with with_sys_path(path):
+        return importlib.import_module(module_name)
 
 
 # __all__ = [
@@ -128,6 +164,7 @@ class World(WorldView):
         super().__init__(world_id)
 
     def __del__(self):
+        # print(f"Destroying world {self.id}")
         self.destroy()
 
 
