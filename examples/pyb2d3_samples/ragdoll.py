@@ -39,7 +39,11 @@ class Ragdoll(SampleBase):
         self._exploded = False
 
     def pre_update(self, dt):
-        if True and self.world_time > 2 and not self._exploded:
+        if (
+            self.frontend.settings.headless
+            and self.world_time > 2
+            and not self._exploded
+        ):
             self._exploded = True
             self.world.explode(
                 position=(0, -self.outer_box_radius), radius=20, impulse_per_length=20
