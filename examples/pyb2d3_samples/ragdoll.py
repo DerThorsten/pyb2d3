@@ -11,7 +11,7 @@ class Ragdoll(SampleBase):
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
 
-        self.outer_box_radius = 10
+        self.outer_box_radius = 30
         self.box_body = self.world.create_static_body(position=(0, 0))
         self.box_body.create_chain(
             b2d.chain_box(
@@ -22,31 +22,32 @@ class Ragdoll(SampleBase):
         def rand_pos():
             margin = 2
             r = self.outer_box_radius - margin
-            return (random.uniform(-r, r), random.uniform(-r, r))
+            return (random.uniform(-r, r), random.uniform(-r, 0))
 
-        num_bodies = 20
+        num_bodies = 100
         for _ in range(num_bodies):
             # ragdoll at the center
             self.ragdoll = examples_common.Ragdoll(
-                scale=3.0,
+                scale=4.0,
                 world=self.world,
                 position=rand_pos(),
                 colorize=True,
+                hertz=0.1,
             )
 
         # only relevant for a headless ui
         self._exploded = False
 
     def pre_update(self, dt):
-        if self.world_time > 2 and not self._exploded:
+        if True and self.world_time > 2 and not self._exploded:
             self._exploded = True
             self.world.explode(
-                position=(0, -self.outer_box_radius), radius=20, impulse_per_length=5
+                position=(0, -self.outer_box_radius), radius=20, impulse_per_length=20
             )
 
     def on_double_click(self, event):
         self.world.explode(
-            position=event.world_position, radius=20, impulse_per_length=5
+            position=event.world_position, radius=20, impulse_per_length=20
         )
 
     def on_triple_click(self, event):
