@@ -56,30 +56,21 @@ ignore = ["F405", "E501"]
 [tool.cibuildwheel]
 
 build = [
-  # "cp39-*",
-  # "cp310-*",
-  # "cp311-*",
+  "cp39-*",
+  "cp310-*",
+  "cp311-*",
   "cp312-*",
   "cp313-*"
 ]
 
-
 # Necessary to see build output from the actual compilation
 build-verbosity = 1
 
-# Optional: run pytest to ensure that the package was correctly built
+# run pytest to ensure that the package was correctly built
 test-command = "pytest {project}"
 test-requires = "pytest"
 
-# # Skip CPython and PyPy 3.8 / 3.9
-# skip = [
-#   "cp38-*",
-#   "pp38-*",
-#   "cp39-*",
-#   "pp39-*",
-# ]
 archs = ["auto64"]          # Only target 64 bit architectures
-
 
 [tool.cibuildwheel.macos.environment]
 MACOSX_DEPLOYMENT_TARGET = "11.0"
