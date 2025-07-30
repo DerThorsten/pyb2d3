@@ -164,7 +164,6 @@ class World(WorldView):
         super().__init__(world_id)
 
     def __del__(self):
-        # print(f"Destroying world {self.id}")
         self.destroy()
 
 
