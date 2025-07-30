@@ -1,8 +1,10 @@
 import pyb2d3 as b2d
 from pyb2d3.samples import SampleBase
-
-
 import random
+
+
+# just to get the examples_common code into the sys.path
+b2d.add_to_sys_path(__file__)
 
 
 class Tumbler(SampleBase):

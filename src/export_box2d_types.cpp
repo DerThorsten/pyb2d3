@@ -363,7 +363,13 @@ void export_world_def(py::module_& m)
         .def_rw("contact_damping_ratio", &b2WorldDef::contactDampingRatio)
         .def_rw("maximum_linear_speed", &b2WorldDef::maximumLinearSpeed)
         .def_rw("internal_value", &b2WorldDef::internalValue) EXPORT_USER_DATA(b2WorldDef)
-
+        .def(
+            "copy",
+            [](const b2WorldDef& self) -> b2WorldDef
+            {
+                return self;
+            }
+        )
 #ifndef PYB2D3_NO_THREADING
         .def(
             "_install_thread_pool",
@@ -450,8 +456,14 @@ void export_body_def(py::module_& m)
         .def_rw("is_bullet", &b2BodyDef::isBullet)
         .def_rw("is_enabled", &b2BodyDef::isEnabled)
         .def_rw("internal_value", &b2BodyDef::internalValue) EXPORT_USER_DATA(b2BodyDef)
-
-        ;
+        .def_rw("name", &b2BodyDef::name)
+        .def(
+            "copy",
+            [](const b2BodyDef& self) -> b2BodyDef
+            {
+                return self;
+            }
+        );
 }
 
 void export_filter(py::module_& m)
@@ -498,7 +510,14 @@ void export_surface_material(py::module_& m)
         .def_rw("rolling_resistance", &b2SurfaceMaterial::rollingResistance)
         .def_rw("tangent_speed", &b2SurfaceMaterial::tangentSpeed)
         .def_rw("user_material_id", &b2SurfaceMaterial::userMaterialId)
-        .def_rw("custom_color", &b2SurfaceMaterial::customColor);
+        .def_rw("custom_color", &b2SurfaceMaterial::customColor)
+        .def(
+            "copy",
+            [](const b2SurfaceMaterial& self) -> b2SurfaceMaterial
+            {
+                return self;
+            }
+        );
 }
 
 void export_shape_def(py::module_& m)
@@ -530,7 +549,14 @@ void export_shape_def(py::module_& m)
         .def_rw("enable_hit_events", &b2ShapeDef::enableHitEvents)
         .def_rw("enable_pre_solve_events", &b2ShapeDef::enablePreSolveEvents)
         .def_rw("invoke_contact_creation", &b2ShapeDef::invokeContactCreation)
-        .def_rw("update_body_mass", &b2ShapeDef::updateBodyMass) EXPORT_USER_DATA(b2ShapeDef);
+        .def_rw("update_body_mass", &b2ShapeDef::updateBodyMass) EXPORT_USER_DATA(b2ShapeDef)
+        .def(
+            "copy",
+            [](const b2ShapeDef& self) -> b2ShapeDef
+            {
+                return self;
+            }
+        );
 }
 
 void export_chain_def(py::module_& m)
@@ -603,6 +629,13 @@ void export_chain_def(py::module_& m)
             [](PyChainDef* self, bool value)
             {
                 self->chain_def.isLoop = value;
+            }
+        )
+        .def(
+            "copy",
+            [](const PyChainDef& self) -> PyChainDef
+            {
+                return self;
             }
         );
 }
@@ -686,7 +719,13 @@ void export_joint_defs(py::module_& m)
         .def_rw("max_motor_force", &b2DistanceJointDef::maxMotorForce)
         .def_rw("motor_speed", &b2DistanceJointDef::motorSpeed)
         .def_rw("collide_connected", &b2DistanceJointDef::collideConnected)
-            EXPORT_USER_DATA(b2DistanceJointDef);
+        .def(
+            "copy",
+            [](const b2DistanceJointDef& self) -> b2DistanceJointDef
+            {
+                return self;
+            }
+        ) EXPORT_USER_DATA(b2DistanceJointDef);
 
     // motor joint def
     py::class_<b2MotorJointDef>(m, "MotorJointDef")
@@ -704,7 +743,14 @@ void export_joint_defs(py::module_& m)
         .def_rw("max_force", &b2MotorJointDef::maxForce)
         .def_rw("max_torque", &b2MotorJointDef::maxTorque)
         .def_rw("correction_factor", &b2MotorJointDef::correctionFactor)
-        .def_rw("collide_connected", &b2MotorJointDef::collideConnected) EXPORT_USER_DATA(b2MotorJointDef);
+        .def_rw("collide_connected", &b2MotorJointDef::collideConnected)
+        .def(
+            "copy",
+            [](const b2MotorJointDef& self) -> b2MotorJointDef
+            {
+                return self;
+            }
+        ) EXPORT_USER_DATA(b2MotorJointDef);
 
     py::class_<b2MouseJointDef>(m, "MouseJointDef")
         .def(
@@ -720,7 +766,14 @@ void export_joint_defs(py::module_& m)
         .def_rw("max_force", &b2MouseJointDef::maxForce)
         .def_rw("hertz", &b2MouseJointDef::hertz)
         .def_rw("damping_ratio", &b2MouseJointDef::dampingRatio)
-        .def_rw("collide_connected", &b2MouseJointDef::collideConnected) EXPORT_USER_DATA(b2MouseJointDef);
+        .def_rw("collide_connected", &b2MouseJointDef::collideConnected)
+        .def(
+            "copy",
+            [](const b2MouseJointDef& self) -> b2MouseJointDef
+            {
+                return self;
+            }
+        ) EXPORT_USER_DATA(b2MouseJointDef);
 
 
     py::class_<b2PrismaticJointDef>(m, "PrismaticJointDef")
@@ -747,7 +800,13 @@ void export_joint_defs(py::module_& m)
         .def_rw("max_motor_force", &b2PrismaticJointDef::maxMotorForce)
         .def_rw("motor_speed", &b2PrismaticJointDef::motorSpeed)
         .def_rw("collide_connected", &b2PrismaticJointDef::collideConnected)
-            EXPORT_USER_DATA(b2PrismaticJointDef);
+        .def(
+            "copy",
+            [](const b2PrismaticJointDef& self) -> b2PrismaticJointDef
+            {
+                return self;
+            }
+        ) EXPORT_USER_DATA(b2PrismaticJointDef);
 
     py::class_<b2RevoluteJointDef>(m, "RevoluteJointDef")
         .def(
@@ -773,7 +832,13 @@ void export_joint_defs(py::module_& m)
         .def_rw("motor_speed", &b2RevoluteJointDef::motorSpeed)
         .def_rw("draw_size", &b2RevoluteJointDef::drawSize)
         .def_rw("collide_connected", &b2RevoluteJointDef::collideConnected)
-            EXPORT_USER_DATA(b2RevoluteJointDef);
+        .def(
+            "copy",
+            [](const b2RevoluteJointDef& self) -> b2RevoluteJointDef
+            {
+                return self;
+            }
+        ) EXPORT_USER_DATA(b2RevoluteJointDef);
 
     py::class_<b2WeldJointDef>(m, "WeldJointDef")
         .def(
@@ -792,7 +857,14 @@ void export_joint_defs(py::module_& m)
         .def_rw("angular_hertz", &b2WeldJointDef::angularHertz)
         .def_rw("linear_damping_ratio", &b2WeldJointDef::linearDampingRatio)
         .def_rw("angular_damping_ratio", &b2WeldJointDef::angularDampingRatio)
-        .def_rw("collide_connected", &b2WeldJointDef::collideConnected) EXPORT_USER_DATA(b2WeldJointDef);
+        .def_rw("collide_connected", &b2WeldJointDef::collideConnected)
+        .def(
+            "copy",
+            [](const b2WeldJointDef& self) -> b2WeldJointDef
+            {
+                return self;
+            }
+        ) EXPORT_USER_DATA(b2WeldJointDef);
 
     py::class_<b2WheelJointDef>(m, "WheelJointDef")
         .def(
@@ -816,7 +888,14 @@ void export_joint_defs(py::module_& m)
         .def_rw("enable_motor", &b2WheelJointDef::enableMotor)
         .def_rw("max_motor_torque", &b2WheelJointDef::maxMotorTorque)
         .def_rw("motor_speed", &b2WheelJointDef::motorSpeed)
-        .def_rw("collide_connected", &b2WheelJointDef::collideConnected) EXPORT_USER_DATA(b2WheelJointDef);
+        .def_rw("collide_connected", &b2WheelJointDef::collideConnected)
+        .def(
+            "copy",
+            [](const b2WheelJointDef& self) -> b2WheelJointDef
+            {
+                return self;
+            }
+        ) EXPORT_USER_DATA(b2WheelJointDef);
 
 
     py::class_<b2FilterJointDef>(m, "FilterJointDef")
@@ -828,7 +907,14 @@ void export_joint_defs(py::module_& m)
             }
         )
         .def_rw("body_a", &b2FilterJointDef::bodyIdA)
-        .def_rw("body_b", &b2FilterJointDef::bodyIdB) EXPORT_USER_DATA(b2FilterJointDef);
+        .def_rw("body_b", &b2FilterJointDef::bodyIdB)
+        .def(
+            "copy",
+            [](const b2FilterJointDef& self) -> b2FilterJointDef
+            {
+                return self;
+            }
+        ) EXPORT_USER_DATA(b2FilterJointDef);
 }
 
 void export_explosion_def(py::module_& m)
@@ -845,7 +931,14 @@ void export_explosion_def(py::module_& m)
         .def_rw("position", &b2ExplosionDef::position)
         .def_rw("radius", &b2ExplosionDef::radius)
         .def_rw("falloff", &b2ExplosionDef::falloff)
-        .def_rw("impulse_per_length", &b2ExplosionDef::impulsePerLength);
+        .def_rw("impulse_per_length", &b2ExplosionDef::impulsePerLength)
+        .def(
+            "copy",
+            [](const b2ExplosionDef& self) -> b2ExplosionDef
+            {
+                return self;
+            }
+        );
 }
 
 void export_events(py::module_& m)

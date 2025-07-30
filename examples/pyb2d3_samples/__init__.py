@@ -11,8 +11,10 @@ from .goo_game import Level1 as GooGameLevel1
 from .chain_builder import ChainBuilder
 from .billard import Billard
 from .meteor import Meteor
+from .ragdoll import Ragdoll
 
 all_examples = [
+    Ragdoll,
     Meteor,
     Mirror,
     NewtonsCradle,
