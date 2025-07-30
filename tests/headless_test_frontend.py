@@ -235,7 +235,7 @@ class HeadlessTestFrontend(FrontendBase):
         )
 
 
-def run_in_headless_test_frontend(sample_class, sample_settings=None, repeats=3):
+def run_in_headless_test_frontend(sample_class, sample_settings=None, repeats=10):
     frontend_settings = HeadlessTestFrontend.Settings()
 
     for i in range(repeats):
