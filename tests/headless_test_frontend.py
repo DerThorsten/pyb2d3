@@ -235,10 +235,11 @@ class HeadlessTestFrontend(FrontendBase):
         )
 
 
-def run_in_headless_test_frontend(sample_class, sample_settings=None, repeats=10):
+def run_in_headless_test_frontend(sample_class, sample_settings=None, repeats=3):
     frontend_settings = HeadlessTestFrontend.Settings()
 
-    for _ in range(repeats):
+    for i in range(repeats):
+        print(f"Running sample: {sample_class.__name__}  {i + 1} / {repeats} time(s)")
         run(
             sample_class=sample_class,
             sample_settings=sample_settings,

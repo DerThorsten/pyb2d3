@@ -40,7 +40,7 @@ wheel.py-api = "cp312"
 Python_EXECUTABLE = "{sys.executable}"
 
 [tool.pytest.ini_options]
-addopts = "-s"
+addopts = "-s -vvvvv"
 minversion = "6.2.5"
 testpaths = [
     "tests"

@@ -27,6 +27,9 @@ def test_subclass_exists():
 # parametrize the test with all subclasses of SampleBase
 @pytest.mark.parametrize("sample_class", pyb2d3_samples.all_examples)
 def test_sample_class(sample_class):
+    # we want to print the name of the sample class being tested
+    print(f"Testing sample class: {sample_class.__name__}")
+
     run_in_headless_test_frontend(
         sample_class=sample_class, sample_settings=sample_class.Settings()
     )
