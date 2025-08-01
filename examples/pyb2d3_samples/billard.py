@@ -262,46 +262,39 @@ class Billard(SampleBase):
 
     def pre_debug_draw(self):
         for pocket_center in self.pocket_centers:
+            t = b2d.Transform()
+            t.p = pocket_center
             self.debug_draw.draw_solid_circle(
-                center=pocket_center,
+                transform=t,
                 radius=0.5,
                 color=(10, 10, 10),
             )
 
-        self.debug_draw.draw_polygon(
-            vertices=self.outline,
-            color=(10, 150, 10),
-            line_width=4,
-            width_in_pixels=True,
-        )
+        self.debug_draw.draw_polygon(points=self.outline, color=(10, 150, 10))
 
     def post_debug_draw(self):
         for ball in self.balls:
             self.debug_draw.draw_solid_circle(
-                center=ball.body.position,
+                transform=ball.body.transform,
                 radius=self.ball_radius,
                 color=ball.color,
             )
             if ball.is_half:
-                self.debug_draw.draw_circle(
-                    center=ball.body.position,
+                self.debug_draw.draw_solid_circle(
+                    transform=ball.body.transform,
                     radius=self.ball_radius / 2,
                     color=(255, 255, 255),
-                    line_width=self.ball_radius / 4,
-                    width_in_pixels=False,
                 )
         if self.marked_point_on_white_ball is not None:
             self.debug_draw.draw_solid_circle(
-                center=self.marked_point_on_white_ball, radius=0.1, color=(255, 0, 0)
+                transform=b2d.transform(self.marked_point_on_white_ball),
+                radius=0.1,
+                color=(255, 0, 0),
             )
 
             if self.aim_point is not None:
-                self.debug_draw.draw_line(
-                    self.marked_point_on_white_ball,
-                    self.aim_point,
-                    color=(255, 0, 0),
-                    line_width=3,
-                    width_in_pixels=True,
+                self.debug_draw.draw_segment(
+                    self.marked_point_on_white_ball, self.aim_point, color=(255, 0, 0)
                 )
 
     def aabb(self):

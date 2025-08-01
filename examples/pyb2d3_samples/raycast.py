@@ -77,12 +77,8 @@ class Raycast(SampleBase):
                 origin=pos, translation=translation
             )
             if ray_result.hit:
-                self.debug_draw.draw_line(
-                    pos,
-                    ray_result.point,
-                    color=(255, 255, 125),
-                    line_width=5,
-                    width_in_pixels=True,
+                self.debug_draw.draw_segment(
+                    pos, ray_result.point, color=(255, 255, 125)
                 )
 
 

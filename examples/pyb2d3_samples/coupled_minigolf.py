@@ -11,7 +11,6 @@ from dataclasses import dataclass
 # some constants to not overcomplicate the example
 BALL_RADIUS = 0.1
 HOLE_RADIUS = 0.2
-FORCE_VECTOR_DRAW_WIDTH = 0.05
 MAX_FORCE_VECTOR_LENGTH = 2
 BALL_COLORS = [b2d.hex_color(100, 100, 220), b2d.hex_color(100, 100, 220)]
 
@@ -224,7 +223,7 @@ class CoupledMinigolf(SampleBase):
     # we use the pre_debug_draw method
     def pre_debug_draw(self):
         self.debug_draw.draw_solid_circle(
-            center=self.level.hole_position,
+            transform=b2d.transform(self.level.hole_position),
             radius=HOLE_RADIUS,
             color=b2d.hex_color(0, 0, 0),
         )
@@ -243,17 +242,16 @@ class CoupledMinigolf(SampleBase):
 
             # draw a line from the ball to the mouse position
             dragged_ball = self.balls[self.dragged_ball_index]
-            self.debug_draw.draw_line(
-                p1=dragged_ball.position,
-                p2=self.drag_pos,
+            self.debug_draw.draw_segment(
+                dragged_ball.position,
+                self.drag_pos,
                 color=b2d.hex_color(*color),
-                line_width=FORCE_VECTOR_DRAW_WIDTH,
             )
             for pos in [dragged_ball.position, self.drag_pos]:
                 self.debug_draw.draw_solid_circle(
-                    center=pos,
-                    radius=FORCE_VECTOR_DRAW_WIDTH / 2,
+                    transform=b2d.transform(pos),
                     color=b2d.hex_color(*color),
+                    radius=BALL_RADIUS * 0.5,
                 )
 
     def aabb(self):

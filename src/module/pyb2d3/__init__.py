@@ -415,6 +415,21 @@ def _extend_world():
 
     WorldView.overlap_aabb = overlap_aabb
 
+    def cast_ray(self, origin, translation, callback, query_filter=None):
+        if query_filter is None:
+            query_filter = QueryFilter()
+
+        def wrapped_cb(shape, point, normal, fraction):
+            res = callback(shape, point, normal, fraction)
+            if res is None:
+                return 1
+            else:
+                return float(res)
+
+        return self._cast_ray(origin, translation, query_filter, wrapped_cb)
+
+    WorldView.cast_ray = cast_ray
+
     def body_factory(self):
         return BodyFactory(self)
 
@@ -602,6 +617,15 @@ def create_body(world_id, *args, **kwargs):
 create_dynamic_body = partial(create_body, type=BodyType.DYNAMIC)
 create_static_body = partial(create_body, type=BodyType.STATIC)
 create_kinematic_body = partial(create_body, type=BodyType.KINEMATIC)
+
+
+def transform(p=None, q=None):
+    t = Transform()
+    if p is not None:
+        t.p = p
+    if q is not None:
+        t.q = q
+    return t
 
 
 def make_filter(**kwargs):
@@ -1044,3 +1068,7 @@ class PathBuilder(object):
 
         # helpfull
         return center
+
+
+def ray_cast_input(origin=(0, 0), translation=(0, 0), max_fraction=1.0):
+    return b2RayCastInput(origin, translation, max_fraction)

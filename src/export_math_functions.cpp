@@ -18,8 +18,42 @@ void export_math_functions(py::module_& m)
 {
     py::class_<b2Transform>(m, "Transform")
         .def(py::init<>())
+        .def(
+            "__init__",
+            [](b2Transform* t)
+            {
+                new (t) b2Transform();
+                *t = b2Transform_identity;
+            }
+        )
+        // .def("__init__", [](b2Transform* t, b2Vec2 p)
+        //     {
+        //         new (t) b2Transform();
+        //         t->p = p;
+        //         t->q = q;
+        //     }
+        //     ,
+        //     // py::arg("p") = b2Vec2{0.0f, 0.0f}//,
+        //     // py::arg("q") = b2Rot{1.0f, 0.0f}
+        // )
+
         .def_rw("p", &b2Transform::p)
-        .def_rw("q", &b2Transform::q);
+        .def_rw("q", &b2Transform::q)
+        .def(
+            "transform_point",
+            [](b2Transform& t, b2Vec2 p)
+            {
+                return b2TransformPoint(t, p);
+            }
+        )
+        .def(
+            "inv_transform_point",
+            [](b2Transform& t, b2Vec2 p)
+            {
+                return b2InvTransformPoint(t, p);
+            }
+        );
+
 
     py::class_<b2Rot>(m, "Rot")
         .def(

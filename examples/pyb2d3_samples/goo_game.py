@@ -20,161 +20,6 @@ class LevelData:
 Levels = [LevelData(), LevelData()]
 
 
-class CircleButton(object):
-    def __init__(self, center, radius):
-        self.center = center
-        self.radius = radius
-        self.sr = radius * radius
-
-    def contains(self, p):
-        return ((p[0] - self.center[0]) ** 2 + (p[1] - self.center[1]) ** 2) <= self.sr
-
-
-# check if clicks are in the hud area
-class Hud(object):
-    def __init__(self, sample, goo_classes, current_selected_goo=0):
-        self.sample = sample
-        self.goo_classes = goo_classes
-        self.goo_colors = [s.color_rgb for s in goo_classes]
-        self.current_selected_goo = current_selected_goo
-        self.n_goo_types = len(self.goo_colors)
-
-        self.margin = self.sample.canvas_shape[0] / 40
-        self.button_radius = self.sample.canvas_shape[1] / 30
-        self.is_goo_selection_expanded = False
-
-        self.selector_button_pos = (
-            self.button_radius + self.margin,
-            self.sample.canvas_shape[1] - (self.button_radius + self.margin),
-        )
-        self.claim_events_until_up_or_outside = False
-
-        self.goo_selection_buttons = [
-            CircleButton(self.selector_button_pos, self.button_radius)
-        ]
-        for i in range(self.n_goo_types):
-            x = self.selector_button_pos[0]
-            y = self.selector_button_pos[1] - (i + 1) * (
-                self.button_radius * 2 + self.margin
-            )
-            circle = CircleButton((x, y), self.button_radius)
-            self.goo_selection_buttons.append(circle)
-
-        # top left restart button
-        self.restart_button_radius = self.button_radius / 2
-        rm = self.restart_button_radius + self.margin
-        self.restart_button = CircleButton((rm, rm), self.restart_button_radius)
-
-    def draw(self):
-        self.draw_circle_button(
-            center=self.selector_button_pos,
-            color_fill=self.goo_colors[self.current_selected_goo],
-            color_stroke=(0, 0, 0),
-            line_width=4,
-            radius=self.button_radius,
-            text=self.goo_classes[self.current_selected_goo].name,
-            text_color=self.goo_classes[self.current_selected_goo].text_color,
-        )
-        if self.is_goo_selection_expanded:
-            # draw the goo selection buttons
-            for i in range(self.n_goo_types):
-                line_width = 2
-                if i == self.current_selected_goo:
-                    line_width = 4
-
-                self.draw_circle_button(
-                    center=self.goo_selection_buttons[i + 1].center,
-                    color_fill=self.goo_colors[i],
-                    line_width=line_width,
-                    radius=self.button_radius,
-                    text=self.goo_classes[i].name,
-                    text_color=self.goo_classes[i].text_color,
-                )
-
-        # draw the restart button
-        self.draw_circle_button(
-            center=self.restart_button.center,
-            radius=self.restart_button_radius,
-            color_fill=(200, 0, 0),
-            line_width=2,
-            font_size=15,
-            text="Restart",
-            text_color=(255, 255, 255),
-        )
-
-    def draw_circle_button(
-        self,
-        center,
-        radius,
-        color_fill,
-        color_stroke=(0, 0, 0),
-        line_width=1,
-        text=None,
-        font_size=20,
-        text_color=(0, 0, 0),
-    ):
-        self.sample.debug_draw.draw_solid_circle(
-            center=center,
-            radius=radius,
-            color=color_fill,
-            world_coordinates=False,
-        )
-        self.sample.debug_draw.draw_circle(
-            center=center,
-            radius=radius,
-            color=color_stroke,
-            line_width=line_width,
-            world_coordinates=False,
-        )
-        self.sample.debug_draw.draw_text(
-            text=text,
-            position=center,
-            color=text_color,
-            font_size=font_size,
-            world_coordinates=False,
-            alignment="center",
-        )
-
-    def on_mouse_down(self, event):
-        # check if the click is in the selector button
-        if self.goo_selection_buttons[0].contains(event.canvas_position):
-            # toggle the goo selection
-            self.is_goo_selection_expanded = not self.is_goo_selection_expanded
-            self.claim_events_until_up_or_outside = True
-            event.handled = True
-        elif self.is_goo_selection_expanded:
-            # check if the click is in one of the goo selection buttons
-            for i in range(self.n_goo_types):
-                if self.goo_selection_buttons[i + 1].contains(event.canvas_position):
-                    old_goo = self.current_selected_goo
-                    self.current_selected_goo = i
-                    self.is_goo_selection_expanded = False
-                    self.claim_events_until_up_or_outside = True
-                    event.handled = True
-                    if old_goo != self.current_selected_goo:
-                        self.sample.on_goo_change(self.current_selected_goo)
-                    break
-
-    def on_mouse_move(self, event):
-        if self.claim_events_until_up_or_outside:
-            event.handled = True
-
-    def on_mouse_up(self, event):
-        if self.claim_events_until_up_or_outside:
-            self.claim_events_until_up_or_outside = False
-            event.handled = True
-        else:
-            # check if the click is in the restart button
-            if self.restart_button.contains(event.canvas_position):
-                self.sample.on_restart_button()
-                event.handled = True
-
-    def on_mouse_out(self, event):
-        if self.claim_events_until_up_or_outside:
-            self.claim_events_until_up_or_outside = False
-            event.handled = True
-
-
 class UserDataStore(object):
     def __init__(self):
         self.id = 0
@@ -382,17 +227,11 @@ class Goo(object):
 
     def draw_at(self, world_pos, angle=0):
         self.debug_draw.draw_solid_circle(
-            center=world_pos,
+            transform=b2d.transform(world_pos),
             radius=self.radius,
             color=type(self).color_rgb,
         )
-        self.debug_draw.draw_circle(
-            center=world_pos,
-            radius=self.radius,
-            color=(0, 0, 0),
-            line_width=2,
-            width_in_pixels=True,
-        )
+        self.debug_draw.draw_circle(world_pos, radius=self.radius, color=(0, 0, 0))
 
         eye_radius = self.radius / 4
         eye_offset = self.radius / 2.5
@@ -421,23 +260,23 @@ class Goo(object):
 
         # draw the eyes
         self.debug_draw.draw_solid_circle(
-            center=left_eye_pos,
+            transform=b2d.transform(left_eye_pos),
             radius=eye_radius,
             color=(255, 255, 255),
         )
         self.debug_draw.draw_solid_circle(
-            center=right_eye_pos,
+            transform=b2d.transform(right_eye_pos),
             radius=eye_radius,
             color=(255, 255, 255),
         )
         # draw the pupils
         self.debug_draw.draw_solid_circle(
-            center=left_pupil_pos,
+            transform=b2d.transform(left_pupil_pos),
             radius=eye_radius / 2,
             color=(0, 0, 0),
         )
         self.debug_draw.draw_solid_circle(
-            center=right_pupil_pos,
+            transform=b2d.transform(right_pupil_pos),
             radius=eye_radius / 2,
             color=(0, 0, 0),
         )
@@ -447,14 +286,7 @@ class Goo(object):
         self.draw_at(self.body.position, self.body.angle)
 
     def draw_edge(self, p1, p2):
-        self.debug_draw.draw_line(
-            p1=p1,
-            p2=p2,
-            color=(100, 100, 100),
-            line_width=2,
-            world_coordinates=True,
-            width_in_pixels=True,
-        )
+        self.debug_draw.draw_segment(p1, p2, color=(100, 100, 100))
 
     def draw_tentative_as_goo(self, pos, other_goos):
         for goo in other_goos:
@@ -479,14 +311,7 @@ class BlueGoo(Goo):
         super().__init__(sample)
 
     def draw_edge(self, p1, p2):
-        self.debug_draw.draw_line(
-            p1=p1,
-            p2=p2,
-            color=BlueGoo.color_rgb,
-            line_width=2,
-            world_coordinates=True,
-            width_in_pixels=True,
-        )
+        self.debug_draw.draw_segment(p1=p1, p2=p2, color=BlueGoo.color_rgb)
 
 
 class WhiteGoo(Goo):
@@ -504,14 +329,7 @@ class WhiteGoo(Goo):
         self.density = 0.25  # white goo is very light
 
     def draw_edge(self, p1, p2):
-        self.debug_draw.draw_line(
-            p1=p1,
-            p2=p2,
-            color=WhiteGoo.color_rgb,
-            line_width=2,
-            world_coordinates=True,
-            width_in_pixels=True,
-        )
+        self.debug_draw.draw_segment(p1=p1, p2=p2, color=WhiteGoo.color_rgb)
 
     def can_be_placed_here(self, world, pos):
         assert self.body is None, "Goo ball already created. Cannot place again."
@@ -551,14 +369,11 @@ class RedGoo(Goo):
         self.auto_expand = True
 
     def draw_edge(self, p1, p2):
-        self.debug_draw.draw_line(
+        self.debug_draw.draw_segment(
             p1=p1,
             p2=p2,
             # rope like color (ie brown orangish)
             color=(255, 100, 0),
-            line_width=5,
-            world_coordinates=True,
-            width_in_pixels=True,
         )
 
     def can_be_placed_here(self, world, pos):
@@ -615,8 +430,6 @@ class GooGame(SampleBase):
         self.goo_classes = [BlueGoo, RedGoo, WhiteGoo, BlackGoo]
         self.selected_goo_cls = BlueGoo
 
-        self.hud = Hud(self, self.goo_classes, current_selected_goo=0)
-
         # the user data store
         self.ud = UserDataStore()
 
@@ -627,9 +440,9 @@ class GooGame(SampleBase):
         self.drag_camera = False
         # self.last_canvas_pos = None
 
-    # pressed on the hud
-    def on_restart_button(self):
-        self.frontend.set_sample(self.__class__, self.settings)
+    # # pressed on the hud
+    # def on_restart_button(self):
+    #     self.frontend.set_sample(self.__class__, self.settings)
 
     def on_goo_change(self, new_goo_type):
         # change the next goo type
@@ -637,10 +450,6 @@ class GooGame(SampleBase):
         self.next_goo = self.selected_goo_cls(self)
 
     def on_mouse_down(self, event):
-        self.hud.on_mouse_down(event)
-        if event.handled:
-            return
-
         self.mouse_is_down = True
         # self.last_canvas_pos = event.canvas_position
         self.tentative_placement = self.next_goo.can_be_placed_here(
@@ -652,10 +461,6 @@ class GooGame(SampleBase):
             self.drag_camera = True
 
     def on_mouse_move(self, event):
-        self.hud.on_mouse_move(event)
-        if event.handled:
-            return
-
         if self.mouse_is_down:
             world_point = event.world_position
             if self.drag_camera:
@@ -668,10 +473,6 @@ class GooGame(SampleBase):
         # self.last_canvas_pos = p
 
     def on_mouse_up(self, event):
-        self.hud.on_mouse_up(event)
-        if event.handled:
-            return
-
         self.mouse_is_down = False
         self.drag_camera = False
         world_point = event.world_position
@@ -744,15 +545,6 @@ class GooGame(SampleBase):
         return result
 
     def post_debug_draw(self):
-        # draw the outline
-        self.debug_draw.draw_polygon(
-            self.outer_vertices,
-            color=(100, 0, 100),
-            line_width=8,
-            world_coordinates=True,
-            width_in_pixels=True,
-        )
-
         # draw edges
         for goo in self.goo_balls:
             for other_goo, joint, created_edge in goo.connections:
@@ -771,9 +563,6 @@ class GooGame(SampleBase):
         # draw goos
         for goo in self.goo_balls:
             goo.draw()
-
-        # the hud should be drawn last
-        self.hud.draw()
 
 
 class Level1(GooGame):

@@ -24,7 +24,7 @@ class Ragdoll(SampleBase):
             r = self.outer_box_radius - margin
             return (random.uniform(-r, r), random.uniform(-r, 0))
 
-        num_bodies = 100
+        num_bodies = 20
         for _ in range(num_bodies):
             # ragdoll at the center
             self.ragdoll = examples_common.Ragdoll(

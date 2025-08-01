@@ -435,9 +435,9 @@ class IpycanvasFrontend(FrontendBase):
             self.output_widget.append_stdout(traceback.format_exc())
             raise e
 
-    def center_sample(self, sample, margin_px=10):
+    def center_sample(self, margin_px=10):
         # center the sample in the canvas
-        self.center_sample_with_transform(sample, self.transform, margin_px)
+        self.center_sample_with_transform(self.transform, margin_px)
 
     def drag_camera(self, delta):
         # drag the camera by the given delta

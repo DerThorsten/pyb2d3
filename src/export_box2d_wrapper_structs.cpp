@@ -59,6 +59,36 @@ void export_world_class(nb::module_& m)
             nb::arg("fcn")
         )
         .def(
+            "_cast_ray",
+            [](WorldView& self, b2Vec2 origin, b2Vec2 translation, b2QueryFilter filter, nanobind::object& fcn)
+            {
+                // lambda without captures st. we can pass it to the C function
+                auto fcn_lambda =
+                    [](b2ShapeId shape_id, b2Vec2 point, b2Vec2 normal, float fraction, void* context) -> float
+                {
+                    auto callable = static_cast<nanobind::object*>(context);
+                    auto result = callable->operator()(shape_id, point, normal, fraction);
+                    const float casted_result = nanobind::cast<float>(result);
+                    return casted_result;
+                };
+
+                void* context = &fcn;
+                b2TreeStats stats = b2World_CastRay(self.id, origin, translation, filter, fcn_lambda, context);
+                return stats;
+            },
+            nb::arg("origin"),
+            nb::arg("translation"),
+            nb::arg("filter"),
+            nb::arg("fcn")
+        )
+        .def(
+            "cast_ray_closest",
+            &WorldView::CastRayClosest,
+            nb::arg("origin"),
+            nb::arg("translation"),
+            nb::arg("filter") = b2DefaultQueryFilter()
+        )
+        .def(
             "shape_at_point",
             &WorldView::ShapeAtPoint,
             nb::arg("point"),
@@ -75,23 +105,6 @@ void export_world_class(nb::module_& m)
             "dynamic_body_at_point",
             &WorldView::DynamicBodyAtPoint,
             nb::arg("point"),
-            nb::arg("filter") = b2DefaultQueryFilter()
-        )
-
-        // .def(
-        //     "cast_ray",
-        //     &WorldView::CastRay,
-        //     nb::arg("origin"),
-        //     nb::arg("translation"),
-        //     nb::arg("filter"),
-        //     nb::arg("fcn"),
-        //     nb::arg("context")
-        // )
-        .def(
-            "cast_ray_closest",
-            &WorldView::CastRayClosest,
-            nb::arg("origin"),
-            nb::arg("translation"),
             nb::arg("filter") = b2DefaultQueryFilter()
         )
         .def_prop_rw("sleeping_enabled", &WorldView::IsSleepingEnabled, &WorldView::EnableSleeping, nb::arg("flag"))

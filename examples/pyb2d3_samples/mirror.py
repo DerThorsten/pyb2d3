@@ -74,15 +74,7 @@ class Mirror(SampleBase):
         ray_length = max(ray_length, 1)
 
         def draw_laser_line(start, end, reflection_count=0, color=(255, 40, 40)):
-            width = int(math.exp(-reflection_count / 30.0) * 10)
-            width = max(width, 1)
-            self.debug_draw.draw_line(
-                start,
-                end,
-                color=(255, 40, 40),
-                line_width=width,
-                width_in_pixels=True,
-            )
+            self.debug_draw.draw_segment(start, end, color=(255, 40, 40))
 
         eps = 1e-5
         pos = self.laser_body.world_point((0, -(1 - eps)))

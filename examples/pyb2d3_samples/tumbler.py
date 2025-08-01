@@ -138,7 +138,7 @@ class Tumbler(SampleBase):
         self.rounded_rectangle_radius = 0.1
         self.rounded_rectangle_width = 0.3
         self.rounded_rectangle_height = 0.1
-        for i in range(200):
+        for i in range(1200):
             # radom position in the tumbler
             x = random.uniform(
                 -box_diameter / 2 + self.rounded_rectangle_width / 2,
@@ -182,4 +182,8 @@ class Tumbler(SampleBase):
 
 
 if __name__ == "__main__":
-    Tumbler.run()
+    from pyb2d3.samples.frontend.opengl_frontend.opengl_frontend import OpenglFrontend
+
+    Tumbler.run(
+        frontend_class=OpenglFrontend, frontend_settings=OpenglFrontend.Settings()
+    )

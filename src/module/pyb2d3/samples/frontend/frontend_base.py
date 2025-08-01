@@ -4,7 +4,7 @@ import math
 from abc import ABC, abstractmethod
 
 from ...debug_draw import DebugDraw
-from ..._pyb2d3 import transform_point
+import pyb2d3 as b2d
 
 
 class FrontendDebugDraw(DebugDraw):
@@ -17,77 +17,61 @@ class FrontendDebugDraw(DebugDraw):
     def end_draw(self):
         pass
 
-    def draw_solid_rect(self, center, shape, color, world_coordinates=True):
-        # via draw solid_polygon
-        hw, hh = shape[0] / 2, shape[1] / 2
-        vertices = [
-            (center[0] - hw, center[1] - hh),
-            (center[0] + hw, center[1] - hh),
-            (center[0] + hw, center[1] + hh),
-            (center[0] - hw, center[1] + hh),
-        ]
-        self.draw_solid_polygon(vertices, color)
+    # only use this function if absolutely no other implementation is available for your debug draw implementation
+    def _poor_mans_draw_solid_capsule(self, p1, p2, radius, color):
+        # t0 = time.time()
+        x1, y1 = p1
+        x2, y2 = p2
 
-    def draw_rect(
-        self,
-        center,
-        shape,
-        line_width,
-        color,
-        width_in_pixels=False,
-        world_coordinates=True,
-    ):
-        # via draw solid_polygon
-        hw, hh = shape[0] / 2, shape[1] / 2
-        vertices = [
-            (center[0] - hw, center[1] - hh),
-            (center[0] + hw, center[1] - hh),
-            (center[0] + hw, center[1] + hh),
-            (center[0] - hw, center[1] + hh),
-        ]
-        self.draw_polygon(
-            vertices,
-            line_width=line_width,
+        dx = x2 - x1
+        dy = y2 - y1
+        length = math.hypot(dx, dy)
+
+        # Unit vector along p1->p2
+        ux = dx / length
+        uy = dy / length
+
+        # Perpendicular vector
+        px = -uy
+        py = ux
+
+        # Four corners of the rectangle part
+        corner1 = (x1 + px * radius, y1 + py * radius)
+        corner2 = (x2 + px * radius, y2 + py * radius)
+        corner3 = (x2 - px * radius, y2 - py * radius)
+        corner4 = (x1 - px * radius, y1 - py * radius)
+
+        transform = b2d.Transform()
+        transform.p = (0, 0)
+        transform.q = b2d.Rot(0)
+
+        self.draw_solid_polygon(
+            points=[corner1, corner2, corner3, corner4],
+            transform=transform,
             color=color,
-            width_in_pixels=width_in_pixels,
+            radius=0,
         )
 
-    def draw_polygon(
-        self, points, line_width, color, width_in_pixels=False, world_coordinates=True
-    ):
-        raise NotImplementedError("draw_polygon must be implemented in a subclass")
+        # Draw end circles
+        transform = b2d.Transform()
+        transform.p = b2d.Vec2(x1, y1)
+        # transform.q = b2d.Rot(0)
+        self.draw_solid_circle(transform=transform, radius=radius, color=color)
+        transform = b2d.Transform()
+        transform.p = b2d.Vec2(x2, y2)
+        # transform.q = b2d.Rot(0)
+        self.draw_solid_circle(transform=transform, radius=radius, color=color)
 
-    def draw_solid_polygon(self, points, color):
-        raise NotImplementedError(
-            "draw_solid_polygon must be implemented in a subclass"
-        )
-
-    def draw_circle(
-        self,
-        center,
-        radius,
-        line_width,
-        color,
-        width_in_pixels=False,
-        world_coordinates=True,
-    ):
-        raise NotImplementedError("draw_circle must be implemented in a subclass")
-
-    def draw_solid_circle(self, center, radius, color, world_coordinates=True):
-        raise NotImplementedError("draw_solid_circle must be implemented in a subclass")
-
-    def draw_line(
-        self, p1, p2, line_width, color, width_in_pixels=False, world_coordinates=True
-    ):
-        raise NotImplementedError("draw_line must be implemented in a subclass")
-
-    def draw_solid_rounded_polygon(self, points, radius, color, world_coordinates=True):
-        """Draw a filled polygon with rounded corners directly on the surface."""
+    # only use this function if absolutely no other implementation is available for your debug draw implementation
+    def _poor_mans_draw_solid_rounded_polygon(self, transform, points, radius, color):
         n = len(points)
 
         for i in range(n):
-            p1 = points[i]
-            p2 = points[(i + 1) % n]
+            raw_p1 = b2d.Vec2(points[i, 0], points[i, 1])
+            raw_p2 = b2d.Vec2(points[(i + 1) % n, 0], points[(i + 1) % n, 1])
+
+            p1 = transform.transform_point(raw_p1)
+            p2 = transform.transform_point(raw_p2)
 
             # Vector from p1 to p2
             dx = p2[0] - p1[0]
@@ -108,144 +92,28 @@ class FrontendDebugDraw(DebugDraw):
 
             # Draw rectangle as polygon
             # pygame.draw.polygon(surface, color, [corner1, corner2, corner3, corner4])
+            empty_transform = b2d.Transform()
+            # empty_transform.p = (0, 0)
+            # empty_transform.q = b2d.Rot(0)
             self.draw_solid_polygon(
+                transform=empty_transform,
                 points=[corner1, corner2, corner3, corner4],
                 color=color,
-                world_coordinates=world_coordinates,
+                radius=0,
             )
 
-        # Draw circles at corners
+        # # Draw circles at corners
+
         for p in points:
-            # pygame.draw.circle(surface, color, (float(p[0]), float(p[1])), radius)
-            self.draw_solid_circle(
-                center=p,
-                radius=radius,
-                color=color,
-                world_coordinates=world_coordinates,
-            )
+            tp = transform.transform_point(b2d.Vec2(p[0], p[1]))
+            ctransform = b2d.Transform()
+            ctransform.p = b2d.Vec2(tp)
+            ctransform.q = transform.q
+            self.draw_solid_circle(transform=ctransform, radius=radius, color=color)
         # draw the inner part of the polygon
         self.draw_solid_polygon(
-            points=points, color=color, world_coordinates=world_coordinates
+            points=points, transform=transform, color=color, radius=0
         )
-
-    def draw_solid_capsule(self, p1, p2, radius, color, world_coordinates=True):
-        x1, y1 = p1
-        x2, y2 = p2
-
-        dx = x2 - x1
-        dy = y2 - y1
-        length = math.hypot(dx, dy)
-
-        if length <= 0.01:
-            # Degenerate case: just draw a circle
-            # pygame.draw.circle(surface, color, (x1, y1), radius)
-            self.draw_solid_circle(center=(x1, y1), radius=radius, color=color)
-            return
-
-        # Unit vector along p1->p2
-        ux = dx / length
-        uy = dy / length
-
-        # Perpendicular vector
-        px = -uy
-        py = ux
-
-        # Four corners of the rectangle part
-        corner1 = (x1 + px * radius, y1 + py * radius)
-        corner2 = (x2 + px * radius, y2 + py * radius)
-        corner3 = (x2 - px * radius, y2 - py * radius)
-        corner4 = (x1 - px * radius, y1 - py * radius)
-
-        # Draw central rectangle
-        # pygame.draw.polygon(surface, color, [corner1, corner2, corner3, corner4])
-        self.draw_solid_polygon(
-            points=[corner1, corner2, corner3, corner4],
-            color=color,
-            world_coordinates=world_coordinates,
-        )
-
-        # Draw end circles
-        self.draw_solid_circle(
-            center=(x1, y1),
-            radius=radius,
-            color=color,
-            world_coordinates=world_coordinates,
-        )
-        self.draw_solid_circle(
-            center=(x2, y2),
-            radius=radius,
-            color=color,
-            world_coordinates=world_coordinates,
-        )
-
-    def draw_text(
-        self,
-        position,
-        text,
-        color,
-        font_size,
-        alignment="center",
-        world_coordinates=True,
-    ):
-        """Draw text on the debug surface."""
-        # This method should be implemented in a subclass to handle text rendering.
-        raise NotImplementedError("draw_text must be implemented in a subclass")
-
-    def _draw_polygon(self, vertices, color):
-        self.draw_polygon(
-            vertices, color, line_width=1, width_in_pixels=True, world_coordinates=True
-        )
-
-    def _draw_solid_polygon(self, transform, vertices, radius, color):
-        vertices = [transform_point(transform, v) for v in vertices]
-        if radius == 0:
-            self.draw_solid_polygon(vertices, color, world_coordinates=True)
-        else:
-            self.draw_solid_rounded_polygon(
-                vertices, radius=radius, color=color, world_coordinates=True
-            )
-
-    def _draw_circle(self, center, radius, color):
-        self.draw_circle(
-            center=center,
-            radius=radius,
-            line_width=1,
-            color=color,
-            width_in_pixels=True,
-            world_coordinates=True,
-        )
-
-    def _draw_solid_circle(self, transform, radius, color):
-        self.draw_solid_circle(
-            center=transform.p, radius=radius, color=color, world_coordinates=True
-        )
-
-    def _draw_solid_capsule(self, p1, p2, radius, color):
-        self.draw_solid_capsule(
-            p1=p1, p2=p2, radius=radius, color=color, world_coordinates=True
-        )
-
-    def _draw_segment(self, p1, p2, color):
-        self.draw_line(
-            p1=p1,
-            p2=p2,
-            line_width=1,
-            color=color,
-            width_in_pixels=True,
-            world_coordinates=True,
-        )
-
-    def _draw_transform(self, transform):
-        pass
-
-    def _draw_point(self, p, size, color):
-        pass
-
-    def _draw_string(self, x, y, string):
-        pass
-
-    def _draw_aabb(self, aabb, color):
-        pass
 
 
 @dataclass
@@ -274,10 +142,9 @@ class Event:
 
 
 class MouseEvent(Event):
-    def __init__(self, world_position, canvas_position, handled=False):
+    def __init__(self, world_position, handled=False):
         super().__init__(handled)
         self.world_position = world_position
-        self.canvas_position = canvas_position
 
 
 class MouseLeaveEvent(Event):
@@ -291,43 +158,40 @@ class MouseEnterEvent(Event):
 
 
 class MouseWheelEvent(MouseEvent):
-    def __init__(self, world_position, canvas_position, delta, handled=False):
-        super().__init__(world_position, canvas_position, handled)
+    def __init__(self, world_position, delta, handled=False):
+        super().__init__(world_position, handled)
         self.delta = delta
 
 
 class MouseDownEvent(MouseEvent):
-    def __init__(self, world_position, canvas_position, handled=False):
-        super().__init__(world_position, canvas_position, handled)
+    def __init__(self, world_position, handled=False):
+        super().__init__(world_position, handled)
 
 
 class MouseUpEvent(MouseEvent):
-    def __init__(self, world_position, canvas_position, handled=False):
-        super().__init__(world_position, canvas_position, handled)
+    def __init__(self, world_position, handled=False):
+        super().__init__(world_position, handled)
 
 
 class MouseMoveEvent(MouseEvent):
-    def __init__(
-        self, world_position, canvas_position, world_delta, canvas_delta, handled=False
-    ):
-        super().__init__(world_position, canvas_position, handled)
+    def __init__(self, world_position, world_delta, handled=False):
+        super().__init__(world_position, handled)
         self.world_delta = world_delta
-        self.canvas_delta = canvas_delta
 
 
 class ClickEvent(MouseEvent):
-    def __init__(self, world_position, canvas_position, handled=False):
-        super().__init__(world_position, canvas_position, handled)
+    def __init__(self, world_position, handled=False):
+        super().__init__(world_position, handled)
 
 
 class DoubleClickEvent(MouseEvent):
-    def __init__(self, world_position, canvas_position, handled=False):
-        super().__init__(world_position, canvas_position, handled)
+    def __init__(self, world_position, handled=False):
+        super().__init__(world_position, handled)
 
 
 class TripleClickEvent(MouseEvent):
-    def __init__(self, world_position, canvas_position, handled=False):
-        super().__init__(world_position, canvas_position, handled)
+    def __init__(self, world_position, handled=False):
+        super().__init__(world_position, handled)
 
 
 class MultiClickHandler:
@@ -354,12 +218,7 @@ class MultiClickHandler:
         if self.first_click_time is not None:
             if current_time - self.first_click_time > self.delayed_time:
                 #  chance for a second click timed out, we can call the first click handler
-                self.on_click(
-                    ClickEvent(
-                        world_position=self.last_world_pos,
-                        canvas_position=self.last_canvas_pos,
-                    )
-                )
+                self.on_click(ClickEvent(world_position=self.last_world_pos))
                 self.first_click_time = None
                 self.second_click_time = None
             # else # we are still waiting for a second click
@@ -371,25 +230,17 @@ class MultiClickHandler:
             if current_time - self.second_click_time > self.delayed_time:
                 # chance for a triple click timed out, we can call the second click handler
                 self.on_double_click(
-                    DoubleClickEvent(
-                        world_position=self.last_world_pos,
-                        canvas_position=self.last_canvas_pos,
-                    )
+                    DoubleClickEvent(world_position=self.last_world_pos)
                 )
                 self.first_click_time = None
                 self.second_click_time = None
 
-    def handle_click(self, world_position, canvas_position):
+    def handle_click(self, world_position):
         if self.on_double_click is None and self.on_triple_click is None:
             # if we don't have a double or triple click handler, we can just call the click handler
-            self.on_click(
-                ClickEvent(
-                    world_position=world_position, canvas_position=canvas_position
-                )
-            )
+            self.on_click(ClickEvent(world_position=world_position))
             return
 
-        self.last_canvas_pos = canvas_position
         self.last_world_pos = world_position
 
         # if we have already a second click
@@ -398,10 +249,7 @@ class MultiClickHandler:
             # the time frame is still valid
             if time.time() - self.second_click_time <= self.delayed_time:
                 self.on_triple_click(
-                    TripleClickEvent(
-                        world_position=self.last_world_pos,
-                        canvas_position=self.last_canvas_pos,
-                    )
+                    TripleClickEvent(world_position=self.last_world_pos)
                 )
             self.first_click_time = None
             self.second_click_time = None
@@ -411,10 +259,7 @@ class MultiClickHandler:
                 # click is in time frame for a second click
                 if self.on_triple_click is None:
                     self.on_double_click(
-                        DoubleClickEvent(
-                            world_position=self.last_world_pos,
-                            canvas_position=self.last_canvas_pos,
-                        )
+                        DoubleClickEvent(world_position=self.last_world_pos)
                     )
                     self.first_click_time = None
                     self.second_click_time = None
@@ -443,7 +288,8 @@ class FrontendBase(ABC):
         self.iteration = 0
 
         # record some timing information
-        self.debug_draw_time = None
+        self.acc_debug_draw_time = 0
+        self.acc_update_time = 0
 
         # sample update time
         self.sample_update_time = None
@@ -457,10 +303,12 @@ class FrontendBase(ABC):
 
     def _set_new_sample(self, sample_class, sample_settings):
         self.iteration = 0
+        self.acc_debug_draw_time = 0
+        self.acc_update_time = 0
         # construct the sample
         self.sample = self.sample_class(self, self.sample_settings)
 
-        self.center_sample(self.sample, margin_px=10)
+        self.center_sample(margin_px=10)
 
         on_double_click = getattr(self.sample, "on_double_click", None)
         on_triple_click = getattr(self.sample, "on_triple_click", None)
@@ -499,18 +347,18 @@ class FrontendBase(ABC):
         # update sample
         self.sample.pre_update(dt)
         t0 = time.time()
-
         self.sample.update(dt)
-
         self.sample_update_time = time.time() - t0
         self.sample.post_update(dt)
+        self.acc_update_time += self.sample_update_time
 
         # debug draw
         self.sample.pre_debug_draw()
         t0 = time.time()
         if self.settings.debug_draw.enabled:
             self.sample.world.draw(self.debug_draw)
-        self.debug_draw_time = time.time() - t0
+        self.acc_debug_draw_time += time.time() - t0
+
         self.sample.post_debug_draw()
         self.iteration += 1
 
@@ -520,9 +368,9 @@ class FrontendBase(ABC):
         )
 
     # this may not be applicable to all frontends
-    def center_sample_with_transform(self, sample, transform, margin_px=10):
+    def center_sample_with_transform(self, transform, margin_px=10):
         canvas_shape = self.settings.canvas_shape
-        aabb = sample.aabb()
+        aabb = self.sample.aabb()
 
         # this default implementation of center_sample
         # assumes that there is a transform attribute in the sample
