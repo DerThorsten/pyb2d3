@@ -1,5 +1,7 @@
 import pyb2d3 as b2d
-from .frontend import run
+# from .frontend import run
+
+from pyb2d3_sandbox.default_frontend import get_default_frontend
 
 from dataclasses import dataclass
 import weakref
@@ -20,12 +22,15 @@ class SampleBase(object):
     # classmethod
     @classmethod
     def run(cls, sample_settings=None, frontend_class=None, frontend_settings=None):
-        run(
-            sample_class=cls,
-            sample_settings=sample_settings,
-            frontend_class=frontend_class,
-            frontend_settings=frontend_settings,
-        )
+        if sample_settings is None:
+            sample_settings = cls.Settings()
+        if frontend_class is None:
+            frontend_class = get_default_frontend()
+        if frontend_settings is None:
+            frontend_settings = frontend_class.Settings()
+
+        frontend = frontend_class(settings=frontend_settings)
+        frontend.run(cls, sample_settings=sample_settings)
 
     def __del__(self):
         self.world.destroy()

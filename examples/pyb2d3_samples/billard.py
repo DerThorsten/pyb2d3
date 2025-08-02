@@ -1,5 +1,5 @@
 import pyb2d3 as b2d
-from pyb2d3.samples import SampleBase
+from pyb2d3_sandbox import SampleBase
 
 import numpy as np
 import math
@@ -171,7 +171,7 @@ class Billard(SampleBase):
         )
         self.balls[-1].body = white_ball
 
-        self.outline = builder.points
+        self.outline = np.array(builder.points)
 
         material = b2d.surface_material(
             restitution=1.0,
@@ -262,15 +262,14 @@ class Billard(SampleBase):
 
     def pre_debug_draw(self):
         for pocket_center in self.pocket_centers:
-            t = b2d.Transform()
-            t.p = pocket_center
+            t = b2d.transform(pocket_center)
             self.debug_draw.draw_solid_circle(
                 transform=t,
                 radius=0.5,
-                color=(10, 10, 10),
+                color=(0, 0, 0),
             )
 
-        self.debug_draw.draw_polygon(points=self.outline, color=(10, 150, 10))
+        # self.debug_draw.draw_polygon(points=self.outline, color=(10, 150, 10))
 
     def post_debug_draw(self):
         for ball in self.balls:
@@ -282,7 +281,7 @@ class Billard(SampleBase):
             if ball.is_half:
                 self.debug_draw.draw_solid_circle(
                     transform=ball.body.transform,
-                    radius=self.ball_radius / 2,
+                    radius=self.ball_radius,
                     color=(255, 255, 255),
                 )
         if self.marked_point_on_white_ball is not None:

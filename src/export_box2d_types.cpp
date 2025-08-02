@@ -109,6 +109,13 @@ void export_b2Vec2(py::module_& m)
         .def_rw("x", &b2Vec2::x)
         .def_rw("y", &b2Vec2::y)
         .def(
+            "normalize",
+            [](b2Vec2& self)
+            {
+                return b2Normalize(self);
+            }
+        )
+        .def(
             "__len__",
             [](const b2Vec2& self)
             {

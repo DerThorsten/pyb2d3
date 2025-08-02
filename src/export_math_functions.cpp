@@ -2,8 +2,9 @@
 
 // stl conversion
 // #include <nanobind/stl/arr
-#include <pyb2d3/py_converter.hpp>
+#include <iostream>
 
+#include <pyb2d3/py_converter.hpp>
 // C
 // extern "C"
 // {
@@ -17,7 +18,7 @@ namespace py = nanobind;
 void export_math_functions(py::module_& m)
 {
     py::class_<b2Transform>(m, "Transform")
-        .def(py::init<>())
+        //.def(py::init<>())
         .def(
             "__init__",
             [](b2Transform* t)
@@ -70,8 +71,8 @@ void export_math_functions(py::module_& m)
             [](b2Rot* t)
             {
                 new (t) b2Rot();
-                t->s = 1.0;
-                t->c = 0.0;
+                t->s = 0.0;
+                t->c = 1.0;
             }
         )
         .def_rw("c", &b2Rot::c)
@@ -80,7 +81,30 @@ void export_math_functions(py::module_& m)
     py::class_<b2AABB>(m, "AABB")
         .def(py::init<>())
         .def_rw("lower_bound", &b2AABB::lowerBound)
-        .def_rw("upper_bound", &b2AABB::upperBound);
+        .def_rw("upper_bound", &b2AABB::upperBound)
+        .def(
+            "center",
+            [](b2AABB& a)
+            {
+                return b2AABB_Center(a);
+            }
+        )
+        .def(
+            "contains",
+            [](b2AABB& a, b2AABB& b)
+            {
+                return b2AABB_Contains(a, b);
+            }
+        )
+        .def(
+            "is_valid",
+            [](b2AABB& a)
+            {
+                return b2IsValidAABB(a);
+            }
+        )
+
+        ;
 
     py::class_<b2Plane>(m, "Plane")
         .def(py::init<>())

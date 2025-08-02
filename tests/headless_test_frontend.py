@@ -1,5 +1,5 @@
 import pyb2d3 as b2d
-from pyb2d3.samples.frontend.frontend_base import (
+from pyb2d3_sandbox.frontend_base import (
     FrontendDebugDraw,
     FrontendBase,
     MouseDownEvent,
@@ -15,7 +15,6 @@ from pyb2d3.samples.frontend.frontend_base import (
 import random
 import time
 from dataclasses import dataclass
-from pyb2d3.samples.frontend import run
 
 
 class NoopDebugDraw(FrontendDebugDraw):
@@ -216,12 +215,19 @@ def run_in_headless_test_frontend(sample_class, sample_settings=None, repeats=10
 
     print(f"Running sample: {sample_class.__name__} ")
     t0 = time.time()
-    run(
-        sample_class=sample_class,
+    # run(
+    #     sample_class=sample_class,
+    #     sample_settings=sample_settings,
+    #     frontend_class=HeadlessTestFrontend,
+    #     frontend_settings=frontend_settings,
+    # )
+
+    sample_class.run(
         sample_settings=sample_settings,
         frontend_class=HeadlessTestFrontend,
         frontend_settings=frontend_settings,
     )
+
     elapsed_time = time.time() - t0
     time_left = total_time_budget_sec - elapsed_time
 
@@ -234,8 +240,7 @@ def run_in_headless_test_frontend(sample_class, sample_settings=None, repeats=10
             print(
                 f"Running sample: {sample_class.__name__}  {i + 2} / {repeats + 1} time(s)"
             )
-            run(
-                sample_class=sample_class,
+            sample_class.run(
                 sample_settings=sample_settings,
                 frontend_class=HeadlessTestFrontend,
                 frontend_settings=frontend_settings,

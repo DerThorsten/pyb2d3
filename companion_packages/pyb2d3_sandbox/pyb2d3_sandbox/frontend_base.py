@@ -3,11 +3,10 @@ import time
 import math
 from abc import ABC, abstractmethod
 
-from ...debug_draw import DebugDraw
 import pyb2d3 as b2d
 
 
-class FrontendDebugDraw(DebugDraw):
+class FrontendDebugDraw(b2d.DebugDraw):
     def __init__(self):
         super().__init__()
 
@@ -353,13 +352,19 @@ class FrontendBase(ABC):
         self.acc_update_time += self.sample_update_time
 
         # debug draw
+        if self.settings.debug_draw.enabled:
+            self.debug_draw.begin_draw()
+
         self.sample.pre_debug_draw()
         t0 = time.time()
         if self.settings.debug_draw.enabled:
-            self.sample.world.draw(self.debug_draw)
+            self.sample.world.draw(self.debug_draw, call_begin_end=False)
         self.acc_debug_draw_time += time.time() - t0
 
         self.sample.post_debug_draw()
+
+        if self.settings.debug_draw.enabled:
+            self.debug_draw.end_draw()
         self.iteration += 1
 
     def center_sample(self, sample, margin_px=10):

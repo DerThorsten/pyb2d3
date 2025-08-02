@@ -1,5 +1,5 @@
 import pyb2d3 as b2d
-from pyb2d3.samples import SampleBase
+from pyb2d3_sandbox.sample_base import SampleBase
 import random
 
 
@@ -182,8 +182,4 @@ class Tumbler(SampleBase):
 
 
 if __name__ == "__main__":
-    from pyb2d3.samples.frontend.opengl_frontend.opengl_frontend import OpenglFrontend
-
-    Tumbler.run(
-        frontend_class=OpenglFrontend, frontend_settings=OpenglFrontend.Settings()
-    )
+    Tumbler.run()

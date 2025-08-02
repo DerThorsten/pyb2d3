@@ -1,4 +1,4 @@
-from .frontend_base import (
+from pyb2d3_sandbox.frontend_base import (
     FrontendBase,
     FrontendDebugDraw,
     MouseDownEvent,

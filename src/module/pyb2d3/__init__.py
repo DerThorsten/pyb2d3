@@ -375,10 +375,12 @@ def _extend_world():
         WorldView.create_body, type=BodyType.KINEMATIC
     )
 
-    def draw(self, debug_draw=None):
-        debug_draw.begin_draw()
+    def draw(self, debug_draw, call_begin_end=True):
+        if call_begin_end:
+            debug_draw.begin_draw()
         self._draw(debug_draw)
-        debug_draw.end_draw()
+        if call_begin_end:
+            debug_draw.end_draw()
 
     WorldView.draw = draw
 
@@ -1072,3 +1074,38 @@ class PathBuilder(object):
 
 def ray_cast_input(origin=(0, 0), translation=(0, 0), max_fraction=1.0):
     return b2RayCastInput(origin, translation, max_fraction)
+
+
+class DebugDraw(DebugDrawBase):
+    def __init__(self):
+        super().__init__(self)
+
+    def draw_polygon(self, vertices, color):
+        pass
+
+    def draw_solid_polygon(self, transform, vertices, radius, color):
+        pass
+
+    def draw_circle(self, center, radius, color):
+        pass
+
+    def draw_solid_circle(self, transform, radius, color):
+        pass
+
+    def draw_solid_capsule(self, p1, p2, radius, color):
+        pass
+
+    def draw_segment(self, p1, p2, color):
+        pass
+
+    def draw_transform(self, transform):
+        pass
+
+    def draw_point(self, p, size, color):
+        pass
+
+    def draw_string(self, x, y, string):
+        pass
+
+    def draw_aabb(self, aabb, color):
+        pass

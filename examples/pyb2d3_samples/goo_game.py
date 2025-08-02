@@ -1,6 +1,6 @@
 import pyb2d3 as b2d
 import numpy as np
-from pyb2d3.samples import SampleBase
+from pyb2d3_sandbox import SampleBase
 
 
 from dataclasses import dataclass

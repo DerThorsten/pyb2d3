@@ -76,3 +76,8 @@ init.sh
 .ruff_cache/
 .pytest_cache/
 .micromamba
+]
+
+
+# egg-info directories ALL OF THEM
+**/*.egg-info/
