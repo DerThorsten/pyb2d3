@@ -21,7 +21,7 @@ import numpy as np
 import traceback
 
 from ipycanvas.compat import Canvas
-from ipycanvas.call_repeated import set_render_loop
+# from ipycanvas.call_repeated import set_render_loop
 
 
 is_emscripten = sys.platform.startswith("emscripten")
@@ -31,6 +31,7 @@ if not is_emscripten:
 X_AXIS = b2d.Vec2(1.0, 0.0)
 Y_AXIS = b2d.Vec2(0.0, 1.0)
 
+from .render_loop import set_render_loop
 
 def html_color(color):
     if isinstance(color, int):
