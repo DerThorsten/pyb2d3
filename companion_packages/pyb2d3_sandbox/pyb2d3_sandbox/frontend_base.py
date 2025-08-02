@@ -127,8 +127,8 @@ class DebugDrawSettings:
 @dataclass
 class FrontendBaseSettings:
     canvas_shape: tuple = (1200, 1200)
-    fps: int = 60
-    substeps: int = 20
+    fps: int = 30
+    substeps: int = 5
     ppm: float = 40.0  # Pixels per meter
     debug_draw: DebugDrawSettings = field(default_factory=DebugDrawSettings)
     multi_click_delay_ms: int = 350  # Delay in milliseconds to wait for multi-clicks

@@ -57,10 +57,11 @@ Tracebacks of the import errors:
             from pyb2d3_sandbox_ipycanvas import IpycanvasFrontend
         except ImportError:
             has_ipycanvas_frontend = False
+            tracebacks.append(traceback.format_exc())
         if has_ipycanvas_frontend:
             _CachedDefaultFrontend = IpycanvasFrontend
             return _CachedDefaultFrontend
 
-        raise ImportError(
-            "No default frontend available. Please install pyb2d3-sandbox-ipycanvas for Jupyter notebook support."
-        )
+        raise ImportError(f"""No default frontend available. Please install pyb2d3-sandbox-ipycanvas for Jupyter notebook support.
+Tracebacks of the import errors:
+{"".join(tracebacks)}""")

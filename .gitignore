@@ -81,3 +81,7 @@ init.sh
 
 # egg-info directories ALL OF THEM
 **/*.egg-info/
+
+
+# the notebooks atm
+examples/notebooks/

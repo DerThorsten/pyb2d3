@@ -3,12 +3,6 @@ from pathlib import Path
 import sys
 import pyb2d3  # noqa: F401
 
-from pyb2d3.samples.frontend.pygame_frontend import (
-    PygameFrontendSettings,
-    PygameHeadlessSettings,
-)
-from pyb2d3.samples.frontend.sample_to_video import sample_to_video
-
 
 this_file = Path(__file__).resolve()
 this_dir = this_file.parent
@@ -16,6 +10,17 @@ docs_root = this_dir.parent
 html_static_path = docs_root / "_static"
 repo_root = docs_root.parent
 examples_dir = repo_root / "examples"
+
+companion_packages = repo_root / "companion_packages"
+pyb2d3_sandbox = companion_packages / "pyb2d3_sandbox"
+
+# add to sys.path
+sys.path.insert(0, str(pyb2d3_sandbox))
+from pyb2d3_sandbox_pygame import (
+    PygameFrontendSettings,
+    PygameHeadlessSettings,
+)
+from pyb2d3_sandbox_pygame.sample_to_video import sample_to_video
 
 
 github_url = "https://github.com/DerThorsten/pyb2d3"

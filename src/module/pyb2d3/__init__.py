@@ -1080,10 +1080,10 @@ class DebugDraw(DebugDrawBase):
     def __init__(self):
         super().__init__(self)
 
-    def draw_polygon(self, vertices, color):
+    def draw_polygon(self, points, color):
         pass
 
-    def draw_solid_polygon(self, transform, vertices, radius, color):
+    def draw_solid_polygon(self, transform, points, radius, color):
         pass
 
     def draw_circle(self, center, radius, color):

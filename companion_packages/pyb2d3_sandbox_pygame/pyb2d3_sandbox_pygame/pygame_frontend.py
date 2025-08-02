@@ -101,7 +101,7 @@ class PygameDebugDraw(FrontendDebugDraw):
         # convert point to canvas coordinates
         canvas_point = self.world_to_canvas(p)
         # canvas_size = self.transform.scale_world_to_canvas(size)
-        pygame.draw.circle(self.screen, color, canvas_point, int(size + 0.5), 0)
+        pygame.draw.circle(self.screen, color, canvas_point, int(size / 2 + 0.5), 0)
 
     def draw_string(self, x, y, string):
         # convert position to canvas coordinates
