@@ -33,6 +33,7 @@ Y_AXIS = b2d.Vec2(0.0, 1.0)
 
 from .render_loop import set_render_loop
 
+
 def html_color(color):
     if isinstance(color, int):
         return "#{:06X}".format(color)
@@ -505,7 +506,7 @@ class IpycanvasFrontend(FrontendBase):
                 self.sample.on_mouse_wheel(
                     MouseWheelEvent(
                         world_position=world_pos,
-                        delta=-event["deltaY"] / 10.0,
+                        delta=-event["deltaY"] / 30.0,
                     )
                 )
 
