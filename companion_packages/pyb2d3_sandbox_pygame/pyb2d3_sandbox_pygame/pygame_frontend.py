@@ -26,7 +26,6 @@ class PygameDebugDraw(FrontendDebugDraw):
 
         self.font_cache = {}
 
-
         # helper to speed up drawing of capsules
         self._capsule_builder = b2d.CapsuleBuilderWithTransform(
             transform=self.transform,
@@ -124,11 +123,6 @@ class PygameDebugDraw(FrontendDebugDraw):
         n_vertices = self._capsule_builder.build(p1, p2, radius)
         canvas_vertices = self._capsule_vertices_buffer[0:n_vertices]
         pygame.draw.polygon(self.screen, color, canvas_vertices, 0)
-
-
-
-
-    
 
 
 @dataclass

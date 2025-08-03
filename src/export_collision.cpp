@@ -196,8 +196,8 @@ void export_collision(py::module_& m)
             [](b2Hull* self)
             {
                 return ArrayVec2(
-                    reinterpret_cast<float*>(self->points)
-                    , {std::size_t(self->count), std::size_t(2)}  // shape
+                    reinterpret_cast<float*>(self->points),
+                    {std::size_t(self->count), std::size_t(2)}  // shape
                 );
             },
             [](b2Hull* self, ArrayVec2 value)

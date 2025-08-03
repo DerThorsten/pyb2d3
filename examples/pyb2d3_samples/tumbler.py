@@ -183,4 +183,5 @@ class Tumbler(SampleBase):
 
 if __name__ == "__main__":
     from pyb2d3_sandbox_pygame import PygameFrontend
+
     Tumbler.run(frontend_class=PygameFrontend)

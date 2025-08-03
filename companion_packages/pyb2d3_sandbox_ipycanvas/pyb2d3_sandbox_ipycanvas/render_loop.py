@@ -3,9 +3,9 @@ import asyncio
 import time
 import sys
 
+
 async def _call_repeated(func, fps, mandatory_minimum_sleep_time):
     try:
-
         interval = 1 / fps
         last_start_time = time.time()
 
@@ -19,18 +19,17 @@ async def _call_repeated(func, fps, mandatory_minimum_sleep_time):
                 print(f"Error in repeated function call: {e}", file=sys.stderr)
                 break
 
-
             elapsed_time = time.time() - start_time
             sleep_time = max(mandatory_minimum_sleep_time, interval - elapsed_time)
             await asyncio.sleep(sleep_time)
     except asyncio.CancelledError:
         # If the task is cancelled, we just exit the loop
         pass
-            
+
 
 def call_repeated(func, fps, mandatory_minimum_sleep_time):
     """Call a function repeatedly at a given frame rate.
-    Since we map an fps to requestAnimationFrame, for the 
+    Since we map an fps to requestAnimationFrame, for the
     emscripten/lite environment, we use 60hz as default when fps is 0.
 
     Args:
@@ -41,7 +40,7 @@ def call_repeated(func, fps, mandatory_minimum_sleep_time):
                                 In particular mouse updates
     """
     if fps == 0:
-        # this is a special case, because for lite 
+        # this is a special case, because for lite
         # this mean "use requestAnimationFrame"
         # so here we just assume this means 60hz
         fps = 60
@@ -52,7 +51,8 @@ def call_repeated(func, fps, mandatory_minimum_sleep_time):
     # Return a lambda that can be used to cancel the loop
     return lambda: task.cancel()
 
-def set_render_loop(canvas, func, fps=0, mandatory_minimum_sleep_time=1/100):
+
+def set_render_loop(canvas, func, fps=0, mandatory_minimum_sleep_time=1 / 100):
     """Set a render loop for the canvas.
     This is used to call the function repeatedly at a given frame rate.
     We use the hold_canvas context manager so we only send one message to the frontend per frame.
@@ -62,7 +62,9 @@ def set_render_loop(canvas, func, fps=0, mandatory_minimum_sleep_time=1/100):
         func: The function to call repeatedly.
         fps: The frame rate to call the function at. If 0, requestAnimationFrame
     """
+
     def wrapped_func(dt):
         with hold_classic_canvas():
             func(dt)
+
     return call_repeated(wrapped_func, fps, mandatory_minimum_sleep_time)
