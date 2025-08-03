@@ -1,5 +1,7 @@
 #include <nanobind/make_iterator.h>
 #include <nanobind/nanobind.h>
+// std::string in nanobind
+#include <nanobind/stl/string.h>
 #include <pyb2d3/py_converter.hpp>
 
 #ifndef PYB2D3_NO_THREADING
@@ -53,6 +55,15 @@ void export_b2Vec2(py::module_& m)
                 t->y = y;
             }
         )
+        // copy constructor
+        .def(
+            "__init__",
+            [](b2Vec2* t, const b2Vec2& other)
+            {
+                new (t) b2Vec2(other);
+            }
+        )
+
         // custom constructor from py::tuple
         .def(
             "__init__",
@@ -98,6 +109,13 @@ void export_b2Vec2(py::module_& m)
         .def_rw("x", &b2Vec2::x)
         .def_rw("y", &b2Vec2::y)
         .def(
+            "normalize",
+            [](b2Vec2& self)
+            {
+                return b2Normalize(self);
+            }
+        )
+        .def(
             "__len__",
             [](const b2Vec2& self)
             {
@@ -141,7 +159,7 @@ void export_b2Vec2(py::module_& m)
             "__repr__",
             [](const b2Vec2& v)
             {
-                return "b2Vec2(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")";
+                return ("b2Vec2(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")");
             }
         )
         .def(
@@ -408,7 +426,8 @@ void export_world_def(py::module_& m)
 
                 self.finishTask = [](void* userTask, void* userContext)
                 {
-                    std::vector<std::future<void>>* futures = static_cast<std::vector<std::future<void>>*>(userTask
+                    std::vector<std::future<void>>* futures = static_cast<std::vector<std::future<void>>*>(
+                        userTask
                     );
                     for (auto& future : *futures)
                     {

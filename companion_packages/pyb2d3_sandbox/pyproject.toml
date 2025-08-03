@@ -1,0 +1,21 @@
+[project]
+name = "pyb2d3-sandbox"
+version = "0.5.6"
+description = "sandbox for pyb2d3"
+authors = [
+    { name = "Dr. Thorsten Beier", email = "derthorstenbeier@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+
+[project.urls]
+"Homepage" = "https://github.com/DerThorsten/pyb2d3"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyb2d3_sandbox"]

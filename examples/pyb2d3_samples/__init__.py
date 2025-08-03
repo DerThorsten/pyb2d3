@@ -12,6 +12,7 @@ from .chain_builder import ChainBuilder
 from .billard import Billard
 from .meteor import Meteor
 from .ragdoll import Ragdoll
+from .cast_ray_callback import CastRayCallback
 
 all_examples = [
     Ragdoll,
@@ -28,4 +29,5 @@ all_examples = [
     GooGameLevel1,
     ChainBuilder,
     Billard,
+    CastRayCallback,
 ]

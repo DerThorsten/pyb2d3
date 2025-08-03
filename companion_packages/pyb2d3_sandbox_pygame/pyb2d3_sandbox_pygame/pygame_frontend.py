@@ -1,4 +1,4 @@
-from .frontend_base import (
+from pyb2d3_sandbox.frontend_base import (
     FrontendDebugDraw,
     FrontendBase,
     MouseDownEvent,
@@ -15,6 +15,9 @@ import pygame
 import sys
 import os
 
+X_AXIS = b2d.Vec2(1, 0)
+Y_AXIS = b2d.Vec2(0, 1)
+
 
 class PygameDebugDraw(FrontendDebugDraw):
     def __init__(self, transform, screen):
@@ -22,7 +25,24 @@ class PygameDebugDraw(FrontendDebugDraw):
         self.transform = transform
 
         self.font_cache = {}
+
+        # helper to speed up drawing of capsules
+        self._capsule_builder = b2d.CapsuleBuilderWithTransform(
+            transform=self.transform,
+            max_circle_segments=10,
+        )
+        self._capsule_vertices_buffer = self._capsule_builder.get_vertices_buffer()
+
         super().__init__()
+
+    def _get_font(self, font_size):
+        if font_size not in self.font_cache:
+            # create a new font
+            font = pygame.font.Font(None, font_size)
+            self.font_cache[font_size] = font
+        else:
+            font = self.font_cache[font_size]
+        return font
 
     def convert_hex_color(self, hex_color):
         # we have a hexadecimal color **as integer**
@@ -34,125 +54,75 @@ class PygameDebugDraw(FrontendDebugDraw):
     def world_to_canvas(self, point):
         return self.transform.world_to_canvas((float(point[0]), float(point[1])))
 
-    def maybe_world_to_canvas(self, point, world_coordinates=True):
-        if not world_coordinates:
-            return point
-        return self.transform.world_to_canvas(point)
+    def draw_polygon(self, points, color):
+        # convert vertices to canvas coordinates
+        canvas_vertices = [self.world_to_canvas(v) for v in points]
+        pygame.draw.polygon(self.screen, color, canvas_vertices, 1)
 
-    def maybe_scale(self, value, world_coordinates=True):
-        if world_coordinates:
-            return self.transform.scale_world_to_canvas(value)
-        return value
-
-    def draw_polygon(
-        self, vertices, color, line_width, width_in_pixels=False, world_coordinates=True
-    ):
-        if not width_in_pixels and world_coordinates:
-            line_width = self.transform.scale_world_to_canvas(line_width)
-        if world_coordinates:
-            vertices = [self.world_to_canvas(v) for v in vertices]
-        pygame.draw.polygon(
-            self.screen,
-            color,
-            vertices,
-            round(line_width),
-        )
-
-    def draw_solid_polygon(self, points, color, world_coordinates=True):
-        if world_coordinates:
-            points = [self.world_to_canvas(v) for v in points]
-        pygame.draw.polygon(self.screen, color, points, 0)
-
-    def draw_circle(
-        self,
-        center,
-        radius,
-        line_width,
-        color,
-        width_in_pixels=False,
-        world_coordinates=True,
-    ):
-        if not width_in_pixels and world_coordinates:
-            line_width = self.transform.scale_world_to_canvas(line_width)
-        if world_coordinates:
-            center = self.world_to_canvas(center)
-            radius = self.transform.scale_world_to_canvas(radius)
-
-        pygame.draw.circle(
-            self.screen,
-            color,
-            center,
-            radius,
-            round(line_width),
-        )
-
-    def draw_solid_circle(self, center, radius, color, world_coordinates=True):
-        if world_coordinates:
-            center = self.world_to_canvas(center)
-            radius = self.transform.scale_world_to_canvas(radius)
-        pygame.draw.circle(
-            self.screen,
-            color,
-            center,
-            radius,
-            0,
-        )
-
-    def draw_line(
-        self, p1, p2, line_width, color, width_in_pixels=False, world_coordinates=True
-    ):
-        if not width_in_pixels and world_coordinates:
-            line_width = self.transform.scale_world_to_canvas(line_width)
-        if world_coordinates:
-            p1 = self.world_to_canvas(p1)
-            p2 = self.world_to_canvas(p2)
-        pygame.draw.line(
-            self.screen,
-            color,
-            p1,
-            p2,
-            round(line_width),
-        )
-
-    def _get_font(self, font_size):
-        if font_size not in self.font_cache:
-            # create a new font
-            font = pygame.font.Font(None, font_size)
-            self.font_cache[font_size] = font
+    def draw_solid_polygon(self, transform, points, radius, color):
+        if radius <= 0:
+            canvas_vertices = [
+                self.world_to_canvas(transform.transform_point(v)) for v in points
+            ]
+            pygame.draw.polygon(self.screen, color, canvas_vertices, 0)
         else:
-            font = self.font_cache[font_size]
-        return font
+            self._poor_mans_draw_solid_rounded_polygon(
+                points=points, transform=transform, radius=radius, color=color
+            )
 
-    def draw_text(
-        self,
-        position,
-        text,
-        color,
-        font_size,
-        alignment="center",
-        world_coordinates=True,
-    ):
-        if world_coordinates:
-            position = self.world_to_canvas(position)
-            font_size = self.transform.scale_world_to_canvas(font_size)
+    def draw_circle(self, center, radius, color):
+        # convert center to canvas coordinates
+        canvas_center = self.world_to_canvas(center)
+        canvas_radius = self.transform.scale_world_to_canvas(radius)
+        pygame.draw.circle(
+            self.screen, color, canvas_center, int(canvas_radius + 0.5), 1
+        )
 
-        font = self._get_font(font_size)
-        text_surface = font.render(text, True, color)
-        text_rect = text_surface.get_rect()
-        if alignment == "center":
-            text_rect.center = position
-        elif alignment == "left":
-            text_rect.topleft = position
-        elif alignment == "right":
-            text_rect.topright = position
-        elif alignment == "top":
-            text_rect.midtop = position
-        elif alignment == "bottom":
-            text_rect.midbottom = position
-        else:
-            raise ValueError(f"Unknown alignment: {alignment}")
+    def draw_solid_circle(self, transform, radius, color):
+        # convert center to canvas coordinates
+        canvas_center = self.world_to_canvas(transform.p)
+        canvas_radius = self.transform.scale_world_to_canvas(radius)
+        pygame.draw.circle(
+            self.screen, color, canvas_center, int(canvas_radius + 0.5), 0
+        )
 
+    def draw_segment(self, p1, p2, color):
+        # convert points to canvas coordinates
+        canvas_p1 = self.world_to_canvas(p1)
+        canvas_p2 = self.world_to_canvas(p2)
+        pygame.draw.aaline(self.screen, color, canvas_p1, canvas_p2)
+
+    def draw_transform(self, transform):
+        world_pos = transform.p
+        canvas_pos = self.world_to_canvas(world_pos)
+
+        world_x_axis = world_pos + transform.transform_point(X_AXIS)
+        world_y_axis = world_pos + transform.transform_point(Y_AXIS)
+
+        x_axis = self.world_to_canvas(world_x_axis)
+        y_axis = self.world_to_canvas(world_y_axis)
+
+        pygame.draw.line(self.screen, (255, 0, 0), canvas_pos, x_axis, 1)
+        pygame.draw.line(self.screen, (0, 255, 0), canvas_pos, y_axis, 1)
+
+    def draw_point(self, p, size, color):
+        # convert point to canvas coordinates
+        canvas_point = self.world_to_canvas(p)
+        # canvas_size = self.transform.scale_world_to_canvas(size)
+        pygame.draw.circle(self.screen, color, canvas_point, int(size / 2 + 0.5), 0)
+
+    def draw_string(self, x, y, string):
+        # convert position to canvas coordinates
+        canvas_pos = self.world_to_canvas((x, y))
+        font = self._get_font(20)
+        text_surface = font.render(string, True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=canvas_pos)
         self.screen.blit(text_surface, text_rect)
+
+    def draw_solid_capsule(self, p1, p2, radius, color):
+        n_vertices = self._capsule_builder.build(p1, p2, radius)
+        canvas_vertices = self._capsule_vertices_buffer[0:n_vertices]
+        pygame.draw.polygon(self.screen, color, canvas_vertices, 0)
 
 
 @dataclass
@@ -205,6 +175,8 @@ class PygameFrontend(FrontendBase):
 
         self._last_click_time = None
         self._last_double_click_time = None
+
+        self.font = pygame.font.Font(None, 20)
 
     def drag_camera(self, delta):
         # drag the camera by the given delta
@@ -277,13 +249,22 @@ class PygameFrontend(FrontendBase):
 
             self.update_and_draw(dt)
             self._dispatch_events()
+
+            # RENDER FPS
+            fps = clock.get_fps()
+
+            font = self.font
+            text_surface = font.render(f"FPS: {fps:.2f}", True, (255, 255, 255))
+            text_rect = text_surface.get_rect(center=(10, 10))
+            self.screen.blit(text_surface, text_rect)
+
             pygame.display.update()
 
         self.sample.post_run()
 
-    def center_sample(self, sample, margin_px=10):
+    def center_sample(self, margin_px=10):
         # center the sample in the canvas
-        self.center_sample_with_transform(sample, self.transform, margin_px)
+        self.center_sample_with_transform(self.transform, margin_px)
 
     def _dispatch_events(self):
         for event in pygame.event.get():
@@ -301,14 +282,8 @@ class PygameFrontend(FrontendBase):
                 canvas_position = b2d.Vec2(pygame.mouse.get_pos())
                 self._last_canvas_mouse_pos = canvas_position
                 world_pos = self.transform.canvas_to_world(canvas_position)
-                self._multi_click_handler.handle_click(
-                    world_position=world_pos, canvas_position=canvas_position
-                )
-                self.sample.on_mouse_down(
-                    MouseDownEvent(
-                        world_position=world_pos, canvas_position=canvas_position
-                    )
-                )
+                self._multi_click_handler.handle_click(world_position=world_pos)
+                self.sample.on_mouse_down(MouseDownEvent(world_position=world_pos))
             elif event.type == pygame.MOUSEBUTTONUP:
                 # only for left
                 if event.button not in (1,):
@@ -316,11 +291,7 @@ class PygameFrontend(FrontendBase):
                 canvas_position = b2d.Vec2(pygame.mouse.get_pos())
                 self._last_canvas_mouse_pos = canvas_position
                 world_pos = self.transform.canvas_to_world(canvas_position)
-                self.sample.on_mouse_up(
-                    MouseUpEvent(
-                        world_position=world_pos, canvas_position=canvas_position
-                    )
-                )
+                self.sample.on_mouse_up(MouseUpEvent(world_position=world_pos))
             elif event.type == pygame.MOUSEMOTION:
                 canvas_position = b2d.Vec2(pygame.mouse.get_pos())
                 if self._last_canvas_mouse_pos is None:
@@ -338,12 +309,7 @@ class PygameFrontend(FrontendBase):
                 )
 
                 self.sample.on_mouse_move(
-                    MouseMoveEvent(
-                        world_position=world_pos,
-                        canvas_position=canvas_position,
-                        world_delta=delta_world,
-                        canvas_delta=canvas_delta,
-                    )
+                    MouseMoveEvent(world_position=world_pos, world_delta=delta_world)
                 )
             # mouse-wheel
             elif event.type == pygame.MOUSEWHEEL:
@@ -354,7 +320,6 @@ class PygameFrontend(FrontendBase):
                 self.sample.on_mouse_wheel(
                     MouseWheelEvent(
                         world_position=world_pos,
-                        canvas_position=canvas_position,
                         delta=event.y / 5.0,
                     )
                 )
