@@ -10,6 +10,8 @@ from pyb2d3_sandbox.frontend_base import (
 )
 import sys
 
+from .render_loop import set_render_loop
+
 # output widget from ipywidgets
 from ipywidgets import Output
 
@@ -30,8 +32,6 @@ if not is_emscripten:
 
 X_AXIS = b2d.Vec2(1.0, 0.0)
 Y_AXIS = b2d.Vec2(0.0, 1.0)
-
-from .render_loop import set_render_loop
 
 
 def html_color(color):
