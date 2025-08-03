@@ -1,5 +1,5 @@
 import pyb2d3 as b2d
-from pyb2d3.samples import SampleBase
+from pyb2d3_sandbox.sample_base import SampleBase
 import random
 
 
@@ -73,37 +73,37 @@ class Tumbler(SampleBase):
             max_motor_torque=50000.0,
         )
 
-        # add a bunch of balls
-        n_balls = 200
-        self.ball_radius = 0.1
-        for i in range(n_balls):
-            # radom position in the tumbler
-            x = random.uniform(
-                -box_diameter / 2 + self.ball_radius,
-                box_diameter / 2 - self.ball_radius,
-            )
-            y = random.uniform(
-                -box_diameter / 2 + self.ball_radius,
-                box_diameter / 2 - self.ball_radius,
-            )
+        # # add a bunch of balls
+        # n_balls = 200
+        # self.ball_radius = 0.1
+        # for i in range(n_balls):
+        #     # radom position in the tumbler
+        #     x = random.uniform(
+        #         -box_diameter / 2 + self.ball_radius,
+        #         box_diameter / 2 - self.ball_radius,
+        #     )
+        #     y = random.uniform(
+        #         -box_diameter / 2 + self.ball_radius,
+        #         box_diameter / 2 - self.ball_radius,
+        #     )
 
-            ball_body = self.world.create_dynamic_body(
-                position=(x, y),
-                linear_damping=0.9,
-                is_bullet=True,  # make the ball a bullet body
-            )
-            material = b2d.surface_material(
-                restitution=0.5,
-                friction=0.5,
-                custom_color=b2d.rgb_to_hex_color(100, 0, 200),
-            )
-            ball_body.create_shape(
-                b2d.shape_def(density=1, material=material, enable_contact_events=True),
-                b2d.circle(radius=self.ball_radius),
-            )
+        #     ball_body = self.world.create_dynamic_body(
+        #         position=(x, y),
+        #         linear_damping=0.9,
+        #         is_bullet=True,  # make the ball a bullet body
+        #     )
+        #     material = b2d.surface_material(
+        #         restitution=0.5,
+        #         friction=0.5,
+        #         custom_color=b2d.rgb_to_hex_color(100, 0, 200),
+        #     )
+        #     ball_body.create_shape(
+        #         b2d.shape_def(density=1, material=material, enable_contact_events=True),
+        #         b2d.circle(radius=self.ball_radius),
+        #     )
 
         # add a bunch of capsules
-        n_capsules = 200
+        n_capsules = 2000
         self.capsule_radius = 0.1
         self.capsule_length = 0.2
         # self.capsule_bodies = b2d.Bodies()
@@ -134,38 +134,38 @@ class Tumbler(SampleBase):
                 ),
             )
 
-        # rounded rectangle
-        self.rounded_rectangle_radius = 0.1
-        self.rounded_rectangle_width = 0.3
-        self.rounded_rectangle_height = 0.1
-        for i in range(200):
-            # radom position in the tumbler
-            x = random.uniform(
-                -box_diameter / 2 + self.rounded_rectangle_width / 2,
-                box_diameter / 2 - self.rounded_rectangle_width / 2,
-            )
-            y = random.uniform(
-                -box_diameter / 2 + self.rounded_rectangle_height / 2,
-                box_diameter / 2 - self.rounded_rectangle_height / 2,
-            )
+        # # rounded rectangle
+        # self.rounded_rectangle_radius = 0.1
+        # self.rounded_rectangle_width = 0.3
+        # self.rounded_rectangle_height = 0.1
+        # for i in range(1200):
+        #     # radom position in the tumbler
+        #     x = random.uniform(
+        #         -box_diameter / 2 + self.rounded_rectangle_width / 2,
+        #         box_diameter / 2 - self.rounded_rectangle_width / 2,
+        #     )
+        #     y = random.uniform(
+        #         -box_diameter / 2 + self.rounded_rectangle_height / 2,
+        #         box_diameter / 2 - self.rounded_rectangle_height / 2,
+        #     )
 
-            rounded_rectangle_body = self.world.create_dynamic_body(
-                position=(x, y),
-                linear_damping=0.9,
-            )
-            material = b2d.surface_material(
-                restitution=0.5,
-                friction=0.5,
-                custom_color=b2d.rgb_to_hex_color(200, 100, 0),
-            )
-            rounded_rectangle_body.create_shape(
-                b2d.shape_def(density=1, material=material, enable_contact_events=True),
-                b2d.box(
-                    hx=self.rounded_rectangle_width / 2,
-                    hy=self.rounded_rectangle_height / 2,
-                    radius=self.rounded_rectangle_radius,
-                ),
-            )
+        #     rounded_rectangle_body = self.world.create_dynamic_body(
+        #         position=(x, y),
+        #         linear_damping=0.9,
+        #     )
+        #     material = b2d.surface_material(
+        #         restitution=0.5,
+        #         friction=0.5,
+        #         custom_color=b2d.rgb_to_hex_color(200, 100, 0),
+        #     )
+        #     rounded_rectangle_body.create_shape(
+        #         b2d.shape_def(density=1, material=material, enable_contact_events=True),
+        #         b2d.box(
+        #             hx=self.rounded_rectangle_width / 2,
+        #             hy=self.rounded_rectangle_height / 2,
+        #             radius=self.rounded_rectangle_radius,
+        #         ),
+        #     )
 
     def on_double_click(self, event):
         self.world.explode(
@@ -182,4 +182,6 @@ class Tumbler(SampleBase):
 
 
 if __name__ == "__main__":
-    Tumbler.run()
+    from pyb2d3_sandbox_pygame import PygameFrontend
+
+    Tumbler.run(frontend_class=PygameFrontend)

@@ -1,5 +1,5 @@
 import pyb2d3 as b2d
-from pyb2d3.samples import SampleBase
+from pyb2d3_sandbox import SampleBase
 
 
 class NewtonsCradle(SampleBase):

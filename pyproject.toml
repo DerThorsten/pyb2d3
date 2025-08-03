@@ -26,8 +26,11 @@ dependencies = [
   "numpy"
 ]
 
-
-
+[project.optional-dependencies]
+frontend = []
+frontend-pygame = ["pygame"]
+frontend-opengl = ["PyOpenGL", "PyOpenGL_accelerate", "imgui-bundle"]
+frontend-ipycanvas = ["ipycanvas"]
 
 [tool.scikit-build]
 cmake.source-dir = "."

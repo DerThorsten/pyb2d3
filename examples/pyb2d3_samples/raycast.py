@@ -1,5 +1,5 @@
 import pyb2d3 as b2d
-from pyb2d3.samples import SampleBase
+from pyb2d3_sandbox import SampleBase
 
 
 import random
@@ -56,7 +56,7 @@ class Raycast(SampleBase):
             upper_bound=(self.box_radius, self.box_radius),
         )
 
-    def post_update(self, dt):
+    def post_debug_draw(self):
         # to get some action for the headless frontend
         # where we dont get mouse inputs
         # (this is usefull when rendering videos for the docs)
@@ -68,7 +68,7 @@ class Raycast(SampleBase):
         # print(f"Ball position: {pos}")
 
         # cast N radidal rays from the ball position
-        n_rays = 500
+        n_rays = 100
         ray_length = self.box_radius * 2 * math.sqrt(2)
         for i in range(n_rays):
             angle = body_angle + 2 * math.pi * i / n_rays
@@ -76,13 +76,12 @@ class Raycast(SampleBase):
             ray_result = self.world.cast_ray_closest(
                 origin=pos, translation=translation
             )
+            # move start in translation direction by radius
+            start = b2d.Vec2(pos) + b2d.Vec2(translation).normalize()
+
             if ray_result.hit:
-                self.debug_draw.draw_line(
-                    pos,
-                    ray_result.point,
-                    color=(255, 255, 125),
-                    line_width=5,
-                    width_in_pixels=True,
+                self.debug_draw.draw_segment(
+                    b2d.Vec2(start), ray_result.point, color=(255, 255, 125)
                 )
 
 

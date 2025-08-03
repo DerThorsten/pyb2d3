@@ -31,7 +31,7 @@ public:
     {
         float* data = const_cast<float*>(reinterpret_cast<const float*>(vertices));
         ArrayVec2 points(data, {static_cast<std::size_t>(vertexCount), static_cast<std::size_t>(2)});
-        m_py_class.attr("_draw_polygon")(points, static_cast<int>(color));
+        m_py_class.attr("draw_polygon")(points, static_cast<int>(color));
     }
 
     void
@@ -39,42 +39,42 @@ public:
     {
         float* data = const_cast<float*>(reinterpret_cast<const float*>(vertices));
         ArrayVec2 points(data, {static_cast<std::size_t>(vertexCount), static_cast<std::size_t>(2)});
-        m_py_class.attr("_draw_solid_polygon")(transform, points, radius, static_cast<int>(color));
+        m_py_class.attr("draw_solid_polygon")(transform, points, radius, static_cast<int>(color));
     }
 
     void draw_circle(b2Vec2 center, float radius, b2HexColor color)
     {
-        m_py_class.attr("_draw_circle")(center, radius, static_cast<int>(color));
+        m_py_class.attr("draw_circle")(center, radius, static_cast<int>(color));
     }
 
     void draw_solid_cirlce(b2Transform transform, float radius, b2HexColor color)
     {
-        m_py_class.attr("_draw_solid_circle")(transform, radius, static_cast<int>(color));
+        m_py_class.attr("draw_solid_circle")(transform, radius, static_cast<int>(color));
     }
 
     void draw_solid_capsule(b2Vec2 p1, b2Vec2 p2, float radius, b2HexColor color)
     {
-        m_py_class.attr("_draw_solid_capsule")(p1, p2, radius, static_cast<int>(color));
+        m_py_class.attr("draw_solid_capsule")(p1, p2, radius, static_cast<int>(color));
     }
 
     void draw_segment(b2Vec2 p1, b2Vec2 p2, b2HexColor color)
     {
-        m_py_class.attr("_draw_segment")(p1, p2, static_cast<int>(color));
+        m_py_class.attr("draw_segment")(p1, p2, static_cast<int>(color));
     }
 
     void draw_transform(b2Transform transform)
     {
-        m_py_class.attr("_draw_transform")(transform);
+        m_py_class.attr("draw_transform")(transform);
     }
 
     void draw_point(b2Vec2 p, float size, b2HexColor color)
     {
-        m_py_class.attr("_draw_point")(p, size, static_cast<int>(color));
+        m_py_class.attr("draw_point")(p, size, static_cast<int>(color));
     }
 
     void draw_string(b2Vec2 p, const char* s, b2HexColor color)
     {
-        m_py_class.attr("_draw_string")(p, s, static_cast<int>(color));
+        m_py_class.attr("draw_string")(p, s, static_cast<int>(color));
     }
 
     py::handle m_py_class;

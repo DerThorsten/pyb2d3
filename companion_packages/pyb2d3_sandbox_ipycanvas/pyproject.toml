@@ -1,0 +1,27 @@
+[project]
+name = "pyb2d3-sandbox-ipycanvas"
+version = "0.5.6"
+description = "run the pyb2d3 sandbox with ipycanvas"
+authors = [
+    { name = "Your Name", email = "you@example.com" }
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+
+dependencies = [
+    "pyb2d3>=0.5.6",
+    "ipycanvas>=0.14.1"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/DerThorsten/pyb2d3"
+
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyb2d3_sandbox_ipycanvas"]

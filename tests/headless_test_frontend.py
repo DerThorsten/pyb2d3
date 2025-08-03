@@ -1,5 +1,5 @@
 import pyb2d3 as b2d
-from pyb2d3.samples.frontend.frontend_base import (
+from pyb2d3_sandbox.frontend_base import (
     FrontendDebugDraw,
     FrontendBase,
     MouseDownEvent,
@@ -13,9 +13,8 @@ from pyb2d3.samples.frontend.frontend_base import (
 )
 
 import random
-
+import time
 from dataclasses import dataclass
-from pyb2d3.samples.frontend import run
 
 
 class NoopDebugDraw(FrontendDebugDraw):
@@ -28,51 +27,34 @@ class NoopDebugDraw(FrontendDebugDraw):
     def end_draw(self):
         pass
 
-    def draw_polygon(
-        self,
-        vertices,
-        color,
-        line_width,
-        width_in_pixels=False,
-        world_coordinates=False,
-    ):
+    def draw_polygon(self, points, color):
         pass
 
-    def draw_solid_polygon(
-        self, points, color, width_in_pixels=False, world_coordinates=False
-    ):
+    def draw_solid_polygon(self, transform, points, radius, color):
         pass
 
-    def draw_circle(
-        self,
-        center,
-        radius,
-        line_width,
-        color,
-        width_in_pixels=False,
-        world_coordinates=False,
-    ):
+    def draw_circle(self, center, radius, color):
         pass
 
-    def draw_solid_circle(
-        self, center, radius, color, width_in_pixels=False, world_coordinates=False
-    ):
+    def draw_solid_circle(self, transform, radius, color):
         pass
 
-    def draw_line(
-        self, p1, p2, line_width, color, width_in_pixels=False, world_coordinates=False
-    ):
+    def draw_solid_capsule(self, p1, p2, radius, color):
         pass
 
-    def draw_text(
-        self,
-        position,
-        text,
-        color,
-        font_size,
-        alignment="center",
-        world_coordinates=True,
-    ):
+    def draw_segment(self, p1, p2, color):
+        pass
+
+    def draw_transform(self, transform):
+        pass
+
+    def draw_point(self, p, size, color):
+        pass
+
+    def draw_string(self, x, y, string):
+        pass
+
+    def draw_aabb(self, aabb, color):
         pass
 
 
@@ -170,9 +152,7 @@ class HeadlessTestFrontend(FrontendBase):
             self.sample.on_mouse_move(
                 MouseMoveEvent(
                     world_position=self.transform.canvas_to_world(new_pos),
-                    canvas_position=new_pos,
                     world_delta=world_delta,
-                    canvas_delta=delta,
                 )
             )
             return
@@ -183,8 +163,7 @@ class HeadlessTestFrontend(FrontendBase):
 
             self.sample.on_triple_click(
                 TripleClickEvent(
-                    world_position=self.transform.canvas_to_world(self.mouse_pos),
-                    canvas_position=self.mouse_pos,
+                    world_position=self.transform.canvas_to_world(self.mouse_pos)
                 )
             )
             return
@@ -194,8 +173,7 @@ class HeadlessTestFrontend(FrontendBase):
             # double click
             self.sample.on_double_click(
                 DoubleClickEvent(
-                    world_position=self.transform.canvas_to_world(self.mouse_pos),
-                    canvas_position=self.mouse_pos,
+                    world_position=self.transform.canvas_to_world(self.mouse_pos)
                 )
             )
             return
@@ -207,7 +185,6 @@ class HeadlessTestFrontend(FrontendBase):
                 self.sample.on_mouse_up(
                     MouseUpEvent(
                         world_position=self.transform.canvas_to_world(self.mouse_pos),
-                        canvas_position=self.mouse_pos,
                     )
                 )
                 return
@@ -218,31 +195,53 @@ class HeadlessTestFrontend(FrontendBase):
                 self.sample.on_mouse_down(
                     MouseDownEvent(
                         world_position=self.transform.canvas_to_world(self.mouse_pos),
-                        canvas_position=self.mouse_pos,
                     )
                 )
                 self.sample.on_click(
                     ClickEvent(
                         world_position=self.transform.canvas_to_world(self.mouse_pos),
-                        canvas_position=self.mouse_pos,
                     )
                 )
                 return
 
-    def center_sample(self, sample, margin_px=10):
-        self.center_sample_with_transform(
-            sample, transform=self.transform, margin_px=margin_px
-        )
+    def center_sample(self, margin_px=10):
+        self.center_sample_with_transform(transform=self.transform, margin_px=margin_px)
 
 
 def run_in_headless_test_frontend(sample_class, sample_settings=None, repeats=10):
     frontend_settings = HeadlessTestFrontend.Settings()
 
-    for i in range(repeats):
-        print(f"Running sample: {sample_class.__name__}  {i + 1} / {repeats} time(s)")
-        run(
-            sample_class=sample_class,
-            sample_settings=sample_settings,
-            frontend_class=HeadlessTestFrontend,
-            frontend_settings=frontend_settings,
-        )
+    total_time_budget_sec = 1
+
+    print(f"Running sample: {sample_class.__name__} ")
+    t0 = time.time()
+    # run(
+    #     sample_class=sample_class,
+    #     sample_settings=sample_settings,
+    #     frontend_class=HeadlessTestFrontend,
+    #     frontend_settings=frontend_settings,
+    # )
+
+    sample_class.run(
+        sample_settings=sample_settings,
+        frontend_class=HeadlessTestFrontend,
+        frontend_settings=frontend_settings,
+    )
+
+    elapsed_time = time.time() - t0
+    time_left = total_time_budget_sec - elapsed_time
+
+    print(f"Sample {sample_class.__name__} took {elapsed_time:.2f} seconds to run.")
+
+    if time_left > elapsed_time:
+        repeats = int(time_left / elapsed_time)
+        repeats = min(repeats, 4)  # Limit to 5 repeats in total (4 additional runs)
+        for i in range(repeats):
+            print(
+                f"Running sample: {sample_class.__name__}  {i + 2} / {repeats + 1} time(s)"
+            )
+            sample_class.run(
+                sample_settings=sample_settings,
+                frontend_class=HeadlessTestFrontend,
+                frontend_settings=frontend_settings,
+            )
