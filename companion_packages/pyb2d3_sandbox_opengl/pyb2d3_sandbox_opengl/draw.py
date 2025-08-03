@@ -17,7 +17,7 @@
 
 
 import numpy as np
-from OpenGL.GL import *
+from OpenGL.GL import *  # noqa: F403
 import os
 from pyb2d3 import Vec2
 from .shader import create_program_from_files, create_program_from_strings
