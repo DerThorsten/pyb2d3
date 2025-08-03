@@ -22,7 +22,7 @@ from pyb2d3_sandbox.frontend_base import (
 )
 
 
-from OpenGL.GL import *
+from OpenGL.GL import *  # noqa: F403
 from pyb2d3 import Vec2, AABB
 from .draw import GLBackground, GLCircles, GLPoints, GLLines
 from .draw import GLSolidPolygons, GLSolidCircles, GLSolidCapsules
@@ -185,8 +185,8 @@ class GLDebugDraw(FrontendDebugDraw):
         self.debug_strings.clear()
 
         # Calculate and update draw performance metrics
-        elapsed = (time.perf_counter() - self._draw_start_time) * 1000.0  # elapsed ms
-        smoothing = 0.5  # state.perf.smoothing_avg
+        # elapsed = (time.perf_counter() - self._draw_start_time) * 1000.0  # elapsed ms
+        # smoothing = 0.5  # state.perf.smoothing_avg
         # state.perf.draw_ms = elapsed
         # state.perf.draw_ms_avg *= smoothing
         # state.perf.draw_ms_avg += elapsed * (1 - smoothing)
