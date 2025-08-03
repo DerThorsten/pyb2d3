@@ -86,6 +86,7 @@ SET(PY_SOURCES
     src/export_math_functions.cpp
     src/export_batch_api.cpp
     src/export_world_to_canvas.cpp
+    src/export_extras.cpp
     src/py_debug_draw.cpp
 )
 if(NOT PYB2D3_NO_THREADING)

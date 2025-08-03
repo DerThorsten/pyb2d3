@@ -25,6 +25,15 @@ class PygameDebugDraw(FrontendDebugDraw):
         self.transform = transform
 
         self.font_cache = {}
+
+
+        # helper to speed up drawing of capsules
+        self._capsule_builder = b2d.CapsuleBuilderWithTransform(
+            transform=self.transform,
+            max_circle_segments=10,
+        )
+        self._capsule_vertices_buffer = self._capsule_builder.get_vertices_buffer()
+
         super().__init__()
 
     def _get_font(self, font_size):
@@ -112,7 +121,14 @@ class PygameDebugDraw(FrontendDebugDraw):
         self.screen.blit(text_surface, text_rect)
 
     def draw_solid_capsule(self, p1, p2, radius, color):
-        self._poor_mans_draw_solid_capsule(p1, p2, radius, color)
+        n_vertices = self._capsule_builder.build(p1, p2, radius)
+        canvas_vertices = self._capsule_vertices_buffer[0:n_vertices]
+        pygame.draw.polygon(self.screen, color, canvas_vertices, 0)
+
+
+
+
+    
 
 
 @dataclass
