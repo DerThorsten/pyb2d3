@@ -72,7 +72,7 @@ def create_sample_videos():
     #     :poster: _static/image.png
     #     :width: 100%
 
-    rst_content = [".. grid:: 3"]
+    rst_content = [".. grid:: 2"]
     template_str = """
     .. grid-item::
 
