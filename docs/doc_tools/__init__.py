@@ -16,11 +16,12 @@ pyb2d3_sandbox = companion_packages / "pyb2d3_sandbox"
 
 # add to sys.path
 sys.path.insert(0, str(pyb2d3_sandbox))
+print(f"Adding {pyb2d3_sandbox} to sys.path")
 from pyb2d3_sandbox_pygame import (
     PygameFrontendSettings,
     PygameHeadlessSettings,
-)
-from pyb2d3_sandbox_pygame.sample_to_video import sample_to_video
+)  # noqa: E402
+from pyb2d3_sandbox_pygame.sample_to_video import sample_to_video  # noqa: E402
 
 
 github_url = "https://github.com/DerThorsten/pyb2d3"
