@@ -10,17 +10,13 @@ docs_root = this_dir.parent
 html_static_path = docs_root / "_static"
 repo_root = docs_root.parent
 examples_dir = repo_root / "examples"
-
 companion_packages = repo_root / "companion_packages"
-pyb2d3_sandbox = companion_packages / "pyb2d3_sandbox"
 
 # add to sys.path
-sys.path.insert(0, str(pyb2d3_sandbox))
-print(f"Adding {pyb2d3_sandbox} to sys.path")
-from pyb2d3_sandbox_pygame import (
-    PygameFrontendSettings,
-    PygameHeadlessSettings,
-)  # noqa: E402
+sys.path.insert(0, str(companion_packages / "pyb2d3_sandbox"))
+sys.path.insert(0, str(companion_packages / "pyb2d3_sandbox_pygame"))
+
+from pyb2d3_sandbox_pygame import PygameFrontendSettings, PygameHeadlessSettings  # noqa: E402
 from pyb2d3_sandbox_pygame.sample_to_video import sample_to_video  # noqa: E402
 
 
