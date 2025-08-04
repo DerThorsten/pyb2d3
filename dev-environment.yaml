@@ -29,3 +29,6 @@ dependencies:
   - sphinxcontrib-video
   - sphinx-design
   - ffmpeg
+  # building emscripten package
+  - curl # to download the variant file
+  - rattler-build
