@@ -107,9 +107,7 @@ class Jump(SampleBase):
 
     # create explosion on double click
     def on_double_click(self, event):
-        self.world.explode(
-            position=event.world_position, radius=70, impulse_per_length=200
-        )
+        self.world.explode(position=event.world_position, radius=70, impulse_per_length=200)
 
     def aabb(self):
         eps = 0.01

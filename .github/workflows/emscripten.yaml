@@ -1,0 +1,28 @@
+
+name: emscripten-forge-pkg
+on:
+  push:
+  pull_request:
+jobs:
+
+  pip:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: dev-environment.yaml
+          init-shell: >-
+            bash
+          cache-environment: true
+          post-cleanup: 'all'
+
+      - name: emscripten-forge
+        shell: bash -el {0}
+        run: |
+          ./scripts/build_emscripten_forge_pkg.sh

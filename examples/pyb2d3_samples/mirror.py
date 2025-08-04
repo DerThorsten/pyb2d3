@@ -48,9 +48,7 @@ class Mirror(SampleBase):
                 rotation=random_angle,
             )
             box_body.create_shape(
-                b2d.shape_def(
-                    density=1, material=b2d.surface_material(restitution=0.5)
-                ),
+                b2d.shape_def(density=1, material=b2d.surface_material(restitution=0.5)),
                 b2d.box(hx=0.5, hy=1.0),
             )
 

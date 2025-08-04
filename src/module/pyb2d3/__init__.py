@@ -365,15 +365,9 @@ def _extend_world():
         return self.create_body_from_def(body_def)
 
     WorldView.create_body = create_body
-    WorldView.create_dynamic_body = partialmethod(
-        WorldView.create_body, type=BodyType.DYNAMIC
-    )
-    WorldView.create_static_body = partialmethod(
-        WorldView.create_body, type=BodyType.STATIC
-    )
-    WorldView.create_kinematic_body = partialmethod(
-        WorldView.create_body, type=BodyType.KINEMATIC
-    )
+    WorldView.create_dynamic_body = partialmethod(WorldView.create_body, type=BodyType.DYNAMIC)
+    WorldView.create_static_body = partialmethod(WorldView.create_body, type=BodyType.STATIC)
+    WorldView.create_kinematic_body = partialmethod(WorldView.create_body, type=BodyType.KINEMATIC)
 
     def draw(self, debug_draw, call_begin_end=True):
         if call_begin_end:
@@ -455,9 +449,7 @@ def _extend_world():
                     )
                 return raw_function(self, args[0])
             elif na == 2:
-                return raw_function(
-                    self, def_func(body_a=args[0], body_b=args[1], **kwargs)
-                )
+                return raw_function(self, def_func(body_a=args[0], body_b=args[1], **kwargs))
             else:
                 raise ValueError(
                     """ the un-named arguments can be either:
@@ -685,9 +677,7 @@ def polygon(points=None, hull=None, radius=None, position=None, rotation=None):
     if hull is None:
         n_points = len(points)
         if n_points < 3 or n_points > 8:
-            raise ValueError(
-                "the number of points should be between 3 and 8, but got {n_points}"
-            )
+            raise ValueError("the number of points should be between 3 and 8, but got {n_points}")
         points = np.require(points, dtype=np.float32, requirements="C")
         hull = compute_hull(points)
 
@@ -704,9 +694,7 @@ def polygon(points=None, hull=None, radius=None, position=None, rotation=None):
         if radius is None:
             return _pyb2d3._make_offset_polygon(hull, position, rotation)
         else:
-            return _pyb2d3._make_offset_rounded_polygon(
-                hull, position, rotation, radius
-            )
+            return _pyb2d3._make_offset_rounded_polygon(hull, position, rotation, radius)
 
 
 def box(hx, hy, center=None, rotation=None, radius=None):
@@ -778,9 +766,7 @@ def hex_color(*args):
     elif len(args) == 3:
         return (args[0] << 16) | (args[1] << 8) | args[2]
     else:
-        raise ValueError(
-            "hex_color expects either a single integer or three RGB values."
-        )
+        raise ValueError("hex_color expects either a single integer or three RGB values.")
 
 
 def random_hex_color():
@@ -975,9 +961,7 @@ class PathBuilder(object):
         return chain_def(points, is_loop=is_loop, material=material)
 
     def _point(self, **point_args):
-        assert len(point_args) == 1, (
-            "Only one of point, delta, left, right, up, down must be given"
-        )
+        assert len(point_args) == 1, "Only one of point, delta, left, right, up, down must be given"
         last_point = self.points[-1]
         if "point" in point_args:
             return point_args["point"]
@@ -1000,9 +984,7 @@ class PathBuilder(object):
     def line_to(self, **point_args):
         self.points.append(self._point(**point_args))
 
-    def arc_to(
-        self, /, radius, clockwise=True, segments=10, major_arc=False, **point_args
-    ):
+    def arc_to(self, /, radius, clockwise=True, segments=10, major_arc=False, **point_args):
         from_point = self.points[-1]
         to_point = self._point(**point_args)
 
@@ -1041,15 +1023,11 @@ class PathBuilder(object):
 
         if (angle1 <= math.pi) == major_arc:
             center = center1
-            start_angle = math.atan2(
-                from_point[1] - center[1], from_point[0] - center[0]
-            )
+            start_angle = math.atan2(from_point[1] - center[1], from_point[0] - center[0])
             end_angle = math.atan2(to_point[1] - center[1], to_point[0] - center[0])
         else:
             center = center2
-            start_angle = math.atan2(
-                from_point[1] - center[1], from_point[0] - center[0]
-            )
+            start_angle = math.atan2(from_point[1] - center[1], from_point[0] - center[0])
             end_angle = math.atan2(to_point[1] - center[1], to_point[0] - center[0])
 
         # Normalize angle span to always go minor arc direction

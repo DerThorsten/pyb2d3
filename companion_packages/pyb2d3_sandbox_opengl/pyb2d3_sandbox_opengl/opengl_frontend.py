@@ -74,9 +74,7 @@ class OpenglFrontend(FrontendBase):
         runner_params.imgui_window_params.default_imgui_window_type = (
             hello_imgui.DefaultImGuiWindowType.provide_full_screen_dock_space
         )
-        runner_params.app_window_params.window_geometry.size = (
-            self.settings.canvas_shape
-        )
+        runner_params.app_window_params.window_geometry.size = self.settings.canvas_shape
         # Initialize simulation and debug draw in post_init
         runner_params.callbacks.post_init = lambda: weak.post_gl_init()
 
@@ -94,9 +92,7 @@ class OpenglFrontend(FrontendBase):
 
         # Docking layout
         runner_params.docking_params = self.create_layout()
-        runner_params.docking_params.main_dock_space_node_flags = (
-            imgui.DockNodeFlags_.none
-        )
+        runner_params.docking_params.main_dock_space_node_flags = imgui.DockNodeFlags_.none
 
         # runner_params.callbacks.pre_new_frame = lambda: weak.on_pre_new_frame()
 
@@ -173,9 +169,7 @@ class OpenglFrontend(FrontendBase):
                 if delta[0] != 0 or delta[1] != 0:
                     event = MouseMoveEvent(
                         world_position=world_pos,
-                        world_delta=self.debug_draw.camera.screen_delta_to_world_delta(
-                            delta
-                        ),
+                        world_delta=self.debug_draw.camera.screen_delta_to_world_delta(delta),
                     )
                     self.sample.on_mouse_move(event)
             elif io.mouse_released[0]:

@@ -80,17 +80,13 @@ class Goo(object):
         return len(self.connections)
 
     def is_object_between_me_and_point(self, world_point):
-        assert self.body is not None, (
-            "Goo ball not created yet. Cannot check for objects."
-        )
+        assert self.body is not None, "Goo ball not created yet. Cannot check for objects."
 
         own_pos = self.body.position
         translation = (world_point[0] - own_pos[0], world_point[1] - own_pos[1])
 
         # cast a ray from the goo ball to the world point
-        ray_result = self.world.cast_ray_closest(
-            origin=own_pos, translation=translation
-        )
+        ray_result = self.world.cast_ray_closest(origin=own_pos, translation=translation)
         return ray_result.hit
 
     def can_be_placed_here(self, world, pos):
@@ -103,11 +99,7 @@ class Goo(object):
         goos = [(goo, dist) for goo, dist in goos if goo.degrees() < goo.max_degree]
 
         # filter out goos where there is an object between the goo and the position
-        goos = [
-            (goo, dist)
-            for goo, dist in goos
-            if not goo.is_object_between_me_and_point(pos)
-        ]
+        goos = [(goo, dist) for goo, dist in goos if not goo.is_object_between_me_and_point(pos)]
 
         # check if we can place as edge
         if len(goos) >= 2:
@@ -178,9 +170,7 @@ class Goo(object):
             custom_color=type(self).color_hex,
         )
         self.body.create_shape(
-            b2d.shape_def(
-                density=self.density, material=material, enable_contact_events=False
-            ),
+            b2d.shape_def(density=self.density, material=material, enable_contact_events=False),
             b2d.circle(radius=self.radius),
         )
         # set the user data to the Goo object itself
@@ -322,9 +312,7 @@ class WhiteGoo(Goo):
 
     def __init__(self, sample):
         super().__init__(sample)
-        self.max_degree = (
-            2  # white goo can connect to two other goo ball, ie forming line segments
-        )
+        self.max_degree = 2  # white goo can connect to two other goo ball, ie forming line segments
         self.hertz = 2.0  # white goo is very elastic
         self.density = 0.25  # white goo is very light
 
@@ -467,18 +455,14 @@ class GooGame(SampleBase):
                 # drag the camera
                 self.frontend.drag_camera(event.world_delta)
             else:
-                self.tentative_placement = self.next_goo.can_be_placed_here(
-                    self.world, world_point
-                )
+                self.tentative_placement = self.next_goo.can_be_placed_here(self.world, world_point)
         # self.last_canvas_pos = p
 
     def on_mouse_up(self, event):
         self.mouse_is_down = False
         self.drag_camera = False
         world_point = event.world_position
-        self.tentative_placement = self.next_goo.can_be_placed_here(
-            self.world, world_point
-        )
+        self.tentative_placement = self.next_goo.can_be_placed_here(self.world, world_point)
         if self.tentative_placement[0]:
             as_edge, goo_pair = self.tentative_placement[1], self.tentative_placement[2]
             if as_edge:
@@ -534,9 +518,7 @@ class GooGame(SampleBase):
             goo = ud[shape.body.user_data]
             if isinstance(goo, Goo):
                 goo_pos = goo.get_position()
-                distance_squared = (goo_pos[0] - pos[0]) ** 2 + (
-                    goo_pos[1] - pos[1]
-                ) ** 2
+                distance_squared = (goo_pos[0] - pos[0]) ** 2 + (goo_pos[1] - pos[1]) ** 2
                 if distance_squared <= square_radius:
                     result.append((goo, distance_squared))
             return True  # <-- continue searching

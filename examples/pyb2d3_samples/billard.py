@@ -102,9 +102,7 @@ class Billard(SampleBase):
 
         assert len(self.pocket_centers) == 6, "There should be 6 pocket centers"
 
-        table_center = (
-            np.array(self.pocket_centers[2]) + np.array(self.pocket_centers[5])
-        ) / 2
+        table_center = (np.array(self.pocket_centers[2]) + np.array(self.pocket_centers[5])) / 2
         table_center = (float(table_center[0]), float(table_center[1]))
         self.table_center = table_center
 
@@ -120,9 +118,7 @@ class Billard(SampleBase):
             ball = self.world.create_dynamic_body(
                 position=position, linear_damping=0.8, fixed_rotation=True
             )
-            ball.create_shape(
-                b2d.shape_def(material=material), b2d.circle(radius=self.ball_radius)
-            )
+            ball.create_shape(b2d.shape_def(material=material), b2d.circle(radius=self.ball_radius))
             return ball
 
         billiard_base_colors = [
@@ -217,9 +213,7 @@ class Billard(SampleBase):
                 float(impulse_vec[1]),
             )  # convert to tuple
             # apply the force as impulse
-            self.balls[-1].body.apply_linear_impulse(
-                impulse_vec, self.marked_point_on_white_ball
-            )
+            self.balls[-1].body.apply_linear_impulse(impulse_vec, self.marked_point_on_white_ball)
             self.game_state = GameState.WAITING_FOR_BALLS_TO_REST
             self.marked_point_on_white_ball = None
             self.aim_point = None
@@ -244,10 +238,7 @@ class Billard(SampleBase):
         for ball in self.balls:
             body = ball.body
             for pocket_center in self.pocket_centers:
-                if (
-                    np.linalg.norm(np.array(body.position) - np.array(pocket_center))
-                    < dr
-                ):
+                if np.linalg.norm(np.array(body.position) - np.array(pocket_center)) < dr:
                     to_be_removed.append(ball)
                     break
 

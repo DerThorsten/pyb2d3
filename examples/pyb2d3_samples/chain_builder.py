@@ -63,45 +63,33 @@ class ChainBuilder(SampleBase):
         # start with left pocket arc
         start = (top_left_corner[0], top_left_corner[1])
         builder = b2d.PathBuilder(start)
-        builder.arc_to(
-            delta=(-cd, -cd), radius=r, clockwise=False, segments=20, major_arc=True
-        )
+        builder.arc_to(delta=(-cd, -cd), radius=r, clockwise=False, segments=20, major_arc=True)
 
         # move down by height
         builder.line_to(down=h)
 
         # add bottom left corner pocket
-        builder.arc_to(
-            delta=(cd, -cd), radius=r, clockwise=False, segments=20, major_arc=True
-        )
+        builder.arc_to(delta=(cd, -cd), radius=r, clockwise=False, segments=20, major_arc=True)
 
         # move right by width /2
         builder.line_to(right=w / 2)
         # add bottom middle pocket
-        builder.arc_to(
-            delta=(md, 0), radius=r, clockwise=False, segments=20, major_arc=True
-        )
+        builder.arc_to(delta=(md, 0), radius=r, clockwise=False, segments=20, major_arc=True)
 
         # move right by width /2
         builder.line_to(right=w / 2)
         # add bottom right corner pocket
-        builder.arc_to(
-            delta=(cd, cd), radius=r, clockwise=False, segments=20, major_arc=True
-        )
+        builder.arc_to(delta=(cd, cd), radius=r, clockwise=False, segments=20, major_arc=True)
 
         # move up by height
         builder.line_to(up=h)
         # add top right corner pocket
-        builder.arc_to(
-            delta=(-cd, cd), radius=r, clockwise=False, segments=20, major_arc=True
-        )
+        builder.arc_to(delta=(-cd, cd), radius=r, clockwise=False, segments=20, major_arc=True)
 
         # move left by width/2
         builder.line_to(left=w / 2)
         # add top middle pocket
-        builder.arc_to(
-            delta=(-md, 0), radius=r, clockwise=False, segments=20, major_arc=True
-        )
+        builder.arc_to(delta=(-md, 0), radius=r, clockwise=False, segments=20, major_arc=True)
         # move left by width/2
         builder.line_to(left=w / 2)
 
