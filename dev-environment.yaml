@@ -18,7 +18,7 @@ dependencies:
   - numpy
   # Tests
   - pytest
-  - pytest-sugarå
+  - pytest-sugar
   # utils
   - pre-commit
   # frontend
@@ -29,3 +29,6 @@ dependencies:
   - sphinxcontrib-video
   - sphinx-design
   - ffmpeg
+  # building emscripten package
+  - curl # to download the variant file
+  - rattler-build

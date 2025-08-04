@@ -201,9 +201,7 @@ class GLDebugDraw(FrontendDebugDraw):
 
     def draw_solid_polygon(self, transform, points, radius: float, color):
         # Delegate to solid_polygons; pass the raw b2Transform from the Transform wrapper
-        self.solid_polygons.add_polygon(
-            transform, points, len(points), radius, ensure_hex(color)
-        )
+        self.solid_polygons.add_polygon(transform, points, len(points), radius, ensure_hex(color))
 
     def draw_circle(self, center, radius: float, color):
         # Queue border circle drawing

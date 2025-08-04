@@ -54,7 +54,10 @@ testpaths = [
 select = ["E", "F"]
 ignore = ["F405", "E501"]
 
-
+[tool.ruff]
+# In addition to the standard set of exclusions, omit all tests, plus a specific file.
+extend-exclude = ["tests", "emscripten_forge"]
+line-length = 100
 
 [tool.cibuildwheel]
 

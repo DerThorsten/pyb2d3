@@ -40,9 +40,7 @@ class Raycast(SampleBase):
                 rotation=random_angle,
             )
             box_body.create_shape(
-                b2d.shape_def(
-                    density=1, material=b2d.surface_material(restitution=0.5)
-                ),
+                b2d.shape_def(density=1, material=b2d.surface_material(restitution=0.5)),
                 b2d.box(hx=0.5, hy=1.0),
             )
 
@@ -73,9 +71,7 @@ class Raycast(SampleBase):
         for i in range(n_rays):
             angle = body_angle + 2 * math.pi * i / n_rays
             translation = (math.cos(angle) * ray_length, math.sin(angle) * ray_length)
-            ray_result = self.world.cast_ray_closest(
-                origin=pos, translation=translation
-            )
+            ray_result = self.world.cast_ray_closest(origin=pos, translation=translation)
             # move start in translation direction by radius
             start = b2d.Vec2(pos) + b2d.Vec2(translation).normalize()
 
