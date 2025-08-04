@@ -61,9 +61,7 @@ class PygameDebugDraw(FrontendDebugDraw):
 
     def draw_solid_polygon(self, transform, points, radius, color):
         if radius <= 0:
-            canvas_vertices = [
-                self.world_to_canvas(transform.transform_point(v)) for v in points
-            ]
+            canvas_vertices = [self.world_to_canvas(transform.transform_point(v)) for v in points]
             pygame.draw.polygon(self.screen, color, canvas_vertices, 0)
         else:
             self._poor_mans_draw_solid_rounded_polygon(
@@ -74,17 +72,13 @@ class PygameDebugDraw(FrontendDebugDraw):
         # convert center to canvas coordinates
         canvas_center = self.world_to_canvas(center)
         canvas_radius = self.transform.scale_world_to_canvas(radius)
-        pygame.draw.circle(
-            self.screen, color, canvas_center, int(canvas_radius + 0.5), 1
-        )
+        pygame.draw.circle(self.screen, color, canvas_center, int(canvas_radius + 0.5), 1)
 
     def draw_solid_circle(self, transform, radius, color):
         # convert center to canvas coordinates
         canvas_center = self.world_to_canvas(transform.p)
         canvas_radius = self.transform.scale_world_to_canvas(radius)
-        pygame.draw.circle(
-            self.screen, color, canvas_center, int(canvas_radius + 0.5), 0
-        )
+        pygame.draw.circle(self.screen, color, canvas_center, int(canvas_radius + 0.5), 0)
 
     def draw_segment(self, p1, p2, color):
         # convert points to canvas coordinates
@@ -133,9 +127,7 @@ class PygameHeadlessSettings:
 
 @dataclass
 class PygameFrontendSettings(FrontendBase.Settings):
-    headless_settings: PygameHeadlessSettings = field(
-        default_factory=PygameHeadlessSettings
-    )
+    headless_settings: PygameHeadlessSettings = field(default_factory=PygameHeadlessSettings)
 
 
 class PygameFrontend(FrontendBase):
@@ -216,10 +208,7 @@ class PygameFrontend(FrontendBase):
         dt = 1 / self.settings.fps if self.settings.fps > 0 else 1 / 60.0
         iteration = 0
         while not self.sample.is_done():
-            if (
-                self.sample.world_time
-                >= self.settings.headless_settings.world_time_limit
-            ):
+            if self.sample.world_time >= self.settings.headless_settings.world_time_limit:
                 break
 
             if self.settings.debug_draw.draw_background:

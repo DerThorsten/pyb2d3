@@ -99,9 +99,7 @@ class CoupledMinigolf(SampleBase):
                 linear_damping=0.75,
                 fixed_rotation=True,
             )
-            material = b2d.surface_material(
-                restitution=0.75, custom_color=BALL_COLORS[i]
-            )
+            material = b2d.surface_material(restitution=0.75, custom_color=BALL_COLORS[i])
             ball_shape_def = b2d.shape_def(density=1, material=material)
             body.create_shape(ball_shape_def, b2d.circle(radius=BALL_RADIUS))
             self.balls.append(body)
@@ -162,21 +160,15 @@ class CoupledMinigolf(SampleBase):
             self.force_vector_length = force_vector_length
             if force_vector_length > MAX_FORCE_VECTOR_LENGTH:
                 self.force_vector_length = MAX_FORCE_VECTOR_LENGTH
-                force_vector = (
-                    force_vector / force_vector_length * MAX_FORCE_VECTOR_LENGTH
-                )
+                force_vector = force_vector / force_vector_length * MAX_FORCE_VECTOR_LENGTH
                 self.drag_pos = (
-                    np.array(self.balls[self.dragged_ball_index].position)
-                    + force_vector
+                    np.array(self.balls[self.dragged_ball_index].position) + force_vector
                 )
             else:
                 self.drag_pos = raw_drag_pos
 
     def balls_rest(self):
-        mag = (
-            self.balls[0].linear_velocity_magnitude()
-            + self.balls[1].linear_velocity_magnitude()
-        )
+        mag = self.balls[0].linear_velocity_magnitude() + self.balls[1].linear_velocity_magnitude()
         return mag < 0.0001
 
     def post_update(self, dt):
@@ -199,9 +191,7 @@ class CoupledMinigolf(SampleBase):
                 self.state = GolfState.BALL_IS_IN_HOLE
                 self.ball_in_hole_time = time.time()
 
-                hole_body = self.world.create_static_body(
-                    position=self.level.hole_position
-                )
+                hole_body = self.world.create_static_body(position=self.level.hole_position)
 
                 # create a distance joint to capture the ball in the hole
                 self.world.create_distance_joint(

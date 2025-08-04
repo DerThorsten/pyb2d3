@@ -30,9 +30,7 @@ class Meteor(SampleBase):
                 y = y_start_inner + box_shape[1] / 2
                 body = self.world.create_dynamic_body(position=(x, y))
                 body.create_shape(
-                    b2d.shape_def(
-                        density=1, material=b2d.surface_material(restitution=0.5)
-                    ),
+                    b2d.shape_def(density=1, material=b2d.surface_material(restitution=0.5)),
                     b2d.box(hx=box_shape[0] / 2, hy=box_shape[1] / 2),
                 )
 
@@ -45,9 +43,7 @@ class Meteor(SampleBase):
                         )
                     )
                     body.create_shape(
-                        b2d.shape_def(
-                            density=1, material=b2d.surface_material(restitution=0.5)
-                        ),
+                        b2d.shape_def(density=1, material=b2d.surface_material(restitution=0.5)),
                         b2d.box(hx=box_shape[1] / 2, hy=box_shape[0] / 2),
                     )
 

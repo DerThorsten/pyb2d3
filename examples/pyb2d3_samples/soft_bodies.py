@@ -20,9 +20,7 @@ class SoftBodies(SampleBase):
         # attach the chain shape to a static body
         self.box_body = self.world.create_static_body(position=(0, 0))
         self.box_body.create_chain(
-            b2d.chain_box(
-                center=(0, 0), hx=self.outer_box_radius, hy=self.outer_box_radius
-            )
+            b2d.chain_box(center=(0, 0), hx=self.outer_box_radius, hy=self.outer_box_radius)
         )
 
         grid_shape = (4, 4)
@@ -75,16 +73,12 @@ class SoftBodies(SampleBase):
 
     # create explosion on double click
     def on_double_click(self, event):
-        self.world.explode(
-            position=event.world_position, radius=7, impulse_per_length=20
-        )
+        self.world.explode(position=event.world_position, radius=7, impulse_per_length=20)
 
     # create "negative" explosion on triple click
     # this will pull bodies towards the click position
     def on_triple_click(self, event):
-        self.world.explode(
-            position=event.world_position, radius=7, impulse_per_length=-20
-        )
+        self.world.explode(position=event.world_position, radius=7, impulse_per_length=-20)
 
     def aabb(self):
         eps = 0.01

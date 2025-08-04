@@ -78,9 +78,7 @@ class GLBackground:
         ]
 
         # Convert Vec2 list to flat numpy array
-        vertex_data = np.array(
-            [(v[0], v[1]) for v in vertices], dtype=np.float32
-        ).flatten()
+        vertex_data = np.array([(v[0], v[1]) for v in vertices], dtype=np.float32).flatten()
 
         # Upload vertex data
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
@@ -114,9 +112,7 @@ class GLBackground:
 
         glUniform1f(self.time_uniform, 0)
         # Use camera instance for resolution
-        glUniform2f(
-            self.resolution_uniform, float(self.camera.width), float(self.camera.height)
-        )
+        glUniform2f(self.resolution_uniform, float(self.camera.width), float(self.camera.height))
         glUniform3f(self.base_color_uniform, 0.2, 0.2, 0.2)  # Gray background
 
         # Draw quad
@@ -157,9 +153,7 @@ class GLCircles:
         fragment_shader = os.path.join(current_dir, "shaders", "circle.fs")
 
         self.program_id = create_program_from_files(vertex_shader, fragment_shader)
-        self.projection_uniform = glGetUniformLocation(
-            self.program_id, "projectionMatrix"
-        )
+        self.projection_uniform = glGetUniformLocation(self.program_id, "projectionMatrix")
         self.pixel_scale_uniform = glGetUniformLocation(self.program_id, "pixelScale")
 
         # Generate vertex array and buffers
@@ -355,9 +349,7 @@ class GLSolidCircles:
         fragment_shader = os.path.join(current_dir, "shaders", "solid_circle.fs")
 
         self.program_id = create_program_from_files(vertex_shader, fragment_shader)
-        self.projection_uniform = glGetUniformLocation(
-            self.program_id, "projectionMatrix"
-        )
+        self.projection_uniform = glGetUniformLocation(self.program_id, "projectionMatrix")
         self.pixel_scale_uniform = glGetUniformLocation(self.program_id, "pixelScale")
 
         # Generate vertex array and buffers
@@ -549,9 +541,7 @@ class GLSolidCapsules:
         fragment_shader = os.path.join(current_dir, "shaders", "solid_capsule.fs")
 
         self.program_id = create_program_from_files(vertex_shader, fragment_shader)
-        self.projection_uniform = glGetUniformLocation(
-            self.program_id, "projectionMatrix"
-        )
+        self.projection_uniform = glGetUniformLocation(self.program_id, "projectionMatrix")
         self.pixel_scale_uniform = glGetUniformLocation(self.program_id, "pixelScale")
 
         self.vao_id = glGenVertexArrays(1)
@@ -734,9 +724,7 @@ class GLSolidPolygons:
         fragment_shader = os.path.join(current_dir, "shaders", "solid_polygon.fs")
 
         self.program_id = create_program_from_files(vertex_shader, fragment_shader)
-        self.projection_uniform = glGetUniformLocation(
-            self.program_id, "projectionMatrix"
-        )
+        self.projection_uniform = glGetUniformLocation(self.program_id, "projectionMatrix")
         self.pixel_scale_uniform = glGetUniformLocation(self.program_id, "pixelScale")
 
         self.vao_id = glGenVertexArrays(1)
@@ -807,9 +795,7 @@ class GLSolidPolygons:
             instance_point78, 4, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(offset)
         )
         offset += 16
-        glVertexAttribIPointer(
-            instance_point_count, 1, GL_INT, stride, ctypes.c_void_p(offset)
-        )
+        glVertexAttribIPointer(instance_point_count, 1, GL_INT, stride, ctypes.c_void_p(offset))
         offset += 4
         glVertexAttribPointer(
             instance_radius, 1, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(offset)
@@ -936,26 +922,20 @@ class GLPoints:
             "}\n"
         )
         self.program_id = create_program_from_strings(vertex_shader, fragment_shader)
-        self.projection_uniform = glGetUniformLocation(
-            self.program_id, "projectionMatrix"
-        )
+        self.projection_uniform = glGetUniformLocation(self.program_id, "projectionMatrix")
         self.vao_id = glGenVertexArrays(1)
         self.vbo_id = glGenBuffers(1)
         glBindVertexArray(self.vao_id)
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
         # Allocate an empty dynamic buffer
         glBufferData(GL_ARRAY_BUFFER, 0, None, GL_DYNAMIC_DRAW)
-        stride = (
-            2 * 4 + 4 + 4
-        )  # 2 floats (8 bytes) + 1 float (4 bytes) + 4 bytes for color
+        stride = 2 * 4 + 4 + 4  # 2 floats (8 bytes) + 1 float (4 bytes) + 4 bytes for color
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(0))
         glEnableVertexAttribArray(1)
         glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(8))
         glEnableVertexAttribArray(2)
-        glVertexAttribPointer(
-            2, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, ctypes.c_void_p(12)
-        )
+        glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, ctypes.c_void_p(12))
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
 
@@ -1028,9 +1008,7 @@ class GLLines:
             "}\n"
         )
         self.program_id = create_program_from_strings(vertex_shader, fragment_shader)
-        self.projection_uniform = glGetUniformLocation(
-            self.program_id, "projectionMatrix"
-        )
+        self.projection_uniform = glGetUniformLocation(self.program_id, "projectionMatrix")
         self.vao_id = glGenVertexArrays(1)
         self.vbo_id = glGenBuffers(1)
         glBindVertexArray(self.vao_id)
@@ -1040,9 +1018,7 @@ class GLLines:
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(0))
         glEnableVertexAttribArray(1)
-        glVertexAttribPointer(
-            1, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, ctypes.c_void_p(8)
-        )
+        glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, ctypes.c_void_p(8))
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
 

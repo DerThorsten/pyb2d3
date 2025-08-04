@@ -291,9 +291,7 @@ class IpycanvasDebugDraw(FrontendDebugDraw):
         world_x_axis = world_pos + transform.transform_point(X_AXIS)
         world_y_axis = world_pos + transform.transform_point(Y_AXIS)
         self._batch_lines.add(world_pos, world_x_axis, color=0xFF0000)  # red for x-axis
-        self._batch_lines.add(
-            world_pos, world_y_axis, color=0x00FF00
-        )  # green for y-axis
+        self._batch_lines.add(world_pos, world_y_axis, color=0x00FF00)  # green for y-axis
 
     def draw_point(self, p, size, color):
         pass
@@ -307,9 +305,7 @@ class IpycanvasDebugDraw(FrontendDebugDraw):
         self._batch_lines.add(p1, p2, ensure_hex(color))
 
     def draw_solid_capsule(self, p1, p2, radius, color):
-        self._poor_mans_draw_solid_capsule(
-            p1=p1, p2=p2, radius=radius, color=ensure_hex(color)
-        )
+        self._poor_mans_draw_solid_capsule(p1=p1, p2=p2, radius=radius, color=ensure_hex(color))
 
 
 last_frontend = [None]
@@ -335,10 +331,7 @@ class IpycanvasFrontend(FrontendBase):
 
             # if a cell is re-executed, we need to cancel the previous loop,
             # otherwise we will have multiple loops running
-            if (
-                last_frontend[0] is not None
-                and last_frontend[0].cancel_loop is not None
-            ):
+            if last_frontend[0] is not None and last_frontend[0].cancel_loop is not None:
                 last_frontend[0].cancel_loop()
             last_frontend[0] = self
 
@@ -385,9 +378,7 @@ class IpycanvasFrontend(FrontendBase):
                 self.canvas.on_mouse_out(self.on_mouse_leave)
                 self.canvas.on_mouse_enter(self.on_mouse_enter)
         except Exception as e:
-            self.output_widget.append_stdout(
-                f"Exception in IpycanvasFrontend.__init__: {e}\n"
-            )
+            self.output_widget.append_stdout(f"Exception in IpycanvasFrontend.__init__: {e}\n")
             self.output_widget.append_stdout(traceback.format_exc())
             raise e
 
@@ -439,9 +430,7 @@ class IpycanvasFrontend(FrontendBase):
                     return
 
                 if self.settings.debug_draw.draw_background:
-                    self.canvas.fill_style = html_color(
-                        self.settings.debug_draw.background_color
-                    )
+                    self.canvas.fill_style = html_color(self.settings.debug_draw.background_color)
                     self.canvas.fill_rect(
                         0,
                         0,
@@ -453,9 +442,7 @@ class IpycanvasFrontend(FrontendBase):
 
                 self.update_and_draw(dt)
             except Exception:
-                self.output_widget.append_stdout(
-                    f"Error in main loop: {traceback.format_exc()}\n"
-                )
+                self.output_widget.append_stdout(f"Error in main loop: {traceback.format_exc()}\n")
                 self.cancel_loop()
 
         self.cancel_loop = set_render_loop(self.canvas, f, fps=self.settings.fps)

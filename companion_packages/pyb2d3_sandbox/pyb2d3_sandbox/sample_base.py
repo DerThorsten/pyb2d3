@@ -138,8 +138,7 @@ class SampleBase(object):
                 body_b=self.mouse_joint_body,
                 target=self.mouse_pos,
                 hertz=self.mouse_joint_hertz,
-                max_force=self.mouse_joint_body.mass
-                * self.mouse_joint_force_multiplier,
+                max_force=self.mouse_joint_body.mass * self.mouse_joint_force_multiplier,
                 damping_ratio=self.mouse_joint_damping_ratio,
             )
         else:
@@ -164,9 +163,7 @@ class SampleBase(object):
                 self.destroy_mouse_joint()
                 return
 
-            assert self.is_mouse_down, (
-                "Mouse joint should only be updated when mouse is down"
-            )
+            assert self.is_mouse_down, "Mouse joint should only be updated when mouse is down"
             self._mouse_joint.target = event.world_position
         elif self._camera_drag:
             # If dragging the camera, update the camera position

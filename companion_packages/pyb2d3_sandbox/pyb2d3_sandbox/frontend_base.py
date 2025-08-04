@@ -110,9 +110,7 @@ class FrontendDebugDraw(b2d.DebugDraw):
             ctransform.q = transform.q
             self.draw_solid_circle(transform=ctransform, radius=radius, color=color)
         # draw the inner part of the polygon
-        self.draw_solid_polygon(
-            points=points, transform=transform, color=color, radius=0
-        )
+        self.draw_solid_polygon(points=points, transform=transform, color=color, radius=0)
 
 
 @dataclass
@@ -194,9 +192,7 @@ class TripleClickEvent(MouseEvent):
 
 
 class MultiClickHandler:
-    def __init__(
-        self, delayed_time_ms, on_click, on_double_click=None, on_triple_click=None
-    ):
+    def __init__(self, delayed_time_ms, on_click, on_double_click=None, on_triple_click=None):
         self.delayed_time = delayed_time_ms / 1000.0
         self.first_click_time = None
         self.second_click_time = None
@@ -228,9 +224,7 @@ class MultiClickHandler:
         if self.second_click_time is not None:
             if current_time - self.second_click_time > self.delayed_time:
                 # chance for a triple click timed out, we can call the second click handler
-                self.on_double_click(
-                    DoubleClickEvent(world_position=self.last_world_pos)
-                )
+                self.on_double_click(DoubleClickEvent(world_position=self.last_world_pos))
                 self.first_click_time = None
                 self.second_click_time = None
 
@@ -247,9 +241,7 @@ class MultiClickHandler:
             # this is a potential tripple click if
             # the time frame is still valid
             if time.time() - self.second_click_time <= self.delayed_time:
-                self.on_triple_click(
-                    TripleClickEvent(world_position=self.last_world_pos)
-                )
+                self.on_triple_click(TripleClickEvent(world_position=self.last_world_pos))
             self.first_click_time = None
             self.second_click_time = None
             return
@@ -257,9 +249,7 @@ class MultiClickHandler:
             if self.first_click_time is not None:
                 # click is in time frame for a second click
                 if self.on_triple_click is None:
-                    self.on_double_click(
-                        DoubleClickEvent(world_position=self.last_world_pos)
-                    )
+                    self.on_double_click(DoubleClickEvent(world_position=self.last_world_pos))
                     self.first_click_time = None
                     self.second_click_time = None
                 else:
