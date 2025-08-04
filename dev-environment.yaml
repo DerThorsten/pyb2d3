@@ -18,7 +18,7 @@ dependencies:
   - numpy
   # Tests
   - pytest
-  - pytest-sugarå
+  - pytest-sugar
   # utils
   - pre-commit
   # frontend
