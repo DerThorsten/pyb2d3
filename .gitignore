@@ -42,7 +42,6 @@ __pycache__/
 # bld directory
 bld/
 
-
 # some testfonts
 Minecraft.ttf
 
@@ -71,17 +70,24 @@ benchmark/
 run.sh
 init.sh
 
-
 .benchmarks/
 .ruff_cache/
 .pytest_cache/
 .micromamba
 ]
 
-
 # egg-info directories ALL OF THEM
 **/*.egg-info/
 
-
 # the notebooks atm
 examples/notebooks/
+
+
+# ignore the "output" directory for emscripten-forge builds
+emscripten_forge/output/
+
+# ignore the rendered recipe (ie where the template is replaced)
+emscripten_forge/recipe/recipe.yaml
+
+# ignore the variant file (we donwload it on the fly)
+emscripten_forge/variant.yaml
