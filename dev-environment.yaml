@@ -32,3 +32,13 @@ dependencies:
   # building emscripten package
   - curl # to download the variant file
   - rattler-build
+  # converting examples to notebooks
+  - jupytext
+  # building the wasm-env
+  - micromamba
+  # building the lite page
+  - jupyter_server
+  - jupyterlite-core >=0.6
+  - jupyterlite-xeus >=4
+  # widgets which we want in lite, but need to install them in the build env
+  - ipycanvas >=0.14.1

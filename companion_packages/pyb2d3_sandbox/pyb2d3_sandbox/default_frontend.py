@@ -6,7 +6,7 @@ _CachedDefaultFrontend = None
 def is_notebook() -> bool:
     try:
         shell = get_ipython().__class__.__name__
-        if shell == "ZMQInteractiveShell":
+        if shell == "ZMQInteractiveShell" or shell == "XPythonShell":
             return True  # Jupyter notebook or qtconsole
         elif shell == "TerminalInteractiveShell":
             return False  # Terminal running IPython

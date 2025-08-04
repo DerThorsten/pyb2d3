@@ -3,8 +3,13 @@ from pyb2d3_sandbox.sample_base import SampleBase
 import random
 
 
-# just to get the examples_common code into the sys.path
-b2d.add_to_sys_path(__file__)
+try:
+    import examples_common  # noqa: F401, E402
+except ImportError:
+    import os
+    import sys
+
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 class Tumbler(SampleBase):

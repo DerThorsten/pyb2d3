@@ -13,6 +13,7 @@
 // C
 
 #include <iostream>
+#include <sstream>
 
 // to_string
 #include <string>
@@ -134,7 +135,20 @@ void export_b2Vec2(py::module_& m)
                 {
                     return self.y;
                 }
-                throw std::out_of_range("Index out of range");
+                else if (index == -2)
+                {
+                    return self.x;
+                }
+                else if (index == -1)
+                {
+                    return self.y;
+                }
+                else
+                {
+                    std::stringstream ss;
+                    ss << "Index out of range: index=" << index;
+                    throw std::out_of_range(ss.str());
+                }
             }
         )
         .def(
@@ -149,9 +163,20 @@ void export_b2Vec2(py::module_& m)
                 {
                     self.y = value;
                 }
+                // handle negative indices
+                else if (index == -2)
+                {
+                    self.x = value;
+                }
+                else if (index == -1)
+                {
+                    self.y = value;
+                }
                 else
                 {
-                    throw std::out_of_range("Index out of range");
+                    std::stringstream ss;
+                    ss << "Index out of range: index=" << index;
+                    throw std::out_of_range(ss.str());
                 }
             }
         )
