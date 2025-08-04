@@ -52,17 +52,11 @@ class Tumbler(SampleBase):
 
         material = b2d.surface_material(restitution=0.5, friction=0.5)
 
-        self.tumbler_body.create_shape(
-            b2d.shape_def(density=5, material=material), left
-        )
+        self.tumbler_body.create_shape(b2d.shape_def(density=5, material=material), left)
 
-        self.tumbler_body.create_shape(
-            b2d.shape_def(density=5, material=material), right
-        )
+        self.tumbler_body.create_shape(b2d.shape_def(density=5, material=material), right)
         self.tumbler_body.create_shape(b2d.shape_def(density=5, material=material), top)
-        self.tumbler_body.create_shape(
-            b2d.shape_def(density=5, material=material), bottom
-        )
+        self.tumbler_body.create_shape(b2d.shape_def(density=5, material=material), bottom)
 
         # add a revolute joint to the tumbler body
         self.world.create_revolute_joint(
@@ -129,9 +123,7 @@ class Tumbler(SampleBase):
             )
             capsule_body.create_shape(
                 b2d.shape_def(density=1, material=material, enable_contact_events=True),
-                b2d.capsule(
-                    (0, 0), (self.capsule_length, 0), radius=self.capsule_radius
-                ),
+                b2d.capsule((0, 0), (self.capsule_length, 0), radius=self.capsule_radius),
             )
 
         # # rounded rectangle
@@ -168,14 +160,10 @@ class Tumbler(SampleBase):
         #     )
 
     def on_double_click(self, event):
-        self.world.explode(
-            position=event.world_position, radius=20, impulse_per_length=10
-        )
+        self.world.explode(position=event.world_position, radius=20, impulse_per_length=10)
 
     def on_triple_click(self, event):
-        self.world.explode(
-            position=event.world_position, radius=20, impulse_per_length=-10
-        )
+        self.world.explode(position=event.world_position, radius=20, impulse_per_length=-10)
 
     def aabb(self):
         return b2d.aabb(lower_bound=(-20, -20), upper_bound=(20, 20))
