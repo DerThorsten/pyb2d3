@@ -24,4 +24,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["pyb2d3_sandbox_ipycanvas"]
+
+
+[tool.setuptools.package-data]
+"pyb2d3_sandbox_ipycanvas" = ["init.js"]

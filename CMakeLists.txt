@@ -60,6 +60,12 @@ if(EMSCRIPTEN)
 
     # # Attempt to create an alias (might not fully satisfy the check)
     # add_library(Python::Module ALIAS MyFakePythonModule)
+
+    # add f-exception flag to cxx and c flags linker-flags
+    # export CFLAGS="$CFLAGS -sWASM_BIGINT -fexceptions"
+    # export CXXFLAGS="$CXXFLAGS -sWASM_BIGINT -fexceptions"
+    # export LDFLAGS="$LDFLAGS -sWASM_BIGINT -fexceptions"
+
     find_package(Python COMPONENTS Interpreter Development REQUIRED)
 else()
     # Find Python

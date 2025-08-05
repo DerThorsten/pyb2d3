@@ -1,10 +1,16 @@
+# +
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase
 import random
 
-# only for examples: import local module "examples_common"
-# import local module st. it also works in jupyter, only for examples
-examples_common = b2d.import_local(__file__, "examples_common")
+try:
+    import examples_common  # noqa: F401, E402
+except ImportError:
+    import os
+    import sys
+
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import examples_common  # noqa: F401, E402
 
 
 class Ragdoll(SampleBase):
