@@ -1,3 +1,4 @@
+# +
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase
 
@@ -272,7 +273,7 @@ class Billard(SampleBase):
             if ball.is_half:
                 self.debug_draw.draw_solid_circle(
                     transform=ball.body.transform,
-                    radius=self.ball_radius,
+                    radius=self.ball_radius / 2,
                     color=(255, 255, 255),
                 )
         if self.marked_point_on_white_ball is not None:

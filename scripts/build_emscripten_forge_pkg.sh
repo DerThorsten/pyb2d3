@@ -1,10 +1,10 @@
 # this dir
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-REPO_ROOT=$DIR/..
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+REPO_ROOT=$THIS_DIR/..
 REPO_ROOT=$(readlink -f "$REPO_ROOT")
 
 
-EMSCRIPTEN_FORGE_DIR="emscripten_forge"
+EMSCRIPTEN_FORGE_DIR=$REPO_ROOT/emscripten_forge
 RECIPE_DIR="$EMSCRIPTEN_FORGE_DIR/recipe"
 RECIPE_YAML_TEMPLATE="$RECIPE_DIR/recipe.yaml.template"
 RECIPE_YAML="$RECIPE_DIR/recipe.yaml"
@@ -27,6 +27,16 @@ else
 fi
 
 
+# get extra args
+EXTRA_ARGS=()
+if [ $# -gt 0 ]; then
+    echo "Using extra args: $@"
+    EXTRA_ARGS=("$@")
+else
+    echo "No extra args provided"
+fi
+
+
 rattler-build build \
     --package-format tar-bz2 \
     -c https://repo.prefix.dev/emscripten-forge-dev \
@@ -36,3 +46,4 @@ rattler-build build \
     -m "$VARIANT_FILE" \
     --recipe "$RECIPE_DIR" \
     --output-dir "$OUTPUT_DIR" \
+    ${EXTRA_ARGS[@]} \

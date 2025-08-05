@@ -37,6 +37,21 @@ jobs:
 
           cmake --build . --config Release
 
+      - name: emscripten-forge-package
+        shell: bash -el {0}
+        run: |
+          ./scripts/build_emscripten_forge_pkg.sh
+
+      - name: emscripten-forge-package
+        shell: bash -el {0}
+        run: |
+          ./scripts/build_lite_env.sh
+
+      - name: convert examples to notebooks
+        shell: bash -el {0}
+        run: |
+          ./scripts/examples_to_notebooks.sh
+
       - name: build docs
         shell: bash -el {0}
         run: |
