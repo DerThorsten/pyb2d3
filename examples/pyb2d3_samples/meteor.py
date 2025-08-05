@@ -48,7 +48,7 @@ class Meteor(SampleBase):
                         b2d.box(hx=box_shape[1] / 2, hy=box_shape[0] / 2),
                     )
 
-        if self.frontend.settings.headless or True:
+        if self.frontend.settings.headless:
             meteor_body = self.world.create_dynamic_body(
                 position=(-35, 300),
                 linear_velocity=(10, 0),
