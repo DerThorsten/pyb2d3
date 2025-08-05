@@ -18,7 +18,7 @@ class Meteor(SampleBase):
         )
 
         # build a towers  meteor can hit
-        num_blocks_base = 60
+        num_blocks_base = 40
         box_shape = [0.5, 3.0]
         distance_x = box_shape[1]
         start_x = 0
