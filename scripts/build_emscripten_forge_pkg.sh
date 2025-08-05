@@ -27,6 +27,16 @@ else
 fi
 
 
+# get extra args
+EXTRA_ARGS=()
+if [ $# -gt 0 ]; then
+    echo "Using extra args: $@"
+    EXTRA_ARGS=("$@")
+else
+    echo "No extra args provided"
+fi
+
+
 rattler-build build \
     --package-format tar-bz2 \
     -c https://repo.prefix.dev/emscripten-forge-dev \
@@ -36,4 +46,4 @@ rattler-build build \
     -m "$VARIANT_FILE" \
     --recipe "$RECIPE_DIR" \
     --output-dir "$OUTPUT_DIR" \
-    --test=skip \
+    ${EXTRA_ARGS[@]} \

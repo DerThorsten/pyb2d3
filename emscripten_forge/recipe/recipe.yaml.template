@@ -8,7 +8,7 @@ source:
   path: PATH_PLACEHOLDER_TO_BE_REPLACED
 
 build:
-  number: 4
+  number: 7
 
 outputs:
   - package:

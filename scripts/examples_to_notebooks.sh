@@ -15,7 +15,7 @@ for file in pyb2d3_samples/*.py; do
         continue
     fi
     base="${filename%.py}"
-    jupytext "$file" --to notebook --output "notebooks/${base}.ipynb" --set-kernel python3
+    jupytext "$file" --to notebook --output "notebooks/${base}.ipynb"  --update-metadata '{"kernelspec": {"name": "xpython"}}'
 done
 
 cp -r pyb2d3_samples/examples_common/ notebooks/examples_common
