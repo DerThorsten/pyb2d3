@@ -75,7 +75,7 @@ OffscreenCanvasRenderingContext2D.prototype._draw_solid_circles = function(data)
         // const s = data[index + 2];
         // const c = data[index + 3];
         const radius = data[index + 4];
-
+        const color = data[index + 5];
 
         ctx.beginPath();
         ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -148,17 +148,78 @@ OffscreenCanvasRenderingContext2D.prototype._draw_solid_polygons = function(n_it
             this.fill();
             this.closePath();
         }
-        else {
-            //console.log("TODO: draw solid polygon with radius", radius);
+        else{
+            // step 1:
+            // calculate the orientation of the normal of each line segment
+            // the first line segment is between point 0 and point 1
+            // the last line segment is between point n-1 and point 0
+
+            const points_start = last_index + 7;
+
+            let normals = [];
+
+            // get the last point as start point
+            let p0_x = data[points_start + (n_points - 1) * 2];
+            let p0_y = data[points_start + (n_points - 1) * 2 + 1];
+
+            for(let j = 0; j < n_points; j++)
+            {
+                //  next point
+                const p1_x = data[points_start + j * 2];
+                const p1_y = data[points_start + j * 2 + 1];
+
+                // delta
+                const dx = p1_x - p0_x;
+                const dy = p1_y - p0_y;
+
+                // calculate the normal vector
+                const nnx = -dy;
+                const nny = dx;
+                // // normalize the normal vector
+                // const length = Math.sqrt(nnx * nnx + nny * nny);
+                // const nx = nnx / length;
+                // const ny = nny / length;
+
+                // orientation of the normal vector
+                const normal_angle = Math.atan2(nny, nnx);
+
+                normals.push(normal_angle);
+
+                // make this point the next last point
+                p0_x = p1_x;
+                p0_y = p1_y;
+
+            }
+
+            p0_x = data[points_start + (n_points - 1) * 2];
+            p0_y = data[points_start + (n_points - 1) * 2 + 1];
+            n0 = normals[n_points - 1];
+            this.beginPath();
+            for(let j = 0; j < n_points; j++)
+            {
+                //  next point
+                const n1 = normals[j];
+                const p1_x = data[points_start + j * 2];
+                const p1_y = data[points_start + j * 2 + 1];
+
+                const offset =  Math.PI;
+                this.arc(p0_x, p0_y, radius, n0 + offset, n1 + offset, false);
+
+                // make this point the next last point
+                p0_x = p1_x;
+                p0_y = p1_y;
+                n0 = n1;
+
+            }
+
+            this.closePath();
+            this.fill();
         }
-
-
 
         this.restore();
         last_index += 7 + n_points * 2;
     }
 }
-
 // segments
 OffscreenCanvasRenderingContext2D.prototype._draw_segments = function(data) {
     ////console.log("OffscreenCanvasRenderingContext2D._draw_segments", data);
