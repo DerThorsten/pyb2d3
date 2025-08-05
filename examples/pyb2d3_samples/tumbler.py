@@ -126,45 +126,14 @@ class Tumbler(SampleBase):
             material = b2d.surface_material(
                 restitution=0.5,
                 friction=0.5,
-                custom_color=b2d.rgb_to_hex_color(0, 100, 200),
+                custom_color=b2d.rgb_to_hex_color(
+                    random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)
+                ),
             )
             capsule_body.create_shape(
                 b2d.shape_def(density=1, material=material, enable_contact_events=True),
                 b2d.capsule((0, 0), (self.capsule_length, 0), radius=self.capsule_radius),
             )
-
-        # # rounded rectangle
-        # self.rounded_rectangle_radius = 0.1
-        # self.rounded_rectangle_width = 0.3
-        # self.rounded_rectangle_height = 0.1
-        # for i in range(1200):
-        #     # radom position in the tumbler
-        #     x = random.uniform(
-        #         -box_diameter / 2 + self.rounded_rectangle_width / 2,
-        #         box_diameter / 2 - self.rounded_rectangle_width / 2,
-        #     )
-        #     y = random.uniform(
-        #         -box_diameter / 2 + self.rounded_rectangle_height / 2,
-        #         box_diameter / 2 - self.rounded_rectangle_height / 2,
-        #     )
-
-        #     rounded_rectangle_body = self.world.create_dynamic_body(
-        #         position=(x, y),
-        #         linear_damping=0.9,
-        #     )
-        #     material = b2d.surface_material(
-        #         restitution=0.5,
-        #         friction=0.5,
-        #         custom_color=b2d.rgb_to_hex_color(200, 100, 0),
-        #     )
-        #     rounded_rectangle_body.create_shape(
-        #         b2d.shape_def(density=1, material=material, enable_contact_events=True),
-        #         b2d.box(
-        #             hx=self.rounded_rectangle_width / 2,
-        #             hy=self.rounded_rectangle_height / 2,
-        #             radius=self.rounded_rectangle_radius,
-        #         ),
-        #     )
 
     def on_double_click(self, event):
         self.world.explode(position=event.world_position, radius=20, impulse_per_length=10)
@@ -177,6 +146,4 @@ class Tumbler(SampleBase):
 
 
 if __name__ == "__main__":
-    from pyb2d3_sandbox_pygame import PygameFrontend
-
-    Tumbler.run(frontend_class=PygameFrontend)
+    Tumbler.run()
