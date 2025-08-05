@@ -40,7 +40,8 @@ jobs:
       - name: emscripten-forge-package
         shell: bash -el {0}
         run: |
-          ./scripts/build_emscripten_forge_pkg.sh
+          # skip tests here since there is a dedicated job for that
+          ./scripts/build_emscripten_forge_pkg.sh --test=skip
 
       - name: emscripten-forge-package
         shell: bash -el {0}
