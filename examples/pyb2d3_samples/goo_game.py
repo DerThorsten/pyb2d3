@@ -422,7 +422,7 @@ class GooGame(SampleBase):
         self.ud = UserDataStore()
 
         # some state
-        self.next_goo = BlackGoo(self)
+        self.next_goo = self.selected_goo_cls(self)
         self.tentative_placement = (False, None, None, None)
         self.mouse_is_down = False
         self.drag_camera = False
