@@ -2,7 +2,7 @@
 import pyb2d3 as b2d
 import numpy as np
 from pyb2d3_sandbox import SampleBase
-
+import pyb2d3_sandbox.ui_elements as ui_elements
 
 from dataclasses import dataclass
 
@@ -397,13 +397,10 @@ class BlackGoo(Goo):
         self.hertz = 10  # very stiff
 
     def draw_edge(self, p1, p2):
-        self.debug_draw.draw_line(
+        self.debug_draw.draw_segment(
             p1=p1,
             p2=p2,
             color=BlackGoo.color_rgb,
-            line_width=5,
-            world_coordinates=True,
-            width_in_pixels=True,
         )
 
 
@@ -417,26 +414,35 @@ class GooGame(SampleBase):
 
         # goo classes
         self.goo_classes = [BlueGoo, RedGoo, WhiteGoo, BlackGoo]
+        self.goo_name_to_index = {goo_cls.name: i for i, goo_cls in enumerate(self.goo_classes)}
+
         self.selected_goo_cls = BlueGoo
 
         # the user data store
         self.ud = UserDataStore()
 
         # some state
-        self.next_goo = BlueGoo(self)
+        self.next_goo = BlackGoo(self)
         self.tentative_placement = (False, None, None, None)
         self.mouse_is_down = False
         self.drag_camera = False
-        # self.last_canvas_pos = None
 
-    # # pressed on the hud
-    # def on_restart_button(self):
-    #     self.frontend.set_sample(self.__class__, self.settings)
+        # add ui-elements
+        self.frontend.add_ui_element(
+            ui_elements.RadioButtons(
+                name="Goo Type",
+                options=[goo_cls.name for goo_cls in self.goo_classes],
+                value=self.selected_goo_cls.name,
+                callback=lambda goo_name: self.on_goo_change(self.goo_name_to_index[goo_name]),
+            )
+        )
 
     def on_goo_change(self, new_goo_type):
         # change the next goo type
+        print("Changing goo type to:", new_goo_type)
         self.selected_goo_cls = self.goo_classes[new_goo_type]
         self.next_goo = self.selected_goo_cls(self)
+        print("Next goo type is now:", self.next_goo.name)
 
     def on_mouse_down(self, event):
         self.mouse_is_down = True

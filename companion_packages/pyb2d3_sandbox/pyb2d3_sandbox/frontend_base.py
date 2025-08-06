@@ -290,12 +290,25 @@ class FrontendBase(ABC):
         self.sample_settings = sample_settings
         self.change_sample_class_requested = True
 
+    def pre_new_sample(self, sample_class, sample_settings):
+        # this can be overridden in derived classes
+        pass
+
+    def post_new_sample(self, sample_class, sample_settings):
+        # this can be overridden in derived classes
+        pass
+
     def _set_new_sample(self, sample_class, sample_settings):
         self.iteration = 0
         self.acc_debug_draw_time = 0
         self.acc_update_time = 0
+
+        self.pre_new_sample(sample_class, sample_settings)
         # construct the sample
         self.sample = self.sample_class(self, self.sample_settings)
+
+        # post new sample
+        self.post_new_sample(sample_class, sample_settings)
 
         self.center_sample(margin_px=10)
 
@@ -356,6 +369,22 @@ class FrontendBase(ABC):
         if self.settings.debug_draw.enabled:
             self.debug_draw.end_draw()
         self.iteration += 1
+
+    def on_play(self):
+        pass
+
+    def on_pause(self):
+        pass
+
+    def on_single_step(self):
+        fps = self.settings.fps
+        if fps == 0:
+            fps = 60  # default to 60 FPS if not set
+        dt = 1 / fps
+        self.update_and_draw(dt)
+
+    def on_stop(self):
+        self.set_sample(self.sample_class, self.sample_settings)
 
     def center_sample(self, sample, margin_px=10):
         raise NotImplementedError(
@@ -432,4 +461,7 @@ class FrontendBase(ABC):
     @abstractmethod
     def main_loop(self):
         """Main loop of the frontend, where the sample is updated and drawn."""
+        pass
+
+    def add_ui_element(self, element):
         pass

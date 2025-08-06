@@ -10,13 +10,14 @@ from pyb2d3_sandbox.frontend_base import (
 import sys
 import asyncio
 
+from .ui import TestbedUI
 from .render_loop import set_render_loop
+from ipycanvas.call_repeated import set_render_loop as ipycanvas_set_render_loop
 
 # output widget from ipywidgets
 from ipywidgets import Output
 
 # display from IPython
-from IPython.display import display
 
 import pyb2d3 as b2d
 import traceback
@@ -70,6 +71,7 @@ class IpycanvasFrontend(FrontendBase):
             self.canvas = Canvas(
                 width=self.settings.canvas_shape[0],
                 height=self.settings.canvas_shape[1],
+                # layout=Layout(width='100%')
             )
             self.output_widget = Output()
 
@@ -90,15 +92,18 @@ class IpycanvasFrontend(FrontendBase):
                 canvas=self.canvas,
                 output_widget=self.output_widget,
             )
+
             self.debug_draw.draw_shapes = settings.debug_draw.draw_shapes
             self.debug_draw.draw_joints = settings.debug_draw.draw_joints
+
+            self.ui = TestbedUI(self)
 
             self.cancel_loop = None
 
             self._last_canvas_mouse_pos = b2d.Vec2(0, 0)
 
             # display the canvas
-            display(self.canvas, self.output_widget)
+            self.ui.display()
 
             if not use_offscreen:
                 # use ipyevents to handle  events
@@ -127,27 +132,36 @@ class IpycanvasFrontend(FrontendBase):
             raise e
 
     def on_mouse_move(self, x, y):
-        mouse_pos = b2d.Vec2(x, y)
-        # get the delta
-        if self._last_canvas_mouse_pos is None:
-            self._last_canvas_mouse_pos = mouse_pos
+        try:
+            if not self.ui.is_playing():
+                return
+            mouse_pos = b2d.Vec2(x, y)
+            # get the delta
+            if self._last_canvas_mouse_pos is None:
+                self._last_canvas_mouse_pos = mouse_pos
 
-        delta = mouse_pos - self._last_canvas_mouse_pos
-        # convert delta to world coordinates
-        world_delta = (
-            self.transform.scale_canvas_to_world(delta[0]),
-            -self.transform.scale_canvas_to_world(delta[1]),
-        )
-        self._last_canvas_mouse_pos = mouse_pos
-        world_pos = self.transform.canvas_to_world(mouse_pos)
-        self.sample.on_mouse_move(
-            MouseMoveEvent(
-                world_position=world_pos,
-                world_delta=world_delta,
+            delta = mouse_pos - self._last_canvas_mouse_pos
+            # convert delta to world coordinates
+            world_delta = (
+                self.transform.scale_canvas_to_world(delta[0]),
+                -self.transform.scale_canvas_to_world(delta[1]),
             )
-        )
+            self._last_canvas_mouse_pos = mouse_pos
+            world_pos = self.transform.canvas_to_world(mouse_pos)
+            self.sample.on_mouse_move(
+                MouseMoveEvent(
+                    world_position=world_pos,
+                    world_delta=world_delta,
+                )
+            )
+        except Exception as e:
+            self.output_widget.append_stdout(f"Exception in on_mouse_move: {e}\n")
+            self.output_widget.append_stdout(traceback.format_exc())
+            self.cancel_loop()
 
     def on_mouse_wheel(self, delta):
+        if not self.ui.is_playing():
+            return
         canvas_pos = self._last_canvas_mouse_pos
         world_pos = self.transform.canvas_to_world(canvas_pos)
         self.sample.on_mouse_wheel(
@@ -158,23 +172,51 @@ class IpycanvasFrontend(FrontendBase):
         )
 
     def on_mouse_down(self, x, y):
-        mouse_pos = b2d.Vec2(x, y)
-        self._last_canvas_mouse_pos = mouse_pos
-        world_pos = self.transform.canvas_to_world(mouse_pos)
+        try:
+            if not self.ui.is_playing():
+                return
+            mouse_pos = b2d.Vec2(x, y)
+            self._last_canvas_mouse_pos = mouse_pos
+            world_pos = self.transform.canvas_to_world(mouse_pos)
 
-        self._multi_click_handler.handle_click(world_position=world_pos)
-        self.sample.on_mouse_down(MouseDownEvent(world_position=world_pos))
+            self._multi_click_handler.handle_click(world_position=world_pos)
+            self.sample.on_mouse_down(MouseDownEvent(world_position=world_pos))
+        except Exception as e:
+            self.output_widget.append_stdout(f"Exception in on_mouse_down: {e}\n")
+            self.output_widget.append_stdout(traceback.format_exc())
+            self.cancel_loop()
 
     def on_mouse_up(self, x, y):
-        canvas_pos = b2d.Vec2(x, y)
-        world_pos = self.transform.canvas_to_world(canvas_pos)
-        self.sample.on_mouse_up(MouseUpEvent(world_position=world_pos))
+        try:
+            if not self.ui.is_playing():
+                return
+            canvas_pos = b2d.Vec2(x, y)
+            world_pos = self.transform.canvas_to_world(canvas_pos)
+            self.sample.on_mouse_up(MouseUpEvent(world_position=world_pos))
+        except Exception as e:
+            self.output_widget.append_stdout(f"Exception in on_mouse_up: {e}\n")
+            self.output_widget.append_stdout(traceback.format_exc())
+            self.cancel_loop()
 
     def on_mouse_leave(self, x, y):
-        self.sample.on_mouse_leave(MouseLeaveEvent())
+        try:
+            if not self.ui.is_playing():
+                return
+            self.sample.on_mouse_leave(MouseLeaveEvent())
+        except Exception as e:
+            self.output_widget.append_stdout(f"Exception in on_mouse_leave: {e}\n")
+            self.output_widget.append_stdout(traceback.format_exc())
+            self.cancel_loop()
 
     def on_mouse_enter(self, x, y):
-        self.sample.on_mouse_enter(MouseEnterEvent())
+        try:
+            if not self.ui.is_playing():
+                return
+            self.sample.on_mouse_enter(MouseEnterEvent())
+        except Exception as e:
+            self.output_widget.append_stdout(f"Exception in on_mouse_enter: {e}\n")
+            self.output_widget.append_stdout(traceback.format_exc())
+            self.cancel_loop()
 
     def center_sample(self, margin_px=10):
         # center the sample in the canvas
@@ -215,60 +257,47 @@ class IpycanvasFrontend(FrontendBase):
             self.transform.offset[1] + delta[1],
         )
 
+    def _clear_canvas(self):
+        if self.settings.debug_draw.draw_background:
+            self.canvas.fill_style = html_color(self.settings.debug_draw.background_color)
+            self.canvas.fill_rect(
+                0,
+                0,
+                self.settings.canvas_shape[0],
+                self.settings.canvas_shape[1],
+            )
+        else:
+            self.canvas.clear()
+
+    def _callback(self, dt):
+        if not self.ui.is_playing():
+            return
+        try:
+            if self.sample.is_done():
+                self.cancel_loop()
+                self.sample.post_run()
+                return
+
+            self._clear_canvas()
+
+            self.update_and_draw(dt)
+        except Exception:
+            self.output_widget.append_stdout(f"Error in main loop: {traceback.format_exc()}\n")
+            self.cancel_loop()
+
     def main_loop_vanilla(self):
         def f(dt):
-            try:
-                if self.sample.is_done():
-                    self.cancel_loop()
-                    self.sample.post_run()
-                    return
-
-                if self.settings.debug_draw.draw_background:
-                    self.canvas.fill_style = html_color(self.settings.debug_draw.background_color)
-                    self.canvas.fill_rect(
-                        0,
-                        0,
-                        self.settings.canvas_shape[0],
-                        self.settings.canvas_shape[1],
-                    )
-                else:
-                    self.canvas.clear()
-
-                self.update_and_draw(dt)
-            except Exception:
-                self.output_widget.append_stdout(f"Error in main loop: {traceback.format_exc()}\n")
-                self.cancel_loop()
+            self._callback(dt)
 
         self.cancel_loop = set_render_loop(self.canvas, f, fps=self.settings.fps)
 
     async def async_main_loop(self):
-        # ensure we await the displaying of the canvas
         await self.canvas.async_initialize()
 
         def f(dt):
-            try:
-                if self.sample.is_done():
-                    self.cancel_loop()
-                    self.sample.post_run()
-                    return
+            self._callback(dt)
 
-                if self.settings.debug_draw.draw_background:
-                    self.canvas.fill_style = html_color(self.settings.debug_draw.background_color)
-                    self.canvas.fill_rect(
-                        0,
-                        0,
-                        self.settings.canvas_shape[0],
-                        self.settings.canvas_shape[1],
-                    )
-                else:
-                    self.canvas.clear()
-
-                self.update_and_draw(dt)
-            except Exception:
-                self.output_widget.append_stdout(f"Error in main loop: {traceback.format_exc()}\n")
-                self.cancel_loop()
-
-        self.cancel_loop = set_render_loop(self.canvas, f, fps=self.settings.fps)
+        self.cancel_loop = ipycanvas_set_render_loop(self.canvas, f, fps=self.settings.fps)
 
     def main_loop_lite(self):
         # run self.async_main_loop in a a task
@@ -281,6 +310,8 @@ class IpycanvasFrontend(FrontendBase):
             self.main_loop_vanilla()
 
     def _dispatch_events(self, event):
+        if not self.ui.is_playing():
+            return
         try:
             if event["type"] == "mousemove":
                 mouse_pos = b2d.Vec2(event["relativeX"], event["relativeY"])
@@ -334,3 +365,10 @@ class IpycanvasFrontend(FrontendBase):
             self.output_widget.append_stdout(f"Exception in event handler: {e}\n")
             self.output_widget.append_stdout(traceback.format_exc())
             self.cancel_loop()
+
+    def pre_new_sample(self, sample_class, sample_settings):
+        # make sure we remove all sample specific UI elements
+        self.ui.remove_sample_ui_elements()
+
+    def add_ui_element(self, element):
+        self.ui.add_sample_ui_element(element)
