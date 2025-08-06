@@ -78,7 +78,7 @@ class TestbedUI:
             checkboxes,
             layout=Layout(
                 align_items="flex-start",
-                width="100%",  # 👈 This removes the unnecessary horizontal scroll bar
+                width="100%",
             ),
         )
 
@@ -150,7 +150,7 @@ class TestbedUI:
         return ipywidgets.HBox(
             [
                 self._footer_left(),
-                ipywidgets.Label("Center Footer"),
+                ipywidgets.Label(""),
                 self._footer_right(),
             ],
             layout=Layout(height="60px", display="flex", justify_content="flex-start"),
@@ -160,7 +160,7 @@ class TestbedUI:
         return self._make_control_button_group()
 
     def _footer_right(self):
-        return ipywidgets.Label("Right Footer")
+        return ipywidgets.Label("")
 
     def _make_control_button_group(self):
         self.play_pause_btn = ToggleButton(
