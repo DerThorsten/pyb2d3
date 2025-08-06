@@ -439,10 +439,8 @@ class GooGame(SampleBase):
 
     def on_goo_change(self, new_goo_type):
         # change the next goo type
-        print("Changing goo type to:", new_goo_type)
         self.selected_goo_cls = self.goo_classes[new_goo_type]
         self.next_goo = self.selected_goo_cls(self)
-        print("Next goo type is now:", self.next_goo.name)
 
     def on_mouse_down(self, event):
         self.mouse_is_down = True
