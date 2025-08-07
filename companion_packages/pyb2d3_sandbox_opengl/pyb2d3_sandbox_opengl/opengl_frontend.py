@@ -21,6 +21,8 @@ from pyb2d3_sandbox.frontend_base import (
     MouseUpEvent,
     MouseMoveEvent,
     MouseWheelEvent,
+    MouseEnterEvent,
+    MouseLeaveEvent,
 )
 
 from dataclasses import dataclass
@@ -55,6 +57,8 @@ class OpenglFrontend(FrontendBase):
         self._last_world_mouse_pos = None
 
         self._center_when_ready = False
+
+        self._was_inside_last_frame = False
 
     @property
     def weak_self(self):
@@ -145,6 +149,10 @@ class OpenglFrontend(FrontendBase):
         gl.glViewport(int(pos.x), int(gl_y), int(size.x), int(size.y))
 
         if imgui.is_window_hovered():
+            if not self._was_inside_last_frame:
+                self.sample.on_mouse_enter(MouseEnterEvent())
+            self._was_inside_last_frame = True
+
             # print("OpenglFrontend.render_simulation(): window hovered")
 
             mouse_pos = Vec2(io.mouse_pos.x, io.mouse_pos.y) - Vec2(pos.x, pos.y)
@@ -175,6 +183,10 @@ class OpenglFrontend(FrontendBase):
             elif io.mouse_released[0]:
                 event = MouseUpEvent(world_position=world_pos)
                 self.sample.on_mouse_up(event)
+        else:
+            if self._was_inside_last_frame:
+                self.sample.on_mouse_leave(MouseLeaveEvent())
+            self._was_inside_last_frame = False
         center = self.debug_draw.camera.center
         scale = self.debug_draw.camera.zoom
         # print("OpenglFrontend.render_simulation(): center:", center, "scale:", scale, "size:", size)
