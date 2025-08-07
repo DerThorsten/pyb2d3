@@ -28,6 +28,9 @@ class TestbedUI:
     def is_playing(self):
         return self.play_pause_btn.value
 
+    def is_paused(self):
+        return not self.play_pause_btn.value
+
     def _make_header(self):
         layout = Layout(height="60px")
         return ipywidgets.Label("Testbed", layout=layout)
@@ -269,7 +272,7 @@ class TestbedUI:
     def on_stop(self, was_playing_before):
         self.frontend._clear_canvas()
 
-        self.frontend.on_stop()
+        self.frontend.stop()
 
         if was_playing_before:
             self.play_pause_btn.value = True
@@ -287,7 +290,7 @@ class TestbedUI:
 
     def on_single_step(self, _):
         self.frontend._clear_canvas()
-        self.frontend.on_single_step()
+        self.frontend.single_step()
 
     def display(self):
         display(self.app_layout, self._output_widget)

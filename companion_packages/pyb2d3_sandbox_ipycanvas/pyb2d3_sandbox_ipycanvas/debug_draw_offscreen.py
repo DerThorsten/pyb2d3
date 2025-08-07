@@ -211,7 +211,8 @@ class Points:
 
 
 class IpycanvasDebugDraw(FrontendDebugDraw):
-    def __init__(self, transform, canvas, output_widget):
+    def __init__(self, frontend, transform, canvas, output_widget):
+        self.frontend = frontend
         self.transform = transform
         self.canvas = canvas
         self.output_widget = output_widget
@@ -227,6 +228,16 @@ class IpycanvasDebugDraw(FrontendDebugDraw):
         self.circles = Circles(self.canvas, self.transform)
         self.segments = Segments(self.canvas, self.transform)
 
+    def reset(self):
+        self.solid_circles._reset()
+        self.solid_polygons._reset()
+        self.solid_capsules._reset()
+        self.points._reset()
+
+        self.polygons._reset()
+        self.circles._reset()
+        self.segments._reset()
+
     def begin_draw(self):
         self.canvas._ctx._begin_draw(
             self.transform.ppm,
@@ -234,6 +245,7 @@ class IpycanvasDebugDraw(FrontendDebugDraw):
             self.transform.offset[1],
         )
 
+    def end_draw(self):
         self.solid_circles.draw()
         self.solid_polygons.draw()
         self.solid_capsules.draw()
@@ -242,7 +254,6 @@ class IpycanvasDebugDraw(FrontendDebugDraw):
         self.segments.draw()
         self.points.draw()
 
-    def end_draw(self):
         self.canvas._ctx._end_draw()
 
     def draw_polygon(self, points, color):

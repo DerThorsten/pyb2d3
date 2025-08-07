@@ -376,15 +376,21 @@ class FrontendBase(ABC):
     def on_pause(self):
         pass
 
-    def on_single_step(self):
+    def single_step(self):
         fps = self.settings.fps
         if fps == 0:
             fps = 60  # default to 60 FPS if not set
         dt = 1 / fps
         self.update_and_draw(dt)
 
-    def on_stop(self):
+    def stop(self):
         self.set_sample(self.sample_class, self.sample_settings)
+        self.on_stop()
+
+    def on_stop(self):
+        """Called when the frontend is stopped."""
+        # this can be overridden in derived classes
+        pass
 
     def center_sample(self, sample, margin_px=10):
         raise NotImplementedError(
@@ -449,6 +455,9 @@ class FrontendBase(ABC):
             world_lower_bound_should[1] - world_lower_bound[1],
         )
         transform.offset = world_delta
+
+    def is_paused(self):
+        return False
 
     @abstractmethod
     def drag_camera(self, delta):
