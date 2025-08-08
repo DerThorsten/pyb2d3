@@ -13,7 +13,7 @@ classifiers = [
 description = "python box2d bindings for box2d >= 3.1"
 name = "pyb2d3"
 requires-python = ">=3.9"
-version = "0.5.6"
+version = "0.6.0"
 
 license = "MIT"
 license-files = [
