@@ -262,7 +262,7 @@ class TestbedUI:
                 max=element.max_value,
                 step=element.step,
                 description=element.label,
-                continuous_update=False,
+                continuous_update=True,
                 layout=Layout(width="100%"),
             )
             slider.observe(
@@ -276,7 +276,7 @@ class TestbedUI:
                 max=element.max_value,
                 step=element.step,
                 description=element.label,
-                continuous_update=False,
+                continuous_update=True,
                 layout=Layout(width="100%"),
             )
             slider.observe(
