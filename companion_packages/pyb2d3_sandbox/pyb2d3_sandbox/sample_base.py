@@ -31,6 +31,7 @@ class SampleBase(object):
 
         frontend = frontend_class(settings=frontend_settings)
         frontend.run(cls, sample_settings=sample_settings)
+        return frontend
 
     def __del__(self):
         self.world.destroy()

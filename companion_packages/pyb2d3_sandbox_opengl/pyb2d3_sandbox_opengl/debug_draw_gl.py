@@ -46,6 +46,13 @@ class Camera:
         self.zoom = 1.0
         self._matrix = None
 
+    def set_size(self, width, height):
+        """Set camera size"""
+        if self.width != width or self.height != height:
+            self.width = width
+            self.height = height
+            self._matrix = None
+
     def set_view(self, center, zoom, width, height):
         """Set camera view parameters"""
         if (

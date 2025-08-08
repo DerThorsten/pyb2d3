@@ -1,7 +1,6 @@
 # +
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase
-
+from pyb2d3_sandbox import SampleBase, widgets
 import math
 
 
@@ -15,6 +14,7 @@ def grid_iterate(shape):
 class SoftBodies(SampleBase):
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
+
         self.outer_box_radius = 10
 
         # attach the chain shape to a static body
@@ -43,12 +43,14 @@ class SoftBodies(SampleBase):
             )
             bodies.append(body)
 
+        self.distance_joins = []
+
         def connect(body_a, body_b):
             d = math.sqrt(
                 (body_b.position[0] - body_a.position[0]) ** 2
                 + (body_b.position[1] - body_a.position[1]) ** 2
             )
-            self.world.create_distance_joint(
+            joint = self.world.create_distance_joint(
                 body_a=body_a,
                 body_b=body_b,
                 length=d,
@@ -56,6 +58,7 @@ class SoftBodies(SampleBase):
                 hertz=5,
                 damping_ratio=0.0,
             )
+            self.distance_joins.append(joint)
 
         # lambda to get flat index from coordinates
         def flat_index(x, y):
@@ -70,6 +73,36 @@ class SoftBodies(SampleBase):
                 connect(bodies[flat_index(x, y)], bodies[flat_index(x + 1, y + 1)])
             if x > 0 and y + 1 < grid_shape[1]:
                 connect(bodies[flat_index(x, y)], bodies[flat_index(x - 1, y + 1)])
+
+        # create ui-elements / widgets to controll the stiffness of the distance joints
+        def update_hz(value):
+            for joint in self.distance_joins:
+                joint.spring_hertz = value
+
+        def update_damping(value):
+            for joint in self.distance_joins:
+                joint.spring_damping_ratio = value
+
+        self.frontend.add_widget(
+            widgets.FloatSlider(
+                label="Hertz",
+                min_value=0.1,
+                max_value=10.0,
+                step=0.1,
+                value=5.0,
+                callback=update_hz,
+            )
+        )
+        self.frontend.add_widget(
+            widgets.FloatSlider(
+                label="Damping Ratio",
+                min_value=0.0,
+                max_value=1.0,
+                step=0.01,
+                value=0.0,
+                callback=update_damping,
+            )
+        )
 
     # create explosion on double click
     def on_double_click(self, event):

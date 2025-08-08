@@ -90,6 +90,7 @@ class HeadlessTestFrontend(FrontendBase):
         pass
 
     def main_loop(self):
+        self.ui_is_ready()
         fps = self.settings.fps
         if fps == 0:
             fps = 60

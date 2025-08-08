@@ -125,7 +125,10 @@ class DebugDrawSettings:
 @dataclass
 class FrontendBaseSettings:
     canvas_shape: tuple = (1200, 1200)
+
     fps: int = 60
+    fixed_delta_t: bool = True  # If True, use a fixed delta time for the physics simulation
+
     substeps: int = 5
     ppm: float = 40.0  # Pixels per meter
     debug_draw: DebugDrawSettings = field(default_factory=DebugDrawSettings)
@@ -272,8 +275,7 @@ class FrontendBase(ABC):
         self.sample_settings = None
         self.change_sample_class_requested = False
 
-        self.sample = None
-
+        self.sample = None  # until the ui is ready, this will be None
         self.iteration = 0
 
         # record some timing information
@@ -282,7 +284,6 @@ class FrontendBase(ABC):
 
         # sample update time
         self.sample_update_time = None
-
         self._multi_click_handler = None
 
     def set_sample(self, sample_class, sample_settings=None):
@@ -327,34 +328,19 @@ class FrontendBase(ABC):
         self.sample_class = sample_class
         self.sample_settings = sample_settings
 
-        self._set_new_sample(sample_class, sample_settings)
+        # self._set_new_sample(sample_class, sample_settings)
 
         # call sample.update in a loop
         # depending on the frontend, this can
         # be blocking or non-blocking
         self.main_loop()
 
-    def update_and_draw(self, dt):
-        # do we need to change the sample class?
-        if self.change_sample_class_requested:
-            self.change_sample_class_requested = False
-            self.sample.post_run()
+    def ui_is_ready(self):
+        # derived classes *must* call this when the UI is ready
+        # this is used to signal that the frontend is ready to run the sample
+        self._set_new_sample(self.sample_class, self.sample_settings)
 
-            self._set_new_sample(self.sample_class, self.sample_settings)
-
-        # click handler update
-        if self._multi_click_handler:
-            self._multi_click_handler.update()
-
-        # update sample
-        self.sample.pre_update(dt)
-        t0 = time.time()
-        self.sample.update(dt)
-        self.sample_update_time = time.time() - t0
-        self.sample.post_update(dt)
-        self.acc_update_time += self.sample_update_time
-
-        # debug draw
+    def _debug_draw_calls(self):
         if self.settings.debug_draw.enabled:
             self.debug_draw.begin_draw()
 
@@ -368,7 +354,38 @@ class FrontendBase(ABC):
 
         if self.settings.debug_draw.enabled:
             self.debug_draw.end_draw()
-        self.iteration += 1
+
+    def _sample_update_calls(self, dt):
+        # Update the world with the given time step
+        self.sample.pre_update(dt)
+        t0 = time.time()
+        self.sample.update(dt)
+        self.sample_update_time = time.time() - t0
+        self.sample.post_update(dt)
+        self.acc_update_time += self.sample_update_time
+
+    def update_and_draw(self, dt, single_step_mode=False):
+        if self.sample is None:
+            # if the sample is not set, we cannot update or draw it
+            return
+        # do we need to change the sample class?
+        if self.change_sample_class_requested:
+            self.change_sample_class_requested = False
+            self.sample.post_run()
+            self._set_new_sample(self.sample_class, self.sample_settings)
+
+        if self.is_paused():
+            # we still need to update the samples we want to do a single step
+            if single_step_mode:
+                self._sample_update_calls(dt)
+            self._debug_draw_calls()
+        else:
+            # click handler update
+            if self._multi_click_handler:
+                self._multi_click_handler.update()
+            self._sample_update_calls(dt)
+            self._debug_draw_calls()
+            self.iteration += 1
 
     def on_play(self):
         pass
@@ -376,15 +393,21 @@ class FrontendBase(ABC):
     def on_pause(self):
         pass
 
-    def on_single_step(self):
+    def single_step(self):
         fps = self.settings.fps
         if fps == 0:
             fps = 60  # default to 60 FPS if not set
         dt = 1 / fps
-        self.update_and_draw(dt)
+        self.update_and_draw(dt, single_step_mode=True)
+
+    def stop(self):
+        self.set_sample(self.sample_class, self.sample_settings)
+        self.on_stop()
 
     def on_stop(self):
-        self.set_sample(self.sample_class, self.sample_settings)
+        """Called when the frontend is stopped."""
+        # this can be overridden in derived classes
+        pass
 
     def center_sample(self, sample, margin_px=10):
         raise NotImplementedError(
@@ -450,6 +473,9 @@ class FrontendBase(ABC):
         )
         transform.offset = world_delta
 
+    def is_paused(self):
+        return False
+
     @abstractmethod
     def drag_camera(self, delta):
         pass
@@ -463,5 +489,5 @@ class FrontendBase(ABC):
         """Main loop of the frontend, where the sample is updated and drawn."""
         pass
 
-    def add_ui_element(self, element):
+    def add_widget(self, element):
         pass

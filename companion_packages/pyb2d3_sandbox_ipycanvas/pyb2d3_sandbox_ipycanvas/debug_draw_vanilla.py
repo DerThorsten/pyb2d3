@@ -37,9 +37,9 @@ class BatchPolygons:
     def __init__(self, canvas, transform):
         self.canvas = canvas
         self.transform = transform
-        self._reset_lists()
+        self._reset()
 
-    def _reset_lists(self):
+    def _reset(self):
         self.points = []
         self.colors = []
         self.sizes = []
@@ -64,16 +64,16 @@ class BatchPolygons:
             points_per_polygon=self.sizes,
         )
 
-        self._reset_lists()
+        self._reset()
 
 
 class BatchSolidPolygons:
     def __init__(self, canvas, transform):
         self.canvas = canvas
         self.transform = transform
-        self._reset_lists()
+        self._reset()
 
-    def _reset_lists(self):
+    def _reset(self):
         self.points = []
         self.colors = []
         self.sizes = []
@@ -97,16 +97,16 @@ class BatchSolidPolygons:
             points_per_polygon=self.sizes,
         )
 
-        self._reset_lists()
+        self._reset()
 
 
 class BatchLines:
     def __init__(self, canvas, transform):
         self.canvas = canvas
         self.transform = transform
-        self._reset_lists()
+        self._reset()
 
-    def _reset_lists(self):
+    def _reset(self):
         self.points = []
         self.colors = []
 
@@ -129,16 +129,16 @@ class BatchLines:
             points_per_line_segment=np.ones(len(self.points), dtype=np.int32) * 2,
         )
 
-        self._reset_lists()
+        self._reset()
 
 
 class BatchSolidCircles:
     def __init__(self, canvas, transform):
         self.canvas = canvas
         self.transform = transform
-        self._reset_lists()
+        self._reset()
 
-    def _reset_lists(self):
+    def _reset(self):
         self.centers = []
         self.radii = []
         self.colors = []
@@ -165,16 +165,16 @@ class BatchSolidCircles:
             color=colors,
         )
 
-        self._reset_lists()
+        self._reset()
 
 
 class BatchCircles:
     def __init__(self, canvas, transform):
         self.canvas = canvas
         self.transform = transform
-        self._reset_lists()
+        self._reset()
 
-    def _reset_lists(self):
+    def _reset(self):
         self.centers = []
         self.radii = []
         self.colors = []
@@ -198,11 +198,12 @@ class BatchCircles:
             x=centers[:, 0], y=centers[:, 1], radius=radii, color=colors
         )
 
-        self._reset_lists()
+        self._reset()
 
 
 class IpycanvasDebugDraw(FrontendDebugDraw):
-    def __init__(self, transform, canvas, output_widget):
+    def __init__(self, frontend, transform, canvas, output_widget):
+        self.frontend = frontend
         self.canvas = canvas
         self.output_widget = output_widget
 
@@ -216,6 +217,13 @@ class IpycanvasDebugDraw(FrontendDebugDraw):
         self._batch_lines = BatchLines(canvas, transform)
         self._batch_solid_circles = BatchSolidCircles(canvas, transform)
         self._batch_circles = BatchCircles(canvas, transform)
+
+    def reset(self):
+        self._batch_polygons._reset()
+        self._batch_solid_polygons._reset()
+        self._batch_lines._reset()
+        self._batch_solid_circles._reset()
+        self._batch_circles._reset()
 
     def world_to_canvas(self, world_point):
         return self.transform.world_to_canvas(world_point)

@@ -199,6 +199,7 @@ class PygameFrontend(FrontendBase):
         )
 
     def main_loop(self):
+        self.ui_is_ready()
         if self.settings.headless:
             self._main_loop_headless()
         else:

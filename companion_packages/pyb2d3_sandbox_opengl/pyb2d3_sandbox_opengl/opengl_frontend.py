@@ -21,11 +21,15 @@ from pyb2d3_sandbox.frontend_base import (
     MouseUpEvent,
     MouseMoveEvent,
     MouseWheelEvent,
+    MouseEnterEvent,
+    MouseLeaveEvent,
 )
+import pyb2d3_sandbox.widgets as widgets
 
+import time
 from dataclasses import dataclass
 
-from imgui_bundle import hello_imgui, imgui
+from imgui_bundle import hello_imgui, imgui, icons_fontawesome_6
 from OpenGL import GL as gl
 
 from pyb2d3 import Vec2
@@ -35,6 +39,36 @@ from .debug_draw_gl import GLDebugDraw, Camera
 
 # weakref
 import weakref
+
+from contextlib import contextmanager
+
+
+@contextmanager
+def enabled(enable):
+    if not enable:
+        imgui.begin_disabled()
+        yield
+        imgui.end_disabled()
+    else:
+        yield
+
+
+def ui_button(*args, enabled=True, same_line=False, **kwargs):
+    if same_line:
+        imgui.same_line()
+    if enabled:
+        return imgui.button(*args, **kwargs)
+    else:
+        imgui.begin_disabled()
+        r = imgui.button(*args, **kwargs)
+        imgui.end_disabled()
+        return r
+
+
+ICON_PLAY = icons_fontawesome_6.ICON_FA_PLAY
+ICON_PAUSE = icons_fontawesome_6.ICON_FA_PAUSE
+ICON_STOP = icons_fontawesome_6.ICON_FA_STOP
+ICON_FORWARD_STEP = icons_fontawesome_6.ICON_FA_FORWARD_STEP
 
 
 class OpenglFrontend(FrontendBase):
@@ -53,17 +87,38 @@ class OpenglFrontend(FrontendBase):
         self.init_app()
         self._last_mouse_pos = None
         self._last_world_mouse_pos = None
-
         self._center_when_ready = False
+        self._was_inside_last_frame = False
+
+        self._is_paused = False
+        self._just_a_single_frame = False
+
+        self.debug_draw_option_names = [
+            ("draw_shapes", "Draw Shapes"),
+            ("draw_joints", "Draw Joints"),
+            ("draw_joint_extras", "Draw Joint Extras"),
+            ("draw_bounds", "Draw Bounds"),
+            # ("draw_mass", "Draw Mass"),
+            # ("draw_body_names", "Draw Body Names"),
+            ("draw_contacts", "Draw Contacts"),
+            # ("draw_graph_colors", "Draw Graph Colors"),
+            # ("draw_contact_normals", "Draw Contact Normals"),
+            # ("draw_contact_impulses", "Draw Contact Impulses"),
+            # ("draw_contact_features", "Draw Contact Features"),
+            # ("draw_friction_impulses", "Draw Friction Impulses"),
+        ]
+
+        self._per_sample_widgets = []
+
+        self._end_of_last_frame_time = time.time()
+
+    def is_paused(self):
+        return self._is_paused
 
     @property
     def weak_self(self):
         """Returns a weak reference to the current instance."""
         return self._self_ref()
-
-    def __del__(self):
-        print("OpenglFrontend.__del__()")
-        # self.sample.destroy()
 
     def init_app(self):
         weak = weakref.proxy(self)
@@ -115,16 +170,7 @@ class OpenglFrontend(FrontendBase):
         #     #     setattr(state.show_dd, key, newvalue)
         #     imgui.end_menu()
 
-    def render_simulation(self):
-        """Draw the simulation in the window"""
-        # Get window dimensions and position in screen coordinates
-        pos = imgui.get_window_pos()
-        size = imgui.get_window_size()
-        io = imgui.get_io()
-        # # Ensure we have valid dimensions
-        if size.x <= 0 or size.y <= 0:
-            return
-
+    def _late_center(self, size):
         if self._center_when_ready:
             # Center the sample when the debug draw is ready
             self.debug_draw.camera.set_view(
@@ -137,15 +183,16 @@ class OpenglFrontend(FrontendBase):
             self._center_when_ready = False
             self._margin_px = None
 
-        # print("OpenglFrontend.render_simulation(): pos:", pos, "size:", size)
-
-        # Convert ImGui coordinates to GL coordinates (flip Y)
-        gl_y = io.display_size.y - (pos.y + size.y)
-        # Set viewport to window region
-        gl.glViewport(int(pos.x), int(gl_y), int(size.x), int(size.y))
-
+    def handle_events(self, pos, io):
+        if self._is_paused:
+            # print("OpenglFrontend.handle_events(): paused")
+            return
         if imgui.is_window_hovered():
-            # print("OpenglFrontend.render_simulation(): window hovered")
+            if not self._was_inside_last_frame:
+                self.sample.on_mouse_enter(MouseEnterEvent())
+            self._was_inside_last_frame = True
+
+            # print("OpenglFrontend.once_per_frame(): window hovered")
 
             mouse_pos = Vec2(io.mouse_pos.x, io.mouse_pos.y) - Vec2(pos.x, pos.y)
             world_pos = self.debug_draw.camera.convert_screen_to_world(mouse_pos)
@@ -157,7 +204,7 @@ class OpenglFrontend(FrontendBase):
                     MouseWheelEvent(delta=-mouse_scroll, world_position=world_pos)
                 )
 
-            # print(" OpenglFrontend.render_simulation(): mouse_pos:", mouse_pos, "world_pos:", world_pos)
+            # print(" OpenglFrontend.once_per_frame(): mouse_pos:", mouse_pos, "world_pos:", world_pos)
             # Check left mouse button events.
             if io.mouse_clicked[0]:
                 event = MouseDownEvent(world_position=world_pos)
@@ -175,21 +222,56 @@ class OpenglFrontend(FrontendBase):
             elif io.mouse_released[0]:
                 event = MouseUpEvent(world_position=world_pos)
                 self.sample.on_mouse_up(event)
-        center = self.debug_draw.camera.center
-        scale = self.debug_draw.camera.zoom
-        # print("OpenglFrontend.render_simulation(): center:", center, "scale:", scale, "size:", size)
-        self.debug_draw.camera.set_view(center, scale, size.x, size.y)
-        self.update_and_draw(1 / 60)
+        else:
+            if self._was_inside_last_frame:
+                self.sample.on_mouse_leave(MouseLeaveEvent())
+            self._was_inside_last_frame = False
+
+    def once_per_frame(self):
+        if self.debug_draw is None or self.sample is None:
+            return
+
+        # if self._is_paused:
+        #     # print("OpenglFrontend.once_per_frame(): paused")
+        #     return
+
+        # Get window dimensions and position in screen coordinates
+        pos = imgui.get_window_pos()
+        size = imgui.get_window_size()
+        io = imgui.get_io()
+        if size.x <= 0 or size.y <= 0:
+            return
+
+        self._late_center(size)
+
+        # Convert ImGui coordinates to GL coordinates (flip Y)
+        gl_y = io.display_size.y - (pos.y + size.y)
+        gl.glViewport(int(pos.x), int(gl_y), int(size.x), int(size.y))
+        self.handle_events(pos, io)
+        self.debug_draw.camera.set_size(size.x, size.y)
+        if self._just_a_single_frame:
+            self.single_step()
+            self._just_a_single_frame = False
+        else:
+            self.update_and_draw(1 / 60)
 
         # Reset viewport
         gl.glViewport(0, 0, int(io.display_size.x), int(io.display_size.y))
+
+        # some potential sleeping here
+        expected_dt = 1 / self.settings.fps
+        dt = time.time() - self._end_of_last_frame_time
+        if dt < expected_dt:
+            sleep_time = expected_dt - dt
+            time.sleep(sleep_time)
+        self._end_of_last_frame_time = time.time()
 
     def create_simulation_window(self):
         weak = weakref.proxy(self)
         window = hello_imgui.DockableWindow()
         window.label = "Simulation"
         window.dock_space_name = "MainDockSpace"
-        window.gui_function = lambda: weak.render_simulation()
+        window.gui_function = lambda: weak.once_per_frame()
         window.imgui_window_flags = imgui.WindowFlags_.no_background
         return window
 
@@ -225,36 +307,101 @@ class OpenglFrontend(FrontendBase):
         split_right3.ratio = 0.4
         return split_right3
 
-    def create_test_list_window(self):
+    def create_samples_ui_window(self):
+        weak = weakref.proxy(self)
         window = hello_imgui.DockableWindow()
-        window.label = "Tests"
-        window.dock_space_name = "RightPanel1"
-        # window.gui_function = self.show_test_list
+        window.label = "Sample UI"
+        window.dock_space_name = "RightPanel3"
+        window.gui_function = lambda: weak.samples_ui_gui_function()
         return window
 
-    def create_stats_window(self):
-        window = hello_imgui.DockableWindow()
-        window.label = "Performance"
-        window.dock_space_name = "RightPanel3"
-        # window.gui_function = weakref.proxy(self).show_stats
-        return window
+    def samples_ui_gui_function(self):
+        for element in self._per_sample_widgets:
+            if isinstance(element, widgets.FloatSlider):
+                # draw a float slider
+                changed, value = imgui.slider_float(
+                    element.label, element.value, element.min_value, element.max_value
+                )
+
+                if changed:
+                    element.value = value
+                    element.callback(value)
+            elif isinstance(element, widgets.IntSlider):
+                # draw an int slider
+                value = imgui.slider_int(
+                    element.label, element.value, element.min_value, element.max_value
+                )
+                if value != element.value:
+                    element.value = value
+                    element.callback(value)
+
+            elif isinstance(element, widgets.Checkbox):
+                # draw a checkbox
+                changed, value = imgui.checkbox(element.label, element.value)
+                if changed:
+                    element.callback(value)
+            elif isinstance(element, widgets.Button):
+                if ui_button(element.label):
+                    element.callback()
+            elif isinstance(element, widgets.RadioButtons):
+                current_value = element.value
+
+                for option in element.options:
+                    selected = current_value == option
+                    changed = imgui.radio_button(option, selected)
+                    if changed and (not selected):
+                        element.value = option
+                        element.callback(option)
+                        break
+
+    def add_widget(self, element):
+        """Add a UI element to the sample's UI."""
+        self._per_sample_widgets.append(element)
+
+    def pre_new_sample(self, sample_class, sample_settings):
+        self._per_sample_widgets.clear()
 
     def show_stats(self):
         imgui.text("current (avg) [max] ms")
 
     def create_controls_window(self):
+        weak = weakref.proxy(self)
         window = hello_imgui.DockableWindow()
         window.label = "Controls"
         window.dock_space_name = "RightPanel"
-        # window.gui_function = self.show_controls
+        window.gui_function = lambda: weak.controls_gui_function()
         return window
 
-    def create_test_ui_window(self):
+    def controls_gui_function(self):
+        # play/pause toggle-button
+        # stop-button
+        # single-step button
+        is_paused = self._is_paused
+
+        imgui.text("Controls")
+        imgui.separator()
+        if ui_button(ICON_PLAY, same_line=False):
+            self._is_paused = not self._is_paused
+        if ui_button(ICON_FORWARD_STEP, enabled=is_paused, same_line=True):
+            self._just_a_single_frame = True
+        if ui_button(ICON_STOP, same_line=True):
+            self.stop()
+        imgui.separator()
+
+    def create_debug_draw_settings_window(self):
+        weak = weakref.proxy(self)
         window = hello_imgui.DockableWindow()
-        window.label = "Test UI"
+        window.label = "Debug Draw Settings"
         window.dock_space_name = "RightPanel2"
-        # window.gui_function = self.show_test_ui
+        window.gui_function = lambda: weak.debug_draw_gui_function()
         return window
+
+    def debug_draw_gui_function(self):
+        imgui.text("Debug Draw Settings")
+        for option_name, option_label in self.debug_draw_option_names:
+            changes, value = imgui.checkbox(option_label, getattr(self.debug_draw, option_name))
+            if changes:
+                setattr(self.debug_draw, option_name, value)
 
     def create_layout(self):
         docking_params = hello_imgui.DockingParams()
@@ -266,10 +413,9 @@ class OpenglFrontend(FrontendBase):
         ]
         docking_params.dockable_windows = [
             self.create_simulation_window(),  # Add back the simulation window
-            self.create_test_list_window(),
-            self.create_stats_window(),
+            self.create_samples_ui_window(),
             self.create_controls_window(),
-            self.create_test_ui_window(),
+            self.create_debug_draw_settings_window(),
         ]
         return docking_params
 
@@ -287,13 +433,11 @@ class OpenglFrontend(FrontendBase):
         # self.sample.world.step(1/60, 10)
 
     def before_exit(self):
-        print("OpenglFrontend.before_exit()")
         self.sample.world.destroy()
-        # self.sample.world = None
 
     def post_gl_init(self):
-        print("Post GL initialization")
         self.debug_draw = GLDebugDraw(self.camera)
+        self.ui_is_ready()
         # self.debug_draw.camera.zoom = 100
         self.debug_draw.draw_shapes = True  # self.settings.debug_draw.draw_shapes
         self.debug_draw.draw_joints = True  # self.settings.debug_draw.draw_joints
@@ -331,15 +475,18 @@ class OpenglFrontend(FrontendBase):
         # Step 5: Apply
         self.camera.center = center
         self.camera.zoom = zoom
+        self.camera._matrix = None
 
     def drag_camera(self, delta):
         screen_delta = (delta[0], delta[1])
         self.camera.center -= screen_delta
+        self.camera._matrix = None
 
     def change_zoom(self, delta):
         self.camera.zoom += delta
         if self.camera.zoom < 1:
             self.camera.zoom = 1
+        self.camera._matrix = None
 
     def main_loop(self):
         hello_imgui.run(self.runner_params)
