@@ -341,5 +341,5 @@ class IpycanvasFrontend(FrontendBase):
         # make sure we remove all sample specific UI elements
         self.ui.remove_sample_ui_elements()
 
-    def add_ui_element(self, element):
+    def add_widget(self, element):
         self.ui.add_sample_ui_element(element)

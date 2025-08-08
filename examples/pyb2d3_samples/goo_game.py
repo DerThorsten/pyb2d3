@@ -2,7 +2,7 @@
 import pyb2d3 as b2d
 import numpy as np
 from pyb2d3_sandbox import SampleBase
-import pyb2d3_sandbox.ui_elements as ui_elements
+import pyb2d3_sandbox.widgets as widgets
 
 from dataclasses import dataclass
 
@@ -431,8 +431,8 @@ class GooGame(SampleBase):
         self.drag_camera = False
 
         # add ui-elements
-        self.frontend.add_ui_element(
-            ui_elements.RadioButtons(
+        self.frontend.add_widget(
+            widgets.RadioButtons(
                 label="Goo Type",
                 options=[goo_cls.name for goo_cls in self.goo_classes],
                 value=self.selected_goo_cls.name,

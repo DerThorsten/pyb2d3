@@ -83,7 +83,7 @@ class SoftBodies(SampleBase):
             for joint in self.distance_joins:
                 joint.spring_damping_ratio = value
 
-        self.frontend.add_ui_element(
+        self.frontend.add_widget(
             widgets.FloatSlider(
                 label="Hertz",
                 min_value=0.1,
@@ -93,7 +93,7 @@ class SoftBodies(SampleBase):
                 callback=update_hz,
             )
         )
-        self.frontend.add_ui_element(
+        self.frontend.add_widget(
             widgets.FloatSlider(
                 label="Damping Ratio",
                 min_value=0.0,

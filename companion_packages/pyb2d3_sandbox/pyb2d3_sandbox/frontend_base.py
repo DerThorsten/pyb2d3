@@ -489,5 +489,5 @@ class FrontendBase(ABC):
         """Main loop of the frontend, where the sample is updated and drawn."""
         pass
 
-    def add_ui_element(self, element):
+    def add_widget(self, element):
         pass

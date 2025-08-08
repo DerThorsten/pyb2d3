@@ -354,7 +354,7 @@ class OpenglFrontend(FrontendBase):
                         element.callback(option)
                         break
 
-    def add_ui_element(self, element):
+    def add_widget(self, element):
         """Add a UI element to the sample's UI."""
         self._per_sample_widgets.append(element)
 
