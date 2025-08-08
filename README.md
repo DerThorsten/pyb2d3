@@ -15,6 +15,8 @@ Install the python bindings with:
 pip install pyb2d3
 ```
 
+
+
 # conda based package
 
 SOON!
@@ -59,4 +61,28 @@ That way, changes to the pure python code are immediately available without the 
 
 ```bash
 PYTHONPATH=$(pwd)/src/module pytest
+```
+
+# Testbed
+
+To install the testbed use:
+```bash
+python -m pip install "pkg @ git+https://git@github.com/derthorsten/pyb2d3.git#subdirectory=companion_packages/pyb2d3_sandbox"
+```
+
+The testbed needs a frontend to run.
+There are several frontends available, e.g.:
+- opengl-based:
+```bash
+python -m pip install "pkg @ git+https://git@github.com/derthorsten/pyb2d3.git#subdirectory=companion_packages/pyb2d3_sandbox_opengl"
+```
+
+- pygame-based
+```bash
+python -m pip install "pkg @ git+https://git@github.com/derthorsten/pyb2d3.git#subdirectory=companion_packages/pyb2d3_sandbox_opengl"
+```
+
+- ipycanvas-based
+```bash
+python -m pip install "pkg @ git+https://git@github.com/derthorsten/pyb2d3.git#subdirectory=companion_packages/pyb2d3_sandbox_ipycanvas"
 ```
