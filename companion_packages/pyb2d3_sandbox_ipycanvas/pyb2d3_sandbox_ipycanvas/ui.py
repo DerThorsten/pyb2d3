@@ -1,7 +1,7 @@
 import ipywidgets
 from ipywidgets import Layout, ToggleButton, Button, VBox
 
-import pyb2d3_sandbox.ui_elements as ui_elements
+from pyb2d3_sandbox import widgets
 
 
 class TestbedUI:
@@ -111,8 +111,66 @@ class TestbedUI:
         return accordion
 
     def _make_simulation_settings_accordion(self):
+        # fps int slider
+        fps_slider = ipywidgets.IntSlider(
+            value=self.frontend.settings.fps,
+            min=0,
+            max=120,
+            step=1,
+            description="FPS",
+            tooltip="Frames per second",
+            continuous_update=False,
+            layout=Layout(align_self="flex-start"),
+            style={"description_width": "initial"},
+        )
+
+        def on_fps_change(change):
+            if change["type"] == "change" and change["name"] == "value":
+                self.frontend.settings.fps = change["new"]
+
+        fps_slider.observe(on_fps_change, names="value")
+
+        # n-substeps int slider
+        n_substeps_slider = ipywidgets.IntSlider(
+            value=self.frontend.settings.substeps,
+            min=1,
+            max=20,
+            step=1,
+            description="Substeps",
+            continuous_update=False,
+            layout=Layout(align_self="flex-start"),
+            style={"description_width": "initial"},
+        )
+
+        def on_n_substeps_change(change):
+            if change["type"] == "change" and change["name"] == "value":
+                self.frontend.settings.substeps = change["new"]
+
+        n_substeps_slider.observe(on_n_substeps_change, names="value")
+
+        # add a checkbox for fixed-delta time
+        fixed_delta_checkbox = ipywidgets.Checkbox(
+            value=self.frontend.settings.fixed_delta_t,
+            description="fixed-Δt",
+            tooltip="If checked, the physics simulation will use a fixed delta time to update the physical world",
+            layout=Layout(align_self="flex-start"),
+            style={"description_width": "initial"},
+        )
+
+        def on_fixed_delta_change(change):
+            if change["type"] == "change" and change["name"] == "value":
+                self.frontend.settings.fixed_delta_t = change["new"]
+
+        fixed_delta_checkbox.observe(on_fixed_delta_change, names="value")
+
+        # this section is only valid if fixed_delta_t is True
+
         vbox = VBox(
-            children=[],
+            children=[
+                fps_slider,
+                n_substeps_slider,
+                fixed_delta_checkbox,
+            ],
             layout=Layout(
                 align_items="flex-start",
                 width="100%",
@@ -197,13 +255,13 @@ class TestbedUI:
         self.sample_settings_vbox.children = []
 
     def add_sample_ui_element(self, element):
-        if isinstance(element, ui_elements.FloatSlider):
+        if isinstance(element, widgets.FloatSlider):
             slider = ipywidgets.FloatSlider(
                 value=element.value,
                 min=element.min_value,
                 max=element.max_value,
                 step=element.step,
-                description=element.name,
+                description=element.label,
                 continuous_update=False,
                 layout=Layout(width="100%"),
             )
@@ -211,34 +269,49 @@ class TestbedUI:
                 lambda change, callback=element.callback: callback(change["new"]), names="value"
             )
             self.sample_settings_vbox.children += (slider,)
-        elif isinstance(element, ui_elements.Checkbox):
+        elif isinstance(element, widgets.IntSlider):
+            slider = ipywidgets.IntSlider(
+                value=element.value,
+                min=element.min_value,
+                max=element.max_value,
+                step=element.step,
+                description=element.label,
+                continuous_update=False,
+                layout=Layout(width="100%"),
+            )
+            slider.observe(
+                lambda change, callback=element.callback: callback(change["new"]), names="value"
+            )
+            self.sample_settings_vbox.children += (slider,)
+
+        elif isinstance(element, widgets.Checkbox):
             checkbox = ipywidgets.Checkbox(
-                value=element.value, description=element.name, layout=Layout(width="100%")
+                value=element.value, description=element.label, layout=Layout(width="100%")
             )
             checkbox.observe(
                 lambda change, callback=element.callback: callback(change["new"]), names="value"
             )
             self.sample_settings_vbox.children += (checkbox,)
-        elif isinstance(element, ui_elements.Button):
-            button = Button(description=element.name, layout=Layout(width="100%"))
+        elif isinstance(element, widgets.Button):
+            button = Button(description=element.label, layout=Layout(width="100%"))
             button.on_click(element.callback)
             self.sample_settings_vbox.children += (button,)
-        elif isinstance(element, ui_elements.Dropdown):
+        elif isinstance(element, widgets.Dropdown):
             dropdown = ipywidgets.Dropdown(
                 options=element.options,
                 value=element.value,
-                description=element.name,
+                description=element.label,
                 layout=Layout(width="100%"),
             )
             dropdown.observe(
                 lambda change, callback=element.callback: callback(change["new"]), names="value"
             )
             self.sample_settings_vbox.children += (dropdown,)
-        elif isinstance(element, ui_elements.RadioButtons):
+        elif isinstance(element, widgets.RadioButtons):
             radio_buttons = ipywidgets.RadioButtons(
                 options=element.options,
                 value=element.value,
-                description=element.name,
+                description=element.label,
                 layout=Layout(width="100%"),
             )
             radio_buttons.observe(

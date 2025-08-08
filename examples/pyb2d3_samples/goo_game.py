@@ -50,7 +50,6 @@ class Goo(object):
         self.sample = sample
         self.world = sample.world
         self.ud = sample.ud
-        self.debug_draw = sample.debug_draw
         self.body = None
         self.hertz = 4.0
         self.gravity_scale = 1.0
@@ -71,6 +70,10 @@ class Goo(object):
         self.place_as_edge_squared_distance_threshold = (
             self.radius / 2
         ) ** 2  # threshold for placing as edge
+
+    @property
+    def debug_draw(self):
+        return self.sample.debug_draw
 
     def has_capacity(self):
         # check if this goo ball can add more connections
@@ -430,7 +433,7 @@ class GooGame(SampleBase):
         # add ui-elements
         self.frontend.add_ui_element(
             ui_elements.RadioButtons(
-                name="Goo Type",
+                label="Goo Type",
                 options=[goo_cls.name for goo_cls in self.goo_classes],
                 value=self.selected_goo_cls.name,
                 callback=lambda goo_name: self.on_goo_change(self.goo_name_to_index[goo_name]),
@@ -604,6 +607,8 @@ class Level1(GooGame):
 
             self.goo_balls[1].connect(g)
             self.goo_balls[2].connect(g)
+
+        print("POST INIT")
 
 
 if __name__ == "__main__":

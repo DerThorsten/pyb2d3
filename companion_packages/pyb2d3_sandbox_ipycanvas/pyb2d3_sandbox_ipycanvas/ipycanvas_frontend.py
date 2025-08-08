@@ -286,6 +286,8 @@ class IpycanvasFrontend(FrontendBase):
             self.cancel_loop()
 
     def main_loop_vanilla(self):
+        self.ui_is_ready()
+
         def f(dt):
             self._callback(dt)
 
@@ -294,6 +296,7 @@ class IpycanvasFrontend(FrontendBase):
     async def async_main_loop(self):
         try:
             await self.canvas.async_initialize()
+            self.ui_is_ready()
 
             def f(dt):
                 self._callback(dt)
