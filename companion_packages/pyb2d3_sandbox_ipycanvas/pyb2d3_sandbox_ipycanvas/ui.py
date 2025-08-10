@@ -1,7 +1,8 @@
 import ipywidgets
 from ipywidgets import Layout, ToggleButton, Button, VBox
-
 from pyb2d3_sandbox import widgets
+
+from IPython.display import display
 
 
 class TestbedUI:
@@ -367,35 +368,3 @@ class TestbedUI:
 
     def display(self):
         display(self.app_layout, self._output_widget)
-
-
-if __name__ == "__main__":
-
-    class MockFrontend:
-        def __init__(self):
-            self.canvas = ipycanvas.Canvas(
-                width=800,
-                height=600,
-            )
-            self.canvas.fill_style = "darkblue"
-            self.canvas.fill_rect(0, 0, self.canvas.width, self.canvas.height)
-            self.settings = type("Settings", (), {"headless": False})
-
-        def on_pause(self):
-            print("MockFrontend: Paused")
-
-        def on_play(self):
-            print("MockFrontend: Playing")
-
-        def on_stop(self):
-            print("MockFrontend: Stopped")
-
-        def on_single_step(self):
-            print("MockFrontend: Single step")
-
-    import ipycanvas
-    from IPython.display import display
-
-    frontend = MockFrontend()
-    ui = TestbedUI(frontend)
-    ui.display()

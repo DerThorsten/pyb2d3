@@ -126,9 +126,8 @@ class DebugDrawSettings:
 class FrontendBaseSettings:
     canvas_shape: tuple = (1200, 1200)
 
-    fps: int = 60
-    fixed_delta_t: bool = True  # If True, use a fixed delta time for the physics simulation
-
+    hertz: int = 60  # Physics update frequency
+    speed: float = 1.0  # Speed multiplier for the simulation
     substeps: int = 5
     ppm: float = 40.0  # Pixels per meter
     debug_draw: DebugDrawSettings = field(default_factory=DebugDrawSettings)
@@ -286,6 +285,12 @@ class FrontendBase(ABC):
         self.sample_update_time = None
         self._multi_click_handler = None
 
+        # the last time when the world was updated
+        self.last_world_update_time = None
+
+        # the dt for the physics update
+        self.physics_update_dt = 1 / self.settings.hertz
+
     def set_sample(self, sample_class, sample_settings=None):
         self.sample_class = sample_class
         self.sample_settings = sample_settings
@@ -340,52 +345,54 @@ class FrontendBase(ABC):
         # this is used to signal that the frontend is ready to run the sample
         self._set_new_sample(self.sample_class, self.sample_settings)
 
-    def _debug_draw_calls(self):
-        if self.settings.debug_draw.enabled:
-            self.debug_draw.begin_draw()
-
-        self.sample.pre_debug_draw()
-        t0 = time.time()
-        if self.settings.debug_draw.enabled:
-            self.sample.world.draw(self.debug_draw, call_begin_end=False)
-        self.acc_debug_draw_time += time.time() - t0
-
-        self.sample.post_debug_draw()
-
-        if self.settings.debug_draw.enabled:
-            self.debug_draw.end_draw()
-
-    def _sample_update_calls(self, dt):
-        # Update the world with the given time step
+    def update_physics_single_step(self):
+        dt = self.physics_update_dt * self.settings.speed
         self.sample.pre_update(dt)
-        t0 = time.time()
         self.sample.update(dt)
-        self.sample_update_time = time.time() - t0
         self.sample.post_update(dt)
-        self.acc_update_time += self.sample_update_time
 
-    def update_and_draw(self, dt, single_step_mode=False):
-        if self.sample is None:
-            # if the sample is not set, we cannot update or draw it
+    def update_physics(self):
+        expected_dt = self.physics_update_dt
+        now = time.perf_counter()
+        if self.last_world_update_time is None:
+            self.update_physics_single_step()
+            self.last_world_update_time = now
             return
+
+        dt = now - self.last_world_update_time
+
+        while dt >= expected_dt:
+            self.update_physics_single_step()
+            dt -= expected_dt
+            self.last_world_update_time += expected_dt
+
+    def update_frontend_logic(self):
+        if self.is_paused():
+            self._last_world_update_time = None
         # do we need to change the sample class?
         if self.change_sample_class_requested:
             self.change_sample_class_requested = False
             self.sample.post_run()
             self._set_new_sample(self.sample_class, self.sample_settings)
 
-        if self.is_paused():
-            # we still need to update the samples we want to do a single step
-            if single_step_mode:
-                self._sample_update_calls(dt)
-            self._debug_draw_calls()
-        else:
-            # click handler update
-            if self._multi_click_handler:
-                self._multi_click_handler.update()
-            self._sample_update_calls(dt)
-            self._debug_draw_calls()
-            self.iteration += 1
+        # click handler update
+        if self._multi_click_handler:
+            self._multi_click_handler.update()
+
+    def draw_physics(self):
+        t0 = time.time()
+        if self.settings.debug_draw.enabled:
+            self.debug_draw.begin_draw()
+
+        self.sample.pre_debug_draw()
+        if self.settings.debug_draw.enabled:
+            self.sample.world.draw(self.debug_draw, call_begin_end=False)
+
+        self.sample.post_debug_draw()
+
+        if self.settings.debug_draw.enabled:
+            self.debug_draw.end_draw()
+        self.acc_debug_draw_time += time.time() - t0
 
     def on_play(self):
         pass
