@@ -78,10 +78,14 @@ class SoftBodies(SampleBase):
         def update_hz(value):
             for joint in self.distance_joins:
                 joint.spring_hertz = value
+                for body in (joint.body_a, joint.body_b):
+                    body.awake = True
 
         def update_damping(value):
             for joint in self.distance_joins:
                 joint.spring_damping_ratio = value
+                for body in (joint.body_a, joint.body_b):
+                    body.awake = True
 
         self.frontend.add_widget(
             widgets.FloatSlider(
@@ -95,7 +99,7 @@ class SoftBodies(SampleBase):
         )
         self.frontend.add_widget(
             widgets.FloatSlider(
-                label="Damping Ratio",
+                label="Damping",
                 min_value=0.0,
                 max_value=1.0,
                 step=0.01,

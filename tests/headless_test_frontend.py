@@ -91,20 +91,15 @@ class HeadlessTestFrontend(FrontendBase):
 
     def main_loop(self):
         self.ui_is_ready()
-        fps = self.settings.fps
-        if fps == 0:
-            fps = 60
-
-        dt = 1 / fps
-        n_steps = int(self.settings.world_time_limit / dt)
+        n_steps = int(self.settings.world_time_limit * self.settings.hertz)
 
         for i in range(n_steps):
+            self.update_frontend_logic()
             if self.sample.is_done():
                 break
-
             self.fire_random_event()
-
-            self.update_and_draw(dt)
+            self.update_physics_single_step()
+            self.draw_physics()
 
         self.sample.post_run()
 

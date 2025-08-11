@@ -89,7 +89,6 @@ class OpenglFrontend(FrontendBase):
         self._last_world_mouse_pos = None
         self._was_inside_last_frame = False
 
-        self._is_paused = False
         self._just_a_single_frame = False
 
         self.debug_draw_option_names = [
@@ -114,9 +113,6 @@ class OpenglFrontend(FrontendBase):
         # just some ui state
         self.speed_ui_val = 0.0
 
-    def is_paused(self):
-        return self._is_paused
-
     @property
     def weak_self(self):
         """Returns a weak reference to the current instance."""
@@ -136,7 +132,7 @@ class OpenglFrontend(FrontendBase):
         runner_params.callbacks.post_init = lambda: weak.post_gl_init()
 
         # Menu setup
-        runner_params.imgui_window_params.show_menu_bar = True
+        runner_params.imgui_window_params.show_menu_bar = False
         runner_params.callbacks.show_menus = lambda: weak.show_menus()
         runner_params.imgui_window_params.show_menu_app = False
 
@@ -174,34 +170,26 @@ class OpenglFrontend(FrontendBase):
 
     def handle_events(self, pos, io):
         if self._is_paused:
-            # print("OpenglFrontend.handle_events(): paused")
             return
+
         if imgui.is_window_hovered():
             if not self._was_inside_last_frame:
                 self.sample.on_mouse_enter(MouseEnterEvent())
             self._was_inside_last_frame = True
 
-            # print("OpenglFrontend.once_per_frame(): window hovered")
-
             mouse_pos = Vec2(io.mouse_pos.x, io.mouse_pos.y) - Vec2(pos.x, pos.y)
             world_pos = self.debug_draw.camera.convert_screen_to_world(mouse_pos)
 
-            # Only handle scroll when mouse is over simulation window
-            mouse_scroll = io.mouse_wheel
-            if mouse_scroll != 0.0:
+            if io.mouse_wheel != 0.0:
                 self.sample.on_mouse_wheel(
-                    MouseWheelEvent(delta=-mouse_scroll, world_position=world_pos)
+                    MouseWheelEvent(delta=-io.mouse_wheel, world_position=world_pos)
                 )
-
-            # print(" OpenglFrontend.once_per_frame(): mouse_pos:", mouse_pos, "world_pos:", world_pos)
-            # Check left mouse button events.
             if io.mouse_clicked[0]:
                 event = MouseDownEvent(world_position=world_pos)
                 self.sample.on_mouse_down(event)
                 self._multi_click_handler.handle_click(world_position=world_pos)
             elif io.mouse_down[0]:
                 delta = Vec2(io.mouse_delta.x, io.mouse_delta.y)
-
                 if delta[0] != 0 or delta[1] != 0:
                     event = MouseMoveEvent(
                         world_position=world_pos,
@@ -349,12 +337,18 @@ class OpenglFrontend(FrontendBase):
         # play/pause toggle-button
         # stop-button
         # single-step button
-        is_paused = self._is_paused
+        is_paused = self.is_paused()
 
         imgui.text("Controls")
         imgui.separator()
-        if ui_button(ICON_PLAY, same_line=False):
-            self._is_paused = not self._is_paused
+
+        play_or_pause_icon = ICON_PLAY if is_paused else ICON_PAUSE
+
+        if ui_button(play_or_pause_icon, same_line=False):
+            if self.is_paused():
+                self.set_running()
+            else:
+                self.set_paused()
         if ui_button(ICON_FORWARD_STEP, enabled=is_paused, same_line=True):
             self._just_a_single_frame = True
         if ui_button(ICON_STOP, same_line=True):
@@ -365,7 +359,6 @@ class OpenglFrontend(FrontendBase):
         changed, hertz = imgui.slider_float("Hertz", self.settings.hertz, 1.0, 120.0, "%.1f Hz")
         if changed:
             self.settings.hertz = hertz
-            self.physics_update_dt = 1.0 / hertz
 
         # slider for amount of substeps
         changed, substeps = imgui.slider_int(

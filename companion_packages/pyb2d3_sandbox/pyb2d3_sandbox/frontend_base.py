@@ -129,7 +129,10 @@ class FrontendBaseSettings:
     hertz: int = 60  # Physics update frequency
     speed: float = 1.0  # Speed multiplier for the simulation
     substeps: int = 5
+
+    # depcrecated as as we center examples automatically
     ppm: float = 40.0  # Pixels per meter
+
     debug_draw: DebugDrawSettings = field(default_factory=DebugDrawSettings)
     multi_click_delay_ms: int = 350  # Delay in milliseconds to wait for multi-clicks
     headless: bool = False  # If True, run in headless mode (no GUI)
@@ -291,6 +294,15 @@ class FrontendBase(ABC):
         # the dt for the physics update
         self.physics_update_dt = 1 / self.settings.hertz
 
+        self._is_paused = False
+
+    def set_paused(self):
+        self._is_paused = True
+        self.last_world_update_time = None
+
+    def set_running(self):
+        self._is_paused = False
+
     def set_sample(self, sample_class, sample_settings=None):
         self.sample_class = sample_class
         self.sample_settings = sample_settings
@@ -346,13 +358,16 @@ class FrontendBase(ABC):
         self._set_new_sample(self.sample_class, self.sample_settings)
 
     def update_physics_single_step(self):
-        dt = self.physics_update_dt * self.settings.speed
+        dt = self.settings.speed / self.settings.hertz
         self.sample.pre_update(dt)
         self.sample.update(dt)
         self.sample.post_update(dt)
 
     def update_physics(self):
-        expected_dt = self.physics_update_dt
+        if self._is_paused:
+            # if we are paused, we don't update the physics
+            return
+        expected_dt = 1 / self.settings.hertz
         now = time.perf_counter()
         if self.last_world_update_time is None:
             self.update_physics_single_step()
@@ -367,7 +382,7 @@ class FrontendBase(ABC):
             self.last_world_update_time += expected_dt
 
     def update_frontend_logic(self):
-        if self.is_paused():
+        if self._is_paused:
             self._last_world_update_time = None
         # do we need to change the sample class?
         if self.change_sample_class_requested:
@@ -393,19 +408,6 @@ class FrontendBase(ABC):
         if self.settings.debug_draw.enabled:
             self.debug_draw.end_draw()
         self.acc_debug_draw_time += time.time() - t0
-
-    def on_play(self):
-        pass
-
-    def on_pause(self):
-        pass
-
-    def single_step(self):
-        fps = self.settings.fps
-        if fps == 0:
-            fps = 60  # default to 60 FPS if not set
-        dt = 1 / fps
-        self.update_and_draw(dt, single_step_mode=True)
 
     def stop(self):
         self.set_sample(self.sample_class, self.sample_settings)
@@ -481,7 +483,7 @@ class FrontendBase(ABC):
         transform.offset = world_delta
 
     def is_paused(self):
-        return False
+        return self._is_paused
 
     @abstractmethod
     def drag_camera(self, delta):

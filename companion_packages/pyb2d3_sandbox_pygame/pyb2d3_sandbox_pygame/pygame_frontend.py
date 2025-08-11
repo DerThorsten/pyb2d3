@@ -206,7 +206,6 @@ class PygameFrontend(FrontendBase):
             self._main_loop_non_headless()
 
     def _main_loop_headless(self):
-        dt = 1 / self.settings.fps if self.settings.fps > 0 else 1 / 60.0
         iteration = 0
         while not self.sample.is_done():
             if self.sample.world_time >= self.settings.headless_settings.world_time_limit:
@@ -215,7 +214,8 @@ class PygameFrontend(FrontendBase):
             if self.settings.debug_draw.draw_background:
                 self.screen.fill(self.settings.debug_draw.background_color)
 
-            self.update_and_draw(dt)
+            self.update_physics_single_step()
+            self.draw_physics()
 
             if self.settings.headless_settings.screenshot_callback:
                 self.settings.headless_settings.screenshot_callback(
@@ -229,18 +229,17 @@ class PygameFrontend(FrontendBase):
 
     def _main_loop_non_headless(self):
         # center the sample in the canvas
-        clock = self.clock
+        clock = pygame.time.Clock()
         while not self.sample.is_done():
             if self.settings.debug_draw.draw_background:
                 self.screen.fill(self.settings.debug_draw.background_color)
 
-            dt = clock.tick_busy_loop(self.settings.fps)
-            dt = dt / 1000.0  # convert to seconds
-
-            self.update_and_draw(dt)
+            self.update_physics()
             self._dispatch_events()
+            self.draw_physics()
 
             # RENDER FPS
+            clock.tick()
             fps = clock.get_fps()
 
             font = self.font
