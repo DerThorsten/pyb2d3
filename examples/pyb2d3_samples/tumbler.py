@@ -74,35 +74,6 @@ class Tumbler(SampleBase):
             max_motor_torque=50000.0,
         )
 
-        # # add a bunch of balls
-        # n_balls = 200
-        # self.ball_radius = 0.1
-        # for i in range(n_balls):
-        #     # radom position in the tumbler
-        #     x = random.uniform(
-        #         -box_diameter / 2 + self.ball_radius,
-        #         box_diameter / 2 - self.ball_radius,
-        #     )
-        #     y = random.uniform(
-        #         -box_diameter / 2 + self.ball_radius,
-        #         box_diameter / 2 - self.ball_radius,
-        #     )
-
-        #     ball_body = self.world.create_dynamic_body(
-        #         position=(x, y),
-        #         linear_damping=0.9,
-        #         is_bullet=True,  # make the ball a bullet body
-        #     )
-        #     material = b2d.surface_material(
-        #         restitution=0.5,
-        #         friction=0.5,
-        #         custom_color=b2d.rgb_to_hex_color(100, 0, 200),
-        #     )
-        #     ball_body.create_shape(
-        #         b2d.shape_def(density=1, material=material, enable_contact_events=True),
-        #         b2d.circle(radius=self.ball_radius),
-        #     )
-
         # add a bunch of capsules
         n_capsules = 2000
         self.capsule_radius = 0.1

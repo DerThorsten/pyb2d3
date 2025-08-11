@@ -1,7 +1,8 @@
 import ipywidgets
 from ipywidgets import Layout, ToggleButton, Button, VBox
-
 from pyb2d3_sandbox import widgets
+
+from IPython.display import display
 
 
 class TestbedUI:
@@ -24,12 +25,6 @@ class TestbedUI:
             pane_heights=["60px", 5, "60px"],
             pane_widths=[0, f"{self._canvas.width}px", 1],
         )
-
-    def is_playing(self):
-        return self.play_pause_btn.value
-
-    def is_paused(self):
-        return not self.play_pause_btn.value
 
     def _make_header(self):
         layout = Layout(height="60px")
@@ -111,24 +106,26 @@ class TestbedUI:
         return accordion
 
     def _make_simulation_settings_accordion(self):
+        ctrl_buttons = self._make_control_button_group()
+
         # fps int slider
-        fps_slider = ipywidgets.IntSlider(
-            value=self.frontend.settings.fps,
-            min=0,
+        hertz_slider = ipywidgets.IntSlider(
+            value=self.frontend.settings.hertz,
+            min=1,
             max=120,
             step=1,
-            description="FPS",
-            tooltip="Frames per second",
-            continuous_update=False,
+            description="Hertz",
+            tooltip="How often the simulation updates per second",
+            continuous_update=True,
             layout=Layout(align_self="flex-start"),
             style={"description_width": "initial"},
         )
 
-        def on_fps_change(change):
+        def on_hertz_change(change):
             if change["type"] == "change" and change["name"] == "value":
-                self.frontend.settings.fps = change["new"]
+                self.frontend.settings.hertz = change["new"]
 
-        fps_slider.observe(on_fps_change, names="value")
+        hertz_slider.observe(on_hertz_change, names="value")
 
         # n-substeps int slider
         n_substeps_slider = ipywidgets.IntSlider(
@@ -137,7 +134,7 @@ class TestbedUI:
             max=20,
             step=1,
             description="Substeps",
-            continuous_update=False,
+            continuous_update=True,
             layout=Layout(align_self="flex-start"),
             style={"description_width": "initial"},
         )
@@ -148,28 +145,42 @@ class TestbedUI:
 
         n_substeps_slider.observe(on_n_substeps_change, names="value")
 
-        # add a checkbox for fixed-delta time
-        fixed_delta_checkbox = ipywidgets.Checkbox(
-            value=self.frontend.settings.fixed_delta_t,
-            description="fixed-Δt",
-            tooltip="If checked, the physics simulation will use a fixed delta time to update the physical world",
+        # speed slider from "-max_factor" to "+max_factor"
+        max_factor = 4
+
+        def mapping(val):
+            if val > 0:
+                return 1.0 + val
+            elif val == 0:
+                return 1.0
+            else:
+                return 1.0 / abs(val - 1)
+
+        speed_slider = ipywidgets.FloatSlider(
+            value=0.0,  # initial value is 0.0, which means no speed change
+            min=-max_factor,
+            max=max_factor,
+            step=0.1,
+            description="Speed",
+            continuous_update=True,
             layout=Layout(align_self="flex-start"),
             style={"description_width": "initial"},
         )
 
-        def on_fixed_delta_change(change):
+        def on_speed_change(change):
             if change["type"] == "change" and change["name"] == "value":
-                self.frontend.settings.fixed_delta_t = change["new"]
+                self.frontend.settings.speed = mapping(change["new"])
 
-        fixed_delta_checkbox.observe(on_fixed_delta_change, names="value")
+        speed_slider.observe(on_speed_change, names="value")
 
         # this section is only valid if fixed_delta_t is True
 
         vbox = VBox(
             children=[
-                fps_slider,
+                ctrl_buttons,
+                hertz_slider,
                 n_substeps_slider,
-                fixed_delta_checkbox,
+                speed_slider,
             ],
             layout=Layout(
                 align_items="flex-start",
@@ -195,6 +206,10 @@ class TestbedUI:
         self._debug_draw_accordion = self._make_debug_draw_accordion()
         self._sample_settings_accordion = self._make_sample_settings_accordion()
 
+        # open this by default
+        self._simulation_settings_accordion.selected_index = 0
+        self._debug_draw_accordion.selected_index = 0
+
         return ipywidgets.VBox(
             [
                 self._simulation_settings_accordion,
@@ -210,15 +225,12 @@ class TestbedUI:
     def _make_footer(self):
         return ipywidgets.HBox(
             [
-                self._footer_left(),
-                ipywidgets.Label(""),
-                self._footer_right(),
+                # self._footer_left(),
+                # ipywidgets.Label(""),
+                # self._footer_right(),
             ],
             layout=Layout(height="60px", display="flex", justify_content="flex-start"),
         )
-
-    def _footer_left(self):
-        return self._make_control_button_group()
 
     def _footer_right(self):
         return ipywidgets.Label("")
@@ -255,6 +267,9 @@ class TestbedUI:
         self.sample_settings_vbox.children = []
 
     def add_sample_ui_element(self, element):
+        # ensure the accordion is visible
+        if not self._sample_settings_accordion.selected_index == 0:
+            self._sample_settings_accordion.selected_index = 0
         if isinstance(element, widgets.FloatSlider):
             slider = ipywidgets.FloatSlider(
                 value=element.value,
@@ -320,27 +335,39 @@ class TestbedUI:
             self.sample_settings_vbox.children += (radio_buttons,)
 
     def _on_play_pause_change(self, change):
-        if change["new"]:
-            self.play_pause_btn.icon = "pause"
-            self.single_step_btn.disabled = True
-            self.on_play()
-        else:
-            self.play_pause_btn.icon = "play"
-            self.on_pause()
-            self.single_step_btn.disabled = False
+        try:
+            if change["new"]:
+                self.play_pause_btn.icon = "pause"
+                self.single_step_btn.disabled = True
+                self.on_play()
+            else:
+                self.play_pause_btn.icon = "play"
+                self.on_pause()
+                self.single_step_btn.disabled = False
+        except Exception as e:
+            self.frontend._handle_exception(e)
 
     def _on_stop_clicked(self, _):
-        was_playing_before = self.is_playing()
-        self.play_pause_btn.value = False
-        self.single_step_btn.disabled = False
-        self.play_pause_btn.icon = "play"
-        self.on_stop(was_playing_before)
+        try:
+            was_playing_before = not self.frontend.is_paused()
+            self.play_pause_btn.value = False
+            self.single_step_btn.disabled = False
+            self.play_pause_btn.icon = "play"
+            self.on_stop(was_playing_before)
+        except Exception as e:
+            self.frontend._handle_exception(e)
 
     def on_play(self):
-        self.frontend.on_play()
+        try:
+            self.frontend.set_running()
+        except Exception as e:
+            self.frontend._handle_exception(e)
 
     def on_pause(self):
-        self.frontend.on_pause()
+        try:
+            self.frontend.set_paused()
+        except Exception as e:
+            self.frontend._handle_exception(e)
 
     def on_stop(self, was_playing_before):
         self.frontend._clear_canvas()
@@ -362,40 +389,7 @@ class TestbedUI:
             # self.frontend.on_single_step()
 
     def on_single_step(self, _):
-        self.frontend._clear_canvas()
-        self.frontend.single_step()
+        self.frontend.update_physics_single_step()
 
     def display(self):
         display(self.app_layout, self._output_widget)
-
-
-if __name__ == "__main__":
-
-    class MockFrontend:
-        def __init__(self):
-            self.canvas = ipycanvas.Canvas(
-                width=800,
-                height=600,
-            )
-            self.canvas.fill_style = "darkblue"
-            self.canvas.fill_rect(0, 0, self.canvas.width, self.canvas.height)
-            self.settings = type("Settings", (), {"headless": False})
-
-        def on_pause(self):
-            print("MockFrontend: Paused")
-
-        def on_play(self):
-            print("MockFrontend: Playing")
-
-        def on_stop(self):
-            print("MockFrontend: Stopped")
-
-        def on_single_step(self):
-            print("MockFrontend: Single step")
-
-    import ipycanvas
-    from IPython.display import display
-
-    frontend = MockFrontend()
-    ui = TestbedUI(frontend)
-    ui.display()

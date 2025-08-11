@@ -112,36 +112,35 @@ class IpycanvasFrontend(FrontendBase):
             # display the canvas
             self.ui.display()
 
-            if not use_offscreen:
-                # use ipyevents to handle  events
-                d = Event(
-                    source=self.canvas,
-                    watched_events=[
-                        "mouseenter",
-                        "mousedown",
-                        "mouseup",
-                        "mousemove",
-                        "wheel",
-                        "mouseleave",
-                    ],
-                )
-                d.on_dom_event(self._dispatch_events)
-            else:
-                self.canvas.on_mouse_move(self.on_mouse_move)
-                self.canvas.on_mouse_down(self.on_mouse_down)
-                self.canvas.on_mouse_up(self.on_mouse_up)
-                self.canvas.on_mouse_out(self.on_mouse_leave)
-                self.canvas.on_mouse_enter(self.on_mouse_enter)
-                self.canvas.on_mouse_wheel(self.on_mouse_wheel)
         except Exception as e:
             self._handle_exception(e)
 
-    def is_paused(self):
-        return self.ui.is_paused()
+    def _connect_events(self):
+        if not use_offscreen:
+            # use ipyevents to handle  events
+            d = Event(
+                source=self.canvas,
+                watched_events=[
+                    "mouseenter",
+                    "mousedown",
+                    "mouseup",
+                    "mousemove",
+                    "wheel",
+                    "mouseleave",
+                ],
+            )
+            d.on_dom_event(self._dispatch_events)
+        else:
+            self.canvas.on_mouse_move(self.on_mouse_move)
+            self.canvas.on_mouse_down(self.on_mouse_down)
+            self.canvas.on_mouse_up(self.on_mouse_up)
+            self.canvas.on_mouse_out(self.on_mouse_leave)
+            self.canvas.on_mouse_enter(self.on_mouse_enter)
+            self.canvas.on_mouse_wheel(self.on_mouse_wheel)
 
     def on_mouse_move(self, x, y):
         try:
-            if self.ui.is_paused():
+            if self.is_paused():
                 return
             mouse_pos = b2d.Vec2(x, y)
             # get the delta
@@ -167,7 +166,7 @@ class IpycanvasFrontend(FrontendBase):
 
     def on_mouse_wheel(self, delta):
         try:
-            if self.ui.is_paused():
+            if self.is_paused():
                 return
             canvas_pos = self._last_canvas_mouse_pos
             world_pos = self.transform.canvas_to_world(canvas_pos)
@@ -182,7 +181,7 @@ class IpycanvasFrontend(FrontendBase):
 
     def on_mouse_down(self, x, y):
         try:
-            if self.ui.is_paused():
+            if self.is_paused():
                 return
             mouse_pos = b2d.Vec2(x, y)
             self._last_canvas_mouse_pos = mouse_pos
@@ -195,7 +194,7 @@ class IpycanvasFrontend(FrontendBase):
 
     def on_mouse_up(self, x, y):
         try:
-            if self.ui.is_paused():
+            if self.is_paused():
                 return
             canvas_pos = b2d.Vec2(x, y)
             world_pos = self.transform.canvas_to_world(canvas_pos)
@@ -205,7 +204,7 @@ class IpycanvasFrontend(FrontendBase):
 
     def on_mouse_leave(self, x, y):
         try:
-            if self.ui.is_paused():
+            if self.is_paused():
                 return
             self.sample.on_mouse_leave(MouseLeaveEvent())
         except Exception as e:
@@ -213,7 +212,7 @@ class IpycanvasFrontend(FrontendBase):
 
     def on_mouse_enter(self, x, y):
         try:
-            if self.ui.is_paused():
+            if self.is_paused():
                 return
             self.sample.on_mouse_enter(MouseEnterEvent())
         except Exception as e:
@@ -270,38 +269,43 @@ class IpycanvasFrontend(FrontendBase):
         else:
             self.canvas.clear()
 
-    def _callback(self, dt):
-        if self.ui.is_paused():
-            return
+    def _callback(self):
         try:
+            self.update_frontend_logic()
+
             if self.sample.is_done():
                 self.cancel_loop()
                 self.sample.post_run()
                 return
 
             self._clear_canvas()
-            self.update_and_draw(dt)
+            self.update_physics()
+            self.draw_physics()
+
         except Exception:
             self.output_widget.append_stdout(f"Error in main loop: {traceback.format_exc()}\n")
             self.cancel_loop()
 
     def main_loop_vanilla(self):
         self.ui_is_ready()
+        self._connect_events()
 
-        def f(dt):
-            self._callback(dt)
+        def f():
+            self._callback()
 
-        self.cancel_loop = set_render_loop(self.canvas, f, fps=self.settings.fps)
+        self.cancel_loop = set_render_loop(self.canvas, f)
 
     async def async_main_loop(self):
         try:
             await self.canvas.async_initialize()
             self.ui_is_ready()
+            self._connect_events()
 
-            def f(dt):
-                self._callback(dt)
+            def f(_):
+                self._callback()
 
-            self.cancel_loop = ipycanvas_set_render_loop(self.canvas, f, fps=self.settings.fps)
+            # fps=0 means use requestAnimationFrame
+            self.cancel_loop = ipycanvas_set_render_loop(self.canvas, f, fps=0)
 
         except Exception as e:
             self._handle_exception(e)
@@ -318,7 +322,7 @@ class IpycanvasFrontend(FrontendBase):
             self.main_loop_vanilla()
 
     def _dispatch_events(self, event):
-        if self.ui.is_paused():
+        if self.is_paused():
             return
 
         mouse_pos = b2d.Vec2(event["relativeX"], event["relativeY"])

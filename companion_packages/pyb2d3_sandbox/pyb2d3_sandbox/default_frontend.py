@@ -1,4 +1,5 @@
 import traceback
+import os
 
 _CachedDefaultFrontend = None
 
@@ -16,10 +17,36 @@ def is_notebook() -> bool:
         return False  # Probably standard Python interpreter
 
 
+def compare_case_insensitive(a: str, b: str) -> bool:
+    """
+    Compare two strings case-insensitively.
+    """
+    return a.lower() == b.lower()
+
+
 def get_default_frontend():
     global _CachedDefaultFrontend
     if _CachedDefaultFrontend is not None:
         return _CachedDefaultFrontend
+
+    # check for certain env variables
+    PYB2D3_SANDBOX_DEFAULT_FRONTEND = os.environ.get("PYB2D3_SANDBOX_DEFAULT_FRONTEND", None)
+    if PYB2D3_SANDBOX_DEFAULT_FRONTEND:
+        if compare_case_insensitive(PYB2D3_SANDBOX_DEFAULT_FRONTEND, "OPENGL"):
+            from pyb2d3_sandbox_opengl import OpenglFrontend
+
+            _CachedDefaultFrontend = OpenglFrontend
+            return _CachedDefaultFrontend
+        elif compare_case_insensitive(PYB2D3_SANDBOX_DEFAULT_FRONTEND, "PYGAME"):
+            from pyb2d3_sandbox_pygame import PygameFrontend
+
+            _CachedDefaultFrontend = PygameFrontend
+            return _CachedDefaultFrontend
+        elif compare_case_insensitive(PYB2D3_SANDBOX_DEFAULT_FRONTEND, "IPYCANVAS"):
+            from pyb2d3_sandbox_ipycanvas import IpycanvasFrontend
+
+            _CachedDefaultFrontend = IpycanvasFrontend
+            return _CachedDefaultFrontend
 
     tracebacks = []
 

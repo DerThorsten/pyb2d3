@@ -27,9 +27,7 @@ def sample_to_video(
     else:
         assert isinstance(frontend_settings, PygameFrontendSettings)
 
-    fps = frontend_settings.fps
-    if fps is None or fps <= 0:
-        fps = 60
+    hertz = frontend_settings.hertz
 
     # create a temporary directory for the frames
     frame_dir = tempfile.mkdtemp()
@@ -103,7 +101,7 @@ def sample_to_video(
         video_output = f"{outname}.mp4"
     else:
         video_output = os.path.join(outdir, f"{outname}.mp4")
-    create_video_from_frames(frame_dir, output=video_output, framerate=fps)
+    create_video_from_frames(frame_dir, output=video_output, framerate=hertz)
 
     if outdir is None:
         output = f"{outname}.gif"
@@ -114,7 +112,7 @@ def sample_to_video(
         create_gif_from_video(
             video_output,
             output,
-            fps=min(max_gif_fps, fps),
+            fps=min(max_gif_fps, hertz),
             scale_gif_width=scale_gif_width,
         )
 
