@@ -413,7 +413,7 @@ class FrontendBase(ABC):
             self._set_new_sample(self.sample_class, self.sample_settings)
 
         # click handler update
-        if self._multi_click_handler:
+        if self._multi_click_handler is not None:
             self._multi_click_handler.update()
 
     def draw_physics(self):

@@ -88,6 +88,12 @@ KEY_MAP = {
     # shift keys
     imgui.Key.left_shift: "shift",
     imgui.Key.right_shift: "shift",
+    # meta keys
+    imgui.Key.left_super: "meta",
+    imgui.Key.right_super: "meta",
+    # alt keys
+    imgui.Key.left_alt: "alt",
+    imgui.Key.right_alt: "alt",
     # Add letter keys
     **{getattr(imgui.Key, f"{chr(i)}"): chr(i) for i in range(ord("a"), ord("z") + 1)},
     # Add number keys

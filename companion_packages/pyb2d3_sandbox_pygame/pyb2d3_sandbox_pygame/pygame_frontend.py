@@ -7,6 +7,8 @@ from pyb2d3_sandbox.frontend_base import (
     MouseWheelEvent,
     MouseLeaveEvent,
     MouseEnterEvent,
+    KeyDownEvent,
+    KeyUpEvent,
 )
 
 from dataclasses import dataclass, field
@@ -213,7 +215,7 @@ class PygameFrontend(FrontendBase):
 
             if self.settings.debug_draw.draw_background:
                 self.screen.fill(self.settings.debug_draw.background_color)
-
+            self.update_frontend_logic()
             self.update_physics_single_step()
             self.draw_physics()
 
@@ -234,6 +236,7 @@ class PygameFrontend(FrontendBase):
             if self.settings.debug_draw.draw_background:
                 self.screen.fill(self.settings.debug_draw.background_color)
 
+            self.update_frontend_logic()
             self.update_physics()
             self._dispatch_events()
             self.draw_physics()
@@ -324,3 +327,44 @@ class PygameFrontend(FrontendBase):
                 self.sample.on_mouse_enter(MouseEnterEvent())
                 self._last_canvas_mouse_pos = None
                 self._last_world_mouse_pos = None
+
+            # keydown
+            elif event.type == pygame.KEYDOWN:
+                key_name = pygame.key.name(event.key)
+
+                # KMOD_LSHIFT   left shift
+                # KMOD_RSHIFT   right shift
+                # KMOD_SHIFT    left shift or right shift or both
+                # KMOD_LCTRL    left control
+                # KMOD_RCTRL    right control
+                # KMOD_CTRL     left control or right control or both
+                # KMOD_LALT     left alt
+                # KMOD_RALT     right alt
+                # KMOD_ALT      left alt or right alt or both
+                # KMOD_LMETA    left meta
+                # KMOD_RMETA    right meta
+                # KMOD_META     left meta or right meta or both
+                # KMOD_CAPS     caps lock
+                # KMOD_NUM      num lock
+                # KMOD_MODE     AltGr
+
+                # ctrl=False, shift=False, meta=False, alt=False
+
+                ctrl = (event.mod & pygame.KMOD_CTRL) != 0
+                shift = (event.mod & pygame.KMOD_SHIFT) != 0
+                meta = (event.mod & pygame.KMOD_META) != 0
+                alt = (event.mod & pygame.KMOD_ALT) != 0
+                self._on_key_down(
+                    KeyDownEvent(
+                        key=key_name,
+                        ctrl=ctrl,
+                        shift=shift,
+                        meta=meta,
+                        alt=alt,
+                    )
+                )
+
+            # keyup
+            elif event.type == pygame.KEYUP:
+                key_name = pygame.key.name(event.key)
+                self._on_key_up(KeyUpEvent(key=key_name))

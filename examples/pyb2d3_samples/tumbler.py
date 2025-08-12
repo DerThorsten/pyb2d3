@@ -107,9 +107,11 @@ class Tumbler(SampleBase):
             )
 
     def on_double_click(self, event):
+        print("Double click at", event.world_position)
         self.world.explode(position=event.world_position, radius=20, impulse_per_length=10)
 
     def on_triple_click(self, event):
+        print("Triple click at", event.world_position)
         self.world.explode(position=event.world_position, radius=20, impulse_per_length=-10)
 
     def aabb(self):
