@@ -23,6 +23,8 @@ from pyb2d3_sandbox.frontend_base import (
     MouseWheelEvent,
     MouseEnterEvent,
     MouseLeaveEvent,
+    KeyDownEvent,
+    KeyUpEvent,
 )
 import pyb2d3_sandbox.widgets as widgets
 
@@ -69,6 +71,30 @@ ICON_PLAY = icons_fontawesome_6.ICON_FA_PLAY
 ICON_PAUSE = icons_fontawesome_6.ICON_FA_PAUSE
 ICON_STOP = icons_fontawesome_6.ICON_FA_STOP
 ICON_FORWARD_STEP = icons_fontawesome_6.ICON_FA_FORWARD_STEP
+
+
+KEY_MAP = {
+    imgui.Key.space: "space",
+    imgui.Key.left_arrow: "left",
+    imgui.Key.right_arrow: "right",
+    imgui.Key.up_arrow: "up",
+    imgui.Key.down_arrow: "down",
+    imgui.Key.escape: "escape",
+    imgui.Key.enter: "enter",
+    imgui.Key.tab: "tab",
+    # ctrl keys
+    imgui.Key.left_ctrl: "ctrl",
+    imgui.Key.right_ctrl: "ctrl",
+    # shift keys
+    imgui.Key.left_shift: "shift",
+    imgui.Key.right_shift: "shift",
+    # Add letter keys
+    **{getattr(imgui.Key, f"{chr(i)}"): chr(i) for i in range(ord("a"), ord("z") + 1)},
+    # Add number keys
+    **{getattr(imgui.Key, f"_{i}"): str(i) for i in range(10)},
+}
+
+KEY_LIST = [(key, value) for key, value in KEY_MAP.items()]
 
 
 class OpenglFrontend(FrontendBase):
@@ -172,6 +198,7 @@ class OpenglFrontend(FrontendBase):
         if self._is_paused:
             return
 
+        # mouse events
         if imgui.is_window_hovered():
             if not self._was_inside_last_frame:
                 self.sample.on_mouse_enter(MouseEnterEvent())
@@ -203,6 +230,30 @@ class OpenglFrontend(FrontendBase):
             if self._was_inside_last_frame:
                 self.sample.on_mouse_leave(MouseLeaveEvent())
             self._was_inside_last_frame = False
+
+        # keyboard events
+        # get all keys which are **just pressed down in this frame**
+        # Check currently pressed keys
+        ikp = imgui.is_key_pressed
+        ikr = imgui.is_key_released
+        for key_code, key_name in KEY_LIST:
+            if ikp(key_code, repeat=False):
+                # check if ctrl, shift, meta, or alt are pressed
+                ctrl = imgui.get_io().key_ctrl
+                shift = imgui.get_io().key_shift
+                meta = imgui.get_io().key_super
+                alt = imgui.get_io().key_alt
+                self._on_key_down(
+                    KeyDownEvent(
+                        key=key_name,
+                        ctrl=ctrl,
+                        shift=shift,
+                        meta=meta,
+                        alt=alt,
+                    )
+                )
+            if ikr(key_code):
+                self._on_key_up(KeyUpEvent(key=key_name))
 
     def once_per_frame(self):
         if self.debug_draw is None or self.sample is None:

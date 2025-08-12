@@ -10,8 +10,9 @@ requires-python = ">=3.8"
 license = { text = "MIT" }
 
 dependencies = [
-    "pyb2d3>=0.5.6",
-    "ipycanvas>=0.14.1"
+    "pyb2d3>=0.6.0",
+    "ipycanvas>=0.14.1",
+    "ipyevents",
 ]
 
 [project.urls]

@@ -1,5 +1,5 @@
 # a conda env
-name: pyb2d
+name: pyb2d3
 channels:
   - conda-forge
 dependencies:
@@ -21,8 +21,14 @@ dependencies:
   - pytest-sugar
   # utils
   - pre-commit
-  # frontend
+  # frontend-pygame
   - pygame
+  # frontent-opengl
+  - pyopengl
+  - imgui-bundle
+  # frontend-jupyter/lite
+  - ipycanvas >=0.14.1
+  - ipyevents
   # docs
   - sphinx
   - sphinx_rtd_theme
