@@ -533,6 +533,12 @@ class FrontendBase(ABC):
 
     def _on_key_down(self, event):
         """Handle key down events."""
+        if event.key in self._pressed_keys:
+            # if the key is already pressed, we don't add it again
+            # this is because some frontend keep fireing the key down event
+            # when the key is pressed
+            # e.g. the ipycanvas frontend does this
+            return
         self._pressed_keys.add(event.key)
         self.sample.on_key_down(event)
 

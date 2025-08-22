@@ -21,6 +21,19 @@ X_AXIS = b2d.Vec2(1, 0)
 Y_AXIS = b2d.Vec2(0, 1)
 
 
+KEY_MODIFIERS = (
+    pygame.K_LSHIFT,
+    pygame.K_RSHIFT,
+    pygame.K_LCTRL,
+    pygame.K_RCTRL,
+    pygame.K_LALT,
+    pygame.K_RALT,
+    pygame.K_LMETA,
+    pygame.K_RMETA,
+)
+KEY_MODIFIER_SET = set(KEY_MODIFIERS)
+
+
 class PygameDebugDraw(FrontendDebugDraw):
     def __init__(self, transform, screen):
         self.screen = screen
@@ -330,6 +343,10 @@ class PygameFrontend(FrontendBase):
 
             # keydown
             elif event.type == pygame.KEYDOWN:
+                # # ignore modifier keys
+                # if event.key in KEY_MODIFIER_SET:
+                #     continue
+
                 key_name = pygame.key.name(event.key)
 
                 # KMOD_LSHIFT   left shift
@@ -366,5 +383,8 @@ class PygameFrontend(FrontendBase):
 
             # keyup
             elif event.type == pygame.KEYUP:
+                # ignore modifier keys
+                if event.key in KEY_MODIFIER_SET:
+                    continue
                 key_name = pygame.key.name(event.key)
                 self._on_key_up(KeyUpEvent(key=key_name))

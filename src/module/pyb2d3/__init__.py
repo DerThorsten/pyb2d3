@@ -747,6 +747,16 @@ def aabb_arround_point(point, radius):
     return aabb(lower_bound, upper_bound)
 
 
+def ensure_hex_color(color):
+    """Ensure color is a hex integer"""
+    if isinstance(color, int):
+        return color
+    elif isinstance(color, tuple) and len(color) == 3:
+        return rgb_to_hex_color(*color)
+    else:
+        raise ValueError("Color must be an int or a tuple of (R, G, B) values.")
+
+
 def rgb_to_hex_color(r, g, b):
     """Convert RGB values to a hexadecimal integer."""
     # since we have 8 bits left, lets fill them with 255

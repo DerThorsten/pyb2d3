@@ -195,6 +195,7 @@ class SampleBase(object):
         return self.frontend.pressed_keys()
 
     def on_key_down(self, event):
+        # print("Key down:", event.key)
         pass
 
     def on_key_up(self, event):

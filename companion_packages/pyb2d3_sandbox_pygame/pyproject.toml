@@ -3,7 +3,7 @@ name = "pyb2d3-sandbox-pygame"
 version = "0.6.0"
 description = "run the pyb2d3 sandbox with pygame"
 authors = [
-    { name = "Your Name", email = "you@example.com" }
+    { name = "Dr. Thorsten Beier", email = "derthorstenbeier@gmail.com" }
 ]
 readme = "README.md"
 requires-python = ">=3.8"
