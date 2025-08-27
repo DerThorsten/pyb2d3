@@ -6,7 +6,6 @@
 #include <pyb2d3/batch_api.hpp>
 #include <pyb2d3/batch_api/batch_exporters.hpp>
 
-
 // nanobind namespace
 namespace nb = nanobind;
 

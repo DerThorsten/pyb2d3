@@ -1,0 +1,31 @@
+[project]
+name = "pyb2d3-sandbox-jupyter"
+version = "0.6.0"
+description = "run the pyb2d3 sandbox with jupyter"
+authors = [
+    { name = "Dr. Thorsten Beier", email = "derthorstenbeier@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+
+dependencies = [
+    "pyb2d3>=0.6.0",
+    "anywidget",
+    "ipywidgets>=8.0.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/DerThorsten/pyb2d3"
+
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+
+[tool.setuptools.package-data]
+"pyb2d3_sandbox_jupyter" = ["canvas_widget.js"]

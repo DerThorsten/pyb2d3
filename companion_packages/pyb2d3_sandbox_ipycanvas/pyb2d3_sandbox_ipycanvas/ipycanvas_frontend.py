@@ -77,6 +77,8 @@ class IpycanvasFrontend(FrontendBase):
         self.output_widget = Output()
         self.cancel_loop = None
 
+        self._ignore_these_keys = set("Control, Shift, Meta")
+
         super().__init__(settings)
 
         try:
@@ -141,6 +143,18 @@ class IpycanvasFrontend(FrontendBase):
             self.canvas.on_mouse_out(self.on_mouse_leave)
             self.canvas.on_mouse_enter(self.on_mouse_enter)
             self.canvas.on_mouse_wheel(self.on_mouse_wheel)
+            self.canvas.on_key_down(self.on_key_down)
+            self.canvas.on_key_up(self.on_key_up)
+
+    def on_key_down(self, key, ctrl, shift, meta):
+        if key in self._ignore_these_keys:
+            return
+        return self._on_key_down(KeyDownEvent(key=key.lower(), ctrl=ctrl, shift=shift, meta=meta))
+
+    def on_key_up(self, key, ctrl, shift, meta):
+        if key in self._ignore_these_keys:
+            return
+        return self._on_key_up(KeyUpEvent(key=key.lower()))
 
     def on_mouse_move(self, x, y):
         try:

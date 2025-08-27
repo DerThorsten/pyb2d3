@@ -74,8 +74,13 @@ endif()
 if(NOT EMSCRIPTEN)
     nanobind_add_module(_pyb2d3 STABLE_ABI ${PY_SOURCES})
 else()
-
     nanobind_add_module(_pyb2d3 ${PY_SOURCES})
+endif()
+
+
+# pass side module flags
+if(EMSCRIPTEN)
+    set_target_properties(_pyb2d3 PROPERTIES  LINK_FLAGS "-sSIDE_MODULE=1")
 endif()
 
 
@@ -89,7 +94,6 @@ endif()
 target_include_directories(_pyb2d3
     PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
-#add definitions
 if(PYB2D3_NO_THREADING)
     target_compile_definitions(_pyb2d3 PRIVATE PYB2D3_NO_THREADING)
 endif()
@@ -119,7 +123,6 @@ if(DEFINED SKBUILD)
     message(STATUS "using SKBUILD" ${SKBUILD})
     install(TARGETS _pyb2d3 LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME})
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/module/pyb2d3/ DESTINATION ${SKBUILD_PROJECT_NAME})
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION ${SKBUILD_PROJECT_NAME}/include)
 else()
     message(STATUS "not using SKBUILD")
 endif()

@@ -124,7 +124,7 @@ class DebugDrawSettings:
 
 @dataclass
 class FrontendBaseSettings:
-    canvas_shape: tuple = (1200, 1200)
+    canvas_shape: tuple = (800, 800)
 
     hertz: int = 60  # Physics update frequency
     speed: float = 1.0  # Speed multiplier for the simulation

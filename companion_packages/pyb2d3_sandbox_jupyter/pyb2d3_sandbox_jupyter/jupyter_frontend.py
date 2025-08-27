@@ -6,10 +6,12 @@ from pyb2d3_sandbox.frontend_base import (
     MouseWheelEvent,
     MouseLeaveEvent,
     MouseEnterEvent,
+    KeyDownEvent,
+    KeyUpEvent,
 )
 import sys
 from .ui import TestbedUI
-from .render_loop import set_render_loop
+from .render_loop import render_loop
 
 # output widget from ipywidgets
 from ipywidgets import Output
@@ -64,6 +66,7 @@ class JupyterFrontend(FrontendBase):
                 height=self.settings.canvas_shape[1],
                 layout=dict(width="100%"),
                 output_widget=self.output_widget,
+                frontend=self,
             )
             # if a cell is re-executed, we need to cancel the previous loop,
             # otherwise we will have multiple loops running
@@ -97,14 +100,11 @@ class JupyterFrontend(FrontendBase):
         except Exception as e:
             self._handle_exception(e)
 
-    def _connect_events(self):
-        self.canvas.on_mouse_wheel = self.on_mouse_wheel
-        # self.canvas.on_mouse_click = self.on_mouse_click
-        self.canvas.on_mouse_move = self.on_mouse_move
-        self.canvas.on_mouse_down = self.on_mouse_down
-        self.canvas.on_mouse_up = self.on_mouse_up
-        self.canvas.on_mouse_enter = self.on_mouse_enter
-        self.canvas.on_mouse_leave = self.on_mouse_leave
+    def on_key_down(self, key, ctrl, shift, meta, alt):
+        self._on_key_down(KeyDownEvent(key, ctrl, shift, meta, alt))
+
+    def on_key_up(self, key):
+        self._on_key_up(KeyUpEvent(key))
 
     def on_mouse_move(self, x, y, dx, dy):
         try:
@@ -234,12 +234,12 @@ class JupyterFrontend(FrontendBase):
 
     def main_loop_vanilla(self):
         self.ui_is_ready()
-        self._connect_events()
+        self.canvas._connect_events()
 
         def f():
             self._callback()
 
-        self.cancel_loop = set_render_loop(self.canvas, f)
+        self.cancel_loop = render_loop(self.canvas, f)
 
     def main_loop(self):
         self.main_loop_vanilla()

@@ -10,9 +10,23 @@ RECIPE_YAML_TEMPLATE="$RECIPE_DIR/recipe.yaml.template"
 RECIPE_YAML="$RECIPE_DIR/recipe.yaml"
 OUTPUT_DIR="$EMSCRIPTEN_FORGE_DIR/output"
 
+# we copy only the relevant parts there
+RECIPE_SRC_DIR="$EMSCRIPTEN_FORGE_DIR/recipe_src"
+mkdir -p "$RECIPE_SRC_DIR"
+
+# copy include,src,extra_licenses from REPO_ROOT to RECIPE_SRC_DIR
+cp -r "$REPO_ROOT/include"              "$RECIPE_SRC_DIR/include"
+cp -r "$REPO_ROOT/src"                  "$RECIPE_SRC_DIR/src"
+cp -r "$REPO_ROOT/extra_licenses"       "$RECIPE_SRC_DIR/extra_licenses"
+cp -r "$REPO_ROOT/companion_packages"   "$RECIPE_SRC_DIR/companion_packages"
+cp    "$REPO_ROOT/CMakeLists.txt"       "$RECIPE_SRC_DIR/"
+cp    "$REPO_ROOT/LICENSE"              "$RECIPE_SRC_DIR/"
+cp    "$REPO_ROOT/pyproject.toml"    "$RECIPE_SRC_DIR/"
+
+
 # replace PATH_PLACEHOLDER_TO_BE_REPLACED in the recipe.yaml.template with the actual path
-# (ie the value of REPO_ROOT)
-sed "s|PATH_PLACEHOLDER_TO_BE_REPLACED|$REPO_ROOT|g" "$RECIPE_YAML_TEMPLATE" > "$RECIPE_YAML"
+# (ie the value of RECIPE_SRC_DIR)
+sed "s|PATH_PLACEHOLDER_TO_BE_REPLACED|$RECIPE_SRC_DIR|g" "$RECIPE_YAML_TEMPLATE" > "$RECIPE_YAML"
 
 
 VARIANT_URL="https://raw.githubusercontent.com/emscripten-forge/recipes/refs/heads/main/variant.yaml"

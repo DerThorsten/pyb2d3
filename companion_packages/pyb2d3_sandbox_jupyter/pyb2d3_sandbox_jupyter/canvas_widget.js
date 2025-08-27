@@ -356,6 +356,12 @@ function client_to_world(canvas, ctx, clientX, clientY) {
 }
 
 
+function map_key(key){
+    if (key == " ") {
+        return "space";
+    }
+    return key.toLowerCase();
+}
 
 function setup_event_listeners(model,ctx, canvas) {
 
@@ -365,6 +371,8 @@ function setup_event_listeners(model,ctx, canvas) {
 
     // handle events
     canvas.addEventListener("click", (event) => {
+        // focus canvas
+        canvas.focus();
         const [world_x, world_y] = client_to_world(canvas, ctx, event.clientX, event.clientY);
         model.send(["click", world_x, world_y]);
         canvas._last_client = [event.clientX, event.clientY];
@@ -372,6 +380,8 @@ function setup_event_listeners(model,ctx, canvas) {
 
     // mouse down event
     canvas.addEventListener("mousedown", (event) => {
+        // focus canvas
+        canvas.focus();
         const [world_x, world_y] = client_to_world(canvas, ctx, event.clientX, event.clientY);
         model.send(["mouse_down",world_x, world_y]);
         canvas._last_client = [event.clientX, event.clientY];
@@ -456,12 +466,46 @@ function setup_event_listeners(model,ctx, canvas) {
         canvas._mouse_inside = true; // set mouse inside to true
     });
 
+
+
+
+    // key-down event
+    canvas.addEventListener("keydown", (event) => {
+        if (event.key === "Control" || event.key === "Shift" || event.key === "Meta" || event.key === "Alt") {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        model.send(["key_down",
+            map_key(event.key),
+            event.ctrlKey,
+            event.shiftKey,
+            event.metaKey,
+            event.altKey
+        ]);
+    });
+
+    // key-up event
+    canvas.addEventListener("keyup", (event) => {
+        if (event.key === "Control" || event.key === "Shift" || event.key === "Meta" || event.key === "Alt") {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        model.send(["key_up",
+            map_key(event.key)
+        ]);
+    });
+
 }
 
 function render({ model, el }) {
 
     // create a canvas element
     let canvas = document.createElement("canvas");
+
+    canvas.setAttribute("tabindex", "0"); // make the canvas focusable
+    // canvas.style.outline = "none"; // remove focus outline
 
     canvas.width = model.get("_width");
     canvas.height = model.get("_height");
