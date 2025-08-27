@@ -91,3 +91,7 @@ emscripten_forge/recipe/recipe.yaml
 
 # ignore the variant file (we donwload it on the fly)
 emscripten_forge/variant.yaml
+
+emscripten_forge/recipe_src/
+
+deploy

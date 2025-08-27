@@ -53,7 +53,7 @@ PYB2D3_SANDBOX_DIR=$REPO_ROOT/companion_packages/pyb2d3_sandbox/pyb2d3_sandbox
 SIDE_PACKAGE_DIR="/lib/python3.13/site-packages/"
 
 
-jupyter lite build  \
+jupyter lite build \
     --XeusAddon.prefix=$WASM_ENV_PREFIX \
     --contents=$CONTENT_DIR \
     --XeusAddon.mounts=$PYB2D3_SANDBOX_IPYCANVAS_DIR:$WASM_SIDE_PACKAGE_DIR/pyb2d3_sandbox_ipycanvas \

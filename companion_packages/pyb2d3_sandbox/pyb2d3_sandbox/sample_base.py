@@ -187,3 +187,16 @@ class SampleBase(object):
     def on_mouse_wheel(self, event):
         # Handle mouse wheel events
         self.frontend.change_zoom(event.delta)
+
+    def is_key_pressed(self, key):
+        return self.frontend.is_key_pressed(key)
+
+    def pressed_keys(self):
+        return self.frontend.pressed_keys()
+
+    def on_key_down(self, event):
+        # print("Key down:", event.key)
+        pass
+
+    def on_key_up(self, event):
+        pass

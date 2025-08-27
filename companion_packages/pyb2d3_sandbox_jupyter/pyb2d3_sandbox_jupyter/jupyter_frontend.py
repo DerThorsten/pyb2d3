@@ -10,10 +10,8 @@ from pyb2d3_sandbox.frontend_base import (
     KeyUpEvent,
 )
 import sys
-import asyncio
 from .ui import TestbedUI
-from .render_loop import set_render_loop
-from ipycanvas.call_repeated import set_render_loop as ipycanvas_set_render_loop
+from .render_loop import render_loop
 
 # output widget from ipywidgets
 from ipywidgets import Output
@@ -23,7 +21,8 @@ from ipywidgets import Output
 import pyb2d3 as b2d
 import traceback
 
-from ipycanvas.compat import Canvas
+from .canvas_widget import CanvasWidget
+from .jupyter_debug_draw import JupyterDebugDraw
 
 
 def html_color(color):
@@ -36,28 +35,10 @@ def html_color(color):
         raise ValueError("Color must be an int or a tuple of (R, G, B) values.")
 
 
-# has pyjs?
-has_pyjs = False
-try:
-    import pyjs  # noqa: F401
-
-    has_pyjs = True
-except ImportError:
-    has_pyjs = False
-is_emscripten = sys.platform.startswith("emscripten")
-use_offscreen = has_pyjs and is_emscripten
-
-if not use_offscreen:
-    from ipyevents import Event
-    from .debug_draw_vanilla import IpycanvasDebugDraw
-else:
-    from .debug_draw_offscreen import IpycanvasDebugDraw
-
-
 last_frontend = [None]
 
 
-class IpycanvasFrontend(FrontendBase):
+class JupyterFrontend(FrontendBase):
     Settings = FrontendBase.Settings
 
     def __del__(self):
@@ -77,15 +58,15 @@ class IpycanvasFrontend(FrontendBase):
         self.output_widget = Output()
         self.cancel_loop = None
 
-        self._ignore_these_keys = set("Control, Shift, Meta")
-
         super().__init__(settings)
 
         try:
-            self.canvas = Canvas(
+            self.canvas = CanvasWidget(
                 width=self.settings.canvas_shape[0],
                 height=self.settings.canvas_shape[1],
-                # layout=Layout(width='100%')
+                layout=dict(width="100%"),
+                output_widget=self.output_widget,
+                frontend=self,
             )
             # if a cell is re-executed, we need to cancel the previous loop,
             # otherwise we will have multiple loops running
@@ -99,7 +80,7 @@ class IpycanvasFrontend(FrontendBase):
                 offset=(0, 0),
             )
 
-            self.debug_draw = IpycanvasDebugDraw(
+            self.debug_draw = JupyterDebugDraw(
                 frontend=self,
                 transform=self.transform,
                 canvas=self.canvas,
@@ -119,71 +100,20 @@ class IpycanvasFrontend(FrontendBase):
         except Exception as e:
             self._handle_exception(e)
 
-    def _connect_events(self):
-        if not use_offscreen:
-            # use ipyevents to handle  events
-            d = Event(
-                source=self.canvas,
-                watched_events=[
-                    "mouseenter",
-                    "mousedown",
-                    "mouseup",
-                    "mousemove",
-                    "wheel",
-                    "mouseleave",
-                    "keydown",
-                    "keyup",
-                ],
-            )
-            d.on_dom_event(self._dispatch_events)
-        else:
-            self.canvas.on_mouse_move(self.on_mouse_move)
-            self.canvas.on_mouse_down(self.on_mouse_down)
-            self.canvas.on_mouse_up(self.on_mouse_up)
-            self.canvas.on_mouse_out(self.on_mouse_leave)
-            self.canvas.on_mouse_enter(self.on_mouse_enter)
-            self.canvas.on_mouse_wheel(self.on_mouse_wheel)
-            self.canvas.on_key_down(self.on_key_down)
-            self.canvas.on_key_up(self.on_key_up)
+    def on_key_down(self, key, ctrl, shift, meta, alt):
+        self._on_key_down(KeyDownEvent(key, ctrl, shift, meta, alt))
 
-    def key_to_key_name(self, key):
-        if key == "Control":
-            return "ctrl"
-        elif key == "Shift":
-            return "shift"
-        elif key == "Meta":
-            return "meta"
-        elif key == "Alt":
-            return "alt"
-        elif key == " ":
-            return "space"
-        return key.lower()
+    def on_key_up(self, key):
+        self._on_key_up(KeyUpEvent(key))
 
-    def on_key_down(self, key, ctrl, shift, meta):
-        return self._on_key_down(
-            KeyDownEvent(key=self.key_to_key_name(key), ctrl=ctrl, shift=shift, meta=meta)
-        )
-
-    def on_key_up(self, key, ctrl, shift, meta):
-        return self._on_key_up(KeyUpEvent(key=self.key_to_key_name(key)))
-
-    def on_mouse_move(self, x, y):
+    def on_mouse_move(self, x, y, dx, dy):
         try:
             if self.is_paused():
                 return
-            mouse_pos = b2d.Vec2(x, y)
-            # get the delta
-            if self._last_canvas_mouse_pos is None:
-                self._last_canvas_mouse_pos = mouse_pos
 
-            delta = mouse_pos - self._last_canvas_mouse_pos
-            # convert delta to world coordinates
-            world_delta = (
-                self.transform.scale_canvas_to_world(delta[0]),
-                -self.transform.scale_canvas_to_world(delta[1]),
-            )
-            self._last_canvas_mouse_pos = mouse_pos
-            world_pos = self.transform.canvas_to_world(mouse_pos)
+            world_pos = b2d.Vec2(x, y)
+            world_delta = b2d.Vec2(dx, dy)
+
             self.sample.on_mouse_move(
                 MouseMoveEvent(
                     world_position=world_pos,
@@ -193,12 +123,11 @@ class IpycanvasFrontend(FrontendBase):
         except Exception as e:
             self._handle_exception(e)
 
-    def on_mouse_wheel(self, delta):
+    def on_mouse_wheel(self, x, y, delta):
         try:
             if self.is_paused():
                 return
-            canvas_pos = self._last_canvas_mouse_pos
-            world_pos = self.transform.canvas_to_world(canvas_pos)
+            world_pos = b2d.Vec2(x, y)
             self.sample.on_mouse_wheel(
                 MouseWheelEvent(
                     world_position=world_pos,
@@ -212,9 +141,7 @@ class IpycanvasFrontend(FrontendBase):
         try:
             if self.is_paused():
                 return
-            mouse_pos = b2d.Vec2(x, y)
-            self._last_canvas_mouse_pos = mouse_pos
-            world_pos = self.transform.canvas_to_world(mouse_pos)
+            world_pos = b2d.Vec2(x, y)
 
             self._multi_click_handler.handle_click(world_position=world_pos)
             self.sample.on_mouse_down(MouseDownEvent(world_position=world_pos))
@@ -225,13 +152,15 @@ class IpycanvasFrontend(FrontendBase):
         try:
             if self.is_paused():
                 return
-            canvas_pos = b2d.Vec2(x, y)
-            world_pos = self.transform.canvas_to_world(canvas_pos)
+            world_pos = b2d.Vec2(x, y)
             self.sample.on_mouse_up(MouseUpEvent(world_position=world_pos))
         except Exception as e:
             self._handle_exception(e)
 
-    def on_mouse_leave(self, x, y):
+    def _clear_canvas(self):
+        self.debug_draw.clear_canvas()
+
+    def on_mouse_leave(self):
         try:
             if self.is_paused():
                 return
@@ -239,7 +168,7 @@ class IpycanvasFrontend(FrontendBase):
         except Exception as e:
             self._handle_exception(e)
 
-    def on_mouse_enter(self, x, y):
+    def on_mouse_enter(self):
         try:
             if self.is_paused():
                 return
@@ -286,18 +215,6 @@ class IpycanvasFrontend(FrontendBase):
             self.transform.offset[1] + delta[1],
         )
 
-    def _clear_canvas(self):
-        if self.settings.debug_draw.draw_background:
-            self.canvas.fill_style = html_color(self.settings.debug_draw.background_color)
-            self.canvas.fill_rect(
-                0,
-                0,
-                self.settings.canvas_shape[0],
-                self.settings.canvas_shape[1],
-            )
-        else:
-            self.canvas.clear()
-
     def _callback(self):
         try:
             self.update_frontend_logic()
@@ -307,7 +224,6 @@ class IpycanvasFrontend(FrontendBase):
                 self.sample.post_run()
                 return
 
-            self._clear_canvas()
             self.update_physics()
             self.draw_physics()
 
@@ -318,83 +234,15 @@ class IpycanvasFrontend(FrontendBase):
 
     def main_loop_vanilla(self):
         self.ui_is_ready()
-        self._connect_events()
+        self.canvas._connect_events()
 
         def f():
             self._callback()
 
-        self.cancel_loop = set_render_loop(self.canvas, f)
-
-    async def async_main_loop(self):
-        try:
-            await self.canvas.async_initialize()
-            self.ui_is_ready()
-            self._connect_events()
-
-            def f(_):
-                self._callback()
-
-            # fps=0 means use requestAnimationFrame
-            self.cancel_loop = ipycanvas_set_render_loop(self.canvas, f, fps=0)
-
-        except Exception as e:
-            self._handle_exception(e)
-            return
-
-    def main_loop_lite(self):
-        # run self.async_main_loop in a a task
-        asyncio.create_task(self.async_main_loop())
+        self.cancel_loop = render_loop(self.canvas, f)
 
     def main_loop(self):
-        if is_emscripten:
-            self.main_loop_lite()
-        else:
-            self.main_loop_vanilla()
-
-    def _dispatch_events(self, event):
-        try:
-            if self.is_paused():
-                return
-            if event["type"] == "keydown":
-                my_event = KeyDownEvent(
-                    key=event["key"],
-                    alt=event["altKey"],
-                    ctrl=event["ctrlKey"],
-                    meta=event["metaKey"],
-                    shift=event["shiftKey"],
-                )
-                self._on_key_down(my_event)
-            elif event["type"] == "keyup":
-                key = event["key"]
-                my_event = KeyUpEvent(key=key)
-                self._on_key_up(my_event)
-
-            else:
-                mouse_pos = b2d.Vec2(event["relativeX"], event["relativeY"])
-                if event["type"] == "mousemove":
-                    self.on_mouse_move(*mouse_pos)
-                elif event["type"] == "mouseenter":
-                    self.on_mouse_enter(*mouse_pos)
-                elif event["type"] == "mouseleave":
-                    self.on_mouse_leave(*mouse_pos)
-                elif event["type"] == "mousedown":
-                    self.on_mouse_down(*mouse_pos)
-                elif event["type"] == "mouseup":
-                    self.on_mouse_up(*mouse_pos)
-                elif event["type"] == "wheel":
-                    self.on_mouse_wheel(event["deltaY"])
-        except Exception as e:
-            self._handle_exception(e)
-            return
-
-        # elif event["type"] == "keydown":
-        #     self._on_key_down(
-        #         KeyDownEvent(key=event["key"])
-        #     )
-        # elif event["type"] == "keyup":
-        #     self._on_key_up(
-        #         KeyUpEvent(key=event["key"])
-        #     )
+        self.main_loop_vanilla()
 
     def pre_new_sample(self, sample_class, sample_settings):
         # make sure we reset the debug draw (ie clear the batches)

@@ -7,6 +7,8 @@ from pyb2d3_sandbox.frontend_base import (
     MouseWheelEvent,
     MouseLeaveEvent,
     MouseEnterEvent,
+    KeyDownEvent,
+    KeyUpEvent,
 )
 
 from dataclasses import dataclass, field
@@ -213,7 +215,7 @@ class PygameFrontend(FrontendBase):
 
             if self.settings.debug_draw.draw_background:
                 self.screen.fill(self.settings.debug_draw.background_color)
-
+            self.update_frontend_logic()
             self.update_physics_single_step()
             self.draw_physics()
 
@@ -234,6 +236,7 @@ class PygameFrontend(FrontendBase):
             if self.settings.debug_draw.draw_background:
                 self.screen.fill(self.settings.debug_draw.background_color)
 
+            self.update_frontend_logic()
             self.update_physics()
             self._dispatch_events()
             self.draw_physics()
@@ -324,3 +327,33 @@ class PygameFrontend(FrontendBase):
                 self.sample.on_mouse_enter(MouseEnterEvent())
                 self._last_canvas_mouse_pos = None
                 self._last_world_mouse_pos = None
+
+            # keydown
+            elif event.type == pygame.KEYDOWN:
+                # # ignore modifier keys
+                # if event.key in KEY_MODIFIER_SET:
+                #     continue
+
+                key_name = pygame.key.name(event.key)
+                # remove left / right
+                if key_name.startswith("left ") or key_name.startswith("right "):
+                    key_name = key_name.split(" ", 1)[1]
+
+                ctrl = (event.mod & pygame.KMOD_CTRL) != 0
+                shift = (event.mod & pygame.KMOD_SHIFT) != 0
+                meta = (event.mod & pygame.KMOD_META) != 0
+                alt = (event.mod & pygame.KMOD_ALT) != 0
+                self._on_key_down(
+                    KeyDownEvent(
+                        key=key_name,
+                        ctrl=ctrl,
+                        shift=shift,
+                        meta=meta,
+                        alt=alt,
+                    )
+                )
+
+            # keyup
+            elif event.type == pygame.KEYUP:
+                key_name = pygame.key.name(event.key)
+                self._on_key_up(KeyUpEvent(key=key_name))

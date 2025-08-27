@@ -124,7 +124,7 @@ class DebugDrawSettings:
 
 @dataclass
 class FrontendBaseSettings:
-    canvas_shape: tuple = (1200, 1200)
+    canvas_shape: tuple = (800, 800)
 
     hertz: int = 60  # Physics update frequency
     speed: float = 1.0  # Speed multiplier for the simulation
@@ -194,6 +194,25 @@ class DoubleClickEvent(MouseEvent):
 class TripleClickEvent(MouseEvent):
     def __init__(self, world_position, handled=False):
         super().__init__(world_position, handled)
+
+
+class KeyDownEvent(Event):
+    def __init__(self, key, ctrl=False, shift=False, meta=False, alt=False, handled=False):
+        super().__init__(handled)
+        self.key = key
+        self.ctrl = ctrl
+        self.shift = shift
+        self.meta = meta
+        self.alt = alt
+
+    def __repr__(self):
+        return f"KeyDownEvent(key={self.key}, ctrl={self.ctrl}, shift={self.shift}, meta={self.meta}, alt={self.alt})"
+
+
+class KeyUpEvent(Event):
+    def __init__(self, key, handled=False):
+        super().__init__(handled)
+        self.key = key
 
 
 class MultiClickHandler:
@@ -296,6 +315,9 @@ class FrontendBase(ABC):
 
         self._is_paused = False
 
+        # store which key is currently pressed
+        self._pressed_keys = set()
+
     def set_paused(self):
         self._is_paused = True
         self.last_world_update_time = None
@@ -391,7 +413,7 @@ class FrontendBase(ABC):
             self._set_new_sample(self.sample_class, self.sample_settings)
 
         # click handler update
-        if self._multi_click_handler:
+        if self._multi_click_handler is not None:
             self._multi_click_handler.update()
 
     def draw_physics(self):
@@ -500,3 +522,28 @@ class FrontendBase(ABC):
 
     def add_widget(self, element):
         pass
+
+    def is_key_pressed(self, key):
+        """Check if a key is pressed."""
+        return key in self._pressed_keys
+
+    def pressed_keys(self):
+        """Get the currently pressed keys set"""
+        return self._pressed_keys
+
+    def _on_key_down(self, event):
+        """Handle key down events."""
+        if event.key in self._pressed_keys:
+            # if the key is already pressed, we don't add it again
+            # this is because some frontend keep fireing the key down event
+            # when the key is pressed
+            # e.g. the ipycanvas frontend does this
+            return
+        self._pressed_keys.add(event.key)
+        self.sample.on_key_down(event)
+
+    def _on_key_up(self, event):
+        """Handle key up events."""
+        if event.key in self._pressed_keys:
+            self._pressed_keys.remove(event.key)
+        self.sample.on_key_up(event)

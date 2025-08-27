@@ -106,6 +106,14 @@ class Jump(SampleBase):
             ball_body.apply_linear_impulse_to_center(impulse)
             self.balls_added += 1
 
+    def on_key_down(self, event):
+        if event.key == "g":
+            self.world.gravity = (0, 0)
+
+    def on_key_up(self, event):
+        if event.key == "g":
+            self.world.gravity = (0, -50)
+
     # create explosion on double click
     def on_double_click(self, event):
         self.world.explode(position=event.world_position, radius=70, impulse_per_length=200)

@@ -1,18 +1,15 @@
 from ipycanvas import hold_canvas as hold_classic_canvas
 import asyncio
-import sys
 
 
-async def _call_repeated(func, mandatory_minimum_sleep_time=1 / 100):
+async def _call_repeated(func, mandatory_minimum_sleep_time):
     try:
         while True:
             try:
                 func()
-            except Exception as e:
-                print(f"Error in repeated function call: {e}", file=sys.stderr)
+            except Exception:
                 break
-            sleep_time = max(mandatory_minimum_sleep_time)
-            await asyncio.sleep(sleep_time)
+            await asyncio.sleep(mandatory_minimum_sleep_time)
     except asyncio.CancelledError:
         # If the task is cancelled, we just exit the loop
         pass
@@ -28,7 +25,7 @@ def call_repeated(func, mandatory_minimum_sleep_time):
 
 def set_render_loop(canvas, func, mandatory_minimum_sleep_time=1 / 100):
     def wrapped_func():
-        with hold_classic_canvas():
+        with hold_classic_canvas(canvas):
             func()
 
     return call_repeated(wrapped_func, mandatory_minimum_sleep_time)

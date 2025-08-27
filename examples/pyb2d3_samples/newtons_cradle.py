@@ -58,6 +58,24 @@ class NewtonsCradle(SampleBase):
             ),
         )
 
+    def on_key_down(self, event):
+        if event.key == "a":
+            # create dynamic body for the ball
+            ball_body = self.world.create_dynamic_body(
+                position=(0, 0), linear_damping=0.1, angular_damping=0.0
+            )
+            ball_body.awake = True
+            # create circle shape for the ball
+            material = b2d.surface_material(
+                restitution=1.0,
+                friction=0.0,
+                custom_color=b2d.hex_color(100, 0, 200),
+            )
+            ball_body.create_shape(
+                b2d.shape_def(density=1, material=material),
+                b2d.circle(radius=self.actual_radius),
+            )
+
 
 if __name__ == "__main__":
     NewtonsCradle.run()

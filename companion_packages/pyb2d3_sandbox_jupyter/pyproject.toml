@@ -1,7 +1,7 @@
 [project]
-name = "pyb2d3-sandbox-pygame"
+name = "pyb2d3-sandbox-jupyter"
 version = "0.6.0"
-description = "run the pyb2d3 sandbox with pygame"
+description = "run the pyb2d3 sandbox with jupyter"
 authors = [
     { name = "Dr. Thorsten Beier", email = "derthorstenbeier@gmail.com" }
 ]
@@ -10,8 +10,9 @@ requires-python = ">=3.8"
 license = { text = "MIT" }
 
 dependencies = [
-    "pyb2d3>=0.5.6",
-    "pygame>=2.0.0"
+    "pyb2d3>=0.6.0",
+    "anywidget",
+    "ipywidgets>=8.0.0",
 ]
 
 [project.urls]
@@ -24,4 +25,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["pyb2d3_sandbox_pygame"]
+
+
+[tool.setuptools.package-data]
+"pyb2d3_sandbox_jupyter" = ["canvas_widget.js"]

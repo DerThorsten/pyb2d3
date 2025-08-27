@@ -64,6 +64,23 @@ class Meteor(SampleBase):
                 b2d.circle(radius=5),
             )
 
+    def on_key_down(self, event):
+        if event.key == "m":
+            # create a meteor
+            meteor_body = self.world.create_dynamic_body(
+                position=(0, 0),
+                user_data=3,
+                gravity_scale=4.0,  # to make it fall faster
+            )
+            meteor_body.create_shape(
+                b2d.shape_def(
+                    density=10,
+                    material=b2d.surface_material(restitution=0.5),
+                    enable_contact_events=True,
+                ),
+                b2d.circle(radius=5),
+            )
+
     def on_double_click(self, event):
         # create a meteor
         meteor_body = self.world.create_dynamic_body(
