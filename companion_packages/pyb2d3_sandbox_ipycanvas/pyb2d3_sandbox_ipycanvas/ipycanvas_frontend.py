@@ -155,6 +155,8 @@ class IpycanvasFrontend(FrontendBase):
             return "meta"
         elif key == "Alt":
             return "alt"
+        elif key == " ":
+            return "space"
         return key.lower()
 
     def on_key_down(self, key, ctrl, shift, meta):
