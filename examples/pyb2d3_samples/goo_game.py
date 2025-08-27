@@ -608,8 +608,6 @@ class Level1(GooGame):
             self.goo_balls[1].connect(g)
             self.goo_balls[2].connect(g)
 
-        print("POST INIT")
-
 
 if __name__ == "__main__":
     Level1.run()

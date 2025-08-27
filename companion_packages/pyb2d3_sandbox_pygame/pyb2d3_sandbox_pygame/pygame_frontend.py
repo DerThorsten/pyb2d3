@@ -21,19 +21,6 @@ X_AXIS = b2d.Vec2(1, 0)
 Y_AXIS = b2d.Vec2(0, 1)
 
 
-KEY_MODIFIERS = (
-    pygame.K_LSHIFT,
-    pygame.K_RSHIFT,
-    pygame.K_LCTRL,
-    pygame.K_RCTRL,
-    pygame.K_LALT,
-    pygame.K_RALT,
-    pygame.K_LMETA,
-    pygame.K_RMETA,
-)
-KEY_MODIFIER_SET = set(KEY_MODIFIERS)
-
-
 class PygameDebugDraw(FrontendDebugDraw):
     def __init__(self, transform, screen):
         self.screen = screen
@@ -348,24 +335,9 @@ class PygameFrontend(FrontendBase):
                 #     continue
 
                 key_name = pygame.key.name(event.key)
-
-                # KMOD_LSHIFT   left shift
-                # KMOD_RSHIFT   right shift
-                # KMOD_SHIFT    left shift or right shift or both
-                # KMOD_LCTRL    left control
-                # KMOD_RCTRL    right control
-                # KMOD_CTRL     left control or right control or both
-                # KMOD_LALT     left alt
-                # KMOD_RALT     right alt
-                # KMOD_ALT      left alt or right alt or both
-                # KMOD_LMETA    left meta
-                # KMOD_RMETA    right meta
-                # KMOD_META     left meta or right meta or both
-                # KMOD_CAPS     caps lock
-                # KMOD_NUM      num lock
-                # KMOD_MODE     AltGr
-
-                # ctrl=False, shift=False, meta=False, alt=False
+                # remove left / right
+                if key_name.startswith("left ") or key_name.startswith("right "):
+                    key_name = key_name.split(" ", 1)[1]
 
                 ctrl = (event.mod & pygame.KMOD_CTRL) != 0
                 shift = (event.mod & pygame.KMOD_SHIFT) != 0
@@ -383,8 +355,5 @@ class PygameFrontend(FrontendBase):
 
             # keyup
             elif event.type == pygame.KEYUP:
-                # ignore modifier keys
-                if event.key in KEY_MODIFIER_SET:
-                    continue
                 key_name = pygame.key.name(event.key)
                 self._on_key_up(KeyUpEvent(key=key_name))

@@ -360,6 +360,18 @@ function map_key(key){
     if (key == " ") {
         return "space";
     }
+    if(key == "Control") {
+        return "ctrl";
+    }
+    if(key == "Shift") {
+        return "shift";
+    }
+    if(key == "Meta") {
+        return "meta";
+    }
+    if(key == "Alt") {
+        return "alt";
+    }
     return key.toLowerCase();
 }
 
@@ -471,9 +483,7 @@ function setup_event_listeners(model,ctx, canvas) {
 
     // key-down event
     canvas.addEventListener("keydown", (event) => {
-        if (event.key === "Control" || event.key === "Shift" || event.key === "Meta" || event.key === "Alt") {
-            return;
-        }
+
         event.preventDefault();
         event.stopPropagation();
         model.send(["key_down",
@@ -487,9 +497,7 @@ function setup_event_listeners(model,ctx, canvas) {
 
     // key-up event
     canvas.addEventListener("keyup", (event) => {
-        if (event.key === "Control" || event.key === "Shift" || event.key === "Meta" || event.key === "Alt") {
-            return;
-        }
+
         event.preventDefault();
         event.stopPropagation();
         model.send(["key_up",

@@ -106,12 +106,18 @@ class Tumbler(SampleBase):
                 b2d.capsule((0, 0), (self.capsule_length, 0), radius=self.capsule_radius),
             )
 
+    def on_key_down(self, event):
+        if event.key == "g":
+            self.world.gravity = (0, 0)
+
+    def on_key_up(self, event):
+        if event.key == "g":
+            self.world.gravity = (0, -10)
+
     def on_double_click(self, event):
-        print("Double click at", event.world_position)
         self.world.explode(position=event.world_position, radius=20, impulse_per_length=10)
 
     def on_triple_click(self, event):
-        print("Triple click at", event.world_position)
         self.world.explode(position=event.world_position, radius=20, impulse_per_length=-10)
 
     def aabb(self):

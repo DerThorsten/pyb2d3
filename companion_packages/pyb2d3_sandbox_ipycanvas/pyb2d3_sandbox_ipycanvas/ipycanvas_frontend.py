@@ -146,15 +146,24 @@ class IpycanvasFrontend(FrontendBase):
             self.canvas.on_key_down(self.on_key_down)
             self.canvas.on_key_up(self.on_key_up)
 
+    def key_to_key_name(self, key):
+        if key == "Control":
+            return "ctrl"
+        elif key == "Shift":
+            return "shift"
+        elif key == "Meta":
+            return "meta"
+        elif key == "Alt":
+            return "alt"
+        return key.lower()
+
     def on_key_down(self, key, ctrl, shift, meta):
-        if key in self._ignore_these_keys:
-            return
-        return self._on_key_down(KeyDownEvent(key=key.lower(), ctrl=ctrl, shift=shift, meta=meta))
+        return self._on_key_down(
+            KeyDownEvent(key=self.key_to_key_name(key), ctrl=ctrl, shift=shift, meta=meta)
+        )
 
     def on_key_up(self, key, ctrl, shift, meta):
-        if key in self._ignore_these_keys:
-            return
-        return self._on_key_up(KeyUpEvent(key=key.lower()))
+        return self._on_key_up(KeyUpEvent(key=self.key_to_key_name(key)))
 
     def on_mouse_move(self, x, y):
         try:
