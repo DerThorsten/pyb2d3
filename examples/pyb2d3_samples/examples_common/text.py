@@ -38,7 +38,6 @@ def create_boxes_from_text(world, text, position, height, font_size=20):
         y = (y) * scaling + 0.5 * scaling
         return position[0] + x, position[1] + y
 
-    print(arr.shape, scaling)
     pixel_width = scaling
     pixel_height = scaling
 

@@ -1,6 +1,6 @@
 [project]
 name = "pyb2d3-sandbox"
-version = "0.7.2"
+version = "0.7.3"
 description = "sandbox for pyb2d3"
 authors = [
     { name = "Dr. Thorsten Beier", email = "derthorstenbeier@gmail.com" }
@@ -10,7 +10,7 @@ requires-python = ">=3.9"
 license = { text = "MIT" }
 
 dependencies = [
-    "pyb2d3>=0.7.2"
+    "pyb2d3>=0.7.3"
 ]
 
 
