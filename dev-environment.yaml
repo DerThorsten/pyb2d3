@@ -29,6 +29,8 @@ dependencies:
   # frontend-jupyter/lite
   - ipycanvas >=0.14.1
   - ipyevents
+  # examples
+  - pillow
   # docs
   - sphinx
   - sphinx_rtd_theme
