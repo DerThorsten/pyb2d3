@@ -29,6 +29,8 @@ dependencies:
   # frontend-jupyter/lite
   - ipycanvas >=0.14.1
   - ipyevents
+  # examples
+  - pillow
   # docs
   - sphinx
   - sphinx_rtd_theme
@@ -49,7 +51,5 @@ dependencies:
   - jupyterlite-sphinx
   # widgets which we want in lite, but need to install them in the build env
   - ipycanvas >=0.14.1
-  # dev-utils
-  - bump-my-version
   - pip:
     - jupyterlite-core ==0.7.0a4
