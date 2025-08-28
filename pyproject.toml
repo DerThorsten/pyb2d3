@@ -74,7 +74,10 @@ build-verbosity = 1
 
 # run pytest to ensure that the package was correctly built
 test-command = "pytest {project}"
-test-requires = "pytest"
+test-requires = [
+  "pytest",
+  "pillow"
+]
 
 archs = ["auto64"]          # Only target 64 bit architectures
 
