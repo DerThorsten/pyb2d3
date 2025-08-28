@@ -1,6 +1,6 @@
 [project]
 name = "pyb2d3-sandbox-jupyter"
-version = "0.7.1"
+version = "0.7.2"
 description = "run the pyb2d3 sandbox with jupyter"
 authors = [
     { name = "Dr. Thorsten Beier", email = "derthorstenbeier@gmail.com" }
@@ -10,8 +10,8 @@ requires-python = ">=3.8"
 license = { text = "MIT" }
 
 dependencies = [
-    "pyb2d3>=0.7.1",
-    "pyb2d3-sandbox>=0.7.1",
+    "pyb2d3>=0.7.2",
+    "pyb2d3-sandbox>=0.7.2",
     "anywidget",
     "ipywidgets>=8.0.0",
 ]
