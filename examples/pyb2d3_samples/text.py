@@ -32,38 +32,6 @@ class Text(SampleBase):
             world=self.world, text="pyb2d3", height=3, position=(-3, 0)
         )
 
-        # # Create a blank white image
-        # W, H = 100, 100
-        # image = Image.new("L", (W, H), color=255)  # "L" = grayscale, 255 = white
-        # # Draw text
-        # draw = ImageDraw.Draw(image)
-        # font = ImageFont.load_default()  # or ImageFont.truetype("arial.ttf", 24)
-        # draw.text((20, 40), "Notebook", font=font, fill=0)  # 0 = black text
-        # arr = np.array(image)
-        # # flip ud
-        # arr = np.flipud(arr)
-
-        # def pixel_to_world(x,y):
-        #     # to [0,1]
-        #     x = x / W
-        #     y = y / H
-
-        #     # to [-box_radius, box_radius]
-        #     x = (x - 0.5) * 2 * self.box_radius
-        #     y = (y - 0.5) * 2 * self.box_radius
-        #     return x, y
-
-        # # world size of single pixel
-        # pixel_size = (2 * self.box_radius / W, 2 * self.box_radius / H)
-
-        # where_black = np.argwhere(arr <= 100)
-        # for y, x in where_black:
-        #     print(f"Creating box at pixel: ({x}, {y})")
-        #     world_pos = pixel_to_world(x,y)
-        #     pixel_body = self.world.create_dynamic_body(position=world_pos)
-        #     box = b2d.box(hx=pixel_size[0] / 2, hy=pixel_size[1] / 2)
-        #     pixel_body.create_shape(b2d.shape_def(density=1.0), box)
-
     def aabb(self):
         return b2d.aabb(
             lower_bound=(-self.box_radius, -self.box_radius),
