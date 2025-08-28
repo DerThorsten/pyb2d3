@@ -40,5 +40,6 @@ if true ; then
         "ipycanvas>=0.14.1" \
         "pyb2d3>=0.5.6" \
         "pyb2d3-sandbox>=0.5.6" \
-        "pyb2d3-sandbox-ipycanvas>=0.5.6"
+        "pyb2d3-sandbox-ipycanvas>=0.5.6" \
+        "pillow"
 fi

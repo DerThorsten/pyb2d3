@@ -13,6 +13,7 @@ from .billard import Billard
 from .meteor import Meteor
 from .ragdoll import Ragdoll
 from .cast_ray_callback import CastRayCallback
+from .text import Text
 
 all_examples = [
     Ragdoll,
@@ -30,4 +31,5 @@ all_examples = [
     ChainBuilder,
     Billard,
     CastRayCallback,
+    Text,
 ]
