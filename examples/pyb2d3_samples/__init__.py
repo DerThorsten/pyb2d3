@@ -14,6 +14,8 @@ from .meteor import Meteor
 from .ragdoll import Ragdoll
 from .cast_ray_callback import CastRayCallback
 from .text import Text
+from .minigolf import Minigolf
+from .angry_shapes import AngryShapes
 
 all_examples = [
     Ragdoll,
@@ -32,4 +34,6 @@ all_examples = [
     Billard,
     CastRayCallback,
     Text,
+    Minigolf,
+    AngryShapes,
 ]
