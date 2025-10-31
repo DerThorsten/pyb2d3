@@ -3,6 +3,7 @@ import pyb2d3 as b2d
 import numpy as np
 from enum import Enum
 from pyb2d3_sandbox import SampleBase
+from examples_common.math import truncated_vector_diff, interpolate_color
 
 
 class GolfState(Enum):
@@ -54,17 +55,8 @@ class Minigolf(SampleBase):
     def on_mouse_move(self, event):
         if self.game_state == GolfState.SET_DRAG_FORCE:
             raw_drag_pos = event.world_position
-
-            # limit the length of the drag vector
-            drag_vector = np.array(raw_drag_pos) - np.array(self.ball.position)
-            drag_vector_length = np.linalg.norm(drag_vector)
-            self.drag_vector_length = drag_vector_length
-            if drag_vector_length > 1:
-                self.drag_vector_length = 1
-                drag_vector = drag_vector / drag_vector_length
-                self.drag_pos = np.array(self.ball.position) + drag_vector
-            else:
-                self.drag_pos = raw_drag_pos
+            drag_vector = truncated_vector_diff(self.ball.position, raw_drag_pos, max_length=1.0)
+            self.drag_pos = np.array(self.ball.position) + drag_vector
 
     def on_mouse_up(self, event):
         if self.game_state == GolfState.SET_DRAG_FORCE:
@@ -119,25 +111,14 @@ class Minigolf(SampleBase):
             color=b2d.hex_color(0, 0, 0),
         )
 
-    def post_debug_draw(self):
         if self.game_state == GolfState.SET_DRAG_FORCE and self.drag_pos is not None:
-            color_yellow = np.array([255, 255, 0])
-            color_red = np.array([255, 0, 0])
-            drag_vector = np.array(self.drag_pos) - np.array(self.ball.position)
-            drag_vector_length = np.linalg.norm(drag_vector)
-            color = color_yellow + (color_red - color_yellow) * drag_vector_length
-            color = (round(color[0]), round(color[1]), round(color[2]))
+            drag_vector_length = np.linalg.norm(self.drag_pos - self.ball.position)
+            color = interpolate_color((255, 255, 0), (255, 0, 0), drag_vector_length)
             self.debug_draw.draw_segment(
                 self.ball.position,
                 self.drag_pos,
                 color=b2d.hex_color(*color),
             )
-            for pos in [self.ball.position, self.drag_pos]:
-                self.debug_draw.draw_solid_circle(
-                    transform=b2d.transform(pos),
-                    color=b2d.hex_color(*color),
-                    radius=self.ball_radius * 0.5,
-                )
 
 
 if __name__ == "__main__":

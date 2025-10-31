@@ -13,14 +13,6 @@ FORCE_VECTOR_DRAW_WIDTH = 0.05
 MAX_FORCE_VECTOR_LENGTH = 2
 
 
-@dataclass
-class LevelData:
-    pass
-
-
-Levels = [LevelData(), LevelData()]
-
-
 class UserDataStore(object):
     def __init__(self):
         self.id = 0
