@@ -15,7 +15,7 @@ from .ragdoll import Ragdoll
 from .cast_ray_callback import CastRayCallback
 from .text import Text
 from .minigolf import Minigolf
-from AngryShapes import AngryShapes
+from .angry_shapes import AngryShapes
 
 all_examples = [
     Ragdoll,
