@@ -3,14 +3,7 @@ import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase
 import random
 
-try:
-    import examples_common  # noqa: F401, E402
-except ImportError:
-    import os
-    import sys
-
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    import examples_common  # noqa: F401, E402
+from examples_common import Ragdoll as RagdollComposit
 
 
 class Ragdoll(SampleBase):
@@ -31,7 +24,7 @@ class Ragdoll(SampleBase):
         num_bodies = 15
         for _ in range(num_bodies):
             # ragdoll at the center
-            self.ragdoll = examples_common.Ragdoll(
+            self.ragdoll = RagdollComposit(
                 scale=7.0,
                 world=self.world,
                 position=rand_pos(),

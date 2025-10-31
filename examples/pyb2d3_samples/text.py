@@ -2,17 +2,7 @@
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase
 
-# from PIL import Image, ImageDraw, ImageFont
-
-
-try:
-    import examples_common  # noqa: F401, E402
-except ImportError:
-    import os
-    import sys
-
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    import examples_common  # noqa: F401, E402
+from examples_common import create_boxes_from_text
 
 
 class Text(SampleBase):
@@ -28,9 +18,7 @@ class Text(SampleBase):
             b2d.chain_box(center=(0, 0), hx=self.box_radius, hy=self.box_radius)
         )
 
-        examples_common.create_boxes_from_text(
-            world=self.world, text="pyb2d3", height=3, position=(-3, 0)
-        )
+        create_boxes_from_text(world=self.world, text="pyb2d3", height=3, position=(-3, 0))
 
     def aabb(self):
         return b2d.aabb(
