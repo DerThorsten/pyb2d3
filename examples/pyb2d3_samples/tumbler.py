@@ -4,16 +4,6 @@ from pyb2d3_sandbox.sample_base import SampleBase
 import random
 
 
-try:
-    import examples_common  # noqa: F401, E402
-except ImportError:
-    import os
-    import sys
-
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    import examples_common  # noqa: F401, E402
-
-
 class Tumbler(SampleBase):
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
