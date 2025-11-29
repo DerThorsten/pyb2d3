@@ -10,9 +10,12 @@ docs_root = this_dir.parent
 html_static_path = docs_root / "_static"
 repo_root = docs_root.parent
 examples_dir = repo_root / "examples"
+samples_dir = examples_dir / "pyb2d3_samples"
 companion_packages = repo_root / "companion_packages"
 
+
 # add to sys.path
+sys.path.insert(0, str(samples_dir))
 sys.path.insert(0, str(companion_packages / "pyb2d3_sandbox"))
 sys.path.insert(0, str(companion_packages / "pyb2d3_sandbox_pygame"))
 
