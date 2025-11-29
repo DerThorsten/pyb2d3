@@ -9,7 +9,7 @@ from .coupled_minigolf import CoupledMinigolf
 from .joints import Joints
 from .goo_game import Level1 as GooGameLevel1
 from .chain_builder import ChainBuilder
-from .billard import Billiard
+from .billiard import Billiard
 from .meteor import Meteor
 from .ragdoll import Ragdoll
 from .cast_ray_callback import CastRayCallback
