@@ -1,7 +1,6 @@
 # +
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase
-
 from examples_common import create_boxes_from_text
 
 
@@ -18,7 +17,7 @@ class Text(SampleBase):
             b2d.chain_box(center=(0, 0), hx=self.box_radius, hy=self.box_radius)
         )
 
-        create_boxes_from_text(world=self.world, text="pyb2d3", height=3, position=(-3, 0))
+        create_boxes_from_text(world=self.world, text="notebook link", height=3, position=(-12, 0))
 
     def aabb(self):
         return b2d.aabb(

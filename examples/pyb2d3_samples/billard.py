@@ -28,7 +28,7 @@ class GameState(enum.Enum):
     WAITING_FOR_BALLS_TO_REST = enum.auto()
 
 
-class Billard(SampleBase):
+class Billiard(SampleBase):
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
 
@@ -300,4 +300,4 @@ class Billard(SampleBase):
 
 
 if __name__ == "__main__":
-    Billard.run()
+    Billiard.run()
