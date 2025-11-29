@@ -7,6 +7,10 @@ from .headless_test_frontend import run_in_headless_test_frontend
 this_dir = Path(__file__).parent
 pyb2d_dir = this_dir.parent
 examples_dir = pyb2d_dir / "examples"
+samples_dir = examples_dir / "pyb2d3_samples"
+
+# add samples directory to the path
+sys.path.append(str(samples_dir))
 
 # add examples directory to the path
 sys.path.append(str(examples_dir))
