@@ -13,17 +13,20 @@ class TestbedUI:
 
         self._header = self._make_header()
         self._right_sidebar = self._make_right_sidebar()
-        self._left_sidebar = self._make_left_sidebar()
         self._footer = self._make_footer()
 
         self.app_layout = ipywidgets.AppLayout(
             header=self._header,
             center=self._canvas,
             right_sidebar=self._right_sidebar,
-            left_sidebar=self._left_sidebar,
+            left_sidebar=None,
             footer=self._footer,
             pane_heights=["60px", 5, "60px"],
-            pane_widths=[0, f"{self._canvas.width}px", 1],
+            pane_widths=[
+                0,
+                f"{70.0 * frontend.settings.layout_scale}%",
+                f"{30.0 * frontend.settings.layout_scale}%",
+            ],
         )
 
     def _make_header(self):
@@ -216,7 +219,7 @@ class TestbedUI:
                 self._debug_draw_accordion,
                 self._sample_settings_accordion,
             ],
-            layout=Layout(display="flex", justify_content="flex-start", width="400px"),
+            layout=Layout(display="flex", justify_content="flex-start", width="100%"),
         )
 
     def _make_left_sidebar(self):
