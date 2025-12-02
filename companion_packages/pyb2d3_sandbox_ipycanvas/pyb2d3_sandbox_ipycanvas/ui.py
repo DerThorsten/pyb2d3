@@ -15,18 +15,29 @@ class TestbedUI:
         self._right_sidebar = self._make_right_sidebar()
         self._footer = self._make_footer()
 
-        self.app_layout = ipywidgets.AppLayout(
-            header=self._header,
-            center=self._canvas,
-            right_sidebar=self._right_sidebar,
-            left_sidebar=None,
-            footer=self._footer,
-            pane_heights=["60px", 5, "60px"],
-            pane_widths=[
+        if frontend.settings.hide_controls:
+            pane_widths = [
+                0,
+                f"{100.0 * frontend.settings.layout_scale}%",
+                0,
+            ]
+            right_sidebar = None
+        else:
+            pane_widths = [
                 0,
                 f"{70.0 * frontend.settings.layout_scale}%",
                 f"{30.0 * frontend.settings.layout_scale}%",
-            ],
+            ]
+            right_sidebar = self._right_sidebar
+
+        self.app_layout = ipywidgets.AppLayout(
+            header=self._header,
+            center=self._canvas,
+            right_sidebar=right_sidebar,
+            left_sidebar=None,
+            footer=self._footer,
+            pane_heights=["60px", 5, "60px"],
+            pane_widths=pane_widths,
         )
 
     def _make_header(self):

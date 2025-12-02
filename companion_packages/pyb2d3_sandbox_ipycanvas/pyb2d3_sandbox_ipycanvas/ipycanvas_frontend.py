@@ -63,6 +63,7 @@ last_frontend = [None]
 @dataclass
 class IpycanvasFrontendSettings(FrontendBase.Settings):
     layout_scale: float = 1.0
+    hide_controls: bool = False
 
 
 class IpycanvasFrontend(FrontendBase):
