@@ -1,6 +1,6 @@
 [project]
 name = "pyb2d3-sandbox-ipycanvas"
-version = "0.7.4"
+version = "0.8.0"
 description = "run the pyb2d3 sandbox with ipycanvas"
 authors = [
     { name = "Dr. Thorsten Beier", email = "derthorstenbeier@gmail.com" }
