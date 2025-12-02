@@ -25,6 +25,9 @@ import traceback
 
 from ipycanvas.compat import Canvas
 
+# dataclass
+from dataclasses import dataclass
+
 
 def html_color(color):
     """Convert a color to a hex string"""
@@ -57,8 +60,14 @@ else:
 last_frontend = [None]
 
 
+@dataclass
+class IpycanvasFrontendSettings(FrontendBase.Settings):
+    layout_scale: float = 1.0
+    hide_controls: bool = False
+
+
 class IpycanvasFrontend(FrontendBase):
-    Settings = FrontendBase.Settings
+    Settings = IpycanvasFrontendSettings
 
     def __del__(self):
         if self.cancel_loop is not None:
@@ -85,7 +94,7 @@ class IpycanvasFrontend(FrontendBase):
             self.canvas = Canvas(
                 width=self.settings.canvas_shape[0],
                 height=self.settings.canvas_shape[1],
-                # layout=Layout(width='100%')
+                layout=dict(width="100%"),
             )
             # if a cell is re-executed, we need to cancel the previous loop,
             # otherwise we will have multiple loops running

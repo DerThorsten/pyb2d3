@@ -21,7 +21,7 @@ cp -r "$REPO_ROOT/extra_licenses"       "$RECIPE_SRC_DIR/extra_licenses"
 cp -r "$REPO_ROOT/companion_packages"   "$RECIPE_SRC_DIR/companion_packages"
 cp    "$REPO_ROOT/CMakeLists.txt"       "$RECIPE_SRC_DIR/"
 cp    "$REPO_ROOT/LICENSE"              "$RECIPE_SRC_DIR/"
-cp    "$REPO_ROOT/pyproject.toml"    "$RECIPE_SRC_DIR/"
+cp    "$REPO_ROOT/pyproject.toml"       "$RECIPE_SRC_DIR/"
 
 
 # replace PATH_PLACEHOLDER_TO_BE_REPLACED in the recipe.yaml.template with the actual path

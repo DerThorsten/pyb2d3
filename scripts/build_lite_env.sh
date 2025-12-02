@@ -32,14 +32,16 @@ if true ; then
     micromamba create -n $WASM_ENV_NAME \
         --platform=emscripten-wasm32 \
         -c $OUTPUT_DIR \
+        -c conda-forge \
         -c https://repo.prefix.dev/emscripten-forge-dev \
         --yes \
+        "ipycanvas>=0.14.2" \
         "python>=3.13" \
         xeus-python  \
         ipywidgets \
-        "ipycanvas>=0.14.1" \
+        "ipycanvas>=0.14.2" \
         "pyb2d3>=0.5.6" \
-        "pyb2d3-sandbox>=0.5.6" \
-        "pyb2d3-sandbox-ipycanvas>=0.5.6" \
         "pillow"
+        # "pyb2d3-sandbox>=0.5.6" \
+        # "pyb2d3-sandbox-ipycanvas>=0.5.6" \
 fi

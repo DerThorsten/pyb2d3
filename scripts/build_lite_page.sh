@@ -31,6 +31,7 @@ if false ; then
 
     micromamba create -n $WASM_ENV_NAME \
         --platform=emscripten-wasm32 \
+        -c conda-forge \
         -c $OUTPUT_DIR \
         -c https://repo.prefix.dev/emscripten-forge-dev \
         --yes \
