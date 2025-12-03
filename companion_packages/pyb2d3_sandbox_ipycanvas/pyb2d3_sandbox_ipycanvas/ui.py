@@ -100,6 +100,7 @@ class TestbedUI:
             layout=Layout(height="auto", justify_content="flex-start", width="auto"),
         )
         accordion.set_title(0, "Drawing Settings:")
+
         return accordion
 
     def _make_sample_settings_accordion(self):
@@ -222,7 +223,7 @@ class TestbedUI:
 
         # open this by default
         self._simulation_settings_accordion.selected_index = 0
-        self._debug_draw_accordion.selected_index = 0
+        # self._debug_draw_accordion.selected_index = 0
 
         return ipywidgets.VBox(
             [
@@ -250,8 +251,14 @@ class TestbedUI:
         return ipywidgets.Label("")
 
     def _make_control_button_group(self):
+        autostart = self.frontend.settings.autostart
+        if autostart:
+            icon = "pause"
+        else:
+            icon = "play"
+
         self.play_pause_btn = ToggleButton(
-            value=True, tooltip="Play/Pause", icon="pause", layout=Layout(width="40px")
+            value=autostart, tooltip="Play/Pause", icon=icon, layout=Layout(width="40px")
         )
         self.stop_btn = Button(
             tooltip="Stop", icon="stop", layout=Layout(width="40px"), button_style="danger"
@@ -348,11 +355,25 @@ class TestbedUI:
             )
             self.sample_settings_vbox.children += (radio_buttons,)
 
+    def _set_paused(self):
+        self.play_pause_btn.icon = "play"
+        self.play_pause_btn.value = False
+        self.on_pause()
+        self.single_step_btn.disabled = False
+
+    def _set_running(self):
+        self.play_pause_btn.icon = "pause"
+        self.play_pause_btn.value = True
+        self.single_step_btn.disabled = True
+        self.on_play()
+
     def _on_play_pause_change(self, change):
         try:
             if change["new"]:
                 self.play_pause_btn.icon = "pause"
                 self.single_step_btn.disabled = True
+                if self.frontend.cancel_loop is None:
+                    self.frontend.restart()
                 self.on_play()
             else:
                 self.play_pause_btn.icon = "play"
@@ -367,6 +388,8 @@ class TestbedUI:
             self.play_pause_btn.value = False
             self.single_step_btn.disabled = False
             self.play_pause_btn.icon = "play"
+            if self.frontend.cancel_loop is not None:
+                self.frontend.restart()
             self.on_stop(was_playing_before)
         except Exception as e:
             self.frontend._handle_exception(e)

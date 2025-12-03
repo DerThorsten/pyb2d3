@@ -29,6 +29,9 @@ from ipycanvas.compat import Canvas
 from dataclasses import dataclass
 
 
+from weakref import WeakSet
+
+
 def html_color(color):
     """Convert a color to a hex string"""
     if isinstance(color, int):
@@ -57,13 +60,14 @@ else:
     from .debug_draw_offscreen import IpycanvasDebugDraw
 
 
-last_frontend = [None]
+all_frontends = WeakSet()
 
 
 @dataclass
 class IpycanvasFrontendSettings(FrontendBase.Settings):
     layout_scale: float = 1.0
     hide_controls: bool = False
+    autostart: bool = True
 
 
 class IpycanvasFrontend(FrontendBase):
@@ -72,6 +76,7 @@ class IpycanvasFrontend(FrontendBase):
     def __del__(self):
         if self.cancel_loop is not None:
             self.cancel_loop()
+            self.cancel_loop = None
 
     def _handle_exception(self, e):
         """Handle exceptions in the frontend"""
@@ -79,13 +84,13 @@ class IpycanvasFrontend(FrontendBase):
         print(f"Error: {e}", file=sys.stderr)
         if self.cancel_loop is not None:
             self.cancel_loop()
+            self.cancel_loop = None
         raise e
 
     def __init__(self, settings):
-        global last_frontend, use_offscreen
+        global use_offscreen
         self.output_widget = Output()
         self.cancel_loop = None
-
         self._ignore_these_keys = set("Control, Shift, Meta")
 
         super().__init__(settings)
@@ -96,11 +101,13 @@ class IpycanvasFrontend(FrontendBase):
                 height=self.settings.canvas_shape[1],
                 layout=dict(width="100%"),
             )
+
             # if a cell is re-executed, we need to cancel the previous loop,
             # otherwise we will have multiple loops running
-            if last_frontend[0] is not None and last_frontend[0].cancel_loop is not None:
-                last_frontend[0].cancel_loop()
-            last_frontend[0] = self
+
+            if self.settings.autostart:
+                self.cancel_other_frontend_loops()
+            all_frontends.add(self)
 
             self.transform = b2d.CanvasWorldTransform(
                 canvas_shape=self.settings.canvas_shape,
@@ -121,9 +128,6 @@ class IpycanvasFrontend(FrontendBase):
             self.ui = TestbedUI(self)
 
             self._last_canvas_mouse_pos = b2d.Vec2(0, 0)
-
-            # display the canvas
-            self.ui.display()
 
         except Exception as e:
             self._handle_exception(e)
@@ -313,6 +317,7 @@ class IpycanvasFrontend(FrontendBase):
 
             if self.sample.is_done():
                 self.cancel_loop()
+                self.cancel_loop = None
                 self.sample.post_run()
                 return
 
@@ -324,6 +329,7 @@ class IpycanvasFrontend(FrontendBase):
             print("Error in main loop:", file=sys.stderr)
             self.output_widget.append_stdout(f"Error in main loop: {traceback.format_exc()}\n")
             self.cancel_loop()
+            self.cancel_loop = None
 
     def main_loop_vanilla(self):
         self.ui_is_ready()
@@ -334,7 +340,29 @@ class IpycanvasFrontend(FrontendBase):
 
         self.cancel_loop = set_render_loop(self.canvas, f)
 
+    def restart(self):
+        if self.cancel_loop is None:
+
+            def f(_):
+                self._callback()
+
+            self.cancel_other_frontend_loops()
+
+            self.cancel_loop = ipycanvas_set_render_loop(self.canvas, f, fps=0)
+
+    def cancel_other_frontend_loops(self):
+        for other_frontend in all_frontends:
+            if other_frontend is not self and other_frontend.cancel_loop is not None:
+                other_frontend.ui._set_paused()
+                other_frontend.cancel_loop()
+                # pyjs.cancel_main_loop()
+                other_frontend.cancel_loop = None
+
     async def async_main_loop(self):
+        await asyncio.sleep(0.1)
+        # display the canvas
+        self.ui.display()
+        await asyncio.sleep(0.1)  # give the canvas some time to initialize
         try:
             await self.canvas.async_initialize()
             self.ui_is_ready()
@@ -344,7 +372,13 @@ class IpycanvasFrontend(FrontendBase):
                 self._callback()
 
             # fps=0 means use requestAnimationFrame
-            self.cancel_loop = ipycanvas_set_render_loop(self.canvas, f, fps=0)
+            if self.settings.autostart:
+                self.cancel_other_frontend_loops()
+                self.cancel_loop = ipycanvas_set_render_loop(self.canvas, f, fps=0)
+            else:
+                self._clear_canvas()
+                self.update_physics_single_step()
+                self.draw_physics()
 
         except Exception as e:
             self._handle_exception(e)
@@ -358,6 +392,7 @@ class IpycanvasFrontend(FrontendBase):
         if is_emscripten:
             self.main_loop_lite()
         else:
+            self.ui.display()
             self.main_loop_vanilla()
 
     def _dispatch_events(self, event):

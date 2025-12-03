@@ -28,7 +28,6 @@ class SampleBase(object):
             frontend_class = get_default_frontend()
 
         if isinstance(frontend_settings, dict):
-            print("Creating frontend settings from dict")
             frontend_settings = frontend_class.Settings(**frontend_settings)
         elif frontend_settings is None:
             frontend_settings = frontend_class.Settings()

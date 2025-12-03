@@ -2,6 +2,9 @@ from ipycanvas import hold_canvas as hold_classic_canvas
 import asyncio
 
 
+has_pyjs_loop = [False]
+
+
 async def _call_repeated(func, mandatory_minimum_sleep_time):
     try:
         while True:
