@@ -1,6 +1,6 @@
 [project]
 name = "pyb2d3-sandbox-opengl"
-version = "0.8.0"
+version = "0.9.0"
 description = "run the pyb2d3 sandbox with opengl"
 authors = [
     { name = "Your Name", email = "you@example.com" }
