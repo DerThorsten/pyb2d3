@@ -360,10 +360,10 @@ class IpycanvasFrontend(FrontendBase):
                 other_frontend.cancel_loop = None
 
     async def async_main_loop(self):
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.2)
         # display the canvas
         self.ui.display()
-        await asyncio.sleep(0.1)  # give the canvas some time to initialize
+        await asyncio.sleep(0.2)  # give the canvas some time to initialize
         try:
             await self.canvas.async_initialize()
             self.ui_is_ready()
