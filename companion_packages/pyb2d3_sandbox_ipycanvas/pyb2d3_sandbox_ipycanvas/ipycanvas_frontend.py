@@ -68,7 +68,7 @@ class IpycanvasFrontendSettings(FrontendBase.Settings):
     layout_scale: float = 1.0
     hide_controls: bool = False
     autostart: bool = True
-    simple_ui: bool = False
+    simple_ui: bool = True
 
 
 class IpycanvasFrontend(FrontendBase):
