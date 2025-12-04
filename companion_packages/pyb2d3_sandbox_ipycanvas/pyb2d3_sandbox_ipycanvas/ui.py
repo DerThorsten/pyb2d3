@@ -11,34 +11,60 @@ class TestbedUI:
         self._canvas = frontend.canvas
         self._output_widget = frontend.output_widget
 
-        self._header = self._make_header()
-        self._right_sidebar = self._make_right_sidebar()
-        self._footer = self._make_footer()
+        if not self.frontend.settings.simple_ui:
+            self._header = self._make_header()
+            self._right_sidebar = self._make_right_sidebar()
+            self._footer = self._make_footer()
 
-        if frontend.settings.hide_controls:
-            pane_widths = [
-                0,
-                f"{100.0 * frontend.settings.layout_scale}%",
-                0,
-            ]
-            right_sidebar = None
+            if frontend.settings.hide_controls:
+                pane_widths = [
+                    0,
+                    f"{100.0 * frontend.settings.layout_scale}%",
+                    0,
+                ]
+                right_sidebar = None
+            else:
+                pane_widths = [
+                    0,
+                    f"{70.0 * frontend.settings.layout_scale}%",
+                    f"{30.0 * frontend.settings.layout_scale}%",
+                ]
+                right_sidebar = self._right_sidebar
+
+            self.ui = ipywidgets.AppLayout(
+                header=self._header,
+                center=self._canvas,
+                right_sidebar=right_sidebar,
+                left_sidebar=None,
+                footer=self._footer,
+                pane_heights=["60px", 5, "60px"],
+                pane_widths=pane_widths,
+            )
         else:
-            pane_widths = [
-                0,
-                f"{70.0 * frontend.settings.layout_scale}%",
-                f"{30.0 * frontend.settings.layout_scale}%",
-            ]
-            right_sidebar = self._right_sidebar
+            button_group = self._make_control_button_group()
+            # we want the controll in the lower **ontop** of the canvas
+            # ie some sort of floating layout
 
-        self.app_layout = ipywidgets.AppLayout(
-            header=self._header,
-            center=self._canvas,
-            right_sidebar=right_sidebar,
-            left_sidebar=None,
-            footer=self._footer,
-            pane_heights=["60px", 5, "60px"],
-            pane_widths=pane_widths,
-        )
+            floating_layout = Layout(
+                position="absolute",
+                bottom="40px",  # 10 pixels from the bottom edge
+                left="0",  # 10 pixels from the left edge
+                # A small z-index ensures it renders above the canvas
+                z_index="10",
+                width="auto",
+            )
+            button_group.layout = floating_layout
+
+            # 4. Create the Parent Container (VBox)
+            # The VBox will hold both the canvas and the button.
+            # Crucially, the VBox must have position: 'relative' for the button's
+            # 'absolute' positioning to work relative to it.
+            container_layout = Layout(
+                width="100%",  # or '99.9%'
+                position="relative",  # <-- THIS IS THE KEY!
+            )
+
+            self.ui = VBox(children=[self._canvas, button_group], layout=container_layout)
 
     def _make_header(self):
         layout = Layout(height="60px")
@@ -100,6 +126,7 @@ class TestbedUI:
             layout=Layout(height="auto", justify_content="flex-start", width="auto"),
         )
         accordion.set_title(0, "Drawing Settings:")
+
         return accordion
 
     def _make_sample_settings_accordion(self):
@@ -222,7 +249,7 @@ class TestbedUI:
 
         # open this by default
         self._simulation_settings_accordion.selected_index = 0
-        self._debug_draw_accordion.selected_index = 0
+        # self._debug_draw_accordion.selected_index = 0
 
         return ipywidgets.VBox(
             [
@@ -250,8 +277,14 @@ class TestbedUI:
         return ipywidgets.Label("")
 
     def _make_control_button_group(self):
+        autostart = self.frontend.settings.autostart
+        if autostart:
+            icon = "pause"
+        else:
+            icon = "play"
+
         self.play_pause_btn = ToggleButton(
-            value=True, tooltip="Play/Pause", icon="pause", layout=Layout(width="40px")
+            value=autostart, tooltip="Play/Pause", icon=icon, layout=Layout(width="40px")
         )
         self.stop_btn = Button(
             tooltip="Stop", icon="stop", layout=Layout(width="40px"), button_style="danger"
@@ -277,10 +310,15 @@ class TestbedUI:
         )
 
     def remove_sample_ui_elements(self):
-        # remove all children from the sample settings vbox
-        self.sample_settings_vbox.children = []
+        if not self.frontend.settings.simple_ui:
+            # remove all children from the sample settings vbox
+            self.sample_settings_vbox.children = []
 
     def add_sample_ui_element(self, element):
+        # no ui-elements in simple mode
+        if self.frontend.settings.simple_ui:
+            return
+
         # ensure the accordion is visible
         if not self._sample_settings_accordion.selected_index == 0:
             self._sample_settings_accordion.selected_index = 0
@@ -348,11 +386,25 @@ class TestbedUI:
             )
             self.sample_settings_vbox.children += (radio_buttons,)
 
+    def _set_paused(self):
+        self.play_pause_btn.icon = "play"
+        self.play_pause_btn.value = False
+        self.on_pause()
+        self.single_step_btn.disabled = False
+
+    def _set_running(self):
+        self.play_pause_btn.icon = "pause"
+        self.play_pause_btn.value = True
+        self.single_step_btn.disabled = True
+        self.on_play()
+
     def _on_play_pause_change(self, change):
         try:
             if change["new"]:
                 self.play_pause_btn.icon = "pause"
                 self.single_step_btn.disabled = True
+                if self.frontend.cancel_loop is None:
+                    self.frontend.restart()
                 self.on_play()
             else:
                 self.play_pause_btn.icon = "play"
@@ -367,6 +419,8 @@ class TestbedUI:
             self.play_pause_btn.value = False
             self.single_step_btn.disabled = False
             self.play_pause_btn.icon = "play"
+            if self.frontend.cancel_loop is not None:
+                self.frontend.restart()
             self.on_stop(was_playing_before)
         except Exception as e:
             self.frontend._handle_exception(e)
@@ -406,4 +460,4 @@ class TestbedUI:
         self.frontend.update_physics_single_step()
 
     def display(self):
-        display(self.app_layout, self._output_widget)
+        display(self.ui, self._output_widget)
