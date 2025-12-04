@@ -47,16 +47,21 @@ class TestbedUI:
 
             floating_layout = Layout(
                 position="absolute",
-                bottom="40px",
-                left="0",  # when I change this I get a scrollbar
+                bottom="40px",  # 10 pixels from the bottom edge
+                left="0",  # 10 pixels from the left edge
+                # A small z-index ensures it renders above the canvas
                 z_index="10",
                 width="auto",
             )
             button_group.layout = floating_layout
 
+            # 4. Create the Parent Container (VBox)
+            # The VBox will hold both the canvas and the button.
+            # Crucially, the VBox must have position: 'relative' for the button's
+            # 'absolute' positioning to work relative to it.
             container_layout = Layout(
                 width="100%",  # or '99.9%'
-                position="relative",
+                position="relative",  # <-- THIS IS THE KEY!
             )
 
             self.ui = VBox(children=[self._canvas, button_group], layout=container_layout)
