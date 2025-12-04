@@ -11,34 +11,55 @@ class TestbedUI:
         self._canvas = frontend.canvas
         self._output_widget = frontend.output_widget
 
-        self._header = self._make_header()
-        self._right_sidebar = self._make_right_sidebar()
-        self._footer = self._make_footer()
+        if not self.frontend.settings.simple_ui:
+            self._header = self._make_header()
+            self._right_sidebar = self._make_right_sidebar()
+            self._footer = self._make_footer()
 
-        if frontend.settings.hide_controls:
-            pane_widths = [
-                0,
-                f"{100.0 * frontend.settings.layout_scale}%",
-                0,
-            ]
-            right_sidebar = None
+            if frontend.settings.hide_controls:
+                pane_widths = [
+                    0,
+                    f"{100.0 * frontend.settings.layout_scale}%",
+                    0,
+                ]
+                right_sidebar = None
+            else:
+                pane_widths = [
+                    0,
+                    f"{70.0 * frontend.settings.layout_scale}%",
+                    f"{30.0 * frontend.settings.layout_scale}%",
+                ]
+                right_sidebar = self._right_sidebar
+
+            self.ui = ipywidgets.AppLayout(
+                header=self._header,
+                center=self._canvas,
+                right_sidebar=right_sidebar,
+                left_sidebar=None,
+                footer=self._footer,
+                pane_heights=["60px", 5, "60px"],
+                pane_widths=pane_widths,
+            )
         else:
-            pane_widths = [
-                0,
-                f"{70.0 * frontend.settings.layout_scale}%",
-                f"{30.0 * frontend.settings.layout_scale}%",
-            ]
-            right_sidebar = self._right_sidebar
+            button_group = self._make_control_button_group()
+            # we want the controll in the lower **ontop** of the canvas
+            # ie some sort of floating layout
 
-        self.app_layout = ipywidgets.AppLayout(
-            header=self._header,
-            center=self._canvas,
-            right_sidebar=right_sidebar,
-            left_sidebar=None,
-            footer=self._footer,
-            pane_heights=["60px", 5, "60px"],
-            pane_widths=pane_widths,
-        )
+            floating_layout = Layout(
+                position="absolute",
+                bottom="40px",
+                left="0",  # when I change this I get a scrollbar
+                z_index="10",
+                width="auto",
+            )
+            button_group.layout = floating_layout
+
+            container_layout = Layout(
+                width="100%",  # or '99.9%'
+                position="relative",
+            )
+
+            self.ui = VBox(children=[self._canvas, button_group], layout=container_layout)
 
     def _make_header(self):
         layout = Layout(height="60px")
@@ -284,10 +305,15 @@ class TestbedUI:
         )
 
     def remove_sample_ui_elements(self):
-        # remove all children from the sample settings vbox
-        self.sample_settings_vbox.children = []
+        if not self.frontend.settings.simple_ui:
+            # remove all children from the sample settings vbox
+            self.sample_settings_vbox.children = []
 
     def add_sample_ui_element(self, element):
+        # no ui-elements in simple mode
+        if self.frontend.settings.simple_ui:
+            return
+
         # ensure the accordion is visible
         if not self._sample_settings_accordion.selected_index == 0:
             self._sample_settings_accordion.selected_index = 0
@@ -429,4 +455,4 @@ class TestbedUI:
         self.frontend.update_physics_single_step()
 
     def display(self):
-        display(self.app_layout, self._output_widget)
+        display(self.ui, self._output_widget)
