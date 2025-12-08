@@ -1,3 +1,5 @@
+console.log("ipycanvaslite: init.js loaded");
+
 
 
 
@@ -292,3 +294,16 @@ OffscreenCanvasRenderingContext2D.prototype._draw_points = function(data) {
         ctx.closePath();
     }
 }
+
+
+
+
+
+
+
+
+
+
+// globalThis["_ipycanvas"] = {
+//     reciver_factory: reciver_factory
+// };

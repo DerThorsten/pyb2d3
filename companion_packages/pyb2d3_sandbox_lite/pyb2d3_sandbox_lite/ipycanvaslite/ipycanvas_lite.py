@@ -40,7 +40,10 @@ def _exec_js_file(filename):
 
 def _extend_js():
     THIS_DIR = Path(__file__).parent
-    _exec_js_file(THIS_DIR / "js" / "init.js")
+    # get parent dir of THIS_DIR
+    PARENT = THIS_DIR.parent
+
+    _exec_js_file(PARENT / "init.js")
 
 
 _extend_js()

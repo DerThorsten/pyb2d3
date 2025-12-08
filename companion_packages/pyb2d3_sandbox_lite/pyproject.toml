@@ -28,4 +28,4 @@ where = ["."]
 
 
 [tool.setuptools.package-data]
-"pyb2d3_sandbox_ipycanvas" = ["init.js"]
+"pyb2d3_sandbox_lite" = ["init.js"]
