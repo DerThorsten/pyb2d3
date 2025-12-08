@@ -12,18 +12,20 @@ from pyb2d3_sandbox.frontend_base import (
 import sys
 import asyncio
 from .ui import TestbedUI
-from .render_loop import set_render_loop
-from ipycanvas.call_repeated import set_render_loop as ipycanvas_set_render_loop
+from .ipycanvaslite.call_repeated import set_render_loop as set_render_loop
+from .debug_draw_offscreen import LiteDebugDraw
 
 # output widget from ipywidgets
 from ipywidgets import Output
+
+import pyjs
 
 # display from IPython
 
 import pyb2d3 as b2d
 import traceback
 
-from ipycanvas.compat import Canvas
+from .ipycanvaslite import Canvas
 
 # dataclass
 from dataclasses import dataclass
@@ -53,26 +55,20 @@ except ImportError:
 is_emscripten = sys.platform.startswith("emscripten")
 use_offscreen = has_pyjs and is_emscripten
 
-if not use_offscreen:
-    from ipyevents import Event
-    from .debug_draw_vanilla import IpycanvasDebugDraw
-else:
-    from .debug_draw_offscreen import IpycanvasDebugDraw
-
 
 all_frontends = WeakSet()
 
 
 @dataclass
-class IpycanvasFrontendSettings(FrontendBase.Settings):
+class LiteFrontendSettings(FrontendBase.Settings):
     layout_scale: float = 1.0
     hide_controls: bool = False
     autostart: bool = True
     simple_ui: bool = False
 
 
-class IpycanvasFrontend(FrontendBase):
-    Settings = IpycanvasFrontendSettings
+class LiteFrontend(FrontendBase):
+    Settings = LiteFrontendSettings
 
     def __del__(self):
         if self.cancel_loop is not None:
@@ -116,7 +112,7 @@ class IpycanvasFrontend(FrontendBase):
                 offset=(0, 0),
             )
 
-            self.debug_draw = IpycanvasDebugDraw(
+            self.debug_draw = LiteDebugDraw(
                 frontend=self,
                 transform=self.transform,
                 canvas=self.canvas,
@@ -127,38 +123,24 @@ class IpycanvasFrontend(FrontendBase):
             self.debug_draw.draw_joints = settings.debug_draw.draw_joints
 
             self.ui = TestbedUI(self)
+            print("Displaying UI")
+            pyjs.js.console.log("Displaying UI")
             self.ui.display()
+            pyjs.js.console.log("UI displayed")
             self._last_canvas_mouse_pos = b2d.Vec2(0, 0)
 
         except Exception as e:
             self._handle_exception(e)
 
     def _connect_events(self):
-        if not use_offscreen:
-            # use ipyevents to handle  events
-            d = Event(
-                source=self.canvas,
-                watched_events=[
-                    "mouseenter",
-                    "mousedown",
-                    "mouseup",
-                    "mousemove",
-                    "wheel",
-                    "mouseleave",
-                    "keydown",
-                    "keyup",
-                ],
-            )
-            d.on_dom_event(self._dispatch_events)
-        else:
-            self.canvas.on_mouse_move(self.on_mouse_move)
-            self.canvas.on_mouse_down(self.on_mouse_down)
-            self.canvas.on_mouse_up(self.on_mouse_up)
-            self.canvas.on_mouse_out(self.on_mouse_leave)
-            self.canvas.on_mouse_enter(self.on_mouse_enter)
-            self.canvas.on_mouse_wheel(self.on_mouse_wheel)
-            self.canvas.on_key_down(self.on_key_down)
-            self.canvas.on_key_up(self.on_key_up)
+        self.canvas.on_mouse_move(self.on_mouse_move)
+        self.canvas.on_mouse_down(self.on_mouse_down)
+        self.canvas.on_mouse_up(self.on_mouse_up)
+        self.canvas.on_mouse_out(self.on_mouse_leave)
+        self.canvas.on_mouse_enter(self.on_mouse_enter)
+        self.canvas.on_mouse_wheel(self.on_mouse_wheel)
+        self.canvas.on_key_down(self.on_key_down)
+        self.canvas.on_key_up(self.on_key_up)
 
     def key_to_key_name(self, key):
         if key == "Control":
@@ -302,8 +284,8 @@ class IpycanvasFrontend(FrontendBase):
 
     def _clear_canvas(self):
         if self.settings.debug_draw.draw_background:
-            self.canvas.fill_style = html_color(self.settings.debug_draw.background_color)
-            self.canvas.fill_rect(
+            self.canvas._ctx.fillStyle = html_color(self.settings.debug_draw.background_color)
+            self.canvas._ctx.fillRect(
                 0,
                 0,
                 self.settings.canvas_shape[0],
@@ -349,7 +331,7 @@ class IpycanvasFrontend(FrontendBase):
 
             self.cancel_other_frontend_loops()
 
-            self.cancel_loop = ipycanvas_set_render_loop(self.canvas, f, fps=0)
+            self.cancel_loop = set_render_loop(self.canvas, f, fps=0)
 
     def cancel_other_frontend_loops(self):
         for other_frontend in all_frontends:
@@ -365,7 +347,9 @@ class IpycanvasFrontend(FrontendBase):
         # self.ui.display()
         # await asyncio.sleep(0.2)  # give the canvas some time to initialize
         try:
-            await self.canvas.async_initialize()
+            print("Waiting for canvas to be ready...")
+            pyjs.js.console.log("Waiting for canvas to be ready...")
+            await self.canvas._ready()
             self.ui_is_ready()
             self._connect_events()
 
@@ -375,7 +359,7 @@ class IpycanvasFrontend(FrontendBase):
             # fps=0 means use requestAnimationFrame
             if self.settings.autostart:
                 self.cancel_other_frontend_loops()
-                self.cancel_loop = ipycanvas_set_render_loop(self.canvas, f, fps=0)
+                self.cancel_loop = set_render_loop(self.canvas, f, fps=0)
             else:
                 self._clear_canvas()
                 self.update_physics_single_step()
@@ -390,11 +374,7 @@ class IpycanvasFrontend(FrontendBase):
         asyncio.create_task(self.async_main_loop())
 
     def main_loop(self):
-        if is_emscripten:
-            self.main_loop_lite()
-        else:
-            self.ui.display()
-            self.main_loop_vanilla()
+        self.main_loop_lite()
 
     def _dispatch_events(self, event):
         try:
