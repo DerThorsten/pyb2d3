@@ -123,7 +123,6 @@ class LiteFrontend(FrontendBase):
             self.debug_draw.draw_joints = settings.debug_draw.draw_joints
 
             self.ui = TestbedUI(self)
-            print("Displaying UI")
             pyjs.js.console.log("Displaying UI")
             self.ui.display()
             pyjs.js.console.log("UI displayed")
@@ -314,15 +313,6 @@ class LiteFrontend(FrontendBase):
             self.cancel_loop()
             self.cancel_loop = None
 
-    def main_loop_vanilla(self):
-        self.ui_is_ready()
-        self._connect_events()
-
-        def f():
-            self._callback()
-
-        self.cancel_loop = set_render_loop(self.canvas, f)
-
     def restart(self):
         if self.cancel_loop is None:
 
@@ -330,7 +320,6 @@ class LiteFrontend(FrontendBase):
                 self._callback()
 
             self.cancel_other_frontend_loops()
-
             self.cancel_loop = set_render_loop(self.canvas, f, fps=0)
 
     def cancel_other_frontend_loops(self):
@@ -347,9 +336,9 @@ class LiteFrontend(FrontendBase):
         # self.ui.display()
         # await asyncio.sleep(0.2)  # give the canvas some time to initialize
         try:
-            print("Waiting for canvas to be ready...")
             pyjs.js.console.log("Waiting for canvas to be ready...")
             await self.canvas._ready()
+            pyjs.js.console.log("Canvas is ready.")
             self.ui_is_ready()
             self._connect_events()
 
@@ -369,12 +358,8 @@ class LiteFrontend(FrontendBase):
             self._handle_exception(e)
             return
 
-    def main_loop_lite(self):
-        # run self.async_main_loop in a a task
-        asyncio.create_task(self.async_main_loop())
-
     def main_loop(self):
-        self.main_loop_lite()
+        asyncio.create_task(self.async_main_loop())
 
     def _dispatch_events(self, event):
         try:

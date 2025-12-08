@@ -360,7 +360,11 @@ class OffscreenCanvas(anywidget.AnyWidget):
         return self._canvas is not None
 
     async def _ready(self):
-        jsf = pyjs.js.Function(f"""return "{self._canvas_name}" in globalThis""")
+        jsf = pyjs.js.Function(f"""
+            const ret =  typeof globalThis.{self._canvas_name} !== "undefined";
+            console.log("Canvas {self._canvas_name} ready? ", ret);
+            return ret;
+        """)
 
         make_sleep_fun = pyjs.js.Function("""
             async function js_sleep() {

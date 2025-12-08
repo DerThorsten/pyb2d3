@@ -39,5 +39,6 @@ def set_render_loop(canvas, func, fps=0):
             print(f"Error in requestAnimationFrame callback: {e}", file=sys.stderr)
             pyjs.cancel_main_loop()
 
+    pyjs.set_main_loop_callback(wrapped_func, 0)
     # return a lambda which can be used to cancel the loop
     return lambda: pyjs.cancel_main_loop()
