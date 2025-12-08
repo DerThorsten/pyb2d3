@@ -370,7 +370,7 @@ class OffscreenCanvas(anywidget.AnyWidget):
             async function js_sleep() {
 
                 await Promise.resolve();                     // let the event loop run
-                await new Promise(r => setTimeout(r, 1000)); // let other async work happen
+                await new Promise(r => setTimeout(r, 0.1)); // let other async work happen
                 await new Promise(r => queueMicrotask(r));   // let microtasks run
             }
             return js_sleep;
