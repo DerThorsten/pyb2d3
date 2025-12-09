@@ -367,10 +367,11 @@ class OffscreenCanvas(anywidget.AnyWidget):
         """)
 
         make_sleep_fun = pyjs.js.Function("""
-            async function js_sleep() {
+
+            async function js_sleep(waiting_time_ms) {
 
                 await Promise.resolve();                     // let the event loop run
-                await new Promise(r => setTimeout(r, 100)); // let other async work happen
+                await new Promise(r => setTimeout(r, waiting_time_ms)); // let other async work happen
                 await new Promise(r => queueMicrotask(r));   // let microtasks run
             }
             return js_sleep;
@@ -378,11 +379,14 @@ class OffscreenCanvas(anywidget.AnyWidget):
         js_sleep = make_sleep_fun()
 
         c = 0
+        factor = 2
+        sleeping_time = 10
         while not jsf():
-            await js_sleep()
+            await js_sleep(sleeping_time)
+            sleeping_time = int(factor * sleeping_time)
 
             c += 1
-            if c >= 40:
+            if c >= 15:
                 pyjs.js.console.log(f"Canvas {self._canvas_name} was not created in time.")
                 raise RuntimeError(f"Canvas {self._canvas_name} was not created in time.")
 
