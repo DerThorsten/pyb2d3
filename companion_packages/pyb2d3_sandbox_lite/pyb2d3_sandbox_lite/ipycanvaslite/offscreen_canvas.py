@@ -362,7 +362,7 @@ class OffscreenCanvas(anywidget.AnyWidget):
     async def _ready(self):
         jsf = pyjs.js.Function(f"""
             const ret =  typeof globalThis.{self._canvas_name} !== "undefined";
-            // console.log("Canvas {self._canvas_name} ready? ", ret);
+            console.log("Canvas {self._canvas_name} ready? ", ret);
             return ret;
         """)
 
