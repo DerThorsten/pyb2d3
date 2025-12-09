@@ -58,43 +58,44 @@ use_offscreen = has_pyjs and is_emscripten
 
 
 if use_offscreen:
+    pass
 
-    async def patched_async_initialize(self):
-        self._check_if_ready = pyjs.js.Function(f"""return "{self._canvas_name}" in globalThis""")
+    # async def patched_async_initialize(self):
+    #     self._check_if_ready = pyjs.js.Function(f"""return "{self._canvas_name}" in globalThis""")
 
-        jsf = pyjs.js.Function(f"""
-            const ret =  typeof globalThis.{self._canvas_name} !== "undefined";
-            console.log("Canvas {self._canvas_name} ready? ", ret);
-            return ret;
-        """)
+    #     jsf = pyjs.js.Function(f"""
+    #         const ret =  typeof globalThis.{self._canvas_name} !== "undefined";
+    #         console.log("Canvas {self._canvas_name} ready? ", ret);
+    #         return ret;
+    #     """)
 
-        make_sleep_fun = pyjs.js.Function("""
-            async function js_sleep(waiting_time_ms) {
-                console.log("Sleeping for ", waiting_time_ms, " ms");
-                await Promise.resolve();                     // let the event loop run
-                await new Promise(r => setTimeout(r, waiting_time_ms)); // let other async work happen
-                await new Promise(r => queueMicrotask(r));   // let microtasks run
-            }
-            return js_sleep;
-        """)
+    #     make_sleep_fun = pyjs.js.Function("""
+    #         async function js_sleep(waiting_time_ms) {
+    #             console.log("Sleeping for ", waiting_time_ms, " ms");
+    #             await Promise.resolve();                     // let the event loop run
+    #             await new Promise(r => setTimeout(r, waiting_time_ms)); // let other async work happen
+    #             await new Promise(r => queueMicrotask(r));   // let microtasks run
+    #         }
+    #         return js_sleep;
+    #     """)
 
-        js_sleep = make_sleep_fun()
+    #     js_sleep = make_sleep_fun()
 
-        c = 0
-        factor = 2
-        sleeping_time = 10
-        while not jsf():
-            await js_sleep(sleeping_time)
-            sleeping_time = int(factor * sleeping_time)
+    #     c = 0
+    #     factor = 2
+    #     sleeping_time = 10
+    #     while not jsf():
+    #         await js_sleep(sleeping_time)
+    #         sleeping_time = int(factor * sleeping_time)
 
-            c += 1
-            if c >= 15:
-                pyjs.js.console.log(f"Canvas {self._canvas_name} was not created in time.")
-                raise RuntimeError(f"Canvas {self._canvas_name} was not created in time.")
+    #         c += 1
+    #         if c >= 15:
+    #             pyjs.js.console.log(f"Canvas {self._canvas_name} was not created in time.")
+    #             raise RuntimeError(f"Canvas {self._canvas_name} was not created in time.")
 
-        self._canvas = pyjs.js.globalThis[self._canvas_name]
+    #     self._canvas = pyjs.js.globalThis[self._canvas_name]
 
-    OffscreenCanvasCore.async_initialize = patched_async_initialize
+    # OffscreenCanvasCore.async_initialize = patched_async_initialize
 
 
 if not use_offscreen:
