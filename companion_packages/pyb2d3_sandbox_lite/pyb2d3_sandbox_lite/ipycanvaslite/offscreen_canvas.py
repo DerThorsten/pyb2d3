@@ -362,7 +362,7 @@ class OffscreenCanvas(anywidget.AnyWidget):
     async def _ready(self):
         jsf = pyjs.js.Function(f"""
             const ret =  typeof globalThis.{self._canvas_name} !== "undefined";
-            console.log("Canvas {self._canvas_name} ready? ", ret);
+            // console.log("Canvas {self._canvas_name} ready? ", ret);
             return ret;
         """)
 
@@ -370,7 +370,7 @@ class OffscreenCanvas(anywidget.AnyWidget):
             async function js_sleep() {
 
                 await Promise.resolve();                     // let the event loop run
-                await new Promise(r => setTimeout(r, 0.1)); // let other async work happen
+                await new Promise(r => setTimeout(r, 100)); // let other async work happen
                 await new Promise(r => queueMicrotask(r));   // let microtasks run
             }
             return js_sleep;
@@ -382,7 +382,7 @@ class OffscreenCanvas(anywidget.AnyWidget):
             await js_sleep()
 
             c += 1
-            if c >= 20:
+            if c >= 40:
                 pyjs.js.console.log(f"Canvas {self._canvas_name} was not created in time.")
                 raise RuntimeError(f"Canvas {self._canvas_name} was not created in time.")
 
