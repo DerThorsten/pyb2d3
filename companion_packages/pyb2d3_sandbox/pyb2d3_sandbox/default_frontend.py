@@ -55,6 +55,11 @@ def get_default_frontend():
 
             _CachedDefaultFrontend = IpycanvasFrontend
             return _CachedDefaultFrontend
+        elif compare_case_insensitive(PYB2D3_SANDBOX_DEFAULT_FRONTEND, "LITTE"):
+            from pyb2d3_sandbox_lite import LiteFrontend
+
+            _CachedDefaultFrontend = LiteFrontend
+            return _CachedDefaultFrontend
 
     tracebacks = []
 
@@ -99,7 +104,6 @@ Tracebacks of the import errors:
                 return _CachedDefaultFrontend
         # for lite-Jupyter we use "ipycanvas-frontend"
         else:
-            # Check if IpycanvasFrontend is available
             has_ipycanvas_frontend = True
             try:
                 from pyb2d3_sandbox_ipycanvas import IpycanvasFrontend

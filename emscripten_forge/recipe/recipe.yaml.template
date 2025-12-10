@@ -87,7 +87,6 @@ outputs:
       - pyb2d3 >=${{ version }}
       - pyb2d3-sandbox >=${{ version }}
 
-
 about:
   license: MIT
   license_file: LICENSE

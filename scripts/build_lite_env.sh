@@ -40,7 +40,7 @@ if true ; then
         xeus-python  \
         ipywidgets \
         "ipycanvas>=0.14.2" \
-        "pyb2d3>=0.5.6" \
+        "pyb2d3>=0.9.0" \
         "pillow"
         # "pyb2d3-sandbox>=0.5.6" \
         # "pyb2d3-sandbox-ipycanvas>=0.5.6" \

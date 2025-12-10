@@ -27,8 +27,6 @@ from ipycanvas.compat import Canvas
 
 # dataclass
 from dataclasses import dataclass
-
-
 from weakref import WeakSet
 
 
@@ -52,6 +50,7 @@ except ImportError:
     has_pyjs = False
 is_emscripten = sys.platform.startswith("emscripten")
 use_offscreen = has_pyjs and is_emscripten
+
 
 if not use_offscreen:
     from ipyevents import Event
@@ -127,7 +126,7 @@ class IpycanvasFrontend(FrontendBase):
             self.debug_draw.draw_joints = settings.debug_draw.draw_joints
 
             self.ui = TestbedUI(self)
-
+            self.ui.display()
             self._last_canvas_mouse_pos = b2d.Vec2(0, 0)
 
         except Exception as e:
@@ -159,6 +158,12 @@ class IpycanvasFrontend(FrontendBase):
             self.canvas.on_mouse_wheel(self.on_mouse_wheel)
             self.canvas.on_key_down(self.on_key_down)
             self.canvas.on_key_up(self.on_key_up)
+
+            # naive **single** touch support
+            self.canvas.on_touch_start(self.on_mouse_down, pass_id=False)
+            self.canvas.on_touch_end(self.on_mouse_up, pass_id=False)
+            self.canvas.on_touch_move(self.on_mouse_move, pass_id=False)
+            self.canvas.on_touch_cancel(self.on_mouse_leave, pass_id=False)
 
     def key_to_key_name(self, key):
         if key == "Control":
@@ -360,10 +365,10 @@ class IpycanvasFrontend(FrontendBase):
                 other_frontend.cancel_loop = None
 
     async def async_main_loop(self):
-        await asyncio.sleep(0.2)
+        # await asyncio.sleep(0.2)
         # display the canvas
-        self.ui.display()
-        await asyncio.sleep(0.2)  # give the canvas some time to initialize
+        # self.ui.display()
+        # await asyncio.sleep(0.2)  # give the canvas some time to initialize
         try:
             await self.canvas.async_initialize()
             self.ui_is_ready()
