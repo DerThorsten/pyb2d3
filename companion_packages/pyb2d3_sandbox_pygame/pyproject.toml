@@ -1,6 +1,6 @@
 [project]
 name = "pyb2d3-sandbox-pygame"
-version = "0.9.0"
+version = "0.10.0"
 description = "run the pyb2d3 sandbox with pygame"
 authors = [
     { name = "Dr. Thorsten Beier", email = "derthorstenbeier@gmail.com" }
