@@ -104,17 +104,6 @@ Tracebacks of the import errors:
                 return _CachedDefaultFrontend
         # for lite-Jupyter we use "ipycanvas-frontend"
         else:
-            # has_lite_frontend = True
-            # try:
-            #     from pyb2d3_sandbox_lite import LiteFrontend
-            # except ImportError:
-            #     has_lite_frontend = False
-            #     tracebacks.append(traceback.format_exc())
-            # if has_lite_frontend:
-            #     _CachedDefaultFrontend = LiteFrontend
-            #     return _CachedDefaultFrontend
-
-            # Check if IpycanvasFrontend is available
             has_ipycanvas_frontend = True
             try:
                 from pyb2d3_sandbox_ipycanvas import IpycanvasFrontend
