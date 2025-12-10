@@ -205,6 +205,12 @@ class IpycanvasFrontend(FrontendBase):
             self.canvas.on_key_down(self.on_key_down)
             self.canvas.on_key_up(self.on_key_up)
 
+            # naive **single** touch support
+            self.canvas.on_touch_start(self.on_mouse_down, pass_id=False)
+            self.canvas.on_touch_end(self.on_mouse_up, pass_id=False)
+            self.canvas.on_touch_move(self.on_mouse_move, pass_id=False)
+            self.canvas.on_touch_cancel(self.on_mouse_leave, pass_id=False)
+
     def key_to_key_name(self, key):
         if key == "Control":
             return "ctrl"
