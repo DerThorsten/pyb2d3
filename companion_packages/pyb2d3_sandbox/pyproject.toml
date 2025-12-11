@@ -1,6 +1,6 @@
 [project]
 name = "pyb2d3-sandbox"
-version = "0.10.0"
+version = "0.11.0"
 description = "sandbox for pyb2d3"
 authors = [
     { name = "Dr. Thorsten Beier", email = "derthorstenbeier@gmail.com" }
