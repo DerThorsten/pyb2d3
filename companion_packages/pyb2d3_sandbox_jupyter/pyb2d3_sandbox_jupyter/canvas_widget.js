@@ -271,22 +271,30 @@ function clear_canvas(ctx, canvas) {
 
 
 
-function on_custom_message(model, canvas, ctx, msg) {
+function on_custom_message(model, canvas, ctx, msg, buffers) {
+    console.log("on_custom_message", msg, buffers);
+
+
+
 
     let time_start = performance.now();
 
     let fi =0;
     let ii = 0;
 
+
     // It can be used to update the canvas or perform other actions
-    const int_array = msg[0];
+    const int_array = new Int32Array(buffers[0].buffer);
     const mode = int_array[ii++];
     if(mode === 1) {
         // just clear
         clear_canvas(ctx, canvas);
         return;
     }
-    const float_array = msg[1];
+
+
+    const float_array = new Float32Array(buffers[1].buffer);
+
 
 
 
@@ -381,14 +389,14 @@ function setup_event_listeners(model,ctx, canvas) {
     canvas._mouse_down = false;
     canvas._mouse_inside = true;
 
-    // handle events
-    canvas.addEventListener("click", (event) => {
-        // focus canvas
-        canvas.focus();
-        const [world_x, world_y] = client_to_world(canvas, ctx, event.clientX, event.clientY);
-        model.send(["click", world_x, world_y]);
-        canvas._last_client = [event.clientX, event.clientY];
-    });
+    // // handle events
+    // canvas.addEventListener("click", (event) => {
+    //     // focus canvas
+    //     canvas.focus();
+    //     const [world_x, world_y] = client_to_world(canvas, ctx, event.clientX, event.clientY);
+    //     model.send(["click", world_x, world_y]);
+    //     canvas._last_client = [event.clientX, event.clientY];
+    // });
 
     // mouse down event
     canvas.addEventListener("mousedown", (event) => {
@@ -479,6 +487,90 @@ function setup_event_listeners(model,ctx, canvas) {
     });
 
 
+    // touch begin event
+    canvas.addEventListener("touchstart", (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const touch = event.touches[0];
+        const [world_x, world_y] = client_to_world(canvas, ctx, touch.clientX, touch.clientY);
+        model.send(["touch_begin", world_x, world_y]);
+        canvas._last_client = [touch.clientX, touch.clientY];
+    }, { passive: false });
+
+    // touch end event
+    canvas.addEventListener("touchend", (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const touch = event.changedTouches[0];
+        const [world_x, world_y] = client_to_world(canvas, ctx, touch.clientX, touch.clientY);
+        model.send(["touch_end", world_x, world_y]);
+    }, { passive: false });
+
+    // touch move event
+    canvas.addEventListener("touchmove", (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (!canvas._mouse_down) {
+            return;
+        }
+        const touch = event.touches[0];
+        const [world_x, world_y] = client_to_world(canvas, ctx, touch.clientX, touch.clientY);
+        const [last_client_x, last_client_y] = canvas._last_client || [touch.clientX, touch.clientY];
+        const world_delta_x = (touch.clientX - last_client_x) / ctx.ppm;
+        const world_delta_y = -(touch.clientY - last_client_y) / ctx.ppm;
+        canvas._last_client = [touch.clientX, touch.clientY];
+
+    }, { passive: false });
+
+    // touch cancel event
+    canvas.addEventListener("touchcancel", (event) => {
+        event.preventDefault();
+        model.send(["touch_cancel"]);
+        canvas._last_client = undefined;
+        canvas._mouse_down = false;
+    }, { passive: false });  canvas.addEventListener("touchstart", (event) => {
+        event.preventDefault();
+        const touch = event.touches[0];
+        const [world_x, world_y] = client_to_world(canvas, ctx, touch.clientX, touch.clientY);
+        model.send(["touch_begin", world_x, world_y]);
+        canvas._last_client = [touch.clientX, touch.clientY];
+        canvas._mouse_down = true;
+    });
+
+    // touch end event
+    canvas.addEventListener("touchend", (event) => {
+        event.preventDefault();
+        const touch = event.changedTouches[0];
+        const [world_x, world_y] = client_to_world(canvas, ctx, touch.clientX, touch.clientY);
+        model.send(["touch_end", world_x, world_y]);
+        canvas._last_client = [touch.clientX, touch.clientY];
+        canvas._mouse_down = false;
+    });
+
+    // touch move event
+    canvas.addEventListener("touchmove", (event) => {
+        event.preventDefault();
+        if (!canvas._mouse_down) {
+            return;
+        }
+        const touch = event.touches[0];
+        const [world_x, world_y] = client_to_world(canvas, ctx, touch.clientX, touch.clientY);
+        const [last_client_x, last_client_y] = canvas._last_client || [touch.clientX, touch.clientY];
+        const world_delta_x = (touch.clientX - last_client_x) / ctx.ppm;
+        const world_delta_y = -(touch.clientY - last_client_y) / ctx.ppm;
+        canvas._last_client = [touch.clientX, touch.clientY];
+        model.send(["touch_move", world_x, world_y, world_delta_x, world_delta_y]);
+    });
+
+    // touch cancel event
+    canvas.addEventListener("touchcancel", (event) => {
+        event.preventDefault();
+        model.send(["touch_cancel"]);
+        canvas._last_client = undefined;
+        canvas._mouse_down = false;
+    });
+
+
 
 
     // key-down event
@@ -540,9 +632,9 @@ function render({ model, el }) {
 
 
     // on custom message, draw a rectangle in red
-    model.on("msg:custom", (msg) => {
+    model.on("msg:custom", (msg, buffers) => {
         try {
-            on_custom_message(model, canvas, ctx, msg);
+            on_custom_message(model, canvas, ctx, msg, buffers);
         } catch (error) {
             console.error("Error handling custom message:", error);
         }

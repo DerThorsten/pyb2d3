@@ -63,8 +63,16 @@ class CanvasWidget(anywidget.AnyWidget):
             self.on_mouse_down(*data[1:])
         elif msg_type == "mouse_up":
             self.on_mouse_up(*data[1:])
-        # elif msg_type == "click":
-        #     self.on_mouse_click(*data[1:])
+
+        elif msg_type == "touch_begin":
+            self.on_mouse_down(*data[1:])
+        elif msg_type == "touch_move":
+            self.on_mouse_move(*data[1:])
+        elif msg_type == "touch_end":
+            self.on_mouse_up(*data[1:])
+        elif msg_type == "touch_cancel":
+            self.on_mouse_leave()
+
         elif msg_type == "key_down":
             self.on_key_down(*data[1:])
         elif msg_type == "key_up":

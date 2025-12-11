@@ -274,6 +274,7 @@ class JupyterFrontend(FrontendBase):
             self.cancel_loop = render_loop(self.canvas, f)
         else:
             self.cancel_loop = None
+            self._clear_canvas()
             self.update_physics_single_step()
             self.draw_physics()
 

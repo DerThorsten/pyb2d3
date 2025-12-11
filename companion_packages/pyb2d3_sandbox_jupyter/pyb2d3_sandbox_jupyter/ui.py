@@ -400,18 +400,14 @@ class TestbedUI:
 
     def _on_play_pause_change(self, change):
         with self.frontend.output_widget:
-            print("Play/Pause button changed:", change)
             try:
                 if change["new"]:
-                    print("we where paused, now playing")
                     self.play_pause_btn.icon = "pause"
                     self.single_step_btn.disabled = True
                     if self.frontend.cancel_loop is None:
-                        print("restarting starting render loop")
                         self.frontend.restart()
                     self.on_play()
                 else:
-                    print("we where playing, now paused")
                     self.play_pause_btn.icon = "play"
                     self.on_pause()
                     self.single_step_btn.disabled = False

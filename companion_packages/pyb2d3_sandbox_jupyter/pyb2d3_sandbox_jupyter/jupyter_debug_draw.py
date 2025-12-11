@@ -218,14 +218,26 @@ class JupyterDebugDraw(FrontendDebugDraw):
         all_floats = np.concatenate(all_floats, axis=0, dtype=np.float32)
         all_ints = np.concatenate(all_ints, axis=0, dtype=np.int32)
 
-        self.canvas.send([all_ints, all_floats])
+        # payload = {
+        #     "ints": {
+        #         "buffer": memoryview(all_ints),
+        #         "dtype": str(all_ints.dtype),
+        #         "shape": all_ints.shape,
+        #     },
+        #     "floats": {
+        #         "buffer": memoryview(all_floats),
+        #         "dtype": str(all_floats.dtype),
+        #         "shape": all_floats.shape,
+        #     },
+        # }
+
+        self.canvas.send({}, buffers=[memoryview(all_ints), memoryview(all_floats)])
 
         for thing in self.all_things:
             thing._reset()
 
     def clear_canvas(self):
-        # Clear the canvas by sending a message with mode 1
-        self.canvas.send((np.array([1], dtype=np.int32),))
+        self.canvas.send({}, buffers=[memoryview(np.array([1], dtype=np.int32))])
 
     def draw_polygon(self, points, color):
         self.polygons.add(points, ensure_hex_color(color))
