@@ -23,6 +23,8 @@ import traceback
 
 from .canvas_widget import CanvasWidget
 from .jupyter_debug_draw import JupyterDebugDraw
+from dataclasses import dataclass
+from weakref import WeakSet
 
 
 def html_color(color):
@@ -35,11 +37,19 @@ def html_color(color):
         raise ValueError("Color must be an int or a tuple of (R, G, B) values.")
 
 
-last_frontend = [None]
+all_frontends = WeakSet()
+
+
+@dataclass
+class JupyterFrontendSettings(FrontendBase.Settings):
+    layout_scale: float = 1.0
+    hide_controls: bool = False
+    autostart: bool = True
+    simple_ui: bool = False
 
 
 class JupyterFrontend(FrontendBase):
-    Settings = FrontendBase.Settings
+    Settings = JupyterFrontendSettings
 
     def __del__(self):
         if self.cancel_loop is not None:
@@ -70,9 +80,9 @@ class JupyterFrontend(FrontendBase):
             )
             # if a cell is re-executed, we need to cancel the previous loop,
             # otherwise we will have multiple loops running
-            if last_frontend[0] is not None and last_frontend[0].cancel_loop is not None:
-                last_frontend[0].cancel_loop()
-            last_frontend[0] = self
+            if self.settings.autostart:
+                self.cancel_other_frontend_loops()
+            all_frontends.add(self)
 
             self.transform = b2d.CanvasWorldTransform(
                 canvas_shape=self.settings.canvas_shape,
@@ -99,6 +109,27 @@ class JupyterFrontend(FrontendBase):
 
         except Exception as e:
             self._handle_exception(e)
+
+    def restart(self):
+        # increment self.canvas._frame traitlet to trigger render loop
+        self.canvas._frame += 1
+        if self.cancel_loop is None:
+
+            def f():
+                self._callback()
+
+            self.cancel_other_frontend_loops()
+
+            self.cancel_loop = render_loop(self.canvas, f)
+
+    def cancel_other_frontend_loops(self):
+        for other_frontend in all_frontends:
+            if other_frontend is not self and other_frontend.cancel_loop is not None:
+                other_frontend.ui._set_paused()
+                other_frontend.cancel_loop()
+                # pyjs.cancel_main_loop()
+                other_frontend.canvas._frame += 1
+                other_frontend.cancel_loop = None
 
     def on_key_down(self, key, ctrl, shift, meta, alt):
         self._on_key_down(KeyDownEvent(key, ctrl, shift, meta, alt))
@@ -239,7 +270,12 @@ class JupyterFrontend(FrontendBase):
         def f():
             self._callback()
 
-        self.cancel_loop = render_loop(self.canvas, f)
+        if self.settings.autostart:
+            self.cancel_loop = render_loop(self.canvas, f)
+        else:
+            self.cancel_loop = None
+            self.update_physics_single_step()
+            self.draw_physics()
 
     def main_loop(self):
         self.main_loop_vanilla()
