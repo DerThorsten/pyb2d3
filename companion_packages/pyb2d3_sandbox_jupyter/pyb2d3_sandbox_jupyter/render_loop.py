@@ -7,37 +7,79 @@ def wait_for_change(widget, value):
 
     def getvalue(change):
         # make the new value available
-        future.set_result(change.new)
+        try:
+            future.set_result(change.new)
+        except asyncio.InvalidStateError:
+            pass
         widget.unobserve(getvalue, value)
+
+    widget.unobserve_it = lambda: widget.unobserve(getvalue, value)
 
     widget.observe(getvalue, value)
     return future
 
 
-async def _call_repeated(canvas, func):
-    # we limit this to 60 hz by default, but this can be overridden
-    target_dt = 1 / 60  # default to 60 fps
+class Loop(object):
+    def __init__(self):
+        self.callback = None
+        self.running = True
+        self.canvas = None
 
-    try:
-        while True:
-            try:
+        self.next_canvas = None
+        self.next_callback = None
+
+    async def run(self):
+        try:
+            # i = 0
+            while self.running:
+                # if i % 60 == 0:
+                #     print("Render loop running...")
+                #  i += 1
                 t0 = time.perf_counter()
-                func()
-                await wait_for_change(canvas, "_frame")
+                if self.callback is not None:
+                    await self.callback(self.canvas)
+
                 elapsed = time.perf_counter() - t0
-                sleep_time = max(0, target_dt - elapsed)
+
+                sleep_time = max(0, 1 / 60 - elapsed)
+
+                if not self.callback:
+                    sleep_time = 0.1  # sleep a bit longer if no callback is set
 
                 await asyncio.sleep(sleep_time)
 
-            except Exception:
-                break
+                if self.next_canvas is not None and self.next_callback is not None:
+                    print("!!!Changing render loop canvas and callback...")
+                    self.canvas = self.next_canvas
+                    self.callback = self.next_callback
+                    self.next_canvas = None
+                    self.next_callback = None
+        except Exception as e:
+            print(e)
 
-    except asyncio.CancelledError:
-        # If the task is cancelled, we just exit the loop
-        pass
+    def change_callback_when_possible(self, canvas, func):
+        self.next_canvas = canvas
+        self.next_callback = func
+
+
+# global instanced of loop
+_global_loop = None
 
 
 def render_loop(canvas, func):
-    loop = asyncio.get_event_loop()
-    task = loop.create_task(_call_repeated(canvas, func))
-    return lambda: task.cancel()
+    global _global_loop
+    if _global_loop is None:
+        _global_loop = Loop()
+
+        asyncio.create_task(_global_loop.run())
+
+    async def callback(canvas):
+        func()
+        await wait_for_change(canvas, "_frame")
+
+    _global_loop.change_callback_when_possible(canvas, callback)
+
+    def cancel():
+        pass
+
+    return cancel

@@ -92,18 +92,18 @@ Tracebacks of the import errors:
 
     else:
         # for vanilla-Jupyter we use "jupyter-frontend"
-        if not has_pyjs:
-            has_jupyter_frontend = True
-            try:
-                from pyb2d3_sandbox_jupyter import JupyterFrontend
-            except ImportError:
-                has_jupyter_frontend = False
-                tracebacks.append(traceback.format_exc())
-            if has_jupyter_frontend:
-                _CachedDefaultFrontend = JupyterFrontend
-                return _CachedDefaultFrontend
-        # for lite-Jupyter we use "ipycanvas-frontend"
-        else:
+
+        has_jupyter_frontend = True
+        try:
+            from pyb2d3_sandbox_jupyter import JupyterFrontend
+        except ImportError:
+            has_jupyter_frontend = False
+            tracebacks.append(traceback.format_exc())
+        if has_jupyter_frontend:
+            _CachedDefaultFrontend = JupyterFrontend
+            return _CachedDefaultFrontend
+
+        if has_pyjs:
             has_ipycanvas_frontend = True
             try:
                 from pyb2d3_sandbox_ipycanvas import IpycanvasFrontend
@@ -114,6 +114,6 @@ Tracebacks of the import errors:
                 _CachedDefaultFrontend = IpycanvasFrontend
                 return _CachedDefaultFrontend
 
-        raise ImportError(f"""No default frontend available. Please install pyb2d3-sandbox-ipycanvas for Jupyter notebook support.
+        raise ImportError(f"""No default frontend available. Please install pyb2d3-sandbox-jupyter or pyb2d3-sandbox-ipycanvas for Jupyter notebook support.
 Tracebacks of the import errors:
 {"".join(tracebacks)}""")
