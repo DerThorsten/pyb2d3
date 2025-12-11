@@ -88,7 +88,7 @@ outputs:
       - pyb2d3-sandbox >=${{ version }}
 
   - package:
-      name: pyb2d3-sandbox-ipycanvas
+      name: pyb2d3-sandbox-jupyter
       version: ${{ version }}
     build:
       noarch: python
