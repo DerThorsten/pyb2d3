@@ -57,6 +57,23 @@ if not use_offscreen:
     from .debug_draw_vanilla import IpycanvasDebugDraw
 else:
     from .debug_draw_offscreen import IpycanvasDebugDraw
+    from ipycanvas.offscreen_canvas.offscreen_canvas_core import OffscreenCanvasCore
+
+
+if use_offscreen:
+
+    async def async_initialize(self):
+        pyjs.js.console.log(f"check if canvas {self._canvas_name} is ready.....")
+        c = 0
+        while not self._check_if_ready():
+            await asyncio.sleep(0.25)
+            c += 1
+            if c >= 20:
+                raise RuntimeError(f"Canvas {self._canvas_name} was not created in time.")
+
+        self._canvas = pyjs.js.globalThis[self._canvas_name]
+
+    OffscreenCanvasCore.async_initialize = async_initialize
 
 
 all_frontends = WeakSet()
