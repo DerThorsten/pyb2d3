@@ -2,9 +2,15 @@ cmake_minimum_required(VERSION 3.22)
 project(pyb2d)
 include(FetchContent)
 
+# compile_commands.json for clangd / IDEs
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 
 OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 OPTION(PYB2D3_NO_THREADING "Disable threading support" OFF)
+OPTION(PYB2D3_BATCH_API "Build the numpy batch API (Bodies, Shapes, ...)" ON)
 
 
 # this is only relevant if we are building box2d
@@ -17,7 +23,7 @@ if(FETCH_BOX2D)
     FetchContent_Declare(
         box2d
         GIT_REPOSITORY https://github.com/erincatto/box2d.git
-        GIT_TAG v3.1.1
+        GIT_TAG v3.2.0
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
     )
@@ -43,31 +49,46 @@ else()
     find_package(Python 3.9
         REQUIRED COMPONENTS Interpreter Development.Module
         OPTIONAL_COMPONENTS Development.SABIModule)
-        # Import nanobind through CMake's find_package mechanism
-        find_package(nanobind CONFIG REQUIRED)
-
 endif()
 
-
-
-# find_package(box2d REQUIRED)
+# Locate nanobind's CMake config via the Python interpreter (the approach
+# recommended by the nanobind docs), unless the caller already provided it.
+if(NOT nanobind_DIR AND NOT nanobind_ROOT)
+    execute_process(
+        COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE nanobind_ROOT
+        RESULT_VARIABLE _nanobind_cmake_dir_result)
+    if(NOT _nanobind_cmake_dir_result EQUAL 0)
+        unset(nanobind_ROOT)
+    endif()
+endif()
 find_package(nanobind CONFIG REQUIRED)
 
 
+# one binding file per domain (see src/bind/bind.hpp)
 SET(PY_SOURCES
-    src/main.cpp
-    src/export_box2d_types.cpp
-    src/export_box2d_wrapper_structs.cpp
-    src/export_collision.cpp
-    src/export_math_functions.cpp
-    src/export_batch_api.cpp
-    src/export_world_to_canvas.cpp
-    src/export_extras.cpp
-    src/py_debug_draw.cpp
+    src/bind/module.cpp
+    src/bind/base.cpp
+    src/bind/vec2.cpp
+    src/bind/math.cpp
+    src/bind/collision.cpp
+    src/bind/dynamic_tree.cpp
+    src/bind/defs.cpp
+    src/bind/joint_defs.cpp
+    src/bind/world.cpp
+    src/bind/body.cpp
+    src/bind/shape.cpp
+    src/bind/chain.cpp
+    src/bind/joint.cpp
+    src/bind/events.cpp
+    src/bind/recording.cpp
+    src/bind/debug_draw.cpp
+    src/bind/world_to_canvas.cpp
+    src/bind/extras.cpp
 )
 if(NOT PYB2D3_NO_THREADING)
-    # if not emscripten, add the main.cpp file
-    list(APPEND PY_SOURCES src/export_threadpool.cpp)
+    list(APPEND PY_SOURCES src/bind/threadpool.cpp)
 endif()
 
 
@@ -97,6 +118,9 @@ target_include_directories(_pyb2d3
 if(PYB2D3_NO_THREADING)
     target_compile_definitions(_pyb2d3 PRIVATE PYB2D3_NO_THREADING)
 endif()
+if(NOT PYB2D3_BATCH_API)
+    target_compile_definitions(_pyb2d3 PRIVATE PYB2D3_NO_BATCH_API)
+endif()
 
 # link box2d
 target_link_libraries(_pyb2d3 PRIVATE box2d::box2d)
@@ -122,7 +146,11 @@ endif()
 if(DEFINED SKBUILD)
     message(STATUS "using SKBUILD" ${SKBUILD})
     install(TARGETS _pyb2d3 LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME})
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/module/pyb2d3/ DESTINATION ${SKBUILD_PROJECT_NAME})
+    # skip in-place build products (e.g. a native _pyb2d3.so copied there by a dev build)
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/module/pyb2d3/ DESTINATION ${SKBUILD_PROJECT_NAME}
+        PATTERN "_pyb2d3*.so" EXCLUDE
+        PATTERN "_pyb2d3*.pyd" EXCLUDE
+        PATTERN "__pycache__" EXCLUDE)
 else()
     message(STATUS "not using SKBUILD")
 endif()

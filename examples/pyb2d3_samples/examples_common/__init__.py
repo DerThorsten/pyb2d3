@@ -1,6 +1,7 @@
 from .ragdoll import Ragdoll  # noqa: F401
 from .text import create_boxes_from_text  # noqa: F401
 from .math import truncated_vector_diff, interpolate_color  # noqa: F401
+from .joints import pinned  # noqa: F401
 
 import pyb2d3 as b2d
 

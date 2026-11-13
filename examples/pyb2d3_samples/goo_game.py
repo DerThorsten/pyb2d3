@@ -183,7 +183,7 @@ class Goo(object):
         body_b = other_goo.body
 
         if not self.auto_expand:
-            edge_length = body_a.get_distance_to(body_b.position)
+            edge_length = body_a.distance_to(body_b.position)
         else:
             edge_length = self.proto_edge_length
 

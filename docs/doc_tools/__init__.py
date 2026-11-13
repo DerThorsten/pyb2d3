@@ -10,26 +10,17 @@ docs_root = this_dir.parent
 html_static_path = docs_root / "_static"
 repo_root = docs_root.parent
 examples_dir = repo_root / "examples"
-samples_dir = examples_dir / "pyb2d3_samples"
-companion_packages = repo_root / "companion_packages"
 
-
-# add to sys.path
-sys.path.insert(0, str(samples_dir))
-sys.path.insert(0, str(companion_packages / "pyb2d3_sandbox"))
-sys.path.insert(0, str(companion_packages / "pyb2d3_sandbox_pygame"))
+# the sandbox, its frontends and the samples live in examples/
+sys.path.insert(0, str(examples_dir))
 
 from pyb2d3_sandbox_pygame import PygameFrontendSettings, PygameHeadlessSettings  # noqa: E402
 from pyb2d3_sandbox_pygame.sample_to_video import sample_to_video  # noqa: E402
+import pyb2d3_samples  # noqa: E402
 
 
 github_url = "https://github.com/DerThorsten/pyb2d3"
 github_main_url = f"{github_url}/blob/main"
-
-
-# Add the examples directory to the system path
-sys.path.insert(0, str(examples_dir))
-import pyb2d3_samples  # noqa: E402
 
 
 def create_sample_videos():

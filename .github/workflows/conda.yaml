@@ -14,29 +14,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: mamba-org/setup-micromamba@v2
-        with:
-          environment-file: dev-environment.yaml
-          init-shell: >-
-            bash
-          cache-environment: true
-          post-cleanup: 'all'
+      - uses: prefix-dev/setup-pixi@v0.8.1
 
-      - name: build
-        shell: bash -el {0}
-        run: |
-          export CMAKE_ARGS="-DFETCH_BOX2D=OFF"
-          uv pip install .
+      - name: install
+        run: pixi run install
 
       - name: test
-        shell: bash -el {0}
-        run: |
-          pytest -v
+        run: pixi run python -m pytest tests -v
 
-  raw-cmake:
+  in-place:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
       - name: Checkout repo
@@ -44,28 +31,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: mamba-org/setup-micromamba@v2
-        with:
-          environment-file: dev-environment.yaml
-          init-shell: >-
-            bash
-          cache-environment: true
-          post-cleanup: 'all'
+      - uses: prefix-dev/setup-pixi@v0.8.1
 
-      - name: build
-        shell: bash -el {0}
-        run: |
-          NANOBIND_CMAKE_DIR=$(python -m nanobind --cmake_dir)
-          mkdir -p build
-          cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
-                    -Dnanobind_DIR=$NANOBIND_CMAKE_DIR \
-                    -DFETCH_BOX2D=OFF \
-                    -DPYB2D_LINK_NANOBIND_STATICALLY=OFF \
-
-          cmake --build . --config Release
-
-      - name: test
-        shell: bash -el {0}
-        run: |
-          PYTHONPATH=$(pwd)/src/module  pytest -v
+      - name: build and test
+        run: pixi run test -v

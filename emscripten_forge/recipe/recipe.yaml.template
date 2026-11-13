@@ -1,111 +1,64 @@
+# keep in sync with
+# https://github.com/emscripten-forge/recipes/tree/emscripten-6x/recipes/recipes_wasm/pyb2d3
+# (only the source differs: the local checkout instead of the release tarball)
 context:
-  version: 0.7.0
+  version: 0.11.1
   name: pyb2d3
 
 source:
-  # - url: https://github.com/DerThorsten/pyb2d3/archive/refs/tags/v${{version}}.tar.gz
-  #   sha256: b7dbcf515882255514b665c328d6cb4d73ce37ed1a57cdf3a24add6d36ddc7c5
   path: PATH_PLACEHOLDER_TO_BE_REPLACED
 
 build:
-  number: 9
+  number: 0
 
 outputs:
-  - package:
-      name: pyb2d3
-      version: ${{ version }}
+- package:
+    name: pyb2d3
+    version: ${{ version }}
 
+  build:
+    script: build_pkg.sh
+    files:
+      exclude:
+      - '**/__pycache__/**'
+      - '**/*.pyc'
+    python:
+      skip_pyc_compilation:
+      - '**/*.py'
+
+  requirements:
     build:
-      script: build_pkg.sh
+    - ${{ compiler("cxx") }}
+    - cross-python_${{ target_platform }}
+    - cmake >=4.0
+    - ninja
+    - numpy
+    - nanobind <2.10.2
+    - scikit-build-core
+    - python
+    - pip
+    host:
+    - python-dev
+    - numpy
+    - box2d-static >=3.2.0
+    run:
+    - numpy
+    - python
 
+  tests:
+  - script: pytester
+    files:
+      recipe:
+      - test_pyb2d3.py
     requirements:
       build:
-      - ${{ compiler("cxx") }}
-      - cross-python_emscripten-wasm32
-      - cmake>=4.0
-      - ninja
-      - numpy
-      - nanobind <2.10.2
-      - scikit-build-core
-      - python
-      - pip
-      host:
-      - python
-      - numpy
-      - box2d-static >=3.1.1
-
+      - pytester
       run:
-      - numpy
-      - python
-
-    tests:
-      - script: pytester
-        files:
-          recipe:
-          - test_pyb2d3.py
-        requirements:
-          build:
-          - pytester
-          run:
-          - pytester-run
-
-  - package:
-      name: pyb2d3-sandbox
-      version: ${{ version }}
-    build:
-      noarch: python
-      script:
-      - ${PYTHON} -m pip install companion_packages/pyb2d3_sandbox -vv --prefix ${PREFIX}
+      - pytester-run
+  - script: generic-testing
     requirements:
       build:
-      - ${{ compiler("cxx") }}
-      - cross-python_emscripten-wasm32
-      - python
-      - pip
-      host:
-      - python
-      run:
-      - pyb2d3 >=${{ version }}
-
-  - package:
-      name: pyb2d3-sandbox-ipycanvas
-      version: ${{ version }}
-    build:
-      noarch: python
-      script:
-      - ${PYTHON} -m pip install companion_packages/pyb2d3_sandbox_ipycanvas -vv --prefix ${PREFIX}
-    requirements:
-      build:
-      - ${{ compiler("cxx") }}
-      - cross-python_emscripten-wasm32
-      - python
-      - pip
-      host:
-      - python
-      run:
-      - ipycanvas >=0.14.1
-      - pyb2d3 >=${{ version }}
-      - pyb2d3-sandbox >=${{ version }}
-
-  - package:
-      name: pyb2d3-sandbox-jupyter
-      version: ${{ version }}
-    build:
-      noarch: python
-      script:
-      - ${PYTHON} -m pip install companion_packages/pyb2d3_sandbox_jupyter -vv --prefix ${PREFIX}
-    requirements:
-      build:
-      - ${{ compiler("cxx") }}
-      - cross-python_emscripten-wasm32
-      - python
-      - pip
-      host:
-      - python
-      run:
-      - anywidget >=0.9.21
-      - pyb2d3 >=${{ version }}
-      - pyb2d3-sandbox >=${{ version }}
+      - generic-testing
 
 about:
   license: MIT

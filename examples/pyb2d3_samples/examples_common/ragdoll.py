@@ -167,7 +167,7 @@ class Ragdoll(object):
         joint_def.enable_spring = hertz > 0.0
         joint_def.hertz = hertz
         joint_def.damping_ratio = damping_ratio
-        joint_def.draw_size = draw_size
+        joint_def.draw_scale = draw_size
         bone.joint = world.create_joint(joint_def)
 
         # head
@@ -198,7 +198,7 @@ class Ragdoll(object):
         joint_def.enable_spring = hertz > 0.0
         joint_def.hertz = hertz
         joint_def.damping_ratio = damping_ratio
-        joint_def.draw_size = draw_size
+        joint_def.draw_scale = draw_size
         bone.joint = world.create_joint(joint_def)
 
         # upper left leg
@@ -231,7 +231,7 @@ class Ragdoll(object):
         joint_def.enable_spring = hertz > 0.0
         joint_def.hertz = hertz
         joint_def.damping_ratio = damping_ratio
-        joint_def.draw_size = draw_size
+        joint_def.draw_scale = draw_size
         bone.joint = world.create_joint(joint_def)
 
         points = [
@@ -275,7 +275,7 @@ class Ragdoll(object):
         joint_def.enable_spring = hertz > 0.0
         joint_def.hertz = hertz
         joint_def.damping_ratio = damping_ratio
-        joint_def.draw_size = draw_size
+        joint_def.draw_scale = draw_size
         bone.joint = world.create_joint(joint_def)
 
         # upper right leg
@@ -308,7 +308,7 @@ class Ragdoll(object):
         joint_def.enable_spring = hertz > 0.0
         joint_def.hertz = hertz
         joint_def.damping_ratio = damping_ratio
-        joint_def.draw_size = draw_size
+        joint_def.draw_scale = draw_size
         bone.joint = world.create_joint(joint_def)
 
         # lower right leg
@@ -338,7 +338,7 @@ class Ragdoll(object):
         joint_def.enable_spring = hertz > 0.0
         joint_def.hertz = hertz
         joint_def.damping_ratio = damping_ratio
-        joint_def.draw_size = draw_size
+        joint_def.draw_scale = draw_size
         bone.joint = world.create_joint(joint_def)
 
         # upper left arm
@@ -367,7 +367,7 @@ class Ragdoll(object):
         joint_def.enable_spring = hertz > 0.0
         joint_def.hertz = hertz
         joint_def.damping_ratio = damping_ratio
-        joint_def.draw_size = draw_size
+        joint_def.draw_scale = draw_size
         bone.joint = world.create_joint(joint_def)
 
         # lower left arm
@@ -388,7 +388,8 @@ class Ragdoll(object):
         joint_def.body_b = bone.body
         joint_def.local_anchor_a = joint_def.body_a.local_point(pivot)
         joint_def.local_anchor_b = joint_def.body_b.local_point(pivot)
-        joint_def.reference_angle = 0.25 * math.pi
+        # box2d >= 3.2: the reference angle is the rotation of the local frame
+        joint_def.local_frame_a = b2d.transform(p=joint_def.local_anchor_a, q=0.25 * math.pi)
         joint_def.enable_limit = enable_limit
         joint_def.lower_angle = -0.2 * math.pi
         joint_def.upper_angle = 0.3 * math.pi
@@ -397,7 +398,7 @@ class Ragdoll(object):
         joint_def.enable_spring = hertz > 0.0
         joint_def.hertz = hertz
         joint_def.damping_ratio = damping_ratio
-        joint_def.draw_size = draw_size
+        joint_def.draw_scale = draw_size
         bone.joint = world.create_joint(joint_def)
 
         # upper right arm
@@ -426,7 +427,7 @@ class Ragdoll(object):
         joint_def.enable_spring = hertz > 0.0
         joint_def.hertz = hertz
         joint_def.damping_ratio = damping_ratio
-        joint_def.draw_size = draw_size
+        joint_def.draw_scale = draw_size
         bone.joint = world.create_joint(joint_def)
 
         # lower right arm
@@ -447,7 +448,8 @@ class Ragdoll(object):
         joint_def.body_b = bone.body
         joint_def.local_anchor_a = joint_def.body_a.local_point(pivot)
         joint_def.local_anchor_b = joint_def.body_b.local_point(pivot)
-        joint_def.reference_angle = 0.25 * math.pi
+        # box2d >= 3.2: the reference angle is the rotation of the local frame
+        joint_def.local_frame_a = b2d.transform(p=joint_def.local_anchor_a, q=0.25 * math.pi)
         joint_def.enable_limit = enable_limit
         joint_def.lower_angle = -0.2 * math.pi
         joint_def.upper_angle = 0.3 * math.pi
@@ -456,7 +458,7 @@ class Ragdoll(object):
         joint_def.enable_spring = hertz > 0.0
         joint_def.hertz = hertz
         joint_def.damping_ratio = damping_ratio
-        joint_def.draw_size = draw_size
+        joint_def.draw_scale = draw_size
         bone.joint = world.create_joint(joint_def)
 
     def destroy(self):

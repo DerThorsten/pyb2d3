@@ -51,17 +51,30 @@ class NoopDebugDraw(FrontendDebugDraw):
     def draw_point(self, p, size, color):
         pass
 
-    def draw_string(self, x, y, string):
+    def draw_string(self, p, string, color):
         pass
 
     def draw_aabb(self, aabb, color):
         pass
 
 
+def make_headless_debug_draw(transform, canvas_shape):
+    """pygame's debug draw on an off-screen surface, so the samples' drawing code (and the
+    frontend's) really runs; a no-op debug draw if pygame is not installed."""
+    try:
+        import pygame
+        from pyb2d3_sandbox_pygame.pygame_frontend import PygameDebugDraw
+    except ImportError:
+        return NoopDebugDraw()
+    pygame.font.init()
+    return PygameDebugDraw(transform=transform, screen=pygame.Surface(canvas_shape))
+
+
 class HeadlessTestFrontend(FrontendBase):
     @dataclass
     class Settings(FrontendBase.Settings):
         world_time_limit: float = 5.0
+        draw_every: int = 10
 
     def __init__(self, settings):
         super().__init__(settings)
@@ -74,8 +87,7 @@ class HeadlessTestFrontend(FrontendBase):
             offset=(0, 0),
         )
 
-        # this debug draw is a no-op, since we are in headless mode
-        self.debug_draw = NoopDebugDraw()
+        self.debug_draw = make_headless_debug_draw(self.transform, self.settings.canvas_shape)
         self.debug_draw.draw_shapes = settings.debug_draw.draw_shapes
         self.debug_draw.draw_joints = settings.debug_draw.draw_joints
 
@@ -99,7 +111,9 @@ class HeadlessTestFrontend(FrontendBase):
                 break
             self.fire_random_event()
             self.update_physics_single_step()
-            self.draw_physics()
+            # drawing every step adds little coverage but quadruples the runtime
+            if i % self.settings.draw_every == 0:
+                self.draw_physics()
 
         self.sample.post_run()
 

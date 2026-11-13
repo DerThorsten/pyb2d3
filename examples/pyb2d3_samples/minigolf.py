@@ -3,7 +3,7 @@ import pyb2d3 as b2d
 import numpy as np
 from enum import Enum
 from pyb2d3_sandbox import SampleBase
-from examples_common.math import truncated_vector_diff, interpolate_color
+from .examples_common.math import truncated_vector_diff, interpolate_color
 
 
 class GolfState(Enum):

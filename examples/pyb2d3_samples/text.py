@@ -1,7 +1,7 @@
 # +
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase
-from examples_common import create_boxes_from_text
+from .examples_common import create_boxes_from_text
 
 
 class Text(SampleBase):
