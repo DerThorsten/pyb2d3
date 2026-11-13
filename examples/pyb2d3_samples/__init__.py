@@ -1,4 +1,8 @@
-from pyb2d3_sandbox import register_sample
+import sys
+
+
+from pyb2d3_sandbox import SampleBase,SampleRegistry,register_sample,registry  # noqa: F401
+
 
 from .mirror import Mirror
 from .newtons_cradle import NewtonsCradle
@@ -58,4 +62,27 @@ all_examples = [cls for samples in _categories.values() for cls, _ in samples]
 del _category, _samples, _cls, _name
 
 # ports of box2d's own samples (register themselves under box2d's category names)
-from . import box2d  # noqa: E402, F401
+from . import box2d
+
+
+def iterate_module_classes(module):
+    """Iterate over all classes in a module."""
+    for name, obj in module.__dict__.items():
+        # if the object is a class, check if it is a subclass of box2d.Sample and yield it
+        if isinstance(obj, type) and issubclass(obj, SampleBase) and obj is not SampleBase:
+            yield obj
+        # if the object is a module, recursively iterate over its classes
+        elif isinstance(obj, type(sys)) and obj.__name__.startswith(module.__name__):
+            yield from iterate_module_classes(obj)
+
+
+# get all classes from box2d and add them to all_examples
+# itertate over all classes in the box2d module
+for cls in iterate_module_classes(box2d):
+
+    # only take those whoe are in the registry (i.e. those that have been registered with a category and name)
+    if cls in registry:
+
+        all_examples.append(cls)
+
+print(f"Registered {len(all_examples)} examples in pyb2d3_samples (including box2d samples).")

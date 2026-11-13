@@ -53,6 +53,9 @@ class SampleRegistry(object):
     def __len__(self):
         return sum(len(entries) for entries in self._categories.values())
 
+    def __contains__(self, cls):
+        return any(entry.cls is cls for entry in self)
+
     def get(self, key):
         """Entry for 'Category/Name'."""
         category, _, name = key.partition("/")

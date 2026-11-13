@@ -17,7 +17,7 @@ Python bindings for `Box2D <https://box2d.org>`_ v3.2, the 2D physics engine.
    :language: python
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    src/installation.rst
