@@ -54,7 +54,7 @@ struct CapsuleBuilderWithTransform
         for (std::size_t i = 0; i < nseg; ++i)
         {
             float theta = angle + (B2_PI * i) / nseg;
-            b2Vec2 point = center1 + b2Vec2{radius * std::cosf(theta), radius * std::sinf(theta)};
+            b2Vec2 point = center1 + b2Vec2{radius * std::cos(theta), radius * std::sin(theta)};
             // transform the point to canvas coordinates
             const auto cpoint = transform.world_to_canvas(point);
 
@@ -67,7 +67,7 @@ struct CapsuleBuilderWithTransform
         for (std::size_t i = 0; i < nseg; ++i)
         {
             float theta = angle + (B2_PI * i) / nseg + B2_PI;
-            b2Vec2 point = center2 + b2Vec2{radius * std::cosf(theta), radius * std::sinf(theta)};
+            b2Vec2 point = center2 + b2Vec2{radius * std::cos(theta), radius * std::sin(theta)};
             // transform the point to canvas coordinates
             const auto cpoint = transform.world_to_canvas(point);
 

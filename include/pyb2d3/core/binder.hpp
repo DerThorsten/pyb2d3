@@ -177,7 +177,6 @@ namespace pyb2d3
     struct Batch
     {
         using entity_type = T;
-        using id_type = typename T::id_type;
 
         std::vector<uint64_t> ids;
 
@@ -186,7 +185,10 @@ namespace pyb2d3
             return ids.size();
         }
 
-        id_type id(std::size_t i) const
+        // `auto`, not `typename T::id_type`: MSVC instantiates nb::class_<Batch<T>> even in
+        // Binder's discarded `if constexpr (with_batch ...)` branches, i.e. also for types
+        // without a batch class and without id_type (PyDynamicTree, PyRecording, ...)
+        auto id(std::size_t i) const
         {
             return T::int_to_id(ids[i]);
         }
