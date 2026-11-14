@@ -25,9 +25,20 @@ cp    "$REPO_ROOT/LICENSE"              "$RECIPE_SRC_DIR/"
 cp    "$REPO_ROOT/pyproject.toml"       "$RECIPE_SRC_DIR/"
 
 
-# replace PATH_PLACEHOLDER_TO_BE_REPLACED in the recipe.yaml.template with the actual path
-# (ie the value of RECIPE_SRC_DIR)
-sed "s|PATH_PLACEHOLDER_TO_BE_REPLACED|$RECIPE_SRC_DIR|g" "$RECIPE_YAML_TEMPLATE" > "$RECIPE_YAML"
+# the package version = the version of the sources (pyproject.toml): a stale
+# version in the recipe lets a solver prefer a newer published pyb2d3
+VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' "$REPO_ROOT/pyproject.toml" | head -n 1)
+if [ -z "$VERSION" ]; then
+    echo "could not read the version from $REPO_ROOT/pyproject.toml"
+    exit 1
+fi
+echo "pyb2d3 version: $VERSION"
+
+# replace the placeholders in the recipe.yaml.template with the actual path
+# (ie the value of RECIPE_SRC_DIR) and the version
+sed -e "s|PATH_PLACEHOLDER_TO_BE_REPLACED|$RECIPE_SRC_DIR|g" \
+    -e "s|VERSION_PLACEHOLDER_TO_BE_REPLACED|$VERSION|g" \
+    "$RECIPE_YAML_TEMPLATE" > "$RECIPE_YAML"
 
 
 # emscripten-forge 6x: packages from the prefix channel emscripten-forge/6x,

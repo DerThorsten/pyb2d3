@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>pyb2d3 sandbox</title>
+  <style>
+    :root { --bg: #1b1d21; --panel: #24272d; --line: #353941; --text: #d9dce1; --muted: #8b919b; --accent: #5aa9e6; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+                 font: 13px/1.4 system-ui, sans-serif; }
+    #app { display: flex; height: 100%; }
+    #panel { width: 280px; flex: none; overflow-y: auto; background: var(--panel);
+             border-right: 1px solid var(--line); padding: 8px 12px; }
+    #stage { position: relative; flex: 1; min-width: 0; }
+    /* the WebGL drawing buffer follows the CSS size (frontend: _resize) */
+    #canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+    #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .pyb2d3-label { position: absolute; white-space: pre; font: 12px monospace; }
+    .pyb2d3-section { border-bottom: 1px solid var(--line); padding: 6px 0 10px; }
+    .pyb2d3-section h3 { margin: 4px 0 8px; font-size: 12px; text-transform: uppercase;
+                         letter-spacing: .05em; color: var(--muted); }
+    .pyb2d3-row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+    .pyb2d3-stats { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .pyb2d3-slider { display: grid; grid-template-columns: 80px 1fr 52px; gap: 6px;
+                     align-items: center; margin: 4px 0; }
+    .pyb2d3-value { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .pyb2d3-check { display: flex; gap: 6px; align-items: center; margin: 3px 0; }
+    .pyb2d3-wide { width: 100%; margin: 3px 0; }
+    select, button { background: #2e3239; color: var(--text); border: 1px solid var(--line);
+                     border-radius: 4px; padding: 4px 8px; font: inherit; }
+    select { width: 100%; }
+    button:hover:not(:disabled) { border-color: var(--accent); }
+    button:disabled { opacity: .45; }
+    input[type=range] { width: 100%; accent-color: var(--accent); }
+    #status { position: absolute; left: 12px; bottom: 8px; color: var(--muted); white-space: pre-wrap; }
+    #status.error { color: #ff7b72; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="panel"></div>
+    <div id="stage">
+      <!-- tabindex: keyboard events reach the canvas after a click -->
+      <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+      <div id="labels"></div>
+      <div id="status">loading…</div>
+    </div>
+  </div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

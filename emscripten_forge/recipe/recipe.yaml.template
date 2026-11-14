@@ -2,14 +2,17 @@
 # https://github.com/emscripten-forge/recipes/tree/emscripten-6x/recipes/recipes_wasm/pyb2d3
 # (only the source differs: the local checkout instead of the release tarball)
 context:
-  version: 0.11.1
+  # filled in by scripts/build_emscripten_forge_pkg.sh from pyproject.toml
+  version: VERSION_PLACEHOLDER_TO_BE_REPLACED
   name: pyb2d3
 
 source:
   path: PATH_PLACEHOLDER_TO_BE_REPLACED
 
 build:
-  number: 0
+  # local builds: a build number above the published one, so a solver
+  # (e.g. the browser sandbox page with this output as channel) prefers them
+  number: 1000
 
 outputs:
 - package:

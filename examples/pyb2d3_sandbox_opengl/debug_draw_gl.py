@@ -26,9 +26,9 @@ from OpenGL.GL import *  # noqa: F403
 from pyb2d3 import Vec2, AABB
 from .draw import GLBackground, GLCircles, GLPoints, GLLines
 from .draw import GLSolidPolygons, GLSolidCircles, GLSolidCapsules
-from imgui_bundle import imgui
 import numpy as np
 import time
+import OpenGL
 
 OpenGL.ERROR_CHECKING = False
 
@@ -143,11 +143,24 @@ class Camera:
 ensure_hex = b2d.ensure_hex_color
 
 
+def draw_text_imgui(screen_pos, text, rgb):
+    """Draw a debug string with imgui (into the current imgui window)."""
+    from imgui_bundle import imgui
+
+    imgui.set_cursor_screen_pos((screen_pos.x, screen_pos.y))
+    imgui.push_style_color(imgui.Col_.text, (*rgb, 1.0))
+    imgui.text(text)
+    imgui.pop_style_color()
+
+
 class GLDebugDraw(FrontendDebugDraw):
-    def __init__(self, camera):
+    def __init__(self, camera, draw_text=draw_text_imgui):
+        """`draw_text(screen_pos, text, (r, g, b))` draws the debug strings
+        (default: imgui; the browser frontend uses HTML labels)."""
         super().__init__()
 
         self.camera = camera
+        self.draw_text = draw_text
         self.background = GLBackground(self.camera)
         self.circles = GLCircles(self.camera)
         self.solid_circles = GLSolidCircles(self.camera)
@@ -178,10 +191,7 @@ class GLDebugDraw(FrontendDebugDraw):
             r = ((color >> 16) & 0xFF) / 255.0
             g = ((color >> 8) & 0xFF) / 255.0
             b = (color & 0xFF) / 255.0
-            imgui.set_cursor_screen_pos((screen_pos.x, screen_pos.y))
-            imgui.push_style_color(imgui.Col_.text, (r, g, b, 1.0))
-            imgui.text(text)
-            imgui.pop_style_color()
+            self.draw_text(screen_pos, text, (r, g, b))
         self.debug_strings.clear()
 
         # Calculate and update draw performance metrics
