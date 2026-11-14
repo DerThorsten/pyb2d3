@@ -4,7 +4,7 @@ Catches errors the headless tests cannot: the OpenGL debug draw and the imgui wi
 window. Exceptions while stepping, drawing or showing a sample's widgets are recorded per
 sample and the run moves on to the next one; exits with 1 if any sample failed.
 
-    python examples/opengl_smoke_test.py [--frames N]
+    python examples/opengl_smoke_test.py [--frames N] [--category Restitution]
 """
 
 import argparse
@@ -75,9 +75,13 @@ def make_driver(frames_per_sample, entries, errors, visited):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--frames", type=int, default=30, help="frames per sample (default 30)")
+    parser.add_argument("--category", help="only the samples of this category, e.g. Restitution")
     args = parser.parse_args()
 
-    entries = list(registry)
+    # a category's samples are consecutive in the registry, so next_sample walks through them
+    entries = [entry for entry in registry if args.category in (None, entry.category)]
+    if not entries:
+        sys.exit(f"no samples in category {args.category!r}, categories: {registry.categories()}")
     errors, visited = {}, []
     driver = make_driver(args.frames, entries, errors, visited)
     run_sample_browser(

@@ -1,5 +1,7 @@
+#include <array>
 #include <cmath>
 #include <optional>
+#include <type_traits>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -117,68 +119,105 @@ namespace pyb2d3::bind
             );
         }
 
-        // box2d's friction / restitution callbacks have no context: they are global
-        nb::object*& friction_callback()
+        // ---------------------------------------------------------------------------
+        // Friction / restitution mixing callbacks.
+        //
+        // box2d stores them per world, but calls them without any context (not even the
+        // world): `float f(float a, uint64_t materialA, float b, uint64_t materialB)`. A C
+        // function pointer cannot carry data, so every world slot (the world id's index,
+        // at most B2_MAX_WORLDS) gets its own compiled trampoline: mixing_trampoline<K, I>
+        // calls the python callback stored for world I. The trampolines only forward their
+        // index, the work is done once in call_mixing.
+        // ---------------------------------------------------------------------------
+        enum class Mixing
         {
-            static nb::object* fn = nullptr;
-            return fn;
-        }
+            friction,
+            restitution
+        };
 
-        nb::object*& restitution_callback()
+        struct MixingCallbacks
         {
-            static nb::object* fn = nullptr;
-            return fn;
-        }
+            nb::object friction;
+            nb::object restitution;
 
-        // box2d's default mixing rules, used as fallback if the python callback fails
-        float default_friction(float a, float b)
-        {
-            return std::sqrt(a * b);
-        }
-
-        float default_restitution(float a, float b)
-        {
-            return a > b ? a : b;
-        }
-
-        // the slot is global but installed per world: a world may still use the trampoline
-        // after another world cleared the callback, fall back to the default rule then
-        float friction_trampoline(float fa, uint64_t ma, float fb, uint64_t mb)
-        {
-            if (friction_callback() == nullptr)
+            nb::object& get(Mixing kind)
             {
-                return default_friction(fa, fb);
+                return kind == Mixing::friction ? friction : restitution;
+            }
+        };
+
+        // never destroyed: the objects are released by world destroy / at exit, not after
+        // the interpreter is gone
+        std::array<MixingCallbacks, B2_MAX_WORLDS>& mixing_callbacks()
+        {
+            static auto* slots = new std::array<MixingCallbacks, B2_MAX_WORLDS>();
+            return *slots;
+        }
+
+        int world_index(b2WorldId id)
+        {
+            return id.index1 - 1;
+        }
+
+        float call_mixing(Mixing kind, int world, float a, uint64_t material_a, float b, uint64_t material_b)
+        {
+            // box2d's default mixing rules, also the fallback if the python callback fails
+            const float fallback = kind == Mixing::friction ? std::sqrt(a * b) : (a > b ? a : b);
+            nb::object& fn = mixing_callbacks()[world].get(kind);
+            if (!fn.is_valid())
+            {
+                return fallback;
             }
             return call_python(
-                default_friction(fa, fb),
-                "friction callback",
+                fallback,
+                kind == Mixing::friction ? "friction callback" : "restitution callback",
                 [&]
                 {
-                    return nb::cast<float>((*friction_callback())(fa, ma, fb, mb));
+                    return nb::cast<float>(fn(a, material_a, b, material_b));
                 }
             );
         }
 
-        float restitution_trampoline(float ra, uint64_t ma, float rb, uint64_t mb)
+        template <Mixing K, int I>
+        float mixing_trampoline(float a, uint64_t material_a, float b, uint64_t material_b)
         {
-            if (restitution_callback() == nullptr)
-            {
-                return default_restitution(ra, rb);
-            }
-            return call_python(
-                default_restitution(ra, rb),
-                "restitution callback",
-                [&]
-                {
-                    return nb::cast<float>((*restitution_callback())(ra, ma, rb, mb));
-                }
-            );
+            return call_mixing(K, I, a, material_a, b, material_b);
         }
 
-        void set_global_callback(nb::object*& slot, nb::object fn)
+        // friction and restitution callbacks share the signature
+        static_assert(std::is_same_v<b2FrictionCallbackFcn, b2RestitutionCallbackFcn>);
+
+        template <Mixing K, int... I>
+        constexpr std::array<b2FrictionCallbackFcn*, sizeof...(I)> make_trampolines(std::integer_sequence<int, I...>)
         {
-            delete slot;
-            slot = fn.is_none() ? nullptr : new nb::object(std::move(fn));
+            return {&mixing_trampoline<K, I>...};
+        }
+
+        // trampolines[world index]
+        template <Mixing K>
+        constexpr auto trampolines = make_trampolines<K>(std::make_integer_sequence<int, B2_MAX_WORLDS>());
+
+        void set_mixing_callback(Mixing kind, b2WorldId world, nb::object fn)
+        {
+            const int index = world_index(world);
+            const bool clear = fn.is_none();
+            mixing_callbacks()[index].get(kind) = clear ? nb::object() : std::move(fn);
+            b2FrictionCallbackFcn* trampoline = clear ? nullptr
+                                                      : (kind == Mixing::friction ? trampolines<Mixing::friction>
+                                                                                  : trampolines<Mixing::restitution>)[index];
+            if (kind == Mixing::friction)
+            {
+                b2World_SetFrictionCallback(world, trampoline);
+            }
+            else
+            {
+                b2World_SetRestitutionCallback(world, trampoline);
+            }
+        }
+
+        void release_mixing_callbacks(b2WorldId world)
+        {
+            mixing_callbacks()[world_index(world)] = MixingCallbacks{};
         }
 
         // ---------------------------------------------------------------------------
@@ -212,13 +251,12 @@ namespace pyb2d3::bind
 
     void export_world(nb::module_& m)
     {
-        // release the global mixing callbacks before interpreter shutdown: a callable still
-        // installed at exit would otherwise keep python objects alive past finalization
+        // release the mixing callbacks of worlds still alive at interpreter shutdown: the
+        // never-destroyed slots would otherwise keep python objects alive past finalization
         nb::module_::import_("atexit").attr("register")(nb::cpp_function(
             []
             {
-                set_global_callback(friction_callback(), nb::none());
-                set_global_callback(restitution_callback(), nb::none());
+                mixing_callbacks().fill(MixingCallbacks{});
             }
         ));
 
@@ -304,6 +342,12 @@ namespace pyb2d3::bind
                [](WorldView& self)
                {
                    release_step_callbacks(self.id);
+                   // slots are per world index: a stale handle must not clear the callbacks of
+                   // a newer world that reuses its index
+                   if (b2World_IsValid(self.id))
+                   {
+                       release_mixing_callbacks(self.id);
+                   }
                    self.Destroy();
                }
         )
@@ -458,32 +502,24 @@ namespace pyb2d3::bind
                 "set_friction_callback",
                 [](WorldView& self, nb::object fn)
                 {
-                    const bool clear = fn.is_none();
-                    set_global_callback(friction_callback(), std::move(fn));
-                    b2World_SetFrictionCallback(self.id, clear ? nullptr : friction_trampoline);
+                    set_mixing_callback(Mixing::friction, self.id, std::move(fn));
                 },
                 nb::arg("callback").none(),
-                "Set the friction mixing callback ``f(friction_a, material_a, friction_b, material_b) -> float``\n"
-                "(``material_*`` are the shapes' ``surface_material.user_material_id``). ``None`` restores\n"
-                "box2d's default rule (``sqrt(friction_a * friction_b)``) for this world.\n\n"
-                "Warning: box2d passes no context (not even the world) to this callback, so pyb2d3 keeps a\n"
-                "single python callback shared by all worlds: setting it on one world replaces it for every\n"
-                "world that has one installed, and clearing it makes those worlds fall back to the default\n"
-                "rule. For per world rules, encode the world in ``user_material_id`` and branch on it."
+                "Set the friction mixing callback of this world\n"
+                "``f(friction_a, material_a, friction_b, material_b) -> float`` (``material_*`` are the\n"
+                "shapes' ``surface_material.user_material_id``). ``None`` restores box2d's default rule\n"
+                "(``sqrt(friction_a * friction_b)``). Called during ``step``, keep it cheap."
             )
             .def(
                 "set_restitution_callback",
                 [](WorldView& self, nb::object fn)
                 {
-                    const bool clear = fn.is_none();
-                    set_global_callback(restitution_callback(), std::move(fn));
-                    b2World_SetRestitutionCallback(self.id, clear ? nullptr : restitution_trampoline);
+                    set_mixing_callback(Mixing::restitution, self.id, std::move(fn));
                 },
                 nb::arg("callback").none(),
-                "Set the restitution mixing callback ``f(restitution_a, material_a, restitution_b, material_b)\n"
-                "-> float``. ``None`` restores box2d's default rule (``max(restitution_a, restitution_b)``).\n\n"
-                "Warning: like the friction callback this is a single python callback shared by all worlds\n"
-                "(see ``set_friction_callback``)."
+                "Set the restitution mixing callback of this world\n"
+                "``f(restitution_a, material_a, restitution_b, material_b) -> float``. ``None`` restores\n"
+                "box2d's default rule (``max(restitution_a, restitution_b)``). Called during ``step``."
             )
 
             // ---- snapshots / recording ---------------------------------------------------------

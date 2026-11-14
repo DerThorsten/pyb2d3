@@ -50,7 +50,8 @@ def public_functions(include_dir):
 
 def binding_sources():
     files = list((REPO / "src" / "bind").glob("*.cpp")) + list((REPO / "src" / "bind").glob("*.hpp"))
-    files += list((REPO / "include" / "pyb2d3").rglob("*.hpp"))
+    # the generated docstrings mention every documented function, they don't bind anything
+    files += [f for f in (REPO / "include" / "pyb2d3").rglob("*.hpp") if "generated" not in f.parts]
     return "\n".join(f.read_text() for f in files)
 
 

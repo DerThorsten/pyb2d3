@@ -32,9 +32,14 @@ where id ist an opaque handle to a joint.
   sandbox core `pyb2d3_sandbox`, the frontends `pyb2d3_sandbox_opengl` / `pyb2d3_sandbox_pygame`
   (pygame also renders the docs videos), the samples `pyb2d3_samples` and in
   `pyb2d3_samples/box2d` the ports of box2d's sample browser (one module per `sample_*.cpp`).
-- `pixi.toml` is the dev environment and task runner: `pixi run build|test|install|docs|
+- `pixi.toml` is the dev environment and task runner: `pixi run build|test|install|wheel|test-installed|docs|
   docs-quick|docs-serve|sandbox|sandbox-pygame|smoke-opengl|emscripten`. `smoke-opengl` runs every sample
   in the real OpenGL frontend (the headless tests draw with pygame, OpenGL needs a window).
+- Docstrings are generated from box2d's `///` header comments: `pixi run docstrings`
+  (scripts/generate_docstrings.py) writes `include/pyb2d3/generated/docstrings.hpp`
+  (`docs::doc<&b2Fn>`, attached by `Binder`; direct `m.def(..., &b2Fn, ...)` bindings pass it as
+  last argument) and `src/module/pyb2d3/_docstrings.py` (struct / field docs). Never edit them by
+  hand; rerun after adding bindings (`tests/test_docstrings.py` checks they are current).
 - No repetition: shared behaviour goes into base classes / binder helpers
   (e.g. `bind_spring`, `bind_limit`, `bind_motor` in `src/bind/joint.cpp`).
 

@@ -8,6 +8,7 @@
 #include <nanobind/stl/string.h>
 
 #include "bind.hpp"
+#include "pyb2d3/generated/docstrings.hpp"
 
 namespace pyb2d3::bind
 {
@@ -64,16 +65,21 @@ namespace pyb2d3::bind
         m.attr("TIME_TO_SLEEP") = B2_TIME_TO_SLEEP;
 
         m.def("get_version", &b2GetVersion, "Version of the box2d C library pyb2d3 was built against.");
-        m.def("is_double_precision", &b2IsDoublePrecision);
-        m.def("is_avx2_available", &b2IsAVX2Available);
+        m.def("is_double_precision", &b2IsDoublePrecision, docs::doc<&b2IsDoublePrecision>);
+        m.def("is_avx2_available", &b2IsAVX2Available, docs::doc<&b2IsAVX2Available>);
         m.def("get_byte_count", &b2GetByteCount, "Bytes currently allocated by box2d.");
 
-        m.def("get_ticks", &b2GetTicks);
-        m.def("get_milliseconds", &b2GetMilliseconds, nb::arg("ticks"));
-        m.def("yield_thread", &b2Yield);
+        m.def("get_ticks", &b2GetTicks, docs::doc<&b2GetTicks>);
+        m.def("get_milliseconds", &b2GetMilliseconds, nb::arg("ticks"), docs::doc<&b2GetMilliseconds>);
+        m.def("yield_thread", &b2Yield, docs::doc<&b2Yield>);
 
-        m.def("set_length_units_per_meter", &b2SetLengthUnitsPerMeter, nb::arg("length_units"));
-        m.def("get_length_units_per_meter", &b2GetLengthUnitsPerMeter);
+        m.def(
+            "set_length_units_per_meter",
+            &b2SetLengthUnitsPerMeter,
+            nb::arg("length_units"),
+            docs::doc<&b2SetLengthUnitsPerMeter>
+        );
+        m.def("get_length_units_per_meter", &b2GetLengthUnitsPerMeter, docs::doc<&b2GetLengthUnitsPerMeter>);
         // colors are plain 0xRRGGBB ints everywhere in the python api
         m.def(
             "get_graph_color",

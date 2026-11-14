@@ -951,3 +951,22 @@ class DebugDraw(DebugDrawBase):
 
     def draw_aabb(self, aabb, color):
         pass
+
+
+def _apply_box2d_docs():
+    """Docs of the box2d structs and their fields, generated from box2d's header comments
+    (scripts/generate_docstrings.py). Functions get theirs when they are bound in C++."""
+    from ._docstrings import CLASS_DOCS, FIELD_DOCS
+
+    for name, doc in CLASS_DOCS.items():
+        cls = getattr(_pyb2d3, name, None)
+        if isinstance(cls, type) and not cls.__doc__:
+            cls.__doc__ = doc
+    for (name, attr), doc in FIELD_DOCS.items():
+        prop = getattr(_pyb2d3, name, type).__dict__.get(attr)
+        if isinstance(prop, property):
+            prop.__doc__ = doc
+
+
+_apply_box2d_docs()
+del _apply_box2d_docs

@@ -4,15 +4,13 @@ requires = ["scikit-build-core", "nanobind"]
 
 [project]
 classifiers = [
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 description = "python box2d bindings for box2d >= 3.2"
 name = "pyb2d3"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 version = "0.11.1"
 
 license = "MIT"
@@ -28,7 +26,7 @@ dependencies = [
 
 [tool.scikit-build]
 cmake.source-dir = "."
-sdist.exclude = [".pixi"]
+sdist.exclude = [".pixi", ".github", "CLAUDE.md", "todos.md"]
 wheel.packages = ["pyb2d3"]
 # # Build stable ABI wheels for CPython 3.12+
 wheel.py-api = "cp312"
@@ -55,19 +53,20 @@ line-length = 100
 
 [tool.cibuildwheel]
 
+# one stable ABI wheel (cp312-abi3) per platform, which cibuildwheel reuses and tests on
+# 3.13 and 3.14
 build = [
-  "cp39-*",
-  "cp310-*",
-  "cp311-*",
   "cp312-*",
-  "cp313-*"
+  "cp313-*",
+  "cp314-*",
 ]
+skip = ["*t-*"]  # free-threaded builds: no stable ABI, not supported yet
 
 # Necessary to see build output from the actual compilation
 build-verbosity = 1
 
-# run pytest to ensure that the package was correctly built
-test-command = "pytest {project}"
+# run the tests against the built wheel (without the repo's verbose pytest options)
+test-command = "pytest {project}/tests -q -o addopts="
 test-requires = [
   "pytest",
   "pillow"

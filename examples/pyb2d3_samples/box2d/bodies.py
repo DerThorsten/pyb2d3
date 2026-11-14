@@ -167,11 +167,6 @@ class Weeble(Box2dSample):
             )
         )
 
-    def post_run(self):
-        # the mixing callbacks are global in pyb2d3, don't leak them into the next sample
-        self.world.set_friction_callback(None)
-        self.world.set_restitution_callback(None)
-
     def teleport(self):
         self.weeble.set_transform((0, 5), b2d.make_rot(0.95 * math.pi))
 

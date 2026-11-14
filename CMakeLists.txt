@@ -44,9 +44,8 @@ if(EMSCRIPTEN)
 
     find_package(Python COMPONENTS Interpreter Development REQUIRED)
 else()
-    # Find Python
-
-    find_package(Python 3.9
+    # Find Python (keep the minimum in sync with requires-python in pyproject.toml)
+    find_package(Python 3.12
         REQUIRED COMPONENTS Interpreter Development.Module
         OPTIONAL_COMPONENTS Development.SABIModule)
 endif()
@@ -125,11 +124,15 @@ endif()
 # link box2d
 target_link_libraries(_pyb2d3 PRIVATE box2d::box2d)
 
-# after each build, copy the extension to the python package directory
-add_custom_command(TARGET _pyb2d3 POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_pyb2d3> ${CMAKE_SOURCE_DIR}/src/module/pyb2d3
-    COMMENT "Copying _pyb2d3 to python package directory"
-)
+# in-place builds: after each build, copy the extension next to the python sources.
+# Not for pip / scikit-build builds: a stray _pyb2d3.abi3.so there would shadow later
+# in-place builds (python prefers the abi3 suffix over a plain .so)
+if(NOT DEFINED SKBUILD)
+    add_custom_command(TARGET _pyb2d3 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_pyb2d3> ${CMAKE_SOURCE_DIR}/src/module/pyb2d3
+        COMMENT "Copying _pyb2d3 to python package directory"
+    )
+endif()
 
 if(NOT DEFINED SKBUILD)
     # on mac or linux, set the shared library suffix to .so

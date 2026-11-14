@@ -53,7 +53,9 @@ Everything is a pixi task (`pixi.toml`):
 ```bash
 pixi run build        # build the extension in place
 pixi run test         # build + tests
-pixi run install      # pip install into the pixi environment
+pixi run install      # build with pip and install into the pixi environment
+pixi run test-installed  # install + tests against the installed package
+pixi run wheel        # build a wheel with pip into dist/
 pixi run docs-quick   # docs without the sample videos (docs/_build/html)
 pixi run docs         # docs with the sample videos
 pixi run docs-serve   # serve the built docs and open them in the browser

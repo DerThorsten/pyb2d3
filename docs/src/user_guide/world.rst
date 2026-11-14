@@ -62,23 +62,10 @@ cannot propagate through Box2D and are reported via :func:`sys.unraisablehook`.
   with ``enable_pre_solve_events=True``. ``pre_continuous`` can be set the same way.
 * ``world.set_friction_callback(fn)`` / ``world.set_restitution_callback(fn)``: mixing rules
   ``fn(value_a, material_a, value_b, material_b) -> float``, where ``material_*`` is the
-  ``user_material_id`` of the shapes' surface materials.
+  ``user_material_id`` of the shapes' surface materials. Without a callback Box2D's defaults
+  apply (friction ``sqrt(a * b)``, restitution ``max(a, b)``).
 
-Pass ``None`` to remove a callback.
-
-.. warning::
-
-   The friction and restitution callbacks are **shared by all worlds**. Box2D installs them per
-   world but calls them without any context (not even the world), so pyb2d3 keeps a single
-   python callback for all worlds:
-
-   * setting a callback on one world replaces it for every world that has one installed,
-   * clearing it (``None``) on one world makes those worlds fall back to Box2D's default rules
-     (friction ``sqrt(a * b)``, restitution ``max(a, b)``).
-
-   Clear the callbacks when you are done with a world (e.g. at the end of a sample). If
-   different worlds need different rules, encode the world in ``user_material_id`` and
-   branch on it inside the one callback.
+Pass ``None`` to remove a callback. Like in Box2D, every callback belongs to its world.
 
 Units
 -----

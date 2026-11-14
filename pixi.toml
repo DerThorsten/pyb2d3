@@ -43,15 +43,31 @@ description = "Build the extension in place (copied into src/module/pyb2d3)"
 cmd = "cmake --build .pixi/build"
 depends-on = ["configure"]
 
+# building via pip (scikit-build-core drives cmake), as users install it
 [tasks.install]
-description = "pip install pyb2d3 into the environment"
+description = "Build with pip and install pyb2d3 into the environment"
 cmd = "python -m pip install . --no-build-isolation --no-deps -v"
 env = { CMAKE_ARGS = "-DFETCH_BOX2D=OFF" }
+
+[tasks.wheel]
+description = "Build a wheel with pip into dist/"
+cmd = "python -m pip wheel . --no-build-isolation --no-deps -w dist"
+env = { CMAKE_ARGS = "-DFETCH_BOX2D=OFF" }
+
+[tasks.test-installed]
+description = "pip install, then run the tests against the installed package (ignores an in-place build)"
+cmd = "python -m pytest tests"
+env = { PYB2D3_TEST_INSTALLED = "1" }
+depends-on = ["install"]
 
 [tasks.test]
 description = "Run the tests (in-place build)"
 cmd = "python -m pytest tests"
 depends-on = ["build"]
+
+[tasks.docstrings]
+description = "Regenerate the docstrings from the box2d header comments (after binding changes or a box2d update)"
+cmd = "python scripts/generate_docstrings.py"
 
 [tasks.docs]
 description = "Build the documentation incl. the sample videos"

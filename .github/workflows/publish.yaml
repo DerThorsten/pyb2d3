@@ -1,110 +1,92 @@
-name: Build and upload to PyPI
+name: wheels
+
+# Builds and tests the wheels + sdist on pull requests and on main.
+# Publishing: push a tag `v<version>` matching the version in pyproject.toml,
+#   git tag v0.12.0 && git push origin v0.12.0
+# the upload job then publishes to PyPI (trusted publishing, environment "pypi").
 
 on:
   workflow_dispatch:
   pull_request:
   push:
-    # branches:
-    #   - main
-  release:
-    types:
-      - published
+    branches: [main]
+    tags: ["v*"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
 
 jobs:
   build_wheels:
-    name: Build wheels for ${{ matrix.os }}
+    name: wheels ${{ matrix.os }}
     runs-on: ${{ matrix.runs-on }}
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - os: linux-intel
+          - os: linux-x86_64
             runs-on: ubuntu-latest
-          - os: linux-arm
+          - os: linux-aarch64
             runs-on: ubuntu-24.04-arm
-          - os: windows-intel
+          - os: windows-amd64
             runs-on: windows-latest
-        #   - os: windows-arm
-        #     runs-on: windows-11-arm
-          # - os: macos-intel
-          #   # macos-13 was the last x86_64 runner
-          #   runs-on: macos-13
-          - os: macos-arm
-            # macos-14+ (including latest) are ARM64 runners
+          - os: macos-arm64
             runs-on: macos-latest
-        #   - os: android-intel
-        #     runs-on: ubuntu-latest
-        #     platform: android
-        #   - os: android-arm
-        #     runs-on: macos-latest
-        #     platform: android
-        #   - os: ios
-        #     runs-on: macos-latest
-        #     platform: ios
-        #   - os: pyodide
-        #     runs-on: ubuntu-latest
-        #     platform: pyodide
 
     steps:
       - uses: actions/checkout@v4
 
-      # GitHub Actions can't currently run the Android emulator on macOS.
-      - name: Skip Android tests on macOS
-        if: matrix.os == 'android-arm'
-        run: echo "CIBW_TEST_COMMAND=" >> "$GITHUB_ENV"
-
-      # https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/
-      - name: Enable KVM for Android emulator
-        if: matrix.os == 'android-intel'
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v3.1.1
-        env:
-          CIBW_PLATFORM: ${{ matrix.platform || 'auto' }}
-        # Can also be configured directly, using `with:`
-        # with:
-        #   package-dir: .
-        #   output-dir: wheelhouse
-        #   config-file: "{package}/pyproject.toml"
+      # configuration (python versions, tests, ...) in [tool.cibuildwheel] of pyproject.toml
+      - name: build and test wheels
+        uses: pypa/cibuildwheel@v4.3.5
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          name: dist-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
   build_sdist:
-    name: Build source distribution
+    name: sdist
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build sdist
-        run: pipx run build --sdist
+      # builds the sdist and then a wheel *from the sdist*: catches files missing in the sdist
+      - name: build sdist (and a wheel from it)
+        run: pipx run build --outdir dist
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-sdist
+          name: dist-sdist
           path: dist/*.tar.gz
 
   upload_pypi:
+    name: upload to PyPI
     needs: [build_wheels, build_sdist]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
       id-token: write
-    # if: github.event_name == 'release' && github.event.action == 'published'
-    # # or, alternatively, upload to PyPI on every tag starting with 'v' (remove on: release above to use this)
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
+      - uses: actions/checkout@v4
+
+      - name: check that the tag matches the package version
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "tag ${GITHUB_REF_NAME} does not match the version ${version} in pyproject.toml"
+            exit 1
+          fi
+
       - uses: actions/download-artifact@v4
         with:
-          # unpacks all CIBW artifacts into dist/
-          pattern: cibw-*
+          pattern: dist-*
           path: dist
           merge-multiple: true
 
-      - name: Upload to PyPI
+      - name: upload
         uses: pypa/gh-action-pypi-publish@release/v1

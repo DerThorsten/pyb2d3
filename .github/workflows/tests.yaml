@@ -1,0 +1,27 @@
+name: tests
+on:
+  push:
+  pull_request:
+
+jobs:
+  # in-place cmake build (the development setup), all tests
+  in-place:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: build and test
+        run: pixi run test -v
+
+  # the package as users get it: pip install, then the tests against the installed package
+  pip-install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.8.1
+      - name: install and test
+        run: pixi run test-installed -v

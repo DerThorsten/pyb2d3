@@ -7,6 +7,7 @@
 #include <nanobind/stl/string.h>
 
 #include "bind.hpp"
+#include "pyb2d3/generated/docstrings.hpp"
 
 namespace pyb2d3::bind
 {
@@ -85,9 +86,9 @@ namespace pyb2d3::bind
             )
             .def_rw("x", &b2Vec2::x)
             .def_rw("y", &b2Vec2::y)
-            .def("normalize", &b2Normalize)
-            .def("length", &b2Length)
-            .def("length_squared", &b2LengthSquared)
+            .def("normalize", &b2Normalize, docs::doc<&b2Normalize>)
+            .def("length", &b2Length, docs::doc<&b2Length>)
+            .def("length_squared", &b2LengthSquared, docs::doc<&b2LengthSquared>)
             .def(
                 "__len__",
                 [](const b2Vec2&)
@@ -125,9 +126,9 @@ namespace pyb2d3::bind
                 nb::is_operator()  // NotImplemented for other types (e.g. pytest.approx)
             )
             // arithmetic
-            .def("__add__", &b2Add, nb::is_operator())
-            .def("__sub__", &b2Sub, nb::is_operator())
-            .def("__neg__", &b2Neg)
+            .def("__add__", &b2Add, nb::is_operator(), docs::doc<&b2Add>)
+            .def("__sub__", &b2Sub, nb::is_operator(), docs::doc<&b2Sub>)
+            .def("__neg__", &b2Neg, docs::doc<&b2Neg>)
             .def(
                 "__mul__",
                 [](b2Vec2 a, float s)

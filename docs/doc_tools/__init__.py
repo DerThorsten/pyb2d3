@@ -17,6 +17,7 @@ sys.path.insert(0, str(examples_dir))
 from pyb2d3_sandbox_pygame import PygameFrontendSettings, PygameHeadlessSettings  # noqa: E402
 from pyb2d3_sandbox_pygame.sample_to_video import sample_to_video  # noqa: E402
 import pyb2d3_samples  # noqa: E402
+from pyb2d3_sandbox import registry  # noqa: E402
 
 
 github_url = "https://github.com/DerThorsten/pyb2d3"
@@ -82,21 +83,25 @@ def create_sample_videos():
 
 
 
-        :octicon:`mark-github`  `Source <{url}>`_
+        :octicon:`mark-github` `{title} <{url}>`__
 
 
 
     """
+    # note: anonymous links (`text <url>`__): named links with the same text ("Source") on
+    # every sample clash as duplicate targets and break
     for sample_class in pyb2d3_samples.all_examples:
         lower_name = sample_class.__name__.lower()
 
         filename = sys.modules[sample_class.__module__].__file__
         # filename relative to examples_dir
-        filename = Path(filename).relative_to(examples_dir)
+        filename = Path(filename).relative_to(examples_dir).as_posix()
 
         url = f"{github_main_url}/examples/{filename}"
+        entry = registry.find(sample_class)
+        title = f"{entry.category} / {entry.name}" if entry else sample_class.__name__
 
-        rst_content.append(template_str.format(video_name=lower_name, url=url))
+        rst_content.append(template_str.format(video_name=lower_name, url=url, title=title))
 
     rst_file = docs_root / "src" / "samples" / "sample_videos.rst"
     with rst_file.open("w") as f:

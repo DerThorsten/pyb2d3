@@ -390,13 +390,12 @@ class Human:
                         b2d.Vec2(capsule.center1) * ratio, b2d.Vec2(capsule.center2) * ratio, capsule.radius * ratio
                     )
                 elif isinstance(shape, b2d.PolygonShape):
-                    # TODO(binding): Polygon.vertices / centroid are read-only, so the polygon is rebuilt
-                    # from a hull, which fails for tiny feet (points closer than the linear slop are welded).
-                    # box2d scales polygon.vertices in place instead.
+                    # like box2d: scale in place (the normals stay valid under uniform scaling)
                     polygon = shape.polygon
-                    hull = b2d.compute_hull(polygon.vertices * ratio)
-                    if hull.count > 0:
-                        shape.polygon = b2d.make_polygon(hull, polygon.radius * ratio)
+                    polygon.vertices = polygon.vertices * ratio
+                    polygon.centroid = b2d.Vec2(polygon.centroid) * ratio
+                    polygon.radius *= ratio
+                    shape.polygon = polygon
 
             body.update_mass_from_shapes()
 

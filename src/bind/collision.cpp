@@ -157,7 +157,9 @@ namespace pyb2d3::bind
         points_property<b2Polygon, &b2Polygon::normals, &b2Polygon::count>(polygon, "normals", false);
 
         nb::class_<b2Hull> hull(m, "Hull");
-        hull.def(nb::init<>()).def_ro("count", &b2Hull::count).def("validate", &b2ValidateHull);
+        hull.def(nb::init<>())
+            .def_ro("count", &b2Hull::count)
+            .def("validate", &b2ValidateHull, docs::doc<&b2ValidateHull>);
         points_property<b2Hull, &b2Hull::points, &b2Hull::count>(hull, "points", true);
 
         nb::class_<b2MassData>(m, "MassData")
@@ -175,28 +177,50 @@ namespace pyb2d3::bind
             nb::arg("points"),
             "Convex hull of up to 8 points (an empty hull for fewer than 3 or more than 8 points)."
         );
-        m.def("validate_hull", &b2ValidateHull, nb::arg("hull"));
+        m.def("validate_hull", &b2ValidateHull, nb::arg("hull"), docs::doc<&b2ValidateHull>);
 
-        m.def("make_polygon", &b2MakePolygon, nb::arg("hull"), nb::arg("radius") = 0.0f);
-        m.def("make_offset_polygon", &b2MakeOffsetPolygon, nb::arg("hull"), nb::arg("position"), nb::arg("rotation"));
+        m.def(
+            "make_polygon",
+            &b2MakePolygon,
+            nb::arg("hull"),
+            nb::arg("radius") = 0.0f,
+            docs::doc<&b2MakePolygon>
+        );
+        m.def(
+            "make_offset_polygon",
+            &b2MakeOffsetPolygon,
+            nb::arg("hull"),
+            nb::arg("position"),
+            nb::arg("rotation"),
+            docs::doc<&b2MakeOffsetPolygon>
+        );
         m.def(
             "make_offset_rounded_polygon",
             &b2MakeOffsetRoundedPolygon,
             nb::arg("hull"),
             nb::arg("position"),
             nb::arg("rotation"),
-            nb::arg("radius")
+            nb::arg("radius"),
+            docs::doc<&b2MakeOffsetRoundedPolygon>
         );
-        m.def("make_square", &b2MakeSquare, nb::arg("half_width"));
-        m.def("make_box", &b2MakeBox, nb::arg("half_width"), nb::arg("half_height"));
-        m.def("make_rounded_box", &b2MakeRoundedBox, nb::arg("half_width"), nb::arg("half_height"), nb::arg("radius"));
+        m.def("make_square", &b2MakeSquare, nb::arg("half_width"), docs::doc<&b2MakeSquare>);
+        m.def("make_box", &b2MakeBox, nb::arg("half_width"), nb::arg("half_height"), docs::doc<&b2MakeBox>);
+        m.def(
+            "make_rounded_box",
+            &b2MakeRoundedBox,
+            nb::arg("half_width"),
+            nb::arg("half_height"),
+            nb::arg("radius"),
+            docs::doc<&b2MakeRoundedBox>
+        );
         m.def(
             "make_offset_box",
             &b2MakeOffsetBox,
             nb::arg("half_width"),
             nb::arg("half_height"),
             nb::arg("center"),
-            nb::arg("rotation")
+            nb::arg("rotation"),
+            docs::doc<&b2MakeOffsetBox>
         );
         m.def(
             "make_offset_rounded_box",
@@ -205,20 +229,87 @@ namespace pyb2d3::bind
             nb::arg("half_height"),
             nb::arg("center"),
             nb::arg("rotation"),
-            nb::arg("radius")
+            nb::arg("radius"),
+            docs::doc<&b2MakeOffsetRoundedBox>
         );
-        m.def("transform_polygon", &b2TransformPolygon, nb::arg("transform"), nb::arg("polygon"));
+        m.def(
+            "transform_polygon",
+            &b2TransformPolygon,
+            nb::arg("transform"),
+            nb::arg("polygon"),
+            docs::doc<&b2TransformPolygon>
+        );
 
-        m.def("compute_circle_mass", &b2ComputeCircleMass, nb::arg("shape"), nb::arg("density"));
-        m.def("compute_capsule_mass", &b2ComputeCapsuleMass, nb::arg("shape"), nb::arg("density"));
-        m.def("compute_polygon_mass", &b2ComputePolygonMass, nb::arg("shape"), nb::arg("density"));
-        m.def("compute_circle_bounds", &b2ComputeCircleBounds, nb::arg("shape"), nb::arg("transform"));
-        m.def("compute_capsule_bounds", &b2ComputeCapsuleBounds, nb::arg("shape"), nb::arg("transform"));
-        m.def("compute_polygon_bounds", &b2ComputePolygonBounds, nb::arg("shape"), nb::arg("transform"));
-        m.def("compute_segment_bounds", &b2ComputeSegmentBounds, nb::arg("shape"), nb::arg("transform"));
-        m.def("point_in_circle", &b2PointInCircle, nb::arg("shape"), nb::arg("point"));
-        m.def("point_in_capsule", &b2PointInCapsule, nb::arg("shape"), nb::arg("point"));
-        m.def("point_in_polygon", &b2PointInPolygon, nb::arg("shape"), nb::arg("point"));
+        m.def(
+            "compute_circle_mass",
+            &b2ComputeCircleMass,
+            nb::arg("shape"),
+            nb::arg("density"),
+            docs::doc<&b2ComputeCircleMass>
+        );
+        m.def(
+            "compute_capsule_mass",
+            &b2ComputeCapsuleMass,
+            nb::arg("shape"),
+            nb::arg("density"),
+            docs::doc<&b2ComputeCapsuleMass>
+        );
+        m.def(
+            "compute_polygon_mass",
+            &b2ComputePolygonMass,
+            nb::arg("shape"),
+            nb::arg("density"),
+            docs::doc<&b2ComputePolygonMass>
+        );
+        m.def(
+            "compute_circle_bounds",
+            &b2ComputeCircleBounds,
+            nb::arg("shape"),
+            nb::arg("transform"),
+            docs::doc<&b2ComputeCircleBounds>
+        );
+        m.def(
+            "compute_capsule_bounds",
+            &b2ComputeCapsuleBounds,
+            nb::arg("shape"),
+            nb::arg("transform"),
+            docs::doc<&b2ComputeCapsuleBounds>
+        );
+        m.def(
+            "compute_polygon_bounds",
+            &b2ComputePolygonBounds,
+            nb::arg("shape"),
+            nb::arg("transform"),
+            docs::doc<&b2ComputePolygonBounds>
+        );
+        m.def(
+            "compute_segment_bounds",
+            &b2ComputeSegmentBounds,
+            nb::arg("shape"),
+            nb::arg("transform"),
+            docs::doc<&b2ComputeSegmentBounds>
+        );
+        m.def(
+            "point_in_circle",
+            &b2PointInCircle,
+            nb::arg("shape"),
+            nb::arg("point"),
+            docs::doc<&b2PointInCircle>
+        );
+        m.def(
+            "point_in_capsule",
+            &b2PointInCapsule,
+            nb::arg("shape"),
+            nb::arg("point"),
+            docs::doc<&b2PointInCapsule>
+        );
+        m.def(
+            "point_in_polygon",
+            &b2PointInPolygon,
+            nb::arg("shape"),
+            nb::arg("point"),
+            docs::doc<&b2PointInPolygon>
+        );
 
         // ---- ray / shape casts --------------------------------------------------------------
         nb::class_<b2RayCastInput>(m, "RayCastInput")
@@ -235,7 +326,7 @@ namespace pyb2d3::bind
             .def_rw("origin", &b2RayCastInput::origin)
             .def_rw("translation", &b2RayCastInput::translation)
             .def_rw("max_fraction", &b2RayCastInput::maxFraction);
-        m.def("is_valid_ray", &b2IsValidRay, nb::arg("input"));
+        m.def("is_valid_ray", &b2IsValidRay, nb::arg("input"), docs::doc<&b2IsValidRay>);
 
         nb::class_<b2ShapeProxy> proxy(m, "ShapeProxy");
         proxy.def(nb::init<>()).def_ro("count", &b2ShapeProxy::count).def_rw("radius", &b2ShapeProxy::radius);
@@ -278,14 +369,63 @@ namespace pyb2d3::bind
             .def_rw("iterations", &b2CastOutput::iterations)
             .def_rw("hit", &b2CastOutput::hit);
 
-        m.def("cast_ray_circle", &b2CastRayCircle, nb::arg("shape"), nb::arg("input"));
-        m.def("cast_ray_capsule", &b2CastRayCapsule, nb::arg("shape"), nb::arg("input"));
-        m.def("cast_ray_segment", &b2CastRaySegment, nb::arg("shape"), nb::arg("input"), nb::arg("one_sided") = false);
-        m.def("cast_ray_polygon", &b2CastRayPolygon, nb::arg("shape"), nb::arg("input"));
-        m.def("cast_shape_circle", &b2CastShapeCircle, nb::arg("shape"), nb::arg("input"));
-        m.def("cast_shape_capsule", &b2CastShapeCapsule, nb::arg("shape"), nb::arg("input"));
-        m.def("cast_shape_segment", &b2CastShapeSegment, nb::arg("shape"), nb::arg("input"));
-        m.def("cast_shape_polygon", &b2CastShapePolygon, nb::arg("shape"), nb::arg("input"));
+        m.def(
+            "cast_ray_circle",
+            &b2CastRayCircle,
+            nb::arg("shape"),
+            nb::arg("input"),
+            docs::doc<&b2CastRayCircle>
+        );
+        m.def(
+            "cast_ray_capsule",
+            &b2CastRayCapsule,
+            nb::arg("shape"),
+            nb::arg("input"),
+            docs::doc<&b2CastRayCapsule>
+        );
+        m.def(
+            "cast_ray_segment",
+            &b2CastRaySegment,
+            nb::arg("shape"),
+            nb::arg("input"),
+            nb::arg("one_sided") = false,
+            docs::doc<&b2CastRaySegment>
+        );
+        m.def(
+            "cast_ray_polygon",
+            &b2CastRayPolygon,
+            nb::arg("shape"),
+            nb::arg("input"),
+            docs::doc<&b2CastRayPolygon>
+        );
+        m.def(
+            "cast_shape_circle",
+            &b2CastShapeCircle,
+            nb::arg("shape"),
+            nb::arg("input"),
+            docs::doc<&b2CastShapeCircle>
+        );
+        m.def(
+            "cast_shape_capsule",
+            &b2CastShapeCapsule,
+            nb::arg("shape"),
+            nb::arg("input"),
+            docs::doc<&b2CastShapeCapsule>
+        );
+        m.def(
+            "cast_shape_segment",
+            &b2CastShapeSegment,
+            nb::arg("shape"),
+            nb::arg("input"),
+            docs::doc<&b2CastShapeSegment>
+        );
+        m.def(
+            "cast_shape_polygon",
+            &b2CastShapePolygon,
+            nb::arg("shape"),
+            nb::arg("input"),
+            docs::doc<&b2CastShapePolygon>
+        );
 
         nb::class_<b2ShapeCastPairInput>(m, "ShapeCastPairInput")
             .def(nb::init<>())
@@ -295,7 +435,7 @@ namespace pyb2d3::bind
             .def_rw("translation_b", &b2ShapeCastPairInput::translationB)
             .def_rw("max_fraction", &b2ShapeCastPairInput::maxFraction)
             .def_rw("can_encroach", &b2ShapeCastPairInput::canEncroach);
-        m.def("cast_shape", &b2CastShape, nb::arg("input"));
+        m.def("cast_shape", &b2CastShape, nb::arg("input"), docs::doc<&b2CastShape>);
 
         // ---- distance -------------------------------------------------------------------------
         nb::class_<b2SegmentDistanceResult>(m, "SegmentDistanceResult")
@@ -310,7 +450,8 @@ namespace pyb2d3::bind
             nb::arg("p1"),
             nb::arg("q1"),
             nb::arg("p2"),
-            nb::arg("q2")
+            nb::arg("q2"),
+            docs::doc<&b2ComputeSegmentDistance>
         );
 
         nb::class_<b2SimplexCache>(m, "SimplexCache")
@@ -381,7 +522,13 @@ namespace pyb2d3::bind
             .def_rw("c2", &b2Sweep::c2)
             .def_rw("q1", &b2Sweep::q1)
             .def_rw("q2", &b2Sweep::q2);
-        m.def("get_sweep_transform", &b2GetSweepTransform, nb::arg("sweep"), nb::arg("time"));
+        m.def(
+            "get_sweep_transform",
+            &b2GetSweepTransform,
+            nb::arg("sweep"),
+            nb::arg("time"),
+            docs::doc<&b2GetSweepTransform>
+        );
 
         nb::class_<b2TOIInput>(m, "TOIInput")
             .def(nb::init<>())
@@ -403,7 +550,12 @@ namespace pyb2d3::bind
             .def_ro("point", &b2TOIOutput::point)
             .def_ro("normal", &b2TOIOutput::normal)
             .def_ro("fraction", &b2TOIOutput::fraction);
-        m.def("compute_time_of_impact", &b2ComputeTimeOfImpact, nb::arg("input"));
+        m.def(
+            "compute_time_of_impact",
+            &b2ComputeTimeOfImpact,
+            nb::arg("input"),
+            docs::doc<&b2ComputeTimeOfImpact>
+        );
 
         // ---- manifolds --------------------------------------------------------------------------
         nb::class_<b2ManifoldPoint>(m, "ManifoldPoint")
@@ -458,16 +610,65 @@ namespace pyb2d3::bind
         const auto a = nb::arg("shape_a");
         const auto b = nb::arg("shape_b");
         const auto xf = nb::arg("transform");
-        m.def("collide_circles", &b2CollideCircles, a, b, xf);
-        m.def("collide_capsule_and_circle", &b2CollideCapsuleAndCircle, a, b, xf);
-        m.def("collide_segment_and_circle", &b2CollideSegmentAndCircle, a, b, xf);
-        m.def("collide_polygon_and_circle", &b2CollidePolygonAndCircle, a, b, xf);
-        m.def("collide_capsules", &b2CollideCapsules, a, b, xf);
-        m.def("collide_segment_and_capsule", &b2CollideSegmentAndCapsule, a, b, xf);
-        m.def("collide_polygon_and_capsule", &b2CollidePolygonAndCapsule, a, b, xf);
-        m.def("collide_polygons", &b2CollidePolygons, a, b, xf);
-        m.def("collide_segment_and_polygon", &b2CollideSegmentAndPolygon, a, b, xf);
-        m.def("collide_chain_segment_and_circle", &b2CollideChainSegmentAndCircle, a, b, xf);
+        m.def("collide_circles", &b2CollideCircles, a, b, xf, docs::doc<&b2CollideCircles>);
+        m.def(
+            "collide_capsule_and_circle",
+            &b2CollideCapsuleAndCircle,
+            a,
+            b,
+            xf,
+            docs::doc<&b2CollideCapsuleAndCircle>
+        );
+        m.def(
+            "collide_segment_and_circle",
+            &b2CollideSegmentAndCircle,
+            a,
+            b,
+            xf,
+            docs::doc<&b2CollideSegmentAndCircle>
+        );
+        m.def(
+            "collide_polygon_and_circle",
+            &b2CollidePolygonAndCircle,
+            a,
+            b,
+            xf,
+            docs::doc<&b2CollidePolygonAndCircle>
+        );
+        m.def("collide_capsules", &b2CollideCapsules, a, b, xf, docs::doc<&b2CollideCapsules>);
+        m.def(
+            "collide_segment_and_capsule",
+            &b2CollideSegmentAndCapsule,
+            a,
+            b,
+            xf,
+            docs::doc<&b2CollideSegmentAndCapsule>
+        );
+        m.def(
+            "collide_polygon_and_capsule",
+            &b2CollidePolygonAndCapsule,
+            a,
+            b,
+            xf,
+            docs::doc<&b2CollidePolygonAndCapsule>
+        );
+        m.def("collide_polygons", &b2CollidePolygons, a, b, xf, docs::doc<&b2CollidePolygons>);
+        m.def(
+            "collide_segment_and_polygon",
+            &b2CollideSegmentAndPolygon,
+            a,
+            b,
+            xf,
+            docs::doc<&b2CollideSegmentAndPolygon>
+        );
+        m.def(
+            "collide_chain_segment_and_circle",
+            &b2CollideChainSegmentAndCircle,
+            a,
+            b,
+            xf,
+            docs::doc<&b2CollideChainSegmentAndCircle>
+        );
         m.def(
             "collide_chain_segment_and_capsule",
             [](const b2ChainSegment& sa, const b2Capsule& sb, b2Transform t, b2SimplexCache* cache)

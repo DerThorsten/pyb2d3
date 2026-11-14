@@ -47,6 +47,8 @@ Minecraft.ttf
 
 .pixi/
 pixi.lock
+# imgui window layout written by the OpenGL sandbox
+imgui.ini
 build/
 build-*/
 dist/

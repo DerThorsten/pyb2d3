@@ -11,7 +11,9 @@ and the common commands are defined in ``pixi.toml``:
 
     pixi run build            # build in place: copies _pyb2d3 into src/module/pyb2d3
     pixi run test             # build + run the tests (they pick up the in-place build)
-    pixi run install          # pip install the package into the environment instead
+    pixi run install          # build with pip and install the package into the environment
+    pixi run test-installed   # install + run the tests against the installed package
+    pixi run wheel            # build a wheel with pip into dist/
     pixi run docs-quick       # docs without the sample videos (docs/_build/html)
     pixi run docs             # docs incl. the sample videos (rendered with pygame)
     pixi run docs-serve       # serve the built docs on localhost and open the browser
@@ -82,6 +84,37 @@ handle types and bind the C functions **directly**, without writing a C++ method
     with the ports of Box2D's own samples in ``pyb2d3_samples/box2d``) and the launcher
     ``sandbox.py``.
 
+Releasing
+---------
+
+The ``wheels`` workflow (``.github/workflows/publish.yaml``) builds and tests the wheels
+(Linux x86_64 / aarch64, Windows, macOS arm64; one stable ABI wheel per platform for
+CPython 3.12+) and the sdist on every pull request and on ``main``. To publish:
+
+1. bump ``version`` in ``pyproject.toml`` and merge,
+2. push a matching tag: ``git tag v0.12.0 && git push origin v0.12.0``.
+
+The upload job checks that the tag matches the version and publishes to PyPI via trusted
+publishing (GitHub environment ``pypi``).
+
+Docstrings
+----------
+
+The docstrings are generated from Box2D's own ``///`` header comments by
+``scripts/generate_docstrings.py`` (``pixi run docstrings``), with the C names translated to
+pyb2d3 names (``b2Body_GetMass`` → ``Body.mass``, ``b2BodyDef::gravityScale`` →
+``BodyDef.gravity_scale``) and ``@param`` / ``@return`` / ``@note`` turned into ``Args:`` /
+``Returns:`` / ``Note:`` sections:
+
+* ``include/pyb2d3/generated/docstrings.hpp``: ``pyb2d3::docs::doc<&b2Fn>`` per bound function.
+  ``Binder`` attaches it automatically, direct bindings pass it as last argument
+  (``m.def("make_rot", &b2MakeRot, nb::arg("radians"), docs::doc<&b2MakeRot>)``).
+* ``src/module/pyb2d3/_docstrings.py``: docs of the bound structs and their fields, applied to
+  the classes and properties on import.
+
+Both are committed. ``tests/test_docstrings.py`` fails if they are out of date, i.e. after
+adding bindings or updating Box2D, rerun ``pixi run docstrings``.
+
 Adding bindings
 ---------------
 
@@ -89,6 +122,7 @@ Adding bindings
    ``def``). A lambda on ``binder.cls()`` is only needed when the C function does not map 1:1
    (output pointers, arrays, callbacks).
 2. Add a test to the matching ``tests/test_<domain>.py``.
+3. Run ``pixi run docstrings`` so the new binding gets Box2D's documentation.
 
 Tests
 -----

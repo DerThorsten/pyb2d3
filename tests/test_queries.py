@@ -177,18 +177,80 @@ def test_friction_and_restitution_callbacks(world, ground):
     world.set_restitution_callback(None)
 
 
-def test_mixing_callbacks_cleared_by_other_world(world, ground):
-    # the python callback slot is global but box2d installs the callback per world
-    world.set_friction_callback(lambda fa, ma, fb, mb: 0.0)
-    world.set_restitution_callback(lambda ra, ma, rb, mb: 0.0)
-    other = b2d.World(gravity=(0, -10))
-    other.set_friction_callback(None)
-    other.set_restitution_callback(None)
+def sliding_world(friction=None):
+    """A box sliding over the ground at 5 m/s, optionally with a friction callback."""
+    world = b2d.World(gravity=(0, -10))
+    make_box_body(world, position=(0, -1), hx=50, hy=1, body_type=b2d.BodyType.STATIC)
+    body = make_box_body(world, position=(0, 0.5))
+    body.linear_velocity = (5, 0)
+    if friction is not None:
+        world.set_friction_callback(friction)
+    return world, body
 
-    make_box_body(world, position=(0, 0.5))
-    step(world, 10)  # must fall back to the default mixing, not crash
-    world.set_friction_callback(None)
-    world.set_restitution_callback(None)
+
+def test_mixing_callbacks_are_per_world():
+    # box2d stores the callbacks per world (and passes them no context): each world calls its own
+    calls = {"a": 0, "b": 0}
+
+    def counting(name, value):
+        def friction(fa, ma, fb, mb):
+            calls[name] += 1
+            return value
+
+        return friction
+
+    world_a, body_a = sliding_world(counting("a", 0.0))  # frictionless
+    world_b, body_b = sliding_world(counting("b", 1.0))  # strong friction
+    world_c, body_c = sliding_world()  # box2d's default rule
+    for world in (world_a, world_b, world_c):
+        step(world, 30)
+
+    assert calls["a"] > 0 and calls["b"] > 0
+    # frictionless > default (0.6) > strong friction (1.0)
+    v_a, v_b, v_c = (body.linear_velocity[0] for body in (body_a, body_b, body_c))
+    assert v_a == approx(5, abs=0.1)
+    assert v_b < v_c < v_a - 1.0
+
+
+def test_clearing_a_mixing_callback_does_not_affect_other_worlds():
+    calls = []
+    world_a, body_a = sliding_world(lambda fa, ma, fb, mb: calls.append(1) or 0.0)
+    world_b, _ = sliding_world(lambda fa, ma, fb, mb: 0.0)
+    world_b.set_friction_callback(None)
+    world_b.destroy()
+
+    step(world_a, 30)
+    assert calls  # world a still uses its own callback
+    assert body_a.linear_velocity[0] == approx(5, abs=0.1)
+
+
+def test_destroy_releases_the_mixing_callbacks():
+    import weakref
+
+    class Friction:
+        def __call__(self, fa, ma, fb, mb):
+            return 0.0
+
+    callback = Friction()
+    alive = weakref.ref(callback)
+    world, _ = sliding_world(callback)
+    del callback
+    assert alive() is not None  # held by the world
+    world.destroy()
+    assert alive() is None
+
+
+def test_stale_destroy_keeps_the_callbacks_of_a_newer_world():
+    old = b2d.World(gravity=(0, -10))
+    stale = b2d.WorldView(old.id)
+    old.destroy()
+    # a new world may reuse the index of the destroyed one
+    calls = []
+    world, body = sliding_world(lambda fa, ma, fb, mb: calls.append(1) or 0.0)
+    stale.destroy()  # no-op for the destroyed world, must not clear the new world's callback
+    step(world, 30)
+    assert calls
+    assert body.linear_velocity[0] == approx(5, abs=0.1)
 
 
 def test_callback_exception_in_step_is_reported(world, ground, monkeypatch):
