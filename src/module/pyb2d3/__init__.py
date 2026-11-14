@@ -6,9 +6,15 @@ import os
 from ._pyb2d3 import *  # noqa: F403
 from . import _pyb2d3
 from functools import partial, partialmethod
-from enum import Enum
+from enum import IntEnum
 from contextlib import contextmanager
 import importlib
+import importlib.metadata
+
+try:
+    __version__ = importlib.metadata.version("pyb2d3")
+except importlib.metadata.PackageNotFoundError:  # in-place build, not installed
+    __version__ = "dev"
 
 
 @contextmanager
@@ -43,143 +49,61 @@ def import_local(path, module_name):
         return importlib.import_module(module_name)
 
 
-# __all__ = [
-#     "Vec2",
-#     "World",
-#     "Body"
-#     # defs
-#     "WorldDef",
-#     "BodyDef",
-#     "ShapeDef",
-#     "ChainDef",
-#     # joints
-#     "RevoluteJointDef",
-#     "DistanceJointDef",
-#     "PrismaticJointDef",
-#     "FilterJointDef",
-#     "WeldJointDef",
-#     "WheelJointDef",
-#     "MouseJointDef",
-#     "MotorJointDef",
-#     # other defs and classes
-#     "ExplosionDef",
-#     "SurfaceMaterial",
-#     "Filter",
-#     "QueryFilter",
-#     "AABB",
-#     "RayResult",
-#     # shapes
-#     "Circle",
-#     "Capsule",
-#     "Segment",
-#     "ChainSegment",
-#     "Polygon",
-
-#     # classes for created things
-#     "Shape",
-#     "CircleShape",
-#     "CapsuleShape",
-#     "SegmentShape",
-#     "ChainSegmentShape",
-#     "PolygonShape",
-
-#     # factories
-#     "circle",
-#     "capsule",
-#     "segment",
-#     "chain_segment",
-#     "polygon",
-#     "chain_def",
-#     "box",
-#     "chain_box",
-#     "aabb",
-#     "aabb_arround_point",
-#     "rgb_to_hex_color",
-#     "rgba_to_hex_color",
-#     "hex_color",
-#     "random_hex_color",
-#     # "HexColor",
-#     "BodyFactory",
-#     # factory functions
-#     "world_def",
-#     "body_def",
-#     "shape_def",
-#     "surface_material",
-#     "revolute_joint_def",
-#     "distance_joint_def",
-#     "prismatic_joint_def",
-#     "filter_joint_def",
-#     "weld_joint_def",
-#     "wheel_joint_def",
-#     "mouse_joint_def",
-#     "motor_joint_def",
-#     "explosion_def",
-#     # constants
-#     "STOP_QUERY",
-#     "CONTINUE_QUERY",
-#     # utility functions
-#     "make_filter",
-#     "make_query_filter",
-#     "query_filter",
-#     "create_body",
-#     "create_joint",
-#     "create_shape",
-#     "create_explosion",
-#     "create_surface_material",
-#     "create_chain",
-#     "create_polygon",
-#     "create_circle",
-#     "create_capsule",
-#     "create_segment",
-#     "create_chain_segment"
-# ]
-
-# some constats
+# some constants for query callbacks
 STOP_QUERY = False
 CONTINUE_QUERY = True
 
-# to auto generate a bunch of stuff
+
+##############################################################################
+# def factories:  xxx_def(**kwargs) -> XxxDef with the given attributes set
+##############################################################################
+
+
+def _set_attributes(obj, kwargs):
+    for k, v in kwargs.items():
+        setattr(obj, k, v)
+    return obj
+
+
+def _make_def_factory(cls):
+    def factory(**kwargs):
+        return _set_attributes(cls(), kwargs)
+
+    factory.__name__ = factory.__qualname__ = cls.__name__
+    factory.__doc__ = f"Create a {cls.__name__} with the given attributes set."
+    return factory
+
+
+world_def = _make_def_factory(WorldDef)
+body_def = _make_def_factory(BodyDef)
+shape_def = _make_def_factory(ShapeDef)
+surface_material = _make_def_factory(SurfaceMaterial)
+explosion_def = _make_def_factory(ExplosionDef)
+make_filter = _make_def_factory(Filter)
+make_query_filter = _make_def_factory(QueryFilter)
+query_filter = make_query_filter
+
+dynamic_body_def = partial(body_def, type=BodyType.DYNAMIC)
+static_body_def = partial(body_def, type=BodyType.STATIC)
+kinematic_body_def = partial(body_def, type=BodyType.KINEMATIC)
+
+# joints: one def factory and one World.create_xxx_joint method per joint type
 _joint_names = [
     "distance",
     "filter",
     "motor",
-    "mouse",
+    "mover",
+    "pogo",
     "prismatic",
     "revolute",
-    "wheel",
     "weld",
+    "wheel",
 ]
+_joint_def_classes = {name: getattr(_pyb2d3, f"{name.capitalize()}JointDef") for name in _joint_names}
 
-
-class World(WorldView):
-    # only the constructor (and __del__) is allowed to be added to this class.
-    # All other methods are added to the WorldView class
-    def __init__(self, /, thread_pool=None, **kwargs):
-        d = world_def(**kwargs)
-        if thread_pool is not None:
-            d._install_thread_pool(thread_pool)
-            self._threadpool = thread_pool
-        world_id = create_world_id(d)
-
-        super().__init__(world_id)
-
-    def __del__(self):
-        self.destroy()
-
-
-# Factory functions
-def world_def(**kwargs):
-    world = WorldDef()
-    for k, v in kwargs.items():
-        setattr(world, k, v)
-    return world
-
-
-def body_def(**kwargs):
-    body = BodyDef()
-    for k, v in kwargs.items():
-        setattr(body, k, v)
-    return body
+for _name, _cls in _joint_def_classes.items():
+    globals()[f"{_name}_joint_def"] = _make_def_factory(_cls)
+del _name, _cls
 
 
 def chain_def(points, materials=None, material=None, is_loop=False, filter=None):
@@ -189,88 +113,52 @@ def chain_def(points, materials=None, material=None, is_loop=False, filter=None)
         materials = [material]
 
     chain = ChainDef()
-    chain.points = np.require(points, dtype=np.float32, requirements="C")
+    chain.points = points  # any iterable of points / numpy array
     chain.is_loop = is_loop
     if materials is not None:
         chain.materials = materials
+    if filter is not None:
+        chain.filter = filter
     return chain
 
 
-def surface_material(**kwargs):
-    material = SurfaceMaterial()
-    for k, v in kwargs.items():
-        setattr(material, k, v)
-    return material
+def _extend_def_classes():
+    def update(self, **kwargs):
+        return _set_attributes(self, kwargs)
+
+    for cls in [WorldDef, BodyDef, ShapeDef, ExplosionDef, SurfaceMaterial, *_joint_def_classes.values()]:
+        cls.update = update
 
 
-def shape_def(**kwargs):
-    shape = ShapeDef()
-    for k, v in kwargs.items():
-        setattr(shape, k, v)
-    return shape
+_extend_def_classes()
+del _extend_def_classes
 
 
-def revolute_joint_def(**kwargs):
-    joint = RevoluteJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
+##############################################################################
+# World
+##############################################################################
 
 
-def distance_joint_def(**kwargs):
-    joint = DistanceJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
+class World(WorldView):
+    # only the constructor (and __del__) is allowed to be added to this class.
+    # All other methods are added to the WorldView class
+    def __init__(self, /, thread_pool=None, _world_id=None, **kwargs):
+        if _world_id is None:
+            d = world_def(**kwargs)
+            if thread_pool is not None:
+                d._install_thread_pool(thread_pool)
+            _world_id = create_world_id(d)
+        # keep the thread pool alive as long as the world
+        self._threadpool = thread_pool
+        super().__init__(_world_id)
 
+    @classmethod
+    def from_snapshot(cls, image, worker_count=0):
+        """Create a new world from an image produced by `WorldView.get_snapshot()`."""
+        return cls(_world_id=create_world_id_from_snapshot(image, worker_count))
 
-def prismatic_joint_def(**kwargs):
-    joint = PrismaticJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def filter_joint_def(**kwargs):
-    joint = FilterJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def weld_joint_def(**kwargs):
-    joint = WeldJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def wheel_joint_def(**kwargs):
-    joint = WheelJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def mouse_joint_def(**kwargs):
-    joint = MouseJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def motor_joint_def(**kwargs):
-    joint = MotorJointDef()
-    for k, v in kwargs.items():
-        setattr(joint, k, v)
-    return joint
-
-
-def explosion_def(**kwargs):
-    explosion = ExplosionDef()
-    for k, v in kwargs.items():
-        setattr(explosion, k, v)
-    return explosion
+    def __del__(self):
+        self.destroy()
 
 
 _shape_def_f = shape_def
@@ -292,11 +180,11 @@ class BodyFactory(object):
         return self
 
     def shape(self, material=None, **kwargs):
+        self._shape_def = _shape_def_f(**kwargs)
         if material is not None:
-            self._shape_def = _shape_def_f(**kwargs)
-            self._shape_def.material = self.material
+            self._material = material
+            self._shape_def.material = material
         else:
-            self._shape_def = _shape_def_f(**kwargs)
             self._material = self._shape_def.material
         return self
 
@@ -322,8 +210,7 @@ class BodyFactory(object):
         return self
 
     def add_capsule(self, *args, **kwargs):
-        capsule = make_capsule(*args, **kwargs)
-        self._s.append(capsule)
+        self._s.append(capsule(*args, **kwargs))
         return self
 
     def add_polygon(self, *args, **kwargs):
@@ -351,17 +238,13 @@ class BodyFactory(object):
 
 # add pure python methods to various classes
 def _extend_world():
-    # avoid name conflicts
     _body_def_func = body_def
 
-    ##########################
-    # extend word
-    #########################
     def create_body(self, body_def=None, **kwargs):
         if body_def is None:
             body_def = _body_def_func(**kwargs)
-        for k, v in kwargs.items():
-            setattr(body_def, k, v)
+        else:
+            _set_attributes(body_def, kwargs)
         return self.create_body_from_def(body_def)
 
     WorldView.create_body = create_body
@@ -378,111 +261,63 @@ def _extend_world():
 
     WorldView.draw = draw
 
-    ##########################
-    # explode
-    ##########################
     _mk_explosion_def = explosion_def
 
     def explode(self, explosion_def=None, **kwargs):
         if explosion_def is None:
             explosion_def = _mk_explosion_def(**kwargs)
-        for k, v in kwargs.items():
-            setattr(explosion_def, k, v)
+        else:
+            _set_attributes(explosion_def, kwargs)
         return self._explode(explosion_def)
 
     WorldView.explode = explode
-
-    def overlap_aabb(self, aabb, callback, query_filter=None, wrap_callback=True):
-        if query_filter is None:
-            query_filter = QueryFilter()
-
-        if wrap_callback:
-
-            def wrapped_cb(shape):
-                res = callback(shape)
-                if res is None:
-                    return True
-                else:
-                    return bool(res)
-
-        else:
-            wrapped_cb = callback
-        return self._overlap_aabb(aabb, query_filter, wrapped_cb)
-
-    WorldView.overlap_aabb = overlap_aabb
-
-    def cast_ray(self, origin, translation, callback, query_filter=None):
-        if query_filter is None:
-            query_filter = QueryFilter()
-
-        def wrapped_cb(shape, point, normal, fraction):
-            res = callback(shape, point, normal, fraction)
-            if res is None:
-                return 1
-            else:
-                return float(res)
-
-        return self._cast_ray(origin, translation, query_filter, wrapped_cb)
-
-    WorldView.cast_ray = cast_ray
 
     def body_factory(self):
         return BodyFactory(self)
 
     WorldView.body_factory = body_factory
 
-    def helper(joint_name):
-        # def_cls = getattr(_pyb2d3, f"{joint_name.capitalize()}JointDef")
+    def dynamic_body_at_point(self, point, query_filter=None):
+        if query_filter is None:
+            query_filter = QueryFilter()
+        return self.body_at_point(point, query_filter, dynamic_only=True)
+
+    WorldView.dynamic_body_at_point = dynamic_body_at_point
+
+    # create_xxx_joint(def) / create_xxx_joint(body_a, body_b, **kwargs) / create_xxx_joint(**kwargs)
+    def make_create_joint(joint_name):
         def_func = globals()[f"{joint_name}_joint_def"]
         raw_function = getattr(WorldView, f"_create_{joint_name}_joint")
 
         def create_joint(self, *args, **kwargs):
-            na = len(args)
-            nk = len(kwargs)
-
-            if na == 0:
+            if len(args) == 0:
                 return raw_function(self, def_func(**kwargs))
-            elif na == 1:
-                if nk > 0:
-                    raise ValueError(
-                        "if only one argument is given, it should be a joint_def, no kwargs allowed"
-                    )
+            if len(args) == 1:
+                if kwargs:
+                    raise ValueError("if only one argument is given, it should be a joint_def, no kwargs allowed")
                 return raw_function(self, args[0])
-            elif na == 2:
+            if len(args) == 2:
                 return raw_function(self, def_func(body_a=args[0], body_b=args[1], **kwargs))
-            else:
-                raise ValueError(
-                    """ the un-named arguments can be either:
+            raise ValueError(
+                """the un-named arguments can be either:
                 1. a joint_def (and no kwargs)
-                2. two bodies (and and additional kwargs)
+                2. two bodies (and additional kwargs)
                 3. just kwargs"""
-                )
+            )
 
         create_joint.__name__ = f"create_{joint_name}_joint"
         return create_joint
 
     for joint_name in _joint_names:
-        setattr(WorldView, f"create_{joint_name}_joint", helper(joint_name))
+        setattr(WorldView, f"create_{joint_name}_joint", make_create_joint(joint_name))
+
+    _def_type_to_name = {cls: name for name, cls in _joint_def_classes.items()}
 
     def create_joint(self, joint_def):
-        if isinstance(joint_def, RevoluteJointDef):
-            return self.create_revolute_joint(joint_def)
-        elif isinstance(joint_def, DistanceJointDef):
-            return self.create_distance_joint(joint_def)
-        elif isinstance(joint_def, PrismaticJointDef):
-            return self.create_prismatic_joint(joint_def)
-        elif isinstance(joint_def, WheelJointDef):
-            return self.create_wheel_joint(joint_def)
-        elif isinstance(joint_def, NullJointDef):
-            return self.create_null_joint(joint_def)
-        elif isinstance(joint_def, PulleyJointDef):
-            return self.create_pulley_joint(joint_def)
-        elif isinstance(joint_def, WeldJointDef):
-            return self.create_gear_joint(joint_def)
-        elif isinstance(joint_def, MouseJointDef):
-            return self.create_mouse_joint(joint_def)
-        else:
-            raise ValueError(f"joint {joint_def} not recognized")
+        name = _def_type_to_name.get(type(joint_def))
+        if name is None:
+            raise ValueError(f"joint def {joint_def} not recognized")
+        return getattr(self, f"create_{name}_joint")(joint_def)
 
     WorldView.create_joint = create_joint
 
@@ -492,25 +327,24 @@ del _extend_world
 
 
 def _extend_body():
+    _creators = {
+        Circle: "create_circle_shape",
+        Polygon: "create_polygon_shape",
+        Capsule: "create_capsule_shape",
+        Segment: "create_segment_shape",
+        ChainSegment: "create_chain_segment_shape",
+    }
+
     def create_shape(self, shape_def, shape):
-        if isinstance(shape, Circle):
-            return self.create_circle_shape(shape_def, shape)
-        elif isinstance(shape, Polygon):
-            return self.create_polygon_shape(shape_def, shape)
-        elif isinstance(shape, Capsule):
-            return self.create_capsule_shape(shape_def, shape)
-        elif isinstance(shape, Segment):
-            return self.create_segment_shape(shape_def, shape)
-        else:
+        creator = _creators.get(type(shape))
+        if creator is None:
             raise ValueError(f"shape {shape} not recognized")
+        return getattr(self, creator)(shape_def, shape)
 
     Body.create_shape = create_shape
 
     def create_shapes(self, shape_def, shapes):
-        res = []
-        for shape in shapes:
-            res.append(self.create_shape(shape_def, shape))
-        return res
+        return [self.create_shape(shape_def, shape) for shape in shapes]
 
     Body.create_shapes = create_shapes
 
@@ -521,45 +355,24 @@ del _extend_body
 
 def _extend_ray_result():
     def reflect_vector(D, P1, P2):
-        # Line direction
         L = P2 - P1
         L_unit = L / np.linalg.norm(L)
-
-        # Projection of D onto L
-        proj_length = np.dot(D, L_unit)
-        proj = proj_length * L_unit
-
-        # Reflection formula
+        proj = np.dot(D, L_unit) * L_unit
         R = 2 * proj - D
-
-        # normalize the reflected vector
         R_length = np.linalg.norm(R)
         if R_length > 0:
             R = R / R_length
-
-        R *= -1
-
-        return R
+        return -R
 
     def compute_normal(self, ray_direction):
         shape = self.shape
         if not isinstance(shape, ChainSegmentShape):
             return self.normal
-        else:
-            body = self.shape.body
-            segment = shape.segment
-            p0 = segment.point1
-            p1 = segment.point2
-
-            # get points in world coordinates
-            p0_world = body.world_point(p0)
-            p1_world = body.world_point(p1)
-
-            return reflect_vector(
-                ray_direction,
-                np.array(p0_world),
-                np.array(p1_world),
-            )
+        body = shape.body
+        segment = shape.segment
+        p0_world = body.world_point(segment.point1)
+        p1_world = body.world_point(segment.point2)
+        return reflect_vector(ray_direction, np.array(p0_world), np.array(p1_world))
 
     RayResult.compute_normal = compute_normal
 
@@ -568,49 +381,134 @@ _extend_ray_result()
 del _extend_ray_result
 
 
-# shorthand for body types
-dynamic_body_def = partial(body_def, type=BodyType.DYNAMIC)
-static_body_def = partial(body_def, type=BodyType.STATIC)
-kinematic_body_def = partial(body_def, type=BodyType.KINEMATIC)
+##############################################################################
+# batch api:  Bodies / Shapes / Joints are arrays of ids
+##############################################################################
 
 
-def _extend_def_classes():
-    def update(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+def _extend_batch_api():
+    def typed(cls):
+        # shapes / joints come back as their concrete type (CircleShape, RevoluteJoint, ...)
+        if hasattr(cls, "cast"):
+            return lambda i: cls(int(i)).cast()
+        return lambda i: cls(int(i))
 
-    WorldDef.update = update
-    BodyDef.update = update
-    ShapeDef.update = update
+    for batch_cls, single_cls in [(Bodies, Body), (Shapes, Shape), (Joints, Joint)]:
 
+        def __iter__(self, _make=typed(single_cls)):
+            return map(_make, self.ids)
 
-_extend_def_classes()
-del _extend_def_classes
+        def __getitem__(self, index, _make=typed(single_cls), _batch=batch_cls):
+            ids = self.ids
+            if isinstance(index, (int, np.integer)):
+                return _make(ids[index])
+            return _batch(ids[index])
 
+        def __repr__(self):
+            return f"{type(self).__name__}(n={len(self)})"
 
-def create_body(world_id, *args, **kwargs):
-    if body_def in kwargs:
-        if len(kwargs) > 1 or len(args) > 0:
-            raise ValueError("there should be only one body_def")
-        bd = kwargs["body_def"]
-    else:
-        if len(args) == 1:
-            if not isinstance(args[0], BodyDef):
-                raise ValueError("args[0] should be a BodyDef")
-            if len(kwargs) > 0:
-                raise ValueError("there should be only one body_def")
-            bd = args[0]
-        elif len(args) > 1:
-            raise ValueError("there should be only one body_def")
-        else:
-            bd = body_def(**kwargs)
-    return create_body_from_def(world_id, bd)
+        batch_cls.__iter__ = __iter__
+        batch_cls.__getitem__ = __getitem__
+        batch_cls.__repr__ = __repr__
 
 
-# shorthand for create_body
-create_dynamic_body = partial(create_body, type=BodyType.DYNAMIC)
-create_static_body = partial(create_body, type=BodyType.STATIC)
-create_kinematic_body = partial(create_body, type=BodyType.KINEMATIC)
+_extend_batch_api()
+del _extend_batch_api
+
+
+##############################################################################
+# mouse dragging (box2d >= 3.2 has no mouse joint: kinematic body + motor joint)
+##############################################################################
+
+
+class MouseDrag(object):
+    """Drag a body with the mouse, the way box2d's own samples do it.
+
+    A kinematic "mouse body" follows the cursor and pulls the grabbed body
+    with a motor joint (a spring plus some angular friction).
+
+    Usage::
+
+        drag = MouseDrag(world)
+        drag.begin(point)          # on mouse down, returns the grabbed body or None
+        drag.update(point)         # on mouse move
+        drag.step(time_step)       # once per world step, before world.step(...)
+        drag.end()                 # on mouse up
+    """
+
+    def __init__(self, world, hertz=7.5, damping_ratio=1.0, force_scale=100.0, angular_friction=0.25):
+        self.world = world
+        self.hertz = hertz
+        self.damping_ratio = damping_ratio
+        self.force_scale = force_scale
+        self.angular_friction = angular_friction
+
+        self.body = None  # the grabbed body
+        self.joint = None
+        self._mouse_body = None
+        self._target = None
+
+    @property
+    def active(self):
+        return self.joint is not None and self.joint.is_valid
+
+    def begin(self, point, body=None):
+        self.end()
+        if body is None:
+            body = self.world.dynamic_body_at_point(point)
+        if body is None:
+            return None
+
+        self._target = (float(point[0]), float(point[1]))
+        self._mouse_body = self.world.create_kinematic_body(position=self._target, enable_sleep=False)
+
+        mass_data = body.mass_data
+        g = float(np.linalg.norm(self.world.gravity))
+        mg = mass_data.mass * (g if g > 0 else 10.0)
+
+        joint_def = motor_joint_def(
+            body_a=self._mouse_body,
+            body_b=body,
+            linear_hertz=self.hertz,
+            linear_damping_ratio=self.damping_ratio,
+            max_spring_force=self.force_scale * mg,
+        )
+        joint_def.local_anchor_b = body.local_point(point)
+        if mass_data.mass > 0:
+            # acts like angular friction
+            lever = math.sqrt(mass_data.rotational_inertia / mass_data.mass)
+            joint_def.max_velocity_torque = self.angular_friction * lever * mg
+
+        self.joint = self.world.create_motor_joint(joint_def)
+        self.body = body
+        return body
+
+    def update(self, point):
+        self._target = (float(point[0]), float(point[1]))
+
+    def step(self, time_step):
+        if self.joint is None:
+            return
+        if not self.joint.is_valid:
+            # the world or the grabbed body was destroyed
+            self.end()
+            return
+        if time_step > 0:
+            self._mouse_body.set_target_transform(transform(p=self._target), time_step, True)
+
+    def end(self):
+        if self.joint is not None and self.joint.is_valid:
+            self.joint.destroy()
+        if self._mouse_body is not None and self._mouse_body.is_valid:
+            self._mouse_body.destroy()
+        self.joint = None
+        self.body = None
+        self._mouse_body = None
+
+
+##############################################################################
+# geometry helpers
+##############################################################################
 
 
 def transform(p=None, q=None):
@@ -622,45 +520,19 @@ def transform(p=None, q=None):
     return t
 
 
-def make_filter(**kwargs):
-    filter = Filter()
-    for k, v in kwargs.items():
-        setattr(filter, k, v)
-    return filter
-
-
-def make_query_filter(**kwargs):
-    query_filter = QueryFilter()
-    for k, v in kwargs.items():
-        setattr(query_filter, k, v)
-    return query_filter
-
-
-def query_filter(**kwargs):
-    """Create a QueryFilter object with the given keyword arguments."""
-    return make_query_filter(**kwargs)
-
-
 def circle(center=(0, 0), radius=1):
-    c = Circle()
-    c.center = center
-    c.radius = radius
-    return c
+    return Circle(center, radius)
 
 
 def capsule(center1, center2, radius):
-    c = Capsule()
-    c.center1 = center1
-    c.center2 = center2
-    c.radius = radius
-    return c
+    return Capsule(center1, center2, radius)
+
+
+make_capsule = capsule
 
 
 def segment(point1, point2):
-    s = Segment()
-    s.point1 = point1
-    s.point2 = point2
-    return s
+    return Segment(point1, point2)
 
 
 def chain_segment(segment, ghost1, ghost2):
@@ -675,44 +547,33 @@ def polygon(points=None, hull=None, radius=None, position=None, rotation=None):
     if int(hull is not None) + int(points is not None) != 1:
         raise ValueError("either hull or points should be provided, but not both")
     if hull is None:
-        n_points = len(points)
-        if n_points < 3 or n_points > 8:
-            raise ValueError("the number of points should be between 3 and 8, but got {n_points}")
-        points = np.require(points, dtype=np.float32, requirements="C")
-        hull = compute_hull(points)
+        hull = compute_hull(points)  # any iterable of points / numpy array
+        if hull.count == 0:
+            raise ValueError(
+                "could not compute a convex hull: polygons need 3 to 8 points that are not collinear"
+            )
 
-    if position and rotation is not None:
-        if radius is None:
-            radius = 0.0
-        return b2d._make_polygon(hull, radius)
-    else:
-        if position is None:
-            position = (0, 0)
-        if rotation is None:
-            rotation = 0.0
+    if position is None and rotation is None:
+        return make_polygon(hull, 0.0 if radius is None else radius)
 
-        if radius is None:
-            return _pyb2d3._make_offset_polygon(hull, position, rotation)
-        else:
-            return _pyb2d3._make_offset_rounded_polygon(hull, position, rotation, radius)
+    position = (0, 0) if position is None else position
+    rotation = 0.0 if rotation is None else rotation
+    if radius is None:
+        return make_offset_polygon(hull, position, rotation)
+    return make_offset_rounded_polygon(hull, position, rotation, radius)
 
 
 def box(hx, hy, center=None, rotation=None, radius=None):
     if center is None and rotation is None:
         if radius is None:
-            return _pyb2d3._make_box(hx, hy)
-        else:
-            return _pyb2d3._make_rounded_box(hx, hy, radius)
-    else:
-        if center is None:
-            center = (0, 0)
-        if rotation is None:
-            rotation = 0.0
+            return make_box(hx, hy)
+        return make_rounded_box(hx, hy, radius)
 
-        if radius is None:
-            return _pyb2d3._make_offset_box(hx, hy, center, rotation)
-        else:
-            return _pyb2d3._make_offset_rounded_box(hx, hy, radius, center, rotation)
+    center = (0, 0) if center is None else center
+    rotation = 0.0 if rotation is None else rotation
+    if radius is None:
+        return make_offset_box(hx, hy, center, rotation)
+    return make_offset_rounded_box(hx, hy, center, rotation, radius)
 
 
 def chain_box(hx, hy, center=(0, 0), angle=None):
@@ -726,7 +587,6 @@ def chain_box(hx, hy, center=(0, 0), angle=None):
         ]
     )
     if angle is not None:
-        # rotate the points around the center
         cos_angle = np.cos(angle)
         sin_angle = np.sin(angle)
         rotation_matrix = np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]])
@@ -735,10 +595,7 @@ def chain_box(hx, hy, center=(0, 0), angle=None):
 
 
 def aabb(lower_bound, upper_bound):
-    aabb = AABB()
-    aabb.lower_bound = lower_bound
-    aabb.upper_bound = upper_bound
-    return aabb
+    return AABB(lower_bound, upper_bound)
 
 
 def aabb_arround_point(point, radius):
@@ -747,25 +604,31 @@ def aabb_arround_point(point, radius):
     return aabb(lower_bound, upper_bound)
 
 
+def ray_cast_input(origin=(0, 0), translation=(0, 0), max_fraction=1.0):
+    return RayCastInput(origin, translation, max_fraction)
+
+
+##############################################################################
+# colors
+##############################################################################
+
+
 def ensure_hex_color(color):
-    """Ensure color is a hex integer"""
+    """A color as 0xRRGGBB int: accepts ints (incl. HexColor members) and (r, g, b) tuples."""
     if isinstance(color, int):
-        return color
-    elif isinstance(color, tuple) and len(color) == 3:
-        return rgb_to_hex_color(*color)
-    else:
-        raise ValueError("Color must be an int or a tuple of (R, G, B) values.")
+        return int(color)
+    if isinstance(color, (tuple, list)) and len(color) == 3:
+        return rgb_to_hex_color(*(int(c) for c in color))
+    raise ValueError(f"a color must be an int (e.g. b2d.HexColor.Red) or an (r, g, b) tuple, got {color!r}")
 
 
 def rgb_to_hex_color(r, g, b):
     """Convert RGB values to a hexadecimal integer."""
-    # since we have 8 bits left, lets fill them with 255
     return (r << 16) | (g << 8) | b
 
 
 def rgba_to_hex_color(r, g, b, a):
     """Convert RGBA values to a hexadecimal integer."""
-    # since we have 8 bits left, lets fill them with 255
     return (r << 24) | (g << 16) | (b << 8) | a
 
 
@@ -788,7 +651,8 @@ def random_hex_color():
 
 
 # ignore in doc
-class HexColor(Enum):
+# an IntEnum: members are plain 0xRRGGBB ints, usable wherever a color is expected
+class HexColor(IntEnum):
     AliceBlue = 0xF0F8FF
     AntiqueWhite = 0xFAEBD7
     Aquamarine = 0x7FFFD4
@@ -945,19 +809,9 @@ class HexColor(Enum):
     Box2DYellow = 0xFFEE8C
 
 
-def extend_batch_api():
-    IdClasses = [(Bodies, Body)]
-
-    for batch_cls, single_cls in IdClasses:
-
-        def __iter__(self):
-            return map(single_cls, self.id_iter())
-
-        batch_cls.__iter__ = __iter__
-
-
-extend_batch_api()
-del extend_batch_api
+##############################################################################
+# path builder for chains
+##############################################################################
 
 
 class PathBuilder(object):
@@ -1020,7 +874,6 @@ class PathBuilder(object):
         center1 = (mx + h * perp_dx, my + h * perp_dy)
         center2 = (mx - h * perp_dx, my - h * perp_dy)
 
-        # Compute angles from centers to points
         def arc_angle(center):
             a1 = math.atan2(from_point[1] - center[1], from_point[0] - center[0])
             a2 = math.atan2(to_point[1] - center[1], to_point[0] - center[0])
@@ -1029,16 +882,10 @@ class PathBuilder(object):
 
         # Select center that gives the minor arc in the desired direction
         angle1 = arc_angle(center1)
-        # angle2 = arc_angle(center2)
 
-        if (angle1 <= math.pi) == major_arc:
-            center = center1
-            start_angle = math.atan2(from_point[1] - center[1], from_point[0] - center[0])
-            end_angle = math.atan2(to_point[1] - center[1], to_point[0] - center[0])
-        else:
-            center = center2
-            start_angle = math.atan2(from_point[1] - center[1], from_point[0] - center[0])
-            end_angle = math.atan2(to_point[1] - center[1], to_point[0] - center[0])
+        center = center1 if (angle1 <= math.pi) == major_arc else center2
+        start_angle = math.atan2(from_point[1] - center[1], from_point[0] - center[0])
+        end_angle = math.atan2(to_point[1] - center[1], to_point[0] - center[0])
 
         # Normalize angle span to always go minor arc direction
         if clockwise:
@@ -1048,7 +895,6 @@ class PathBuilder(object):
             if end_angle < start_angle:
                 end_angle += 2 * math.pi
 
-        # Generate arc points
         for i in range(1, segments + 1):
             t = i / segments
             angle = start_angle + (end_angle - start_angle) * t
@@ -1056,17 +902,25 @@ class PathBuilder(object):
             y = center[1] + radius * math.sin(angle)
             self.points.append((x, y))
 
-        # helpfull
         return center
 
 
-def ray_cast_input(origin=(0, 0), translation=(0, 0), max_fraction=1.0):
-    return b2RayCastInput(origin, translation, max_fraction)
+##############################################################################
+# debug draw
+##############################################################################
 
 
 class DebugDraw(DebugDrawBase):
+    """Base class for python debug draws. All coordinates are world coordinates."""
+
     def __init__(self):
         super().__init__(self)
+
+    def begin_draw(self):
+        pass
+
+    def end_draw(self):
+        pass
 
     def draw_polygon(self, points, color):
         pass
@@ -1092,8 +946,27 @@ class DebugDraw(DebugDrawBase):
     def draw_point(self, p, size, color):
         pass
 
-    def draw_string(self, x, y, string):
+    def draw_string(self, p, string, color):
         pass
 
     def draw_aabb(self, aabb, color):
         pass
+
+
+def _apply_box2d_docs():
+    """Docs of the box2d structs and their fields, generated from box2d's header comments
+    (scripts/generate_docstrings.py). Functions get theirs when they are bound in C++."""
+    from ._docstrings import CLASS_DOCS, FIELD_DOCS
+
+    for name, doc in CLASS_DOCS.items():
+        cls = getattr(_pyb2d3, name, None)
+        if isinstance(cls, type) and not cls.__doc__:
+            cls.__doc__ = doc
+    for (name, attr), doc in FIELD_DOCS.items():
+        prop = getattr(_pyb2d3, name, type).__dict__.get(attr)
+        if isinstance(prop, property):
+            prop.__doc__ = doc
+
+
+_apply_box2d_docs()
+del _apply_box2d_docs

@@ -10,26 +10,18 @@ docs_root = this_dir.parent
 html_static_path = docs_root / "_static"
 repo_root = docs_root.parent
 examples_dir = repo_root / "examples"
-samples_dir = examples_dir / "pyb2d3_samples"
-companion_packages = repo_root / "companion_packages"
 
-
-# add to sys.path
-sys.path.insert(0, str(samples_dir))
-sys.path.insert(0, str(companion_packages / "pyb2d3_sandbox"))
-sys.path.insert(0, str(companion_packages / "pyb2d3_sandbox_pygame"))
+# the sandbox, its frontends and the samples live in examples/
+sys.path.insert(0, str(examples_dir))
 
 from pyb2d3_sandbox_pygame import PygameFrontendSettings, PygameHeadlessSettings  # noqa: E402
 from pyb2d3_sandbox_pygame.sample_to_video import sample_to_video  # noqa: E402
+import pyb2d3_samples  # noqa: E402
+from pyb2d3_sandbox import registry  # noqa: E402
 
 
 github_url = "https://github.com/DerThorsten/pyb2d3"
 github_main_url = f"{github_url}/blob/main"
-
-
-# Add the examples directory to the system path
-sys.path.insert(0, str(examples_dir))
-import pyb2d3_samples  # noqa: E402
 
 
 def create_sample_videos():
@@ -91,21 +83,25 @@ def create_sample_videos():
 
 
 
-        :octicon:`mark-github`  `Source <{url}>`_
+        :octicon:`mark-github` `{title} <{url}>`__
 
 
 
     """
+    # note: anonymous links (`text <url>`__): named links with the same text ("Source") on
+    # every sample clash as duplicate targets and break
     for sample_class in pyb2d3_samples.all_examples:
         lower_name = sample_class.__name__.lower()
 
         filename = sys.modules[sample_class.__module__].__file__
         # filename relative to examples_dir
-        filename = Path(filename).relative_to(examples_dir)
+        filename = Path(filename).relative_to(examples_dir).as_posix()
 
         url = f"{github_main_url}/examples/{filename}"
+        entry = registry.find(sample_class)
+        title = f"{entry.category} / {entry.name}" if entry else sample_class.__name__
 
-        rst_content.append(template_str.format(video_name=lower_name, url=url))
+        rst_content.append(template_str.format(video_name=lower_name, url=url, title=title))
 
     rst_file = docs_root / "src" / "samples" / "sample_videos.rst"
     with rst_file.open("w") as f:

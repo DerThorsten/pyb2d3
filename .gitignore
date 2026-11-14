@@ -47,8 +47,13 @@ Minecraft.ttf
 
 .pixi/
 pixi.lock
+# imgui window layout written by the OpenGL sandbox
+imgui.ini
 build/
+build-*/
 dist/
+# clangd index
+.cache/
 
 dependencies/
 sandbox/
@@ -89,9 +94,12 @@ emscripten_forge/output/
 # ignore the rendered recipe (ie where the template is replaced)
 emscripten_forge/recipe/recipe.yaml
 
-# ignore the variant file (we donwload it on the fly)
-emscripten_forge/variant.yaml
+# ignore the variant file (we download it on the fly)
+emscripten_forge/variant*.yaml
 
 emscripten_forge/recipe_src/
 
 deploy
+
+# Claude Code personal settings
+.claude/settings.local.json

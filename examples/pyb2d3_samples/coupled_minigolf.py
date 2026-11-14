@@ -169,7 +169,7 @@ class CoupledMinigolf(SampleBase):
                 self.drag_pos = raw_drag_pos
 
     def balls_rest(self):
-        mag = self.balls[0].linear_velocity_magnitude() + self.balls[1].linear_velocity_magnitude()
+        mag = self.balls[0].speed + self.balls[1].speed
         return mag < 0.0001
 
     def post_update(self, dt):

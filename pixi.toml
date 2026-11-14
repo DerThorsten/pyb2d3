@@ -1,0 +1,106 @@
+[workspace]
+name = "pyb2d3"
+channels = ["conda-forge"]
+# (conda-forge has no box2d >= 3.2 for linux-aarch64 yet)
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[dependencies]
+# build
+cxx-compiler = "*"
+c-compiler = "*"
+cmake = "*"
+ninja = "*"
+scikit-build-core = "*"
+nanobind = "*"
+pip = "*"
+python = ">=3.13"
+box2d = ">=3.2.0"
+# run
+numpy = "*"
+# tests
+pytest = "*"
+pre-commit = "*"
+# sandbox frontends and samples
+imgui-bundle = "*"
+pyopengl = "*"
+pygame = "*"
+pillow = "*"
+# docs
+sphinx = "*"
+sphinxcontrib-video = "*"
+sphinx-design = "*"
+ffmpeg = "*"
+# emscripten-forge package
+rattler-build = "*"
+curl = "*"
+
+# the build dir lives in .pixi: its cmake cache belongs to this environment's python / compilers
+[tasks.configure]
+cmd = "cmake -S . -B .pixi/build -G Ninja -DFETCH_BOX2D=OFF -DCMAKE_BUILD_TYPE=Release"
+
+[tasks.build]
+description = "Build the extension in place (copied into src/module/pyb2d3)"
+cmd = "cmake --build .pixi/build"
+depends-on = ["configure"]
+
+# building via pip (scikit-build-core drives cmake), as users install it
+[tasks.install]
+description = "Build with pip and install pyb2d3 into the environment"
+cmd = "python -m pip install . --no-build-isolation --no-deps -v"
+env = { CMAKE_ARGS = "-DFETCH_BOX2D=OFF" }
+
+[tasks.wheel]
+description = "Build a wheel with pip into dist/"
+cmd = "python -m pip wheel . --no-build-isolation --no-deps -w dist"
+env = { CMAKE_ARGS = "-DFETCH_BOX2D=OFF" }
+
+[tasks.test-installed]
+description = "pip install, then run the tests against the installed package (ignores an in-place build)"
+cmd = "python -m pytest tests"
+env = { PYB2D3_TEST_INSTALLED = "1" }
+depends-on = ["install"]
+
+[tasks.test]
+description = "Run the tests (in-place build)"
+cmd = "python -m pytest tests"
+depends-on = ["build"]
+
+[tasks.docstrings]
+description = "Regenerate the docstrings from the box2d header comments (after binding changes or a box2d update)"
+cmd = "python scripts/generate_docstrings.py"
+
+[tasks.docs]
+description = "Build the documentation incl. the sample videos"
+cmd = "sphinx-build -b html docs docs/_build/html"
+depends-on = ["build"]
+
+[tasks.docs-quick]
+description = "Build the documentation without the sample videos"
+cmd = "sphinx-build -b html docs docs/_build/html"
+env = { PYB2D3_DOCS_QUICK = "1" }
+depends-on = ["build"]
+
+[tasks.docs-serve]
+description = "Serve the built docs on localhost and open them in the browser"
+cmd = "python docs/serve.py"
+
+[tasks.sandbox]
+description = "Browse the samples with the OpenGL frontend, e.g. pixi run sandbox \"Joints/Ragdoll\""
+cmd = "python examples/sandbox.py --frontend opengl \"{{ sample }}\""
+args = [{ arg = "sample", default = "" }]
+depends-on = ["build"]
+
+[tasks.sandbox-pygame]
+description = "Browse the samples with the pygame frontend"
+cmd = "python examples/sandbox.py --frontend pygame \"{{ sample }}\""
+args = [{ arg = "sample", default = "" }]
+depends-on = ["build"]
+
+[tasks.smoke-opengl]
+description = "Run every sample a few frames in the OpenGL frontend (needs a display), fails on errors"
+cmd = "python examples/opengl_smoke_test.py"
+depends-on = ["build"]
+
+[tasks.emscripten]
+description = "Build the emscripten-forge package (emscripten-forge/6x channel)"
+cmd = "bash scripts/build_emscripten_forge_pkg.sh"

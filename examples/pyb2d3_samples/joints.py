@@ -1,4 +1,6 @@
 # +
+import math
+
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase
 
@@ -45,8 +47,9 @@ class Joints(SampleBase):
         self.world.create_prismatic_joint(
             body_a=a,
             body_b=b,
+            # box2d >= 3.2: the slide axis is the x-axis of local frame A (here: 45 degrees)
+            local_frame_a=b2d.transform(q=0.25 * math.pi),
             local_anchor_b=(0, 0),
-            local_axis_a=(1, 1),
         )
         # to start with some movement
         b.apply_linear_impulse_to_center((0, 10))

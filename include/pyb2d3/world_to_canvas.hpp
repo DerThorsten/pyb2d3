@@ -1,5 +1,8 @@
 #pragma once
 
+// used by the pygame sandbox frontend (also the docs videos) and the headless sample tests:
+// CanvasWorldTransform, CapsuleBuilderWithTransform
+
 
 // # transform points from world coordinates
 // # to canvas coordinates  and vice versa

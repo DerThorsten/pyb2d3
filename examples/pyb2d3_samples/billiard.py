@@ -224,7 +224,7 @@ class Billiard(SampleBase):
             all_rest = True
             for ball in self.balls:
                 body = ball.body
-                mag = body.linear_velocity_magnitude()
+                mag = body.speed
                 if mag > 0.0001:  # threshold for resting
                     all_rest = False
                     break

@@ -1,88 +1,67 @@
 # pyb2d3
-python bindings for Box2D 3
 
+Python bindings for [Box2D](https://box2d.org) v3.2, the 2D physics engine.
 
-# Documentation
+- the complete public Box2D API, typed and Pythonic
+- a numpy batch API to simulate and read out thousands of bodies with a few calls
+- snapshots, recording and deterministic replay
+- a sandbox with OpenGL and pygame frontends and ~140 interactive samples, including ports of
+  Box2D's own sample browser
 
-The documentation is avaialable at [derthorsten.github.io/pyb2d3](https://derthorsten.github.io/pyb2d3/).
+```python
+import pyb2d3 as b2d
 
+world = b2d.World(gravity=(0, -10))
+ground = world.create_static_body(position=(0, -1))
+ground.create_shape(b2d.shape_def(), b2d.box(50, 1))
 
-# Installation
+body = world.create_dynamic_body(position=(0, 4))
+body.create_shape(b2d.shape_def(density=1), b2d.box(0.5, 0.5))
 
-## pip
-Install the python bindings with:
+for _ in range(60):
+    world.step(1 / 60, 4)
+print(body.position)
+```
+
+## Documentation
+
+[derthorsten.github.io/pyb2d3](https://derthorsten.github.io/pyb2d3/)
+
+## Installation
+
 ```bash
 pip install pyb2d3
+# or
+conda install -c conda-forge pyb2d3
 ```
 
+## Sandbox and samples
 
-
-# conda based package
-
-SOON!
-
-# Building from Source
-
-Note:
-This may not work on windows!
-
-Create the development environment with:
-```bash
-micromamba create -f dev-environment.yml
-```
-
-Activate the environment with:
-```bash
-micromamba activate pyb2d
-```
-
-
-Install the python bindings with:
-```bash
-pip install .
-```
-
-If you prefer to build the bindings with raw cmake, you can do so with.
-This is particular usefull for iterative development since
-the rebuild times are the fastest when building with raw cmake (instead
-of using pip which relies on scikit-build-core to invoke cmake).
+The sandbox, its frontends and the samples live in `examples/` (they are not packages).
+With [pixi](https://pixi.sh), from a checkout:
 
 ```bash
-mkdir build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX \
-    -Dnanobind_DIR=$(python -m nanobind --cmake_dir)
-make -j$(nproc)
+pixi run sandbox                    # OpenGL frontend, samples grouped by category
+pixi run sandbox "Joints/Ragdoll"   # start at a sample
+pixi run sandbox-pygame             # pygame frontend
 ```
 
-For iterative development one needs to add
-the source directory to the `PYTHONPATH` so that the python bindings can be imported.
-That way, changes to the pure python code are immediately available without the need to rebuild the bindings.
+## Development
+
+Everything is a pixi task (`pixi.toml`):
 
 ```bash
-PYTHONPATH=$(pwd)/src/module pytest
+pixi run build        # build the extension in place
+pixi run test         # build + tests
+pixi run install      # build with pip and install into the pixi environment
+pixi run test-installed  # install + tests against the installed package
+pixi run wheel        # build a wheel with pip into dist/
+pixi run docs-quick   # docs without the sample videos (docs/_build/html)
+pixi run docs         # docs with the sample videos
+pixi run docs-serve   # serve the built docs and open them in the browser
+pixi run smoke-opengl # every sample a few frames in the OpenGL frontend (needs a display)
+pixi run emscripten   # emscripten-forge package
 ```
 
-# Testbed
-
-To install the testbed use:
-```bash
-python -m pip install "pkg @ git+https://git@github.com/derthorsten/pyb2d3.git#subdirectory=companion_packages/pyb2d3_sandbox"
-```
-
-The testbed needs a frontend to run.
-There are several frontends available, e.g.:
-- opengl-based:
-```bash
-python -m pip install "pkg @ git+https://git@github.com/derthorsten/pyb2d3.git#subdirectory=companion_packages/pyb2d3_sandbox_opengl"
-```
-
-- pygame-based
-```bash
-python -m pip install "pkg @ git+https://git@github.com/derthorsten/pyb2d3.git#subdirectory=companion_packages/pyb2d3_sandbox_opengl"
-```
-
-- ipycanvas-based
-```bash
-python -m pip install "pkg @ git+https://git@github.com/derthorsten/pyb2d3.git#subdirectory=companion_packages/pyb2d3_sandbox_ipycanvas"
-```
+See the [developer guide](https://derthorsten.github.io/pyb2d3/src/developer.html) for the
+architecture of the bindings.

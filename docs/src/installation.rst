@@ -1,40 +1,36 @@
 Installation
------------------
+============
 
-pyb2d is published on Python Package Index (PyPI) and conda-forge.
-You can install it using pip or conda.
+pyb2d3 is published on PyPI and conda-forge.
 
-Installation with pip
-++++++++++++++++++++++++
-
-To install pyb2d using pip, run the following command:
-
- .. code-block:: bash
+.. code-block:: bash
 
     pip install pyb2d3
 
+.. code-block:: bash
 
+    conda install -c conda-forge pyb2d3    # or mamba / micromamba / pixi add pyb2d3
 
+The only runtime dependency is numpy.
 
-Installation with conda / mamba / micromamba
-++++++++++++++++++++++++++++++++++++++++++++++++
+Sandbox and samples
+-------------------
 
-To install pyb2d using conda, run the following command:
+The interactive sandbox, its OpenGL and pygame frontends and the samples are not packages,
+they live in the ``examples`` directory of the repository. Run them from a checkout with
+`pixi <https://pixi.sh>`_:
 
-   .. code-block:: bash
+.. code-block:: bash
 
-      conda install -c conda-forge pyb2d3
+    git clone https://github.com/derthorsten/pyb2d3.git
+    cd pyb2d3
+    pixi run sandbox                     # OpenGL frontend
+    pixi run sandbox "Joints/Ragdoll"    # start at a sample
+    pixi run sandbox-pygame              # pygame frontend
 
-or
+See :doc:`sandbox`.
 
-   .. code-block:: bash
+From source
+-----------
 
-      mamba install -c conda-forge pyb2d3
-
-or
-
-   .. code-block:: bash
-
-      micromamba install -c conda-forge pyb2d3
-
-depending on your personal preference and your snake of choice.
+See :doc:`developer`.
