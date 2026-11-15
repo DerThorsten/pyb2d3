@@ -28,9 +28,10 @@ from .draw import GLBackground, GLCircles, GLPoints, GLLines
 from .draw import GLSolidPolygons, GLSolidCircles, GLSolidCapsules
 import numpy as np
 import time
-import OpenGL
+import weakref
 
-OpenGL.ERROR_CHECKING = False
+# (PyOpenGL's error checking: switched off in this package's __init__, before the
+# first OpenGL.GL import)
 
 
 class Camera:
@@ -170,6 +171,33 @@ class GLDebugDraw(FrontendDebugDraw):
         self.lines = GLLines(self.camera)
         # Add storage for debug strings
         self.debug_strings = []
+        # the world is drawn in C++ into flat arrays (no python call per shape); the
+        # draw_* callbacks below are for what samples draw themselves. The string
+        # callback holds this debug draw weakly: a strong reference from the C++
+        # object back to self would be a cycle the garbage collector cannot see
+        self_ref = weakref.ref(self)
+
+        def on_string(position, text, color):
+            """body names etc. (rare): into this debug draw's strings"""
+            debug_draw = self_ref()
+            if debug_draw is not None:
+                debug_draw.draw_string(position, text, color)
+
+        self.batch = b2d.BatchDebugDraw(on_string=on_string)
+
+    def draw_world(self, world):
+        """draw `world` with this debug draw's options: collected in C++
+        (BatchDebugDraw), handed to the GL batches as whole arrays"""
+        batch = self.batch
+        batch.copy_options(self)
+        batch.clear()
+        world._draw(batch)
+        self.solid_circles.circles.add_block(batch.solid_circles)
+        self.solid_capsules.capsules.add_block(batch.capsules)
+        self.solid_polygons.add_block(batch.polygons)
+        self.circles.circles.add_block(batch.circles)
+        self.points.points.add_block(batch.points)
+        self.lines.lines.add_block(batch.lines)
 
     def begin_draw(self):
         self._draw_start_time = time.perf_counter()  # start timing
@@ -177,12 +205,21 @@ class GLDebugDraw(FrontendDebugDraw):
         self.background.draw()
 
     def end_draw(self):
+        # the GL state is set once per frame, not per shape type (every GL call
+        # costs, especially python -> wasm -> JS in the browser): blending for all
+        # shapes, a reset at the end (the imgui frontend draws after us)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         self.solid_circles.draw()
         self.solid_capsules.draw()
         self.solid_polygons.draw()
         self.circles.draw()
         self.lines.draw()
         self.points.draw()
+        glDisable(GL_BLEND)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+        glBindVertexArray(0)
+        glUseProgram(0)
 
         # Draw debug strings
         for pos, text, color in self.debug_strings:
@@ -202,28 +239,30 @@ class GLDebugDraw(FrontendDebugDraw):
         # state.perf.draw_ms_avg += elapsed * (1 - smoothing)
         # state.perf.draw_ms_max = max(state.perf.draw_ms_max, elapsed)
 
+    # colors are passed on as they come (int, HexColor, (r, g, b)): the add_* methods
+    # convert them once with the cached draw.rgba8
+
     def draw_polygon(self, points, color):
-        # Draw polygon outlines by connecting points in order]
-        color = ensure_hex(color)
+        # Draw polygon outlines by connecting points in order
         n = len(points)
         for i in range(n):
             self.lines.add_line(points[i], points[(i + 1) % n], color)
 
     def draw_solid_polygon(self, transform, points, radius: float, color):
         # Delegate to solid_polygons; pass the raw b2Transform from the Transform wrapper
-        self.solid_polygons.add_polygon(transform, points, len(points), radius, ensure_hex(color))
+        self.solid_polygons.add_polygon(transform, points, len(points), radius, color)
 
     def draw_circle(self, center, radius: float, color):
         # Queue border circle drawing
-        self.circles.add_circle(center, radius, ensure_hex(color))
+        self.circles.add_circle(center, radius, color)
 
     def draw_segment(self, p1, p2, color):
         # Draw a line segment between two points
-        self.lines.add_line(p1, p2, ensure_hex(color))
+        self.lines.add_line(p1, p2, color)
 
     def draw_point(self, p, size: float, color):
         # Draw a point as a small circle
-        self.points.add_point(p, size, ensure_hex(color))
+        self.points.add_point(p, size, color)
 
     def draw_string(self, p, s: str, color=1):
         """Store debug string for rendering during end_frame"""
@@ -231,15 +270,15 @@ class GLDebugDraw(FrontendDebugDraw):
 
     def draw_capsule(self, p1, p2, radius: float, color):
         # Draw capsule outline by adding a capsule (the same as solid capsule here)
-        self.solid_capsules.add_capsule(p1, p2, radius, ensure_hex(color))
+        self.solid_capsules.add_capsule(p1, p2, radius, color)
 
     def draw_solid_capsule(self, p1, p2, radius: float, color):
         # Draw a filled capsule
-        self.solid_capsules.add_capsule(p1, p2, radius, ensure_hex(color))
+        self.solid_capsules.add_capsule(p1, p2, radius, color)
 
     def draw_solid_circle(self, transform, radius: float, color):
         # Queue solid circle drawing; pass the underlying b2Transform
-        self.solid_circles.add_circle(transform, radius, ensure_hex(color))
+        self.solid_circles.add_circle(transform, radius, color)
 
     def draw_transform(self, transform):
         # Draw coordinate axes. Use a fixed scale.

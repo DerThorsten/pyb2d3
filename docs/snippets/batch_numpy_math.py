@@ -29,7 +29,9 @@ def kinetic_energy():
     """Translational plus rotational kinetic energy of all bodies."""
     v = bodies.linear_velocity
     w = bodies.angular_velocity
-    return 0.5 * np.sum(bodies.mass * np.sum(v * v, axis=1)) + 0.5 * np.sum(bodies.rotational_inertia * w * w)
+    return 0.5 * np.sum(bodies.mass * np.sum(v * v, axis=1)) + 0.5 * np.sum(
+        bodies.rotational_inertia * w * w
+    )
 
 
 energies = []
@@ -43,7 +45,8 @@ assert energies[-1] > energies[0] > 0
 
 # the same numbers with a python loop, to check the vectorized version
 loop_energy = sum(
-    0.5 * b.mass * (b.linear_velocity.x**2 + b.linear_velocity.y**2) + 0.5 * b.rotational_inertia * b.angular_velocity**2
+    0.5 * b.mass * (b.linear_velocity.x**2 + b.linear_velocity.y**2)
+    + 0.5 * b.rotational_inertia * b.angular_velocity**2
     for b in bodies
 )
 assert np.isclose(loop_energy, kinetic_energy(), rtol=1e-4)

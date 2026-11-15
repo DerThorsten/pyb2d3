@@ -35,7 +35,9 @@ bodies.user_data = np.arange(n, dtype=np.uint64)  # e.g. an index into your own 
 
 # teleport: set_transform takes positions (n, 2) and rotations (n, 2) as (cos, sin)
 new_angles = np.zeros(n)
-bodies.set_transform(positions + (0, 10), np.stack([np.cos(new_angles), np.sin(new_angles)], axis=1))
+bodies.set_transform(
+    positions + (0, 10), np.stack([np.cos(new_angles), np.sin(new_angles)], axis=1)
+)
 assert np.allclose(bodies.position[:, 1], positions[:, 1] + 10)
 
 world.step(1 / 60, 4)

@@ -283,7 +283,9 @@ namespace pyb2d3
         const bool broadcast = (total == bv::width);
         if (!broadcast && total != n * bv::width)
         {
-            throw nb::value_error("value has the wrong size: expected one element or one element per batch entry");
+            throw nb::value_error(
+                "value has the wrong size: expected one element or one element per batch entry"
+            );
         }
         const S* ptr = arr.data();
         for (std::size_t i = 0; i < n; ++i)
@@ -339,8 +341,7 @@ namespace pyb2d3
     {
         using R = result_of_t<F>;
 
-        static constexpr bool enabled = (is_batchable_v<A> && ...)
-                                        && (std::is_void_v<R> || is_batchable_v<R>);
+        static constexpr bool enabled = (is_batchable_v<A> && ...) && (std::is_void_v<R> || is_batchable_v<R>);
 
         static nb::object call(Batch<T>& batch, detail::as_object<A>... args)
         {
@@ -484,48 +485,46 @@ namespace pyb2d3
             using IdT = typename T::id_type;
 
             cls.def(nb::init<uint64_t>(), nb::arg("id"))
-            .def_prop_ro(
-                "id",
-                [](const T& self)
-                {
-                    return self.int_id();
-                }
-            )
-            // is_operator: comparing with another type (e.g. None) returns NotImplemented
-            // instead of raising, so `body in [None, ...]` and `body == None` work
-            .def(
-                "__eq__",
-                [](const T& self, const T& other)
-                {
-                    return self.int_id() == other.int_id();
-                },
-                nb::is_operator()
-            )
-            .def(
-                "__ne__",
-                [](const T& self, const T& other)
-                {
-                    return self.int_id() != other.int_id();
-                },
-                nb::is_operator()
-            )
-            .def(
-                "__hash__",
-                [](const T& self)
-                {
-                    return std::hash<uint64_t>{}(self.int_id());
-                }
-            )
-            .def(
-                "__repr__",
-                [](nb::handle self)
-                {
-                    return nb::str("{}(id={})").format(
-                        nb::type_name(self.type()),
-                        nb::cast<const T&>(self).int_id()
-                    );
-                }
-            );
+                .def_prop_ro(
+                    "id",
+                    [](const T& self)
+                    {
+                        return self.int_id();
+                    }
+                )
+                // is_operator: comparing with another type (e.g. None) returns NotImplemented
+                // instead of raising, so `body in [None, ...]` and `body == None` work
+                .def(
+                    "__eq__",
+                    [](const T& self, const T& other)
+                    {
+                        return self.int_id() == other.int_id();
+                    },
+                    nb::is_operator()
+                )
+                .def(
+                    "__ne__",
+                    [](const T& self, const T& other)
+                    {
+                        return self.int_id() != other.int_id();
+                    },
+                    nb::is_operator()
+                )
+                .def(
+                    "__hash__",
+                    [](const T& self)
+                    {
+                        return std::hash<uint64_t>{}(self.int_id());
+                    }
+                )
+                .def(
+                    "__repr__",
+                    [](nb::handle self)
+                    {
+                        return nb::str("{}(id={})")
+                            .format(nb::type_name(self.type()), nb::cast<const T&>(self).int_id());
+                    }
+                );
 
             b.template ro<&is_valid_fn<IdT>>("is_valid");
 
@@ -552,7 +551,8 @@ namespace pyb2d3
         detail::bind_handle_common(cls, b);
 
         {
-            batch_cls.def(nb::init<>())
+            batch_cls
+                .def(nb::init<>())
                 // fast path: an array of ids
                 .def(
                     "__init__",

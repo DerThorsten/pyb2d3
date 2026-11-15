@@ -70,13 +70,18 @@ class BatchDamBreak(SampleBase):
         """the tank (static) and a dynamic obstacle block on its floor"""
         w, h = self.tank
         tank = self.world.create_static_body()
-        wall_def = b2d.shape_def(material=b2d.surface_material(friction=0.1, custom_color=b2d.HexColor.SlateGray))
+        wall_def = b2d.shape_def(
+            material=b2d.surface_material(friction=0.1, custom_color=b2d.HexColor.SlateGray)
+        )
         tank.create_shape(wall_def, b2d.box(w / 2 + 1.0, 0.5, center=(w / 2, -0.5)))
         tank.create_shape(wall_def, b2d.box(0.5, h, center=(-0.5, h)))
         tank.create_shape(wall_def, b2d.box(0.5, h, center=(w + 0.5, h)))
         self.obstacle = self.world.create_dynamic_body(position=(0.62 * w, 1.0))
         self.obstacle.create_shape(
-            b2d.shape_def(density=3.0, material=b2d.surface_material(friction=0.6, custom_color=b2d.HexColor.Peru)),
+            b2d.shape_def(
+                density=3.0,
+                material=b2d.surface_material(friction=0.6, custom_color=b2d.HexColor.Peru),
+            ),
             b2d.box(1.0, 1.0),
         )
 
@@ -87,7 +92,9 @@ class BatchDamBreak(SampleBase):
         columns = 26
         rows = int(np.ceil(self.count / columns))
         gx, gy = np.meshgrid(np.arange(columns), np.arange(rows))
-        positions = np.stack([gx.ravel() * spacing + 0.2, gy.ravel() * spacing + 0.2], axis=1)[: self.count]
+        positions = np.stack([gx.ravel() * spacing + 0.2, gy.ravel() * spacing + 0.2], axis=1)[
+            : self.count
+        ]
         positions += self.rng.uniform(-0.01, 0.01, positions.shape)
         colors = hsv_colors(0.55 + 0.05 * positions[:, 1] / positions[:, 1].max(), 0.7, 0.95)
         bodies = b2d.Bodies()
@@ -95,8 +102,10 @@ class BatchDamBreak(SampleBase):
         for (x, y), color in zip(positions, colors):
             body = self.world.create_dynamic_body(position=(float(x), float(y)))
             material = b2d.surface_material(friction=0.0, custom_color=int(color))
-            body.create_shape(b2d.shape_def(density=1.0, material=material, filter=fluid_filter),
-                              b2d.circle(radius=self.radius))
+            body.create_shape(
+                b2d.shape_def(density=1.0, material=material, filter=fluid_filter),
+                b2d.circle(radius=self.radius),
+            )
             bodies.append(body)
         self.particles = bodies
         # rest density: the density inside the initial packing
@@ -143,7 +152,9 @@ class BatchDamBreak(SampleBase):
 
     def post_debug_draw(self):
         speed = self.particles.speed
-        text = (f"{len(self.particles)} particles, {self.pairs} pairs, forces {self.timing.value or 0:.1f} ms   "
-                f"speed mean {speed.mean():.2f} max {speed.max():.1f}  front x {self.particles.position[:, 0].max():.1f}  "
-                f"top y {self.particles.position[:, 1].max():.1f}")
+        text = (
+            f"{len(self.particles)} particles, {self.pairs} pairs, forces {self.timing.value or 0:.1f} ms   "
+            f"speed mean {speed.mean():.2f} max {speed.max():.1f}  front x {self.particles.position[:, 0].max():.1f}  "
+            f"top y {self.particles.position[:, 1].max():.1f}"
+        )
         self.debug_draw.draw_string((0.0, self.tank[1] + 1.0), text, b2d.HexColor.White)

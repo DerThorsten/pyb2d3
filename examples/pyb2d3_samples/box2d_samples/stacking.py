@@ -87,16 +87,52 @@ class VerticalStack(Box2dSample):
         self.create_stacks()
 
         add = self.frontend.add_widget
-        add(widgets.Dropdown(label="Shape", options=self.shape_types, value=self.shape_type,
-                             callback=lambda v: self.reset(shape_type=v)))
-        add(widgets.IntSlider(label="Rows", min_value=1, max_value=self.max_rows, step=1, value=self.row_count,
-                              callback=lambda v: self.reset(row_count=v)))
-        add(widgets.IntSlider(label="Columns", min_value=1, max_value=self.max_columns, step=1,
-                              value=self.column_count, callback=lambda v: self.reset(column_count=v)))
-        add(widgets.IntSlider(label="Bullets", min_value=1, max_value=self.max_bullets, step=1,
-                              value=self.bullet_count, callback=lambda v: setattr(self, "bullet_count", v)))
-        add(widgets.Dropdown(label="Bullet Shape", options=self.shape_types, value=self.bullet_type,
-                             callback=lambda v: setattr(self, "bullet_type", v)))
+        add(
+            widgets.Dropdown(
+                label="Shape",
+                options=self.shape_types,
+                value=self.shape_type,
+                callback=lambda v: self.reset(shape_type=v),
+            )
+        )
+        add(
+            widgets.IntSlider(
+                label="Rows",
+                min_value=1,
+                max_value=self.max_rows,
+                step=1,
+                value=self.row_count,
+                callback=lambda v: self.reset(row_count=v),
+            )
+        )
+        add(
+            widgets.IntSlider(
+                label="Columns",
+                min_value=1,
+                max_value=self.max_columns,
+                step=1,
+                value=self.column_count,
+                callback=lambda v: self.reset(column_count=v),
+            )
+        )
+        add(
+            widgets.IntSlider(
+                label="Bullets",
+                min_value=1,
+                max_value=self.max_bullets,
+                step=1,
+                value=self.bullet_count,
+                callback=lambda v: setattr(self, "bullet_count", v),
+            )
+        )
+        add(
+            widgets.Dropdown(
+                label="Bullet Shape",
+                options=self.shape_types,
+                value=self.bullet_type,
+                callback=lambda v: setattr(self, "bullet_type", v),
+            )
+        )
         add(widgets.Button(label="Fire Bullets", callback=self.refire_bullets))
         add(widgets.Button(label="Destroy Body", callback=self.destroy_body))
         add(widgets.Button(label="Reset Stack", callback=self.reset))
@@ -116,7 +152,9 @@ class VerticalStack(Box2dSample):
         xroot = 8.0
         self.bodies = []
         for j in range(self.column_count):
-            self.bodies += create_column(self.world, xroot + j * dx, self.row_count, shape_def, geometry, offset)
+            self.bodies += create_column(
+                self.world, xroot + j * dx, self.row_count, shape_def, geometry, offset
+            )
 
     def reset(self, **changes):
         for name, value in changes.items():
@@ -262,14 +300,30 @@ class Cliff(Box2dSample):
         offset = -4.0 if self.flip else 0.0
         circle_offset = 4.0 if self.flip else 0.0
         groups = [
-            (capsule, 0.01, 2.0, [(-9.0 + offset, 4.25), (2.0 + offset, 4.75), (13.0 + offset, 4.75)]),
+            (
+                capsule,
+                0.01,
+                2.0,
+                [(-9.0 + offset, 4.25), (2.0 + offset, 4.75), (13.0 + offset, 4.75)],
+            ),
             (square, 0.01, 2.5, [(-11.0, 4.5), (0.0, 5.0), (11.0, 5.0)]),
-            (circle, 0.2, 1.5, [(-13.0 + circle_offset, 4.5), (-2.0 + circle_offset, 5.0), (9.0 + circle_offset, 5.0)]),
+            (
+                circle,
+                0.2,
+                1.5,
+                [
+                    (-13.0 + circle_offset, 4.5),
+                    (-2.0 + circle_offset, 5.0),
+                    (9.0 + circle_offset, 5.0),
+                ],
+            ),
         ]
         for geometry, friction, speed, positions in groups:
             shape_def = b2d.shape_def(material=b2d.surface_material(friction=friction))
             for position in positions:
-                body = self.world.create_dynamic_body(position=position, linear_velocity=(speed * sign, 0.0))
+                body = self.world.create_dynamic_body(
+                    position=position, linear_velocity=(speed * sign, 0.0)
+                )
                 body.create_shape(shape_def, geometry)
                 self.bodies.append(body)
 
@@ -319,7 +373,10 @@ class Arch(Box2dSample):
             return (-p[0], p[1])
 
         quads = [[ps1[i], ps2[i], ps2[i + 1], ps1[i + 1]] for i in range(8)]
-        quads += [[mirror(ps2[i]), mirror(ps1[i]), mirror(ps1[i + 1]), mirror(ps2[i + 1])] for i in range(8)]
+        quads += [
+            [mirror(ps2[i]), mirror(ps1[i]), mirror(ps1[i + 1]), mirror(ps2[i + 1])]
+            for i in range(8)
+        ]
         quads.append([ps1[8], ps2[8], mirror(ps2[8]), mirror(ps1[8])])
         for quad in quads:
             body = world.create_dynamic_body()

@@ -65,7 +65,9 @@ class SensorFunnel(Box2dSample):
             b2d.chain_def(self.points, material=b2d.surface_material(friction=0.2), is_loop=True)
         )
 
-        paddle_def = b2d.shape_def(density=1.0, material=b2d.surface_material(friction=0.1, restitution=1.0))
+        paddle_def = b2d.shape_def(
+            density=1.0, material=b2d.surface_material(friction=0.1, restitution=1.0)
+        )
         sign = 1.0
         y = 14.0
         for _ in range(3):
@@ -91,7 +93,9 @@ class SensorFunnel(Box2dSample):
         self.create_element()
 
         self.frontend.add_widget(
-            widgets.RadioButtons(label="Type", options=["donut", "human"], value=self.type, callback=self.set_type)
+            widgets.RadioButtons(
+                label="Type", options=["donut", "human"], value=self.type, callback=self.set_type
+            )
         )
 
     def set_type(self, element_type):
@@ -147,7 +151,11 @@ class SensorBookend(Box2dSample):
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
         ground = self.world.create_static_body()
-        for p1, p2 in [((-10.0, 0.0), (10.0, 0.0)), ((-10.0, 0.0), (-10.0, 10.0)), ((10.0, 0.0), (10.0, 10.0))]:
+        for p1, p2 in [
+            ((-10.0, 0.0), (10.0, 0.0)),
+            ((-10.0, 0.0), (-10.0, 10.0)),
+            ((10.0, 0.0), (10.0, 10.0)),
+        ]:
             ground.create_shape(b2d.shape_def(), b2d.segment(p1, p2))
 
         self.is_visiting1 = False
@@ -155,19 +163,41 @@ class SensorBookend(Box2dSample):
         self.sensors_overlap_count = 0
 
         # name -> (create function, body, shape); the shape is kept after the body is destroyed for the end events
-        self.creators = {"visitor": self.create_visitor, "sensor1": self.create_sensor1, "sensor2": self.create_sensor2}
+        self.creators = {
+            "visitor": self.create_visitor,
+            "sensor1": self.create_sensor1,
+            "sensor2": self.create_sensor2,
+        }
         self.bodies = {}
         self.shapes = {}
         for name in self.creators:
             self.create(name)
 
         add = self.frontend.add_widget
-        for name, label in [("visitor", "visitor"), ("sensor1", "sensor 1"), ("sensor2", "sensor 2")]:
-            add(widgets.Button(label=f"create / destroy {label}", callback=lambda n=name: self.toggle(n)))
-            add(widgets.Checkbox(label=f"{label} events", value=True,
-                                 callback=lambda flag, n=name: self.enable_events(n, flag)))
-            add(widgets.Checkbox(label=f"enable {label} body", value=True,
-                                 callback=lambda flag, n=name: self.enable_body(n, flag)))
+        for name, label in [
+            ("visitor", "visitor"),
+            ("sensor1", "sensor 1"),
+            ("sensor2", "sensor 2"),
+        ]:
+            add(
+                widgets.Button(
+                    label=f"create / destroy {label}", callback=lambda n=name: self.toggle(n)
+                )
+            )
+            add(
+                widgets.Checkbox(
+                    label=f"{label} events",
+                    value=True,
+                    callback=lambda flag, n=name: self.enable_events(n, flag),
+                )
+            )
+            add(
+                widgets.Checkbox(
+                    label=f"enable {label} body",
+                    value=True,
+                    callback=lambda flag, n=name: self.enable_body(n, flag),
+                )
+            )
 
     def create(self, name):
         self.bodies[name], self.shapes[name] = self.creators[name]()
@@ -185,7 +215,9 @@ class SensorBookend(Box2dSample):
 
     def create_visitor(self):
         body = self.world.create_dynamic_body(position=(-4.0, 1.0))
-        return body, body.create_shape(b2d.shape_def(enable_sensor_events=True), b2d.circle(radius=0.5))
+        return body, body.create_shape(
+            b2d.shape_def(enable_sensor_events=True), b2d.circle(radius=0.5)
+        )
 
     def toggle(self, name):
         body = self.bodies.get(name)
@@ -204,7 +236,11 @@ class SensorBookend(Box2dSample):
             self.bodies[name].enabled = flag
 
     def post_update(self, dt):
-        visitor, sensor1, sensor2 = self.shapes["visitor"], self.shapes["sensor1"], self.shapes["sensor2"]
+        visitor, sensor1, sensor2 = (
+            self.shapes["visitor"],
+            self.shapes["sensor1"],
+            self.shapes["sensor2"],
+        )
         events = self.world.get_sensor_events()
         for delta, event_list in ((1, events.begin_events()), (-1, events.end_events())):
             for event in event_list:
@@ -259,14 +295,22 @@ class FootSensor(Box2dSample):
         chain.enable_sensor_events = True
         ground.create_chain(chain)
 
-        self.player = world.create_dynamic_body(position=(0.0, 1.0), motion_locks=b2d.MotionLocks(angular_z=True))
+        self.player = world.create_dynamic_body(
+            position=(0.0, 1.0), motion_locks=b2d.MotionLocks(angular_z=True)
+        )
         material = b2d.surface_material(friction=0.3)
         self.player.create_shape(
-            b2d.shape_def(filter=b2d.make_filter(category_bits=self.PLAYER, mask_bits=self.GROUND), material=material),
+            b2d.shape_def(
+                filter=b2d.make_filter(category_bits=self.PLAYER, mask_bits=self.GROUND),
+                material=material,
+            ),
             b2d.capsule((0.0, -0.5), (0.0, 0.5), 0.5),
         )
         self.sensor = self.player.create_shape(
-            _sensor_def(filter=b2d.make_filter(category_bits=self.FOOT, mask_bits=self.GROUND), material=material),
+            _sensor_def(
+                filter=b2d.make_filter(category_bits=self.FOOT, mask_bits=self.GROUND),
+                material=material,
+            ),
             b2d.box(0.5, 0.25, center=(0.0, -1.0)),
         )
         self.overlap_count = 0
@@ -287,7 +331,9 @@ class FootSensor(Box2dSample):
     def post_debug_draw(self):
         for point in self.visitor_points:
             self.debug_draw.draw_point(point, 10.0, WHITE)
-        self.debug_draw.draw_string(self.player.position + (0.0, 2.0), f"count == {self.overlap_count}", WHITE)
+        self.debug_draw.draw_string(
+            self.player.position + (0.0, 2.0), f"count == {self.overlap_count}", WHITE
+        )
 
 
 @register_sample("Events", "Contact")
@@ -303,13 +349,19 @@ class ContactEvent(Box2dSample):
         world = self.world
 
         ground = world.create_static_body()
-        ground.create_chain(b2d.chain_def([(40.0, -40.0), (-40.0, -40.0), (-40.0, 40.0), (40.0, 40.0)], is_loop=True))
+        ground.create_chain(
+            b2d.chain_def(
+                [(40.0, -40.0), (-40.0, -40.0), (-40.0, 40.0), (40.0, 40.0)], is_loop=True
+            )
+        )
 
         self.player = world.create_dynamic_body(
             gravity_scale=0.0, linear_damping=0.5, angular_damping=0.5, is_bullet=True
         )
         # Enable contact events for the player shape
-        self.core_shape = self.player.create_shape(b2d.shape_def(enable_contact_events=True), b2d.circle(radius=1.0))
+        self.core_shape = self.player.create_shape(
+            b2d.shape_def(enable_contact_events=True), b2d.circle(radius=1.0)
+        )
 
         self.debris = [None] * self.count
         self.timer = _SpawnTimer()
@@ -317,8 +369,14 @@ class ContactEvent(Box2dSample):
         self.lines = []  # (p1, p2, color) of the contact impulses of this step
 
         self.frontend.add_widget(
-            widgets.FloatSlider(label="force", min_value=100.0, max_value=500.0, step=1.0, value=self.force,
-                                callback=lambda v: setattr(self, "force", v))
+            widgets.FloatSlider(
+                label="force",
+                min_value=100.0,
+                max_value=500.0,
+                step=1.0,
+                value=self.force,
+                callback=lambda v: setattr(self, "force", v),
+            )
         )
 
     def spawn_debris(self):
@@ -335,7 +393,9 @@ class ContactEvent(Box2dSample):
             user_data=index + 1,  # 0 means "not debris"
         )
         # No events when debris hits debris
-        shape_def = b2d.shape_def(material=b2d.surface_material(restitution=0.8), enable_contact_events=False)
+        shape_def = b2d.shape_def(
+            material=b2d.surface_material(restitution=0.8), enable_contact_events=False
+        )
         if (index + 1) % 3 == 0:
             geometry = b2d.circle(radius=0.5)
         elif (index + 1) % 2 == 0:
@@ -349,7 +409,9 @@ class ContactEvent(Box2dSample):
         position = self.player.position
         for key, force in (("a", (-1, 0)), ("d", (1, 0)), ("w", (0, 1)), ("s", (0, -1))):
             if self.is_key_pressed(key):
-                self.player.apply_force((self.force * force[0], self.force * force[1]), position, True)
+                self.player.apply_force(
+                    (self.force * force[0], self.force * force[1]), position, True
+                )
 
     def contact_lines(self, shape, other, color):
         """The impulses of the contact between `shape` and `other`, read from the shape's contact data."""
@@ -402,7 +464,9 @@ class ContactEvent(Box2dSample):
             shape = debris.shapes[0]
             if shape.type == b2d.ShapeType.circle:
                 circle = shape.circle
-                geometry = b2d.circle(center=b2d.transform_point(relative, circle.center), radius=circle.radius)
+                geometry = b2d.circle(
+                    center=b2d.transform_point(relative, circle.center), radius=circle.radius
+                )
             elif shape.type == b2d.ShapeType.capsule:
                 capsule = shape.capsule
                 geometry = b2d.capsule(
@@ -443,11 +507,20 @@ class BodyMove(Box2dSample):
         super().__init__(frontend, settings)
         ground = self.world.create_static_body()
         material = b2d.surface_material(friction=0.1)
-        for hx, hy, center, angle in [(12.0, 0.1, (-10.0, -0.1), -0.15 * math.pi), (12.0, 0.1, (10.0, -0.1), 0.15 * math.pi)]:
-            ground.create_shape(b2d.shape_def(material=material), b2d.box(hx, hy, center=center, rotation=angle))
+        for hx, hy, center, angle in [
+            (12.0, 0.1, (-10.0, -0.1), -0.15 * math.pi),
+            (12.0, 0.1, (10.0, -0.1), 0.15 * math.pi),
+        ]:
+            ground.create_shape(
+                b2d.shape_def(material=material), b2d.box(hx, hy, center=center, rotation=angle)
+            )
 
         bouncy = b2d.shape_def(material=b2d.surface_material(friction=0.1, restitution=0.8))
-        for hx, hy, center in [(0.1, 10.0, (19.9, 10.0)), (0.1, 10.0, (-19.9, 10.0)), (20.0, 0.1, (0.0, 20.1))]:
+        for hx, hy, center in [
+            (0.1, 10.0, (19.9, 10.0)),
+            (0.1, 10.0, (-19.9, 10.0)),
+            (20.0, 0.1, (0.0, 20.1)),
+        ]:
             ground.create_shape(bouncy, b2d.box(hx, hy, center=center))
 
         self.bodies = []
@@ -461,9 +534,14 @@ class BodyMove(Box2dSample):
 
         self.frontend.add_widget(widgets.Button(label="Explode", callback=self.explode))
         self.frontend.add_widget(
-            widgets.FloatSlider(label="Magnitude", min_value=-20.0, max_value=20.0, step=0.1,
-                                value=self.explosion_magnitude,
-                                callback=lambda v: setattr(self, "explosion_magnitude", v))
+            widgets.FloatSlider(
+                label="Magnitude",
+                min_value=-20.0,
+                max_value=20.0,
+                step=0.1,
+                value=self.explosion_magnitude,
+                callback=lambda v: setattr(self, "explosion_magnitude", v),
+            )
         )
 
     def explode(self):
@@ -485,7 +563,9 @@ class BodyMove(Box2dSample):
             n = len(self.bodies)
             if n >= self.count:
                 break
-            body = self.world.create_dynamic_body(position=(x, y), is_bullet=(n % 12 == 0), user_data=n + 1)
+            body = self.world.create_dynamic_body(
+                position=(x, y), is_bullet=(n % 12 == 0), user_data=n + 1
+            )
             remainder = n % 4
             if remainder == 0:
                 geometry = capsule
@@ -526,7 +606,9 @@ class BodyMove(Box2dSample):
     def post_debug_draw(self):
         for transform in self.moved_transforms:
             self.debug_draw.draw_transform(transform)
-        self.debug_draw.draw_circle(self.explosion_position, self.explosion_radius, b2d.HexColor.Azure.value)
+        self.debug_draw.draw_circle(
+            self.explosion_position, self.explosion_radius, b2d.HexColor.Azure.value
+        )
 
 
 @register_sample("Events", "Sensor Types")
@@ -547,9 +629,14 @@ class SensorTypes(Box2dSample):
         ground = world.create_static_body(name="ground")
         # Enable sensor events, but filter them out as a test
         ground_def = b2d.shape_def(
-            filter=b2d.make_filter(category_bits=self.GROUND, mask_bits=self.DEFAULT), enable_sensor_events=True
+            filter=b2d.make_filter(category_bits=self.GROUND, mask_bits=self.DEFAULT),
+            enable_sensor_events=True,
         )
-        for p1, p2 in [((-6.0, 0.0), (6.0, 0.0)), ((-6.0, 0.0), (-6.0, 4.0)), ((6.0, 0.0), (6.0, 4.0))]:
+        for p1, p2 in [
+            ((-6.0, 0.0), (6.0, 0.0)),
+            ((-6.0, 0.0), (-6.0, 4.0)),
+            ((6.0, 0.0), (6.0, 4.0)),
+        ]:
             ground.create_shape(ground_def, b2d.segment(p1, p2))
 
         sensor_def = _sensor_def(filter=b2d.make_filter(category_bits=self.SENSOR))
@@ -639,7 +726,9 @@ class JointEvent(Box2dSample):
             return body
 
         def anchors(body, pivot):
-            return dict(local_anchor_a=ground.local_point(pivot), local_anchor_b=body.local_point(pivot))
+            return dict(
+                local_anchor_a=ground.local_point(pivot), local_anchor_b=body.local_point(pivot)
+            )
 
         self.joints = []
         x, y = -12.5, 10.0
@@ -675,12 +764,20 @@ class JointEvent(Box2dSample):
 
         # prismatic joint
         body = box_body((x, y))
-        self.joints.append(world.create_prismatic_joint(body_a=ground, body_b=body, **anchors(body, (x - 1.0, y)), **common))
+        self.joints.append(
+            world.create_prismatic_joint(
+                body_a=ground, body_b=body, **anchors(body, (x - 1.0, y)), **common
+            )
+        )
         x += 5.0
 
         # revolute joint
         body = box_body((x, y))
-        self.joints.append(world.create_revolute_joint(body_a=ground, body_b=body, **anchors(body, (x - 1.0, y)), **common))
+        self.joints.append(
+            world.create_revolute_joint(
+                body_a=ground, body_b=body, **anchors(body, (x - 1.0, y)), **common
+            )
+        )
         x += 5.0
 
         # weld joint
@@ -826,7 +923,11 @@ class SensorHits(Box2dSample):
         self.launch()
 
         self.frontend.add_widget(
-            widgets.Checkbox(label="Bullet", value=self.is_bullet, callback=lambda v: setattr(self, "is_bullet", v))
+            widgets.Checkbox(
+                label="Bullet",
+                value=self.is_bullet,
+                callback=lambda v: setattr(self, "is_bullet", v),
+            )
         )
         self.frontend.add_widget(widgets.Button(label="Launch", callback=self.launch))
 
@@ -839,7 +940,8 @@ class SensorHits(Box2dSample):
 
         self.body = launch_body(self.world, (-26.7, 6.0), self.is_bullet)
         shape_def = b2d.shape_def(
-            enable_sensor_events=True, material=b2d.surface_material(friction=0.8, rolling_resistance=0.01)
+            enable_sensor_events=True,
+            material=b2d.surface_material(friction=0.8, rolling_resistance=0.01),
         )
         self.body.create_shape(shape_def, b2d.circle(radius=0.25))
 
@@ -897,7 +999,9 @@ class ProjectileEvent(Box2dSample):
         ground.create_shape(ground_def, b2d.segment((10.0, 0.0), (10.0, 20.0)))
         ground.create_shape(ground_def, b2d.segment((-30.0, 0.0), (30.0, 0.0)))
 
-        create_column(self.world, 8.0, 8, b2d.shape_def(enable_sensor_events=True), ROUNDED_BOX, offset=0.01)
+        create_column(
+            self.world, 8.0, 8, b2d.shape_def(enable_sensor_events=True), ROUNDED_BOX, offset=0.01
+        )
 
         self.projectile = None
         self.projectile_shape = None
@@ -980,10 +1084,20 @@ class CircleImpulse(Box2dSample):
         self.hit_points = []
         self.spawn()
 
-        self.frontend.add_widget(widgets.Checkbox(label="gravity", value=self.use_gravity,
-                                                  callback=lambda v: self.spawn(use_gravity=v)))
-        self.frontend.add_widget(widgets.Checkbox(label="restitution", value=self.use_restitution,
-                                                  callback=lambda v: self.spawn(use_restitution=v)))
+        self.frontend.add_widget(
+            widgets.Checkbox(
+                label="gravity",
+                value=self.use_gravity,
+                callback=lambda v: self.spawn(use_gravity=v),
+            )
+        )
+        self.frontend.add_widget(
+            widgets.Checkbox(
+                label="restitution",
+                value=self.use_restitution,
+                callback=lambda v: self.spawn(use_restitution=v),
+            )
+        )
 
     def spawn(self, **changes):
         for name, value in changes.items():

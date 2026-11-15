@@ -45,6 +45,7 @@ def _paths(name):
 sys.path.insert(0, str(docs_dir.parent / "examples" / "web"))
 import build_page  # noqa: E402
 
+
 def _local_pyb2d3_build():
     """the newest emscripten build of this version of pyb2d3 (`pixi run emscripten`,
     emscripten_forge/output), or None: the sandbox runs the code of this commit"""
@@ -55,8 +56,10 @@ def _local_pyb2d3_build():
     output = docs_dir.parent / "emscripten_forge" / "output" / "emscripten-wasm32"
     builds = sorted(output.glob(f"pyb2d3-{version}-*.tar.bz2"), key=lambda p: p.stat().st_mtime)
     if not builds:
-        print(f"sandbox: WARNING no local emscripten build of pyb2d3 {version} in {output} "
-              "(pixi run emscripten): the page installs the published pyb2d3")
+        print(
+            f"sandbox: WARNING no local emscripten build of pyb2d3 {version} in {output} "
+            "(pixi run emscripten): the page installs the published pyb2d3"
+        )
     return builds[-1] if builds else None
 
 
@@ -76,7 +79,9 @@ build_page.build(
 )
 # which builds the page uses (a forgotten environment variable is easy to miss)
 print(f"sandbox: pyjs from {_sandbox_pyjs or build_page.DEFAULT_PYJS_URL}")
-print(f"sandbox: local packages: {[p.name for p in _sandbox_local_pkgs] or 'none (all from the channels)'}")
+print(
+    f"sandbox: local packages: {[p.name for p in _sandbox_local_pkgs] or 'none (all from the channels)'}"
+)
 html_extra_path = [str(sandbox_extra)]
 
 

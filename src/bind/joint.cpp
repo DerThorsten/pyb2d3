@@ -36,15 +36,7 @@ namespace pyb2d3::bind
         }
 
         // motor_enabled, target_motor_speed, max_motor_{force|torque}, current_motor_{force|torque}
-        template <
-            auto IsEnabled,
-            auto Enable,
-            auto GetSpeed,
-            auto SetSpeed,
-            auto GetMax,
-            auto SetMax,
-            auto GetCurrent,
-            class B>
+        template <auto IsEnabled, auto Enable, auto GetSpeed, auto SetSpeed, auto GetMax, auto SetMax, auto GetCurrent, class B>
         void bind_motor(B& b, const char* max_name, const char* current_name)
         {
             b.template rw<IsEnabled, Enable>("motor_enabled")
@@ -173,7 +165,9 @@ namespace pyb2d3::bind
                 .rw<b2MotorJoint_GetLinearHertz, b2MotorJoint_SetLinearHertz>("linear_hertz")
                 .rw<b2MotorJoint_GetLinearDampingRatio, b2MotorJoint_SetLinearDampingRatio>("linear_damping_ratio")
                 .rw<b2MotorJoint_GetAngularHertz, b2MotorJoint_SetAngularHertz>("angular_hertz")
-                .rw<b2MotorJoint_GetAngularDampingRatio, b2MotorJoint_SetAngularDampingRatio>("angular_damping_ratio")
+                .rw<b2MotorJoint_GetAngularDampingRatio, b2MotorJoint_SetAngularDampingRatio>(
+                    "angular_damping_ratio"
+                )
                 .rw<b2MotorJoint_GetMaxSpringForce, b2MotorJoint_SetMaxSpringForce>("max_spring_force")
                 .rw<b2MotorJoint_GetMaxSpringTorque, b2MotorJoint_SetMaxSpringTorque>("max_spring_torque");
         }
@@ -265,7 +259,9 @@ namespace pyb2d3::bind
                 .rw<b2WeldJoint_GetLinearHertz, b2WeldJoint_SetLinearHertz>("linear_hertz")
                 .rw<b2WeldJoint_GetLinearDampingRatio, b2WeldJoint_SetLinearDampingRatio>("linear_damping_ratio")
                 .rw<b2WeldJoint_GetAngularHertz, b2WeldJoint_SetAngularHertz>("angular_hertz")
-                .rw<b2WeldJoint_GetAngularDampingRatio, b2WeldJoint_SetAngularDampingRatio>("angular_damping_ratio");
+                .rw<b2WeldJoint_GetAngularDampingRatio, b2WeldJoint_SetAngularDampingRatio>(
+                    "angular_damping_ratio"
+                );
         }
 
         // ---- wheel -------------------------------------------------------------------------

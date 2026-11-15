@@ -37,16 +37,30 @@ namespace pyb2d3::bind
 
         float tree_ray_trampoline(const b2RayCastInput* input, int proxy_id, uint64_t user_data, void* ctx)
         {
-            return static_cast<QueryContext*>(ctx)
-                ->call(0.0f, [&](nb::handle r) { return r.is_none() ? input->maxFraction : nb::cast<float>(r); },
-                       *input, proxy_id, user_data);
+            return static_cast<QueryContext*>(ctx)->call(
+                0.0f,
+                [&](nb::handle r)
+                {
+                    return r.is_none() ? input->maxFraction : nb::cast<float>(r);
+                },
+                *input,
+                proxy_id,
+                user_data
+            );
         }
 
         float tree_box_trampoline(const b2BoxCastInput* input, int proxy_id, uint64_t user_data, void* ctx)
         {
-            return static_cast<QueryContext*>(ctx)
-                ->call(0.0f, [&](nb::handle r) { return r.is_none() ? input->maxFraction : nb::cast<float>(r); },
-                       *input, proxy_id, user_data);
+            return static_cast<QueryContext*>(ctx)->call(
+                0.0f,
+                [&](nb::handle r)
+                {
+                    return r.is_none() ? input->maxFraction : nb::cast<float>(r);
+                },
+                *input,
+                proxy_id,
+                user_data
+            );
         }
     }  // namespace
 
@@ -62,7 +76,12 @@ namespace pyb2d3::bind
         cls.def(nb::init<int>(), nb::arg("proxy_capacity") = 16);
 
         Binder(cls)
-            .def<b2CreateTreeProxy>("create_proxy", nb::arg("aabb"), nb::arg("category_bits"), nb::arg("user_data") = 0)
+            .def<b2CreateTreeProxy>(
+                "create_proxy",
+                nb::arg("aabb"),
+                nb::arg("category_bits"),
+                nb::arg("user_data") = 0
+            )
             .def<b2DestroyTreeProxy>("destroy_proxy", nb::arg("proxy_id"))
             .def<b2DynamicTree_MoveProxy>("move_proxy", nb::arg("proxy_id"), nb::arg("aabb"))
             .def<b2DynamicTree_SetCategoryBits>("set_category_bits", nb::arg("proxy_id"), nb::arg("category_bits"))

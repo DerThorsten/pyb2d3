@@ -38,7 +38,9 @@ class BatchHourglass(SampleBase):
         self.build()
         for widget in (
             widgets.Button("flip (space)", self.flip),
-            widgets.IntSlider("grains", 300, 2000, 100, self.count, self.set_count),  # the bulb holds ~2050
+            widgets.IntSlider(
+                "grains", 300, 2000, 100, self.count, self.set_count
+            ),  # the bulb holds ~2050
             widgets.FloatSlider("neck width", 0.4, 2.0, 0.05, self.neck, self.set_neck),
         ):
             self.frontend.add_widget(widget)
@@ -79,8 +81,12 @@ class BatchHourglass(SampleBase):
         if self.glass is not None:
             self.glass.destroy()
         self.angle = self.target_angle = 0.0  # rebuilt upright, grains in the upper bulb
-        self.glass = self.world.create_kinematic_body(position=(0.0, 0.0), rotation=b2d.make_rot(self.angle))
-        glass_def = b2d.shape_def(material=b2d.surface_material(friction=0.5, custom_color=b2d.HexColor.LightSkyBlue))
+        self.glass = self.world.create_kinematic_body(
+            position=(0.0, 0.0), rotation=b2d.make_rot(self.angle)
+        )
+        glass_def = b2d.shape_def(
+            material=b2d.surface_material(friction=0.5, custom_color=b2d.HexColor.LightSkyBlue)
+        )
         right = np.array(self.outline())
         for side in (1.0, -1.0):
             for quad in self.wall_quads(right * (side, 1.0), side):
@@ -96,8 +102,12 @@ class BatchHourglass(SampleBase):
         local = np.stack([gx[inside], gy[inside]], axis=1)[: self.count]
         c, s = math.cos(self.angle), math.sin(self.angle)
         world = local @ np.array([[c, s], [-s, c]])
-        colors = hsv_colors(0.08 + 0.06 * (local[:, 1] / self.half_height), saturation=0.55, value=0.95)
-        self.grains = create_circles(self.world, world, self.grain_radius, colors=colors, friction=0.4, density=2.0)
+        colors = hsv_colors(
+            0.08 + 0.06 * (local[:, 1] / self.half_height), saturation=0.55, value=0.95
+        )
+        self.grains = create_circles(
+            self.world, world, self.grain_radius, colors=colors, friction=0.4, density=2.0
+        )
         self.previous_top = len(self.grains)
 
     def set_count(self, value):
@@ -122,10 +132,14 @@ class BatchHourglass(SampleBase):
         # velocity of a target transform stays until the next one
         turning = self.angle != self.target_angle
         if turning:
-            step = math.copysign(min(self.flip_speed * dt, abs(self.target_angle - self.angle)),
-                                 self.target_angle - self.angle)
+            step = math.copysign(
+                min(self.flip_speed * dt, abs(self.target_angle - self.angle)),
+                self.target_angle - self.angle,
+            )
             self.angle += step
-        self.glass.set_target_transform(b2d.transform(p=(0.0, 0.0), q=b2d.make_rot(self.angle)), dt, wake=turning)
+        self.glass.set_target_transform(
+            b2d.transform(p=(0.0, 0.0), q=b2d.make_rot(self.angle)), dt, wake=turning
+        )
 
     def post_update(self, dt):
         top = self.count_top()
@@ -139,4 +153,6 @@ class BatchHourglass(SampleBase):
     def post_debug_draw(self):
         top = self.count_top()
         text = f"top {top}  bottom {len(self.grains) - top}  flow {self.flow:.0f} grains/s"
-        self.debug_draw.draw_string((-self.half_width, self.half_height + 0.6), text, b2d.HexColor.White)
+        self.debug_draw.draw_string(
+            (-self.half_width, self.half_height + 0.6), text, b2d.HexColor.White
+        )

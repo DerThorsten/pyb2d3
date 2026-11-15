@@ -8,7 +8,12 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, widgets
 
-from .batch_common import Ema, create_points, destroy_bodies, hsv_colors  # create_points: stars and cores only feel gravity
+from .batch_common import (
+    Ema,
+    create_points,
+    destroy_bodies,
+    hsv_colors,
+)  # create_points: stars and cores only feel gravity
 
 
 class BatchGalaxyCollision(SampleBase):
@@ -49,7 +54,9 @@ class BatchGalaxyCollision(SampleBase):
         self.reset()
         for widget in (
             widgets.FloatSlider("closest approach", 14.0, 34.0, 0.5, self.impact, self.set_impact),
-            widgets.IntSlider("stars per galaxy", 100, 1000, 50, self.stars_per_galaxy, self.set_stars),
+            widgets.IntSlider(
+                "stars per galaxy", 100, 1000, 50, self.stars_per_galaxy, self.set_stars
+            ),
             widgets.Checkbox("second disc retrograde", self.retrograde, self.set_retrograde),
             widgets.Button("reset", self.reset),
         ):
@@ -81,7 +88,9 @@ class BatchGalaxyCollision(SampleBase):
         # circular speed with the softened force: v^2 = G M r^2 / (r^2 + eps^2)^1.5
         speed = np.sqrt(self.gravity * self.core_mass * r**2 / (r**2 + self.softening**2) ** 1.5)
         tangent = spin * np.stack([-np.sin(phi), np.cos(phi)], axis=1)
-        colors = hsv_colors(hue + 0.08 * (r - self.disc[0]) / (self.disc[1] - self.disc[0]), 0.45, 1.0)
+        colors = hsv_colors(
+            hue + 0.08 * (r - self.disc[0]) / (self.disc[1] - self.disc[0]), 0.45, 1.0
+        )
         return center + offset, velocity + speed[:, None] * tangent, colors
 
     def reset(self):
@@ -110,7 +119,9 @@ class BatchGalaxyCollision(SampleBase):
         spins = [1.0, -1.0 if self.retrograde else 1.0]
 
         core_density = self.core_mass / (math.pi * 0.8**2)
-        cores = create_points(self.world, np.array(centers), 0.8, [0xFFE08A, 0xFFE08A], core_density)
+        cores = create_points(
+            self.world, np.array(centers), 0.8, [0xFFE08A, 0xFFE08A], core_density
+        )
         cores.linear_velocity = np.array(velocities)
         star_p, star_v, star_c = [], [], []
         for center, velocity, spin, hue in zip(centers, velocities, spins, (0.55, 0.0)):
@@ -168,7 +179,8 @@ class BatchGalaxyCollision(SampleBase):
         change = velocity - np.array([old.x, old.y])
         p = self.stars.position
         in_disc = (self.galaxy_of == self.dragged) & (
-            np.linalg.norm(p - center, axis=1) < 1.5 * self.disc[1])
+            np.linalg.norm(p - center, axis=1) < 1.5 * self.disc[1]
+        )
         if in_disc.any():
             disc = self.stars[in_disc]
             disc.linear_velocity = disc.linear_velocity + change
@@ -204,10 +216,8 @@ class BatchGalaxyCollision(SampleBase):
     def post_debug_draw(self):
         dd = self.debug_draw
         sep = float(np.linalg.norm(self.cores.position[1] - self.cores.position[0]))
-        text = (f"{len(self.stars)} stars, core distance {sep:.1f} (closest {self.closest:.1f}), "
-                f"in tails {100 * self.tidal_fraction():.0f}%, forces {self.force_time.value or 0.0:.2f} ms")
+        text = (
+            f"{len(self.stars)} stars, core distance {sep:.1f} (closest {self.closest:.1f}), "
+            f"in tails {100 * self.tidal_fraction():.0f}%, forces {self.force_time.value or 0.0:.2f} ms"
+        )
         dd.draw_string((-35.0, 30.0), text, b2d.HexColor.White)
-
-
-if __name__ == "__main__":
-    BatchGalaxyCollision.run()

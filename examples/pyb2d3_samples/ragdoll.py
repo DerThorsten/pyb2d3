@@ -58,7 +58,3 @@ class Ragdoll(SampleBase):
             lower_bound=(-self.outer_box_radius, -self.outer_box_radius),
             upper_bound=(self.outer_box_radius, self.outer_box_radius),
         )
-
-
-if __name__ == "__main__":
-    Ragdoll.run()

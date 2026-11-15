@@ -121,7 +121,3 @@ class Mirror(SampleBase):
                 )
                 body_angle += math.pi
             last_ray_result = ray_result
-
-
-if __name__ == "__main__":
-    Mirror.run()

@@ -61,7 +61,9 @@ class BatchFireworks(SampleBase):
         self.bursts = 0
         for widget in (
             widgets.FloatSlider("launch rate (1/s)", 0.0, 5.0, 0.1, self.rate, self.set_rate),
-            widgets.IntSlider("sparks per burst", 30, 400, 10, self.sparks_per_burst, self.set_sparks),
+            widgets.IntSlider(
+                "sparks per burst", 30, 400, 10, self.sparks_per_burst, self.set_sparks
+            ),
             widgets.FloatSlider("air drag", 0.0, 4.0, 0.1, self.drag, self.set_drag),
         ):
             self.frontend.add_widget(widget)
@@ -179,7 +181,3 @@ class BatchFireworks(SampleBase):
         rockets = int((self.pool.active & self.is_rocket).sum())
         text = f"{rockets} rockets, {sparks} / {self.pool_size} sparks, {self.bursts} bursts"
         dd.draw_string((-self.width, 29.0), text, b2d.HexColor.White)
-
-
-if __name__ == "__main__":
-    BatchFireworks.run()

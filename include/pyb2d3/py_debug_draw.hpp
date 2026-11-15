@@ -25,7 +25,8 @@ public:
         m_py.attr("draw_polygon")(points(vertices, count), int(color));
     }
 
-    void draw_solid_polygon(b2Transform transform, const b2Vec2* vertices, int count, float radius, b2HexColor color)
+    void
+    draw_solid_polygon(b2Transform transform, const b2Vec2* vertices, int count, float radius, b2HexColor color)
     {
         m_py.attr("draw_solid_polygon")(transform, points(vertices, count), radius, int(color));
     }

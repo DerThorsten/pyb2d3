@@ -34,7 +34,9 @@ world, body_list = make_world()
 bodies = b2d.Bodies(body_list)
 loop_ms = 1000 * min(timeit.repeat(lambda: pull_loop(body_list), number=1, repeat=5))
 batch_ms = 1000 * min(timeit.repeat(lambda: pull_batch(bodies), number=1, repeat=5))
-print(f"{n} bodies: python loop {loop_ms:.2f} ms, batch {batch_ms:.3f} ms ({loop_ms / batch_ms:.0f}x faster)")
+print(
+    f"{n} bodies: python loop {loop_ms:.2f} ms, batch {batch_ms:.3f} ms ({loop_ms / batch_ms:.0f}x faster)"
+)
 
 # both apply the same forces
 world_a, list_a = make_world()

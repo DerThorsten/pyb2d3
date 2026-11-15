@@ -28,8 +28,10 @@ class MySample(SampleBase):
             box = self.world.create_dynamic_body(position=(-4 + 2 * i, 2 + i))
             box.create_shape(b2d.shape_def(density=1), b2d.box(0.5, 0.5))
         ball = self.world.create_dynamic_body(position=(0, 10))
-        ball.create_shape(b2d.shape_def(density=1, material=b2d.surface_material(restitution=0.6)),
-                          b2d.circle(radius=0.7))
+        ball.create_shape(
+            b2d.shape_def(density=1, material=b2d.surface_material(restitution=0.6)),
+            b2d.circle(radius=0.7),
+        )
 
         # a slider in the sample's panel:
         # self.frontend.add_widget(widgets.FloatSlider("gravity", -20, 0, 0.5, -10, self.set_gravity_y))
@@ -56,7 +58,3 @@ class MySample(SampleBase):
     #     if event.key == "space":
     #         body = self.world.create_dynamic_body(position=(0, 12))
     #         body.create_shape(b2d.shape_def(density=1), b2d.circle(radius=0.5))
-
-
-if __name__ == "__main__":
-    MySample.run()

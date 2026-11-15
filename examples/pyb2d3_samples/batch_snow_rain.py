@@ -84,7 +84,9 @@ class BatchSnowRain(SampleBase):
         cx, cy = self.globe_center
         r = self.globe_radius
         globe = self.world.create_kinematic_body(position=(cx, cy), enable_sleep=False)
-        glass = b2d.shape_def(material=b2d.surface_material(friction=0.2, custom_color=b2d.HexColor.LightSkyBlue))
+        glass = b2d.shape_def(
+            material=b2d.surface_material(friction=0.2, custom_color=b2d.HexColor.LightSkyBlue)
+        )
         n = 48
         angles = np.linspace(0.0, 2.0 * math.pi, n + 1)
         ring = np.stack([r * np.cos(angles), r * np.sin(angles)], axis=1)
@@ -94,16 +96,32 @@ class BatchSnowRain(SampleBase):
         for p, q in zip(ring[:-1], ring[1:]):
             globe.create_shape(glass, b2d.capsule(tuple(p), tuple(q), 0.15))
         # the village: a snow field, two houses, a fir tree (part of the globe)
-        wood = b2d.shape_def(material=b2d.surface_material(friction=0.8, custom_color=b2d.HexColor.SaddleBrown))
-        roof = b2d.shape_def(material=b2d.surface_material(friction=0.8, custom_color=b2d.HexColor.Firebrick))
-        fir = b2d.shape_def(material=b2d.surface_material(friction=0.8, custom_color=b2d.HexColor.ForestGreen))
+        wood = b2d.shape_def(
+            material=b2d.surface_material(friction=0.8, custom_color=b2d.HexColor.SaddleBrown)
+        )
+        roof = b2d.shape_def(
+            material=b2d.surface_material(friction=0.8, custom_color=b2d.HexColor.Firebrick)
+        )
+        fir = b2d.shape_def(
+            material=b2d.surface_material(friction=0.8, custom_color=b2d.HexColor.ForestGreen)
+        )
         floor = -0.6 * r
         globe.create_shape(wood, b2d.box(0.8 * r, 0.15, center=(0.0, floor - 0.15)))
         for x, w, h in ((-2.0, 0.8, 0.7), (1.2, 0.6, 0.55)):
             globe.create_shape(wood, b2d.box(w, h, center=(x, floor + h)))
-            globe.create_shape(roof, b2d.polygon(points=[(x - w - 0.2, floor + 2 * h), (x + w + 0.2, floor + 2 * h),
-                                                         (x, floor + 2 * h + 0.9 * w)]))
-        globe.create_shape(fir, b2d.polygon(points=[(3.0, floor), (3.9, floor), (3.45, floor + 2.4)]))
+            globe.create_shape(
+                roof,
+                b2d.polygon(
+                    points=[
+                        (x - w - 0.2, floor + 2 * h),
+                        (x + w + 0.2, floor + 2 * h),
+                        (x, floor + 2 * h + 0.9 * w),
+                    ]
+                ),
+            )
+        globe.create_shape(
+            fir, b2d.polygon(points=[(3.0, floor), (3.9, floor), (3.45, floor + 2.4)])
+        )
         # the stand
         stand = self.world.create_static_body(position=(cx, cy - r - 0.6))
         stand.create_shape(wood, b2d.box(3.0, 0.6))
@@ -117,20 +135,32 @@ class BatchSnowRain(SampleBase):
         positions = np.stack([cx + radius * np.cos(angle), cy + radius * np.sin(angle)], axis=1)
         positions[:, 1] = np.maximum(positions[:, 1], cy + floor + 1.5)
         whites = hsv_colors(np.full(count, 0.6), self.rng.uniform(0.0, 0.12, count), 1.0)
-        self.flakes = create_circles(self.world, positions, self.rng.uniform(0.04, 0.08, count), colors=whites,
-                                     density=0.5, friction=0.6, linear_damping=10.0, enable_sleep=False)
+        self.flakes = create_circles(
+            self.world,
+            positions,
+            self.rng.uniform(0.04, 0.08, count),
+            colors=whites,
+            density=0.5,
+            friction=0.6,
+            linear_damping=10.0,
+            enable_sleep=False,
+        )
 
     def build_rain(self):
         """ground, umbrellas walking to and fro, a pool of drops"""
         ground = self.world.create_static_body(position=(0.0, self.ground))
-        ground.create_shape(b2d.shape_def(material=b2d.surface_material(custom_color=b2d.HexColor.DimGray)),
-                            b2d.box(14.0, 0.25, center=(0.0, -0.25)))
+        ground.create_shape(
+            b2d.shape_def(material=b2d.surface_material(custom_color=b2d.HexColor.DimGray)),
+            b2d.box(14.0, 0.25, center=(0.0, -0.25)),
+        )
         self.scene = [ground]
         self.shakers = []
         cloth = [b2d.HexColor.Crimson, b2d.HexColor.Gold, b2d.HexColor.MediumSeaGreen]
         for k, (x, y, period) in enumerate(((-6.0, 3.2, 7.0), (0.5, 4.0, 9.5), (6.0, 3.5, 6.0))):
             umbrella = self.world.create_kinematic_body(position=(x, y), enable_sleep=False)
-            canopy = b2d.shape_def(material=b2d.surface_material(friction=0.2, custom_color=cloth[k]))
+            canopy = b2d.shape_def(
+                material=b2d.surface_material(friction=0.2, custom_color=cloth[k])
+            )
             angles = np.linspace(math.radians(15), math.radians(165), 12)
             arc = np.stack([1.8 * np.cos(angles), 0.8 * np.sin(angles)], axis=1)
             # thick canopy: a drop falls ~0.2 m per step and kinematic bodies get
@@ -140,10 +170,20 @@ class BatchSnowRain(SampleBase):
             handle = b2d.shape_def(material=b2d.surface_material(custom_color=b2d.HexColor.Black))
             umbrella.create_shape(handle, b2d.capsule((0.0, 0.8), (0.0, -2.0), 0.04))
             self.scene.append(umbrella)
-            self.shakers.append(Shaker(umbrella, axis=(1.0, 0.0), amplitude=2.5, frequency=1.0 / period))
+            self.shakers.append(
+                Shaker(umbrella, axis=(1.0, 0.0), amplitude=2.5, frequency=1.0 / period)
+            )
         no_drop_contacts = b2d.make_filter(group_index=-1)  # drops pass through each other
-        self.pool = ParticlePool(self.world, 1200, 0.045, int(b2d.HexColor.LightSkyBlue.value), parking=(0.0, -50.0),
-                                 restitution=0.0, friction=0.0, enable_sleep=False)
+        self.pool = ParticlePool(
+            self.world,
+            1200,
+            0.045,
+            int(b2d.HexColor.LightSkyBlue.value),
+            parking=(0.0, -50.0),
+            restitution=0.0,
+            friction=0.0,
+            enable_sleep=False,
+        )
         for shape in self.pool.shapes:
             shape.filter = no_drop_contacts
         self.budget = 0.0
@@ -210,7 +250,9 @@ class BatchSnowRain(SampleBase):
             self.globe_shaker.step(self.time, dt)
         else:
             base = self.globe_shaker.base
-            self.globe.set_target_transform(b2d.transform(p=(float(base[0]), float(base[1]))), dt, wake=False)
+            self.globe.set_target_transform(
+                b2d.transform(p=(float(base[0]), float(base[1]))), dt, wake=False
+            )
         n = len(self.flakes)
         accel = self.rng.normal(0.0, self.flutter, (n, 2))  # little eddies
         if shaking:
@@ -220,7 +262,9 @@ class BatchSnowRain(SampleBase):
             offset = self.flakes.position - self.stir
             distance = np.linalg.norm(offset, axis=1)
             near = np.clip(1.0 - distance / 2.5, 0.0, 1.0)
-            swirl = np.stack([-offset[:, 1], offset[:, 0]], axis=1) / np.maximum(distance, 0.2)[:, None]
+            swirl = (
+                np.stack([-offset[:, 1], offset[:, 0]], axis=1) / np.maximum(distance, 0.2)[:, None]
+            )
             accel += 60.0 * near[:, None] * (swirl + np.array([0.0, 0.5]))  # swirl + a little lift
         self.flakes.apply_force_to_center(self.flakes.mass[:, None] * accel)
 
@@ -241,7 +285,9 @@ class BatchSnowRain(SampleBase):
         k = int(self.budget)
         if k:
             self.budget -= k
-            start = np.stack([self.rng.uniform(-14.0, 14.0, k) - 0.6 * self.wind, np.full(k, 12.5)], axis=1)
+            start = np.stack(
+                [self.rng.uniform(-14.0, 14.0, k) - 0.6 * self.wind, np.full(k, 12.5)], axis=1
+            )
             velocity = np.stack([np.full(k, self.wind), self.rng.uniform(-12.0, -9.0, k)], axis=1)
             pool.emit(start, velocity)
         flying = pool.bodies[pool.active]
@@ -260,7 +306,10 @@ class BatchSnowRain(SampleBase):
             speed = self.flakes.speed
             floating = int(np.count_nonzero(speed > 0.15))
             state = "shaking" if self.time < self.shake_until else "settling"
-            outside = np.linalg.norm(self.flakes.position - self.globe_shaker.base, axis=1) > self.globe_radius + 0.5
+            outside = (
+                np.linalg.norm(self.flakes.position - self.globe_shaker.base, axis=1)
+                > self.globe_radius + 0.5
+            )
             text = f"{len(self.flakes)} flakes, {floating} floating ({state})"
             if outside.any():
                 text += f", {int(outside.sum())} outside the globe"

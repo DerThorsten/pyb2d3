@@ -2,17 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- viewport-fit=cover: the canvas goes under the notch, the overlays keep out of it (safe-area insets) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>pyb2d3 sandbox</title>
   <style>
     :root { --bg: #1b1d21; --panel: #24272d; --line: #353941; --text: #d9dce1; --muted: #8b919b; --accent: #5aa9e6; }
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
-                 font: 13px/1.4 system-ui, sans-serif; }
-    #app { display: flex; height: 100%; }
-    #panel { width: 280px; flex: none; overflow-y: auto; background: var(--panel);
-             border-right: 1px solid var(--line); padding: 8px 12px; }
+                 font: 13px/1.4 system-ui, sans-serif; overscroll-behavior: none; }
+    #app { display: flex; height: 100%; height: 100dvh; }
+    /* the panel's wrapper (the panel content is rebuilt by the frontend) */
+    #side { width: 280px; flex: none; display: flex; flex-direction: column; background: var(--panel);
+            border-right: 1px solid var(--line); }
+    #panel { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px; }
+    #side-grip, #panel-toggle { display: none; }
     #stage { position: relative; flex: 1; min-width: 0; }
+    /* overlay buttons on the canvas, out of the notch (viewport-fit=cover) */
+    #tools { position: absolute; top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right));
+             display: flex; gap: 6px; }
+    .pyb2d3-zoom { position: absolute; top: calc(max(8px, env(safe-area-inset-top)) + 40px);
+                   right: max(8px, env(safe-area-inset-right)); display: flex; flex-direction: column; gap: 4px; }
+    .pyb2d3-zoom button { min-width: 36px; }
+    /* category + sample: two lists next to each other */
+    .pyb2d3-sample-choice select { flex: 1; min-width: 0; }
+    .pyb2d3-sample-choice .pyb2d3-category-select { flex: 0.8; }
     /* the WebGL drawing buffer follows the CSS size (frontend: _resize) */
     #canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
     #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
@@ -37,50 +50,95 @@
     #status { position: absolute; left: 12px; bottom: 8px; color: var(--muted); white-space: pre-wrap; }
     #status.error { color: #ff7b72; }
     /* the code pane (editor.js) */
-    #code-toggle { position: absolute; top: 8px; right: 8px; }
-    #code-toggle.active { border-color: var(--accent); }
-    #code { width: 46%; min-width: 320px; flex: none; display: flex; flex-direction: column;
-            background: var(--panel); border-left: 1px solid var(--line); resize: horizontal; overflow: hidden; }
+    #code-toggle.active, #panel-toggle.active { border-color: var(--accent); }
+    #code { position: relative; width: 46%; min-width: 280px; flex: none; display: flex; flex-direction: column;
+            background: var(--panel); border-left: 1px solid var(--line); overflow: hidden; }
     #code[hidden] { display: none; }
+    /* the resize handle on the left edge: wide enough for a finger, a thin grip line */
+    #code-resizer { position: absolute; left: 0; top: 0; bottom: 0; width: 14px; z-index: 5;
+                    cursor: col-resize; touch-action: none; }
+    #code-resizer::after { content: ""; position: absolute; left: 5px; top: 50%; width: 4px; height: 48px;
+                           margin-top: -24px; border-radius: 2px; background: var(--line); }
+    #code-resizer:hover::after, #code-resizer.dragging::after { background: var(--accent); }
+    #code-bar, #code-body { margin-left: 10px; }  /* room for the handle */
     #code-bar { display: flex; gap: 6px; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--line); }
     #code-file { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
                  color: var(--muted); font: 12px monospace; }
     #code-body { flex: 1; min-height: 0; display: flex; }
-    #code-tree { width: 190px; flex: none; overflow: auto; padding: 4px 0; border-right: 1px solid var(--line);
-                 font: 12px monospace; }
-    #code-tree details { padding-left: 10px; }
-    #code-tree > details { padding-left: 4px; }
-    #code-tree summary { cursor: pointer; color: var(--muted); white-space: nowrap; }
-    #code-tree .file { padding-left: 14px; cursor: pointer; white-space: nowrap; }
-    #code-tree .file:hover { color: var(--accent); }
-    #code-tree .file.current { background: #2e3239; color: var(--text); }
-    #code-tree .file.modified::after { content: " \25cf"; color: var(--accent); }
+    #code-editor[hidden] { display: none; }
     #code-editor { flex: 1; min-width: 0; position: relative; }
     .code-fallback { position: absolute; inset: 0; width: 100%; height: 100%; resize: none; border: 0;
                      background: var(--bg); color: var(--text); font: 13px/1.5 monospace; padding: 8px; }
     #code-error { margin: 0; max-height: 35%; overflow: auto; padding: 8px; border-top: 1px solid var(--line);
                   color: #ff7b72; font: 12px monospace; white-space: pre-wrap; }
+
+    /* ---- phones / small tablets: the canvas fills the screen, the panel lies over it
+       (the drawing buffer keeps its size when the panel opens) ---- */
+    @media (max-width: 800px), (max-height: 520px) {
+      #app { display: block; position: relative; }
+      #stage { position: absolute; inset: 0; }
+      #panel-toggle { display: inline-block; }
+      #side { position: fixed; z-index: 20; border: 0; box-shadow: 0 0 18px rgba(0, 0, 0, .55);
+              transition: transform .2s ease, max-height .2s ease; }
+      select, button { min-height: 34px; }  /* fingers */
+      #code { position: fixed; inset: 0; z-index: 30; width: 100% !important; min-width: 0;
+              padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); }
+      #code-resizer { display: none; }  /* full screen: nothing to resize */
+      #code-bar, #code-body { margin-left: 0; }
+    }
+    /* portrait: a bottom sheet; collapsed it shows only the sample choice + previous / next */
+    @media (max-width: 800px) and (orientation: portrait), (max-height: 520px) and (orientation: portrait) {
+      :root { --peek: calc(124px + env(safe-area-inset-bottom)); }
+      #side { left: 0; right: 0; bottom: 0; width: auto; max-height: 55dvh; border-radius: 12px 12px 0 0;
+              padding-bottom: env(safe-area-inset-bottom); }
+      #side-grip { display: block; flex: none; width: 100%; height: 22px; min-height: 0; border: 0;
+                   border-radius: 12px 12px 0 0; background: transparent; position: relative; }
+      #side-grip::before { content: ""; position: absolute; left: 50%; top: 8px; width: 40px; height: 5px;
+                           margin-left: -20px; border-radius: 3px; background: var(--muted); }
+      #app:not(.panel-open) #side { max-height: var(--peek); }
+      #app:not(.panel-open) #panel { overflow: hidden; }
+      #panel { padding-top: 0; }
+      .pyb2d3-sample-section h3 { display: none; }
+      /* the overlays above the collapsed sheet */
+      .pyb2d3-fps { bottom: calc(var(--peek) + 6px) !important; }
+      #status { bottom: calc(var(--peek) + 8px); }
+    }
+    /* landscape: a drawer from the left, closed by default */
+    @media (max-width: 800px) and (orientation: landscape), (max-height: 520px) and (orientation: landscape) {
+      #side { top: 0; bottom: 0; left: 0; width: min(320px, 45vw); padding-left: env(safe-area-inset-left); }
+      #app:not(.panel-open) #side { transform: translateX(-105%); box-shadow: none; }
+      #panel { padding-top: max(8px, env(safe-area-inset-top)); }
+    }
   </style>
 </head>
 <body>
   <div id="app">
-    <div id="panel"></div>
+    <!-- the panel's wrapper: desktop the left column, compact screens a bottom sheet
+         (portrait) or a drawer (landscape); #panel itself is rebuilt by the frontend -->
+    <div id="side">
+      <button id="side-grip" type="button" aria-label="show / hide the controls"></button>
+      <div id="panel"></div>
+    </div>
     <div id="stage">
       <!-- tabindex: keyboard events reach the canvas after a click -->
       <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
       <div id="labels"></div>
       <div id="status">loading…</div>
-      <button id="code-toggle" title="edit the code of the samples">&lt;/&gt; Code</button>
+      <div id="tools">
+        <button id="panel-toggle" type="button" title="controls">&#9776;</button>
+        <button id="code-toggle" type="button" title="edit the code of this sample">&lt;/&gt; Code</button>
+      </div>
     </div>
     <div id="code" hidden>
+      <!-- drag (mouse / finger) to make the code pane wider or narrower (editor.js) -->
+      <div id="code-resizer" title="drag to resize"></div>
       <div id="code-bar">
         <span id="code-file"></span>
-        <button id="code-run" title="run the edited code: the sample the cursor is in (Ctrl/Cmd+Enter, Ctrl/Cmd+S)">&#9654; Run</button>
+        <button id="code-run" title="restart the sample with the edited code (Ctrl/Cmd+Enter, Ctrl/Cmd+S)">&#9654; Run</button>
         <button id="code-revert" title="back to the original of this file">Revert</button>
         <button id="code-close" title="close">&#10005;</button>
       </div>
       <div id="code-body">
-        <div id="code-tree"></div>
         <div id="code-editor"></div>
       </div>
       <pre id="code-error" hidden></pre>

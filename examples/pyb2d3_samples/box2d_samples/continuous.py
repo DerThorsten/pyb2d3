@@ -39,10 +39,17 @@ class BounceHouse(Box2dSample):
         self.launch()
 
         self.frontend.add_widget(
-            widgets.Dropdown(label="Shape", options=SHAPE_TYPES, value=self.shape_type, callback=self.set_shape_type)
+            widgets.Dropdown(
+                label="Shape",
+                options=SHAPE_TYPES,
+                value=self.shape_type,
+                callback=self.set_shape_type,
+            )
         )
         self.frontend.add_widget(
-            widgets.Checkbox(label="hit events", value=self.enable_hit_events, callback=self.set_hit_events)
+            widgets.Checkbox(
+                label="hit events", value=self.enable_hit_events, callback=self.set_hit_events
+            )
         )
 
     def launch(self):
@@ -230,9 +237,13 @@ class SkinnyBox(Box2dSample):
         self.bullet_body = None
         self.launch()
 
-        self.frontend.add_widget(widgets.Checkbox(label="Capsule", value=self.capsule, callback=self.set_capsule))
+        self.frontend.add_widget(
+            widgets.Checkbox(label="Capsule", value=self.capsule, callback=self.set_capsule)
+        )
         self.frontend.add_widget(widgets.Button(label="Launch", callback=self.launch))
-        self.frontend.add_widget(widgets.Checkbox(label="Auto Test", value=self.auto_test, callback=self.set_auto_test))
+        self.frontend.add_widget(
+            widgets.Checkbox(label="Auto Test", value=self.auto_test, callback=self.set_auto_test)
+        )
 
     def set_capsule(self, flag):
         self.capsule = flag
@@ -292,9 +303,20 @@ class GhostBumps(Box2dSample):
         add = self.frontend.add_widget
         add(widgets.Checkbox(label="Chain", value=self.use_chain, callback=self.set_use_chain))
         add(attr_slider(self, "Bevel", "bevel", 0.0, 1.0, 0.01, on_change=self.on_bevel_changed))
-        add(widgets.Dropdown(label="Shape", options=SHAPE_TYPES, value=self.shape_type, callback=self.set_shape_type))
+        add(
+            widgets.Dropdown(
+                label="Shape",
+                options=SHAPE_TYPES,
+                value=self.shape_type,
+                callback=self.set_shape_type,
+            )
+        )
         add(attr_slider(self, "Round", "round", 0.0, 0.4, 0.1))
-        add(attr_slider(self, "Friction", "friction", 0.0, 1.0, 0.1, on_change=self.on_friction_changed))
+        add(
+            attr_slider(
+                self, "Friction", "friction", 0.0, 1.0, 0.1, on_change=self.on_friction_changed
+            )
+        )
         add(widgets.Button(label="Launch", callback=self.launch))
 
     def set_use_chain(self, flag):
@@ -329,7 +351,12 @@ class GhostBumps(Box2dSample):
                 [(-slope, slope)] * 3
                 + [(-2.0 * hy * m, -2.0 * hy * m)]
                 + [(slope, -slope)] * 2
-                + [(corner, -corner), (2.0 * hx + hy * mm, 0.0), (2.0 * hx, 0.0), (2.0 * hx + hy * mm, 0.0)]
+                + [
+                    (corner, -corner),
+                    (2.0 * hx + hy * mm, 0.0),
+                    (2.0 * hx, 0.0),
+                    (2.0 * hx + hy * mm, 0.0),
+                ]
                 + [(corner, corner)]
                 + [(slope, slope)] * 2
                 + [(-2.0 * hy * m, 2.0 * hy * m)]
@@ -373,7 +400,9 @@ class GhostBumps(Box2dSample):
         _destroy(self.body)
         self.body = self.world.create_dynamic_body(position=(-28, 18), linear_velocity=(0, 0))
 
-        shape_def = b2d.shape_def(density=1.0, material=b2d.surface_material(friction=self.friction))
+        shape_def = b2d.shape_def(
+            density=1.0, material=b2d.surface_material(friction=self.friction)
+        )
         if self.shape_type == "Circle":
             shape = b2d.circle(radius=0.5)
         elif self.shape_type == "Capsule":
@@ -395,12 +424,16 @@ class SpeculativeFallback(Box2dSample):
         super().__init__(frontend, settings)
         ground = self.world.create_static_body()
         ground.create_shape(b2d.shape_def(), b2d.segment((-10, 0), (10, 0)))
-        ground.create_shape(b2d.shape_def(), b2d.polygon([(-2, 4), (2, 4), (2, 4.1), (-0.5, 4.2), (-2, 4.2)]))
+        ground.create_shape(
+            b2d.shape_def(), b2d.polygon([(-2, 4), (2, 4), (2, 4.1), (-0.5, 4.2), (-2, 4.2)])
+        )
 
         # fast moving skinny box, also testing a large shape offset
         offset = 8.0
         body = self.world.create_dynamic_body(position=(offset, 12), linear_velocity=(0, -100))
-        body.create_shape(b2d.shape_def(), b2d.box(2.0, 0.05, center=(-offset, 0), rotation=math.pi))
+        body.create_shape(
+            b2d.shape_def(), b2d.box(2.0, 0.05, center=(-offset, 0), rotation=math.pi)
+        )
 
 
 @register_sample("Continuous", "Speculative Sliver")
@@ -452,9 +485,14 @@ class PixelImperfect(Box2dSample):
         super().__init__(frontend, settings)
         ppm = PIXELS_PER_METER
         block = self.world.create_static_body(position=(175.0 / ppm, 150.0 / ppm))
-        block.create_shape(b2d.shape_def(material=b2d.surface_material(friction=0.0)), b2d.box(20.0 / ppm, 10.0 / ppm))
+        block.create_shape(
+            b2d.shape_def(material=b2d.surface_material(friction=0.0)),
+            b2d.box(20.0 / ppm, 10.0 / ppm),
+        )
 
-        ball = self.world.create_dynamic_body(position=(200.0 / ppm, 275.0 / ppm), gravity_scale=0.0)
+        ball = self.world.create_dynamic_body(
+            position=(200.0 / ppm, 275.0 / ppm), gravity_scale=0.0
+        )
         ball.create_shape(
             b2d.shape_def(material=b2d.surface_material(friction=0.0)),
             b2d.box(4.0 / ppm, 4.0 / ppm, radius=0.9 / ppm),
@@ -478,7 +516,10 @@ class RestitutionThreshold(Box2dSample):
         block = self.world.create_static_body(
             position=(205.0 / ppm, 120.0 / ppm), rotation=70.0 * 3.14 / 180.0
         )
-        block.create_shape(b2d.shape_def(material=b2d.surface_material(friction=0.0)), b2d.box(50.0 / ppm, 5.0 / ppm))
+        block.create_shape(
+            b2d.shape_def(material=b2d.surface_material(friction=0.0)),
+            b2d.box(50.0 / ppm, 5.0 / ppm),
+        )
 
         ball = self.world.create_dynamic_body(position=(200.0 / ppm, 250.0 / ppm))
         ball.create_shape(
@@ -535,7 +576,10 @@ class Drop(Box2dSample):
 
     def tiled_ground(self):
         x0 = -0.5 * self.COUNT * self.WIDTH
-        return [b2d.box(0.5 * self.WIDTH, 0.05, center=(x0 + j * self.WIDTH, 0)) for j in range(self.COUNT + 1)]
+        return [
+            b2d.box(0.5 * self.WIDTH, 0.05, center=(x0 + j * self.WIDTH, 0))
+            for j in range(self.COUNT + 1)
+        ]
 
     def scene1(self):
         """ball"""
@@ -577,7 +621,9 @@ class Drop(Box2dSample):
             body.create_shape(b2d.shape_def(), b2d.box(a, a))
             self.bodies.append(body)
 
-        body = self.world.create_dynamic_body(position=(-7.7, 1.9), linear_velocity=(200, 0), is_bullet=True)
+        body = self.world.create_dynamic_body(
+            position=(-7.7, 1.9), linear_velocity=(200, 0), is_bullet=True
+        )
         body.create_shape(b2d.shape_def(density=4.0), b2d.circle(radius=0.125))
         self.bodies.append(body)
         self.frame_count = 1
@@ -615,7 +661,9 @@ class Pinball(Box2dSample):
         self.debug_draw.draw_joints = False
 
         ground = world.create_static_body()
-        ground.create_chain(b2d.chain_def([(-8, 6), (-8, 20), (8, 20), (8, 6), (0, -2)], is_loop=True))
+        ground.create_chain(
+            b2d.chain_def([(-8, 6), (-8, 20), (8, 20), (8, 6), (0, -2)], is_loop=True)
+        )
 
         # flippers
         self.flipper_joints = []
@@ -681,7 +729,9 @@ class Wedge(Box2dSample):
         ground.create_shape(b2d.shape_def(), b2d.segment((0, 0), (0, 8)))
 
         body = self.world.create_dynamic_body(position=(-0.45, 10.75), linear_velocity=(0, -200))
-        body.create_shape(b2d.shape_def(material=b2d.surface_material(friction=0.2)), b2d.circle(radius=0.3))
+        body.create_shape(
+            b2d.shape_def(material=b2d.surface_material(friction=0.2)), b2d.circle(radius=0.3)
+        )
 
 
 @register_sample("Continuous", "Safety Factor")
@@ -704,8 +754,12 @@ class SafetyFactor(Box2dSample):
         self.overlap = 0.0
         self.launch()
 
-        self.frontend.add_widget(attr_slider(self, "Height", "height", 0.0, 2.0, 0.01, on_change=self.launch))
-        self.frontend.add_widget(attr_slider(self, "Safety", "safety_factor", 0.0, 1.0, 0.01, on_change=self.launch))
+        self.frontend.add_widget(
+            attr_slider(self, "Height", "height", 0.0, 2.0, 0.01, on_change=self.launch)
+        )
+        self.frontend.add_widget(
+            attr_slider(self, "Safety", "safety_factor", 0.0, 1.0, 0.01, on_change=self.launch)
+        )
         self.frontend.add_widget(widgets.Button(label="Drop", callback=self.launch))
 
     def launch(self):
@@ -724,4 +778,6 @@ class SafetyFactor(Box2dSample):
                 self.overlap = max(self.overlap, -point.separation)
 
     def post_debug_draw(self):
-        self.debug_draw.draw_segment((-3, -self.overlap), (3, -self.overlap), b2d.HexColor.Red.value)
+        self.debug_draw.draw_segment(
+            (-3, -self.overlap), (3, -self.overlap), b2d.HexColor.Red.value
+        )

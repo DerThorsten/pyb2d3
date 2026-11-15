@@ -50,7 +50,9 @@ class BatchGalton(SampleBase):
 
     def create_board(self):
         board = self.world.create_static_body()
-        peg_def = b2d.shape_def(material=b2d.surface_material(restitution=0.0, custom_color=b2d.HexColor.Silver))
+        peg_def = b2d.shape_def(
+            material=b2d.surface_material(restitution=0.0, custom_color=b2d.HexColor.Silver)
+        )
         dy = self.spacing * math.sqrt(3) / 2
         half_width = (self.rows + 1) / 2 * self.spacing
         for row in range(self.rows):
@@ -74,14 +76,26 @@ class BatchGalton(SampleBase):
         # side walls up to the funnel: balls bouncing off the outer pegs stay on the board
         for x in (self.bin_edges[0], self.bin_edges[-1]):
             board.create_shape(wall_def, b2d.segment((x, self.top + 1.0), (x, -self.bin_height)))
-        board.create_shape(wall_def, b2d.segment((self.bin_edges[0], -self.bin_height), (self.bin_edges[-1], -self.bin_height)))
+        board.create_shape(
+            wall_def,
+            b2d.segment(
+                (self.bin_edges[0], -self.bin_height), (self.bin_edges[-1], -self.bin_height)
+            ),
+        )
 
     def reset(self):
         if self.pool is not None:
             self.pool.destroy(self)
-        self.pool = ParticlePool(self.world, self.total, self.ball_radius, int(b2d.HexColor.Gold.value),
-                                 restitution=0.0, friction=0.1, linear_damping=self.damping,
-                                 enable_sleep=False)  # slow balls on a peg top must not fall asleep
+        self.pool = ParticlePool(
+            self.world,
+            self.total,
+            self.ball_radius,
+            int(b2d.HexColor.Gold.value),
+            restitution=0.0,
+            friction=0.1,
+            linear_damping=self.damping,
+            enable_sleep=False,
+        )  # slow balls on a peg top must not fall asleep
         self.emitted = 0
         self.budget = 0.0
 
@@ -118,7 +132,17 @@ class BatchGalton(SampleBase):
         k = np.arange(self.rows + 1)
         binomial = np.array([math.comb(self.rows, int(i)) for i in k]) / 2.0**self.rows
         width = self.bin_edges[-1] - self.bin_edges[0]
-        draw_histogram(self.debug_draw, (self.bin_edges[0], -self.bin_height - 0.05), (width, self.bin_height * 0.9),
-                       counts, b2d.HexColor.Orange, reference=binomial * max(n, 1), reference_color=b2d.HexColor.White)
-        self.debug_draw.draw_string((self.bin_edges[0], self.top + 1.2), f"{n} / {self.total} balls in the bins",
-                                    b2d.HexColor.White)
+        draw_histogram(
+            self.debug_draw,
+            (self.bin_edges[0], -self.bin_height - 0.05),
+            (width, self.bin_height * 0.9),
+            counts,
+            b2d.HexColor.Orange,
+            reference=binomial * max(n, 1),
+            reference_color=b2d.HexColor.White,
+        )
+        self.debug_draw.draw_string(
+            (self.bin_edges[0], self.top + 1.2),
+            f"{n} / {self.total} balls in the bins",
+            b2d.HexColor.White,
+        )

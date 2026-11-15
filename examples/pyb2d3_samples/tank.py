@@ -81,7 +81,9 @@ class Tank:
 
         self.wheels = []
         self.hull = world.create_dynamic_body(position=origin)
-        hull_def = b2d.shape_def(density=2.0, filter=hull_filter, material=b2d.surface_material(friction=0.6))
+        hull_def = b2d.shape_def(
+            density=2.0, filter=hull_filter, material=b2d.surface_material(friction=0.6)
+        )
         for outline in (self.hull_outline, self.turret_outline):
             self.hull.create_shape(hull_def, b2d.polygon(points=outline))
 
@@ -96,7 +98,9 @@ class Tank:
             wheel = self.create_wheel(origin + center, radius, wheel_def)
             self.motors.append(
                 world.create_revolute_joint(
-                    **pinned(self.hull, wheel, wheel.position), enable_motor=True, max_motor_torque=motor_torque
+                    **pinned(self.hull, wheel, wheel.position),
+                    enable_motor=True,
+                    max_motor_torque=motor_torque,
                 )
             )
         for center, radius in self.road_wheels:
@@ -151,7 +155,10 @@ class Tank:
         circle = np.stack([np.cos(angles), np.sin(angles)], axis=1)
         wheels = [self.sprocket, self.idler, *self.road_wheels, *self.return_rollers]
         samples = np.concatenate(
-            [np.array(center) + (radius + self.link_radius + 0.01) * circle for center, radius in wheels]
+            [
+                np.array(center) + (radius + self.link_radius + 0.01) * circle
+                for center, radius in wheels
+            ]
         )
         points = resample_loop(convex_hull(samples), self.link_spacing) + np.array(origin)
 
@@ -165,8 +172,12 @@ class Tank:
         for p, q in zip(points, np.roll(points, -1, axis=0)):
             half_length = 0.5 * np.linalg.norm(q - p)
             angle = math.atan2(q[1] - p[1], q[0] - p[0])
-            link = self.world.create_dynamic_body(position=0.5 * (p + q), rotation=b2d.make_rot(angle))
-            link.create_shape(link_def, b2d.capsule((-half_length, 0.0), (half_length, 0.0), self.link_radius))
+            link = self.world.create_dynamic_body(
+                position=0.5 * (p + q), rotation=b2d.make_rot(angle)
+            )
+            link.create_shape(
+                link_def, b2d.capsule((-half_length, 0.0), (half_length, 0.0), self.link_radius)
+            )
             links.append(link)
         # chain the links into a closed loop
         for i, (a, b) in enumerate(zip(links, links[1:] + links[:1])):
@@ -208,7 +219,9 @@ class Tank:
 
     def muzzle(self):
         """Position and direction of the barrel's end."""
-        return self.barrel.world_point((self.barrel_length, 0.0)), self.barrel.world_vector((1.0, 0.0))
+        return self.barrel.world_point((self.barrel_length, 0.0)), self.barrel.world_vector(
+            (1.0, 0.0)
+        )
 
 
 class TankSample(SampleBase):
@@ -241,7 +254,9 @@ class TankSample(SampleBase):
 
         for widget in (
             widgets.FloatSlider("speed", 1.0, 20.0, 0.5, self.speed, self.set_speed),
-            widgets.FloatSlider("torque", 200.0, 5000.0, 50.0, self.motor_torque, self.set_motor_torque),
+            widgets.FloatSlider(
+                "torque", 200.0, 5000.0, 50.0, self.motor_torque, self.set_motor_torque
+            ),
             widgets.Button("fire", self.fire),
             widgets.Button("recover (r)", self.recover),
             widgets.Checkbox("follow tank", self.follow, self.set_follow),
@@ -292,7 +307,9 @@ class TankSample(SampleBase):
         shape_def, box, y0 = self.debris_def(color), b2d.box(size, size), self.ground_y(x)
         for row in range(rows):
             for column in range(columns):
-                self.add_body((x + 2.05 * size * column, y0 + size + 2.02 * size * row), shape_def, box)
+                self.add_body(
+                    (x + 2.05 * size * column, y0 + size + 2.02 * size * row), shape_def, box
+                )
 
     def crate_pyramid(self, x, base, size=0.45, color=b2d.HexColor.Burlywood):
         shape_def, box, y0 = self.debris_def(color), b2d.box(size, size), self.ground_y(x)
@@ -321,9 +338,14 @@ class TankSample(SampleBase):
         angle = math.atan2(height, width)
         for sign in (1.0, -1.0):
             self.add_body(
-                (x + 0.5 * width, y0 + hy), plank_def, b2d.box(0.5 * diagonal, 0.06), rotation=sign * angle
+                (x + 0.5 * width, y0 + hy),
+                plank_def,
+                b2d.box(0.5 * diagonal, 0.06),
+                rotation=sign * angle,
             )
-        self.add_body((x + 0.5 * width, y0 + height + 0.15), plank_def, b2d.box(0.5 * width + 0.6, 0.15))
+        self.add_body(
+            (x + 0.5 * width, y0 + height + 0.15), plank_def, b2d.box(0.5 * width + 0.6, 0.15)
+        )
         crate_def, box = self.debris_def(b2d.HexColor.Peru), b2d.box(0.4, 0.4)
         for i in range(3):
             self.add_body((x + 0.5 * width + 0.85 * (i - 1), y0 + height + 0.7), crate_def, box)
@@ -346,7 +368,9 @@ class TankSample(SampleBase):
         # logs to drive over behind the big hill
         log_def = self.debris_def(b2d.HexColor.SaddleBrown, density=0.8, friction=0.8)
         for i in range(6):
-            self.add_body((280.0 + 4.0 * i, 0.5), log_def, b2d.capsule((-1.0, 0.0), (1.0, 0.0), 0.4))
+            self.add_body(
+                (280.0 + 4.0 * i, 0.5), log_def, b2d.capsule((-1.0, 0.0), (1.0, 0.0), 0.4)
+            )
         # the finale before the end wall
         self.crate_pyramid(312.0, base=9, color=b2d.HexColor.Tan)
 

@@ -57,7 +57,9 @@ class BatchVsLoop(SampleBase):
         n = self.count
         positions = self.rng.uniform(-self.half + 1.0, self.half - 1.0, (n, 2))
         colors = hsv_colors(np.linalg.norm(positions, axis=1) / (1.5 * self.half))
-        self.bodies = create_circles(self.world, positions, self.radius, colors=colors, friction=0.1)
+        self.bodies = create_circles(
+            self.world, positions, self.radius, colors=colors, friction=0.1
+        )
         self.body_list = list(self.bodies)
         for ema in self.timings.values():
             ema.value = None
@@ -78,7 +80,9 @@ class BatchVsLoop(SampleBase):
         distance = np.linalg.norm(delta, axis=1)
         falloff = 1.0 / (distance + 1.0)
         tangent = np.stack([-delta[:, 1], delta[:, 0]], axis=1)
-        accel = (self.pull * delta + self.spin * tangent) * falloff[:, None] ** 2 - self.drag * bodies.linear_velocity
+        accel = (self.pull * delta + self.spin * tangent) * falloff[
+            :, None
+        ] ** 2 - self.drag * bodies.linear_velocity
         bodies.apply_force_to_center(bodies.mass[:, None] * accel)
 
     def field_loop(self):
@@ -124,7 +128,3 @@ class BatchVsLoop(SampleBase):
             lines.append(f"batch is {loop / batch:.0f}x faster")
         for i, line in enumerate(lines):
             dd.draw_string((0.0, self.half - 1.5 - 1.5 * i), line, b2d.HexColor.White)
-
-
-if __name__ == "__main__":
-    BatchVsLoop.run()

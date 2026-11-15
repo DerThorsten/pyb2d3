@@ -108,7 +108,3 @@ class Meteor(SampleBase):
             lower_bound=(-50, -10),
             upper_bound=(200, 300),
         )
-
-
-if __name__ == "__main__":
-    Meteor.run()

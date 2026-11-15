@@ -118,7 +118,3 @@ class Tumbler(SampleBase):
 
     def aabb(self):
         return b2d.aabb(lower_bound=(-20, -20), upper_bound=(20, 20))
-
-
-if __name__ == "__main__":
-    Tumbler.run()

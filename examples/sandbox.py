@@ -24,7 +24,9 @@ if any((module_dir / "pyb2d3").glob("_pyb2d3*")):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("sample", nargs="?", default="", help='start sample, e.g. "Games/Billiard"')
-    parser.add_argument("--frontend", choices=["opengl", "pygame"], help="default: opengl if available")
+    parser.add_argument(
+        "--frontend", choices=["opengl", "pygame"], help="default: opengl if available"
+    )
     parser.add_argument("--list", action="store_true", help="list the samples and exit")
     args = parser.parse_args()
 

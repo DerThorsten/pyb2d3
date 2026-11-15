@@ -22,7 +22,9 @@ def hsv_colors(hue, saturation=0.75, value=0.95):
     return (rgb[..., 0] << 16) | (rgb[..., 1] << 8) | rgb[..., 2]
 
 
-def create_circles(world, positions, radius, colors=None, density=1.0, friction=0.2, restitution=0.0, **body_kwargs):
+def create_circles(
+    world, positions, radius, colors=None, density=1.0, friction=0.2, restitution=0.0, **body_kwargs
+):
     """One dynamic circle body per row of `positions`, returned as a `b2d.Bodies` batch.
 
     `radius` and `colors` are a single value or one value per body. Creating bodies is
@@ -34,8 +36,12 @@ def create_circles(world, positions, radius, colors=None, density=1.0, friction=
     bodies = b2d.Bodies()
     for (x, y), r, color in zip(positions, radii, colors):
         body = world.create_dynamic_body(position=(float(x), float(y)), **body_kwargs)
-        material = b2d.surface_material(friction=friction, restitution=restitution, custom_color=int(color))
-        body.create_shape(b2d.shape_def(density=density, material=material), b2d.circle(radius=float(r)))
+        material = b2d.surface_material(
+            friction=friction, restitution=restitution, custom_color=int(color)
+        )
+        body.create_shape(
+            b2d.shape_def(density=density, material=material), b2d.circle(radius=float(r))
+        )
         bodies.append(body)
     return bodies
 
@@ -51,8 +57,10 @@ def create_points(world, positions, radius, colors, density):
     for (x, y), color in zip(positions, colors):
         body = world.create_dynamic_body(position=(float(x), float(y)), enable_sleep=False)
         material = b2d.surface_material(custom_color=int(color))
-        body.create_shape(b2d.shape_def(density=density, material=material, filter=NO_COLLISIONS),
-                          b2d.circle(radius=radius))
+        body.create_shape(
+            b2d.shape_def(density=density, material=material, filter=NO_COLLISIONS),
+            b2d.circle(radius=radius),
+        )
         bodies.append(body)
     return bodies
 
@@ -83,7 +91,9 @@ class Ema:
         self.value = None
 
     def __call__(self, sample):
-        self.value = sample if self.value is None else (1.0 - self.alpha) * self.value + self.alpha * sample
+        self.value = (
+            sample if self.value is None else (1.0 - self.alpha) * self.value + self.alpha * sample
+        )
         return self.value
 
 
@@ -157,11 +167,29 @@ class ParticlePool:
     launches some (the oldest flying ones when the pool runs dry), `park` disables
     them again. Creating bodies is slow, enabling / moving them is a batch call."""
 
-    def __init__(self, world, size, radius, color, parking=(0.0, -500.0), density=1.0,
-                 friction=0.2, restitution=0.1, **body_kwargs):
+    def __init__(
+        self,
+        world,
+        size,
+        radius,
+        color,
+        parking=(0.0, -500.0),
+        density=1.0,
+        friction=0.2,
+        restitution=0.1,
+        **body_kwargs,
+    ):
         positions = np.tile(np.asarray(parking, dtype=np.float64), (size, 1))
-        self.bodies = create_circles(world, positions, radius, colors=color, density=density,
-                                     friction=friction, restitution=restitution, **body_kwargs)
+        self.bodies = create_circles(
+            world,
+            positions,
+            radius,
+            colors=color,
+            density=density,
+            friction=friction,
+            restitution=restitution,
+            **body_kwargs,
+        )
         self.bodies.enabled = False
         self.active = np.zeros(size, dtype=bool)
         self.age = np.zeros(size)
@@ -233,7 +261,9 @@ class Shaker:
 
     def step(self, time, dt):
         target = self.base + tuple(self.offset(time + dt))
-        self.body.set_target_transform(b2d.transform(p=tuple(target), q=self.rotation), dt, wake=True)
+        self.body.set_target_transform(
+            b2d.transform(p=tuple(target), q=self.rotation), dt, wake=True
+        )
 
 
 # ---- plots drawn with debug draw ----------------------------------------------------------------
@@ -277,5 +307,8 @@ def draw_histogram(debug_draw, origin, size, counts, color, reference=None, refe
         draw_curve(debug_draw, [(x0, oy), (x0, y1), (x0 + bar, y1), (x0 + bar, oy)], color)
     if reference is not None:
         x = ox + bar * (np.arange(len(reference)) + 0.5)
-        draw_curve(debug_draw, np.stack([x, oy + h * np.asarray(reference) / top], axis=1),
-                   reference_color or b2d.HexColor.White)
+        draw_curve(
+            debug_draw,
+            np.stack([x, oy + h * np.asarray(reference) / top], axis=1),
+            reference_color or b2d.HexColor.White,
+        )

@@ -148,7 +148,3 @@ class CastRayCallback(SampleBase):
             return ret
 
         self.world.cast_ray(pos, translation, query_filter=query_filter, callback=callback)
-
-
-if __name__ == "__main__":
-    CastRayCallback.run()

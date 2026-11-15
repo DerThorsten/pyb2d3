@@ -42,7 +42,9 @@ class HighMassRatio1(Box2dSample):
                 for i in range(count):
                     coeff = i - 0.5 * count
                     yy = y + 2.0 if count == 1 else y
-                    body = self.world.create_dynamic_body(position=(2.0 * coeff * extent + offset, yy))
+                    body = self.world.create_dynamic_body(
+                        position=(2.0 * coeff * extent + offset, yy)
+                    )
                     density = (j + 1.0) * 100.0 if count == 1 else 1.0
                     body.create_shape(b2d.shape_def(density=density), box)
                 count -= 1
@@ -98,11 +100,26 @@ class OverlapRecovery(Box2dSample):
 
         add = self.frontend.add_widget
         add(attr_slider(self, "Extent", "extent", 0.1, 1.0, 0.1, on_change=self.create_scene))
-        add(attr_slider(self, "Base Count", "base_count", 1, 10, 1, on_change=self.create_scene, cls=widgets.IntSlider))
+        add(
+            attr_slider(
+                self,
+                "Base Count",
+                "base_count",
+                1,
+                10,
+                1,
+                on_change=self.create_scene,
+                cls=widgets.IntSlider,
+            )
+        )
         add(attr_slider(self, "Overlap", "overlap", 0.0, 1.0, 0.01, on_change=self.create_scene))
         add(attr_slider(self, "Speed", "speed", 0.0, 10.0, 0.1, on_change=self.create_scene))
         add(attr_slider(self, "Hertz", "hertz", 0.0, 240.0, 1.0, on_change=self.create_scene))
-        add(attr_slider(self, "Damping Ratio", "damping_ratio", 0.0, 20.0, 0.1, on_change=self.create_scene))
+        add(
+            attr_slider(
+                self, "Damping Ratio", "damping_ratio", 0.0, 20.0, 0.1, on_change=self.create_scene
+            )
+        )
         add(widgets.Button(label="Reset Scene", callback=self.create_scene))
 
     def create_scene(self):
@@ -178,19 +195,53 @@ class Cart(Box2dSample):
 
         add = self.frontend.add_widget
         on_contact = self.on_contact_changed
-        add(attr_slider(self, "Contact Hertz", "contact_hertz", 0.0, 240.0, 1.0, on_change=on_contact))
-        add(attr_slider(self, "Contact Damping Ratio", "contact_damping_ratio", 0.0, 100.0, 1.0, on_change=on_contact))
-        add(attr_slider(self, "Contact Speed", "contact_speed", 0.0, 5.0, 0.1, on_change=on_contact))
-        add(attr_slider(self, "Joint Hertz", "constraint_hertz", 0.0, 240.0, 1.0, on_change=self.create_scene))
         add(
             attr_slider(
-                self, "Joint Damping Ratio", "constraint_damping_ratio", 0.0, 20.0, 1.0, on_change=self.create_scene
+                self, "Contact Hertz", "contact_hertz", 0.0, 240.0, 1.0, on_change=on_contact
+            )
+        )
+        add(
+            attr_slider(
+                self,
+                "Contact Damping Ratio",
+                "contact_damping_ratio",
+                0.0,
+                100.0,
+                1.0,
+                on_change=on_contact,
+            )
+        )
+        add(
+            attr_slider(self, "Contact Speed", "contact_speed", 0.0, 5.0, 0.1, on_change=on_contact)
+        )
+        add(
+            attr_slider(
+                self,
+                "Joint Hertz",
+                "constraint_hertz",
+                0.0,
+                240.0,
+                1.0,
+                on_change=self.create_scene,
+            )
+        )
+        add(
+            attr_slider(
+                self,
+                "Joint Damping Ratio",
+                "constraint_damping_ratio",
+                0.0,
+                20.0,
+                1.0,
+                on_change=self.create_scene,
             )
         )
         add(widgets.Button(label="Reset Scene", callback=self.create_scene))
 
     def apply_contact_tuning(self):
-        self.world.set_contact_tuning(self.contact_hertz, self.contact_damping_ratio, self.contact_speed)
+        self.world.set_contact_tuning(
+            self.contact_hertz, self.contact_damping_ratio, self.contact_speed
+        )
 
     def on_contact_changed(self):
         self.apply_contact_tuning()
@@ -205,7 +256,9 @@ class Cart(Box2dSample):
         chassis.create_shape(b2d.shape_def(density=1000.0), b2d.box(1.0, 0.25, center=(0, 0.25)))
         self.bodies = [chassis]
 
-        wheel_def = b2d.shape_def(density=50.0, material=b2d.surface_material(rolling_resistance=0.02))
+        wheel_def = b2d.shape_def(
+            density=50.0, material=b2d.surface_material(rolling_resistance=0.02)
+        )
         for x in (-0.9, 0.9):
             wheel = self.world.create_dynamic_body(position=(x, y_base - 0.15))
             wheel.create_shape(wheel_def, b2d.circle(radius=0.1))
@@ -263,7 +316,11 @@ class MultiplePrismatic(Box2dSample):
 
         add = self.frontend.add_widget
         add(attr_slider(self, "Hertz", "hertz", 0.0, 480.0, 1.0, on_change=self.apply_tuning))
-        add(attr_slider(self, "Damping Ratio", "damping_ratio", 0.0, 100.0, 1.0, on_change=self.apply_tuning))
+        add(
+            attr_slider(
+                self, "Damping Ratio", "damping_ratio", 0.0, 100.0, 1.0, on_change=self.apply_tuning
+            )
+        )
 
     def apply_tuning(self):
         for joint in self.joints:

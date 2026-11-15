@@ -99,7 +99,9 @@ _joint_names = [
     "weld",
     "wheel",
 ]
-_joint_def_classes = {name: getattr(_pyb2d3, f"{name.capitalize()}JointDef") for name in _joint_names}
+_joint_def_classes = {
+    name: getattr(_pyb2d3, f"{name.capitalize()}JointDef") for name in _joint_names
+}
 
 for _name, _cls in _joint_def_classes.items():
     globals()[f"{_name}_joint_def"] = _make_def_factory(_cls)
@@ -126,7 +128,14 @@ def _extend_def_classes():
     def update(self, **kwargs):
         return _set_attributes(self, kwargs)
 
-    for cls in [WorldDef, BodyDef, ShapeDef, ExplosionDef, SurfaceMaterial, *_joint_def_classes.values()]:
+    for cls in [
+        WorldDef,
+        BodyDef,
+        ShapeDef,
+        ExplosionDef,
+        SurfaceMaterial,
+        *_joint_def_classes.values(),
+    ]:
         cls.update = update
 
 
@@ -294,7 +303,9 @@ def _extend_world():
                 return raw_function(self, def_func(**kwargs))
             if len(args) == 1:
                 if kwargs:
-                    raise ValueError("if only one argument is given, it should be a joint_def, no kwargs allowed")
+                    raise ValueError(
+                        "if only one argument is given, it should be a joint_def, no kwargs allowed"
+                    )
                 return raw_function(self, args[0])
             if len(args) == 2:
                 return raw_function(self, def_func(body_a=args[0], body_b=args[1], **kwargs))
@@ -439,7 +450,9 @@ class MouseDrag(object):
     # force_scale: max pulling force as a multiple of the weight of the grabbed
     # body + everything jointed to it (box2d's samples use 100 x the grabbed
     # body alone: strong enough to yank whole contraptions around)
-    def __init__(self, world, hertz=7.5, damping_ratio=1.0, force_scale=10.0, angular_friction=0.25):
+    def __init__(
+        self, world, hertz=7.5, damping_ratio=1.0, force_scale=10.0, angular_friction=0.25
+    ):
         self.world = world
         self.hertz = hertz
         self.damping_ratio = damping_ratio
@@ -463,7 +476,9 @@ class MouseDrag(object):
             return None
 
         self._target = (float(point[0]), float(point[1]))
-        self._mouse_body = self.world.create_kinematic_body(position=self._target, enable_sleep=False)
+        self._mouse_body = self.world.create_kinematic_body(
+            position=self._target, enable_sleep=False
+        )
 
         mass_data = body.mass_data
         g = float(np.linalg.norm(self.world.gravity))
@@ -640,7 +655,9 @@ def ensure_hex_color(color):
         return int(color)
     if isinstance(color, (tuple, list)) and len(color) == 3:
         return rgb_to_hex_color(*(int(c) for c in color))
-    raise ValueError(f"a color must be an int (e.g. b2d.HexColor.Red) or an (r, g, b) tuple, got {color!r}")
+    raise ValueError(
+        f"a color must be an int (e.g. b2d.HexColor.Red) or an (r, g, b) tuple, got {color!r}"
+    )
 
 
 def rgb_to_hex_color(r, g, b):

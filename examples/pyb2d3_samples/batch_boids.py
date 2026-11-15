@@ -5,7 +5,14 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, widgets
 
-from .batch_common import create_circles, destroy_bodies, hsv_colors, neighbor_pairs, pair_sum, unit_and_length
+from .batch_common import (
+    create_circles,
+    destroy_bodies,
+    hsv_colors,
+    neighbor_pairs,
+    pair_sum,
+    unit_and_length,
+)
 
 
 class BatchBoids(SampleBase):
@@ -38,8 +45,12 @@ class BatchBoids(SampleBase):
         self.create_boids()
         for widget in (
             widgets.IntSlider("boids", 100, 2500, 100, self.count, self.set_count),
-            widgets.FloatSlider("separation", 0.0, 4.0, 0.1, self.separation, self.setter("separation")),
-            widgets.FloatSlider("alignment", 0.0, 4.0, 0.1, self.alignment, self.setter("alignment")),
+            widgets.FloatSlider(
+                "separation", 0.0, 4.0, 0.1, self.separation, self.setter("separation")
+            ),
+            widgets.FloatSlider(
+                "alignment", 0.0, 4.0, 0.1, self.alignment, self.setter("alignment")
+            ),
             widgets.FloatSlider("cohesion", 0.0, 4.0, 0.1, self.cohesion, self.setter("cohesion")),
         ):
             self.frontend.add_widget(widget)
@@ -56,10 +67,19 @@ class BatchBoids(SampleBase):
         destroy_bodies(self, self.bodies)
         n = self.count
         m = 1.0
-        positions = self.rng.uniform((-self.hx + m, -self.hy + m), (self.hx - m, self.hy - m), (n, 2))
+        positions = self.rng.uniform(
+            (-self.hx + m, -self.hy + m), (self.hx - m, self.hy - m), (n, 2)
+        )
         angle = self.rng.uniform(0, 2 * np.pi, n)
-        self.bodies = create_circles(self.world, positions, self.radius, colors=hsv_colors(angle / (2 * np.pi), 0.6),
-                                     friction=0.0, restitution=0.5, linear_damping=0.0)
+        self.bodies = create_circles(
+            self.world,
+            positions,
+            self.radius,
+            colors=hsv_colors(angle / (2 * np.pi), 0.6),
+            friction=0.0,
+            restitution=0.5,
+            linear_damping=0.0,
+        )
         self.bodies.linear_velocity = self.speed * np.stack([np.cos(angle), np.sin(angle)], axis=1)
         self.flock_count = 0
         self.pairs = (np.zeros(0, dtype=np.int64), np.zeros(0, dtype=np.int64))
@@ -90,17 +110,28 @@ class BatchBoids(SampleBase):
         alignment = pair_sum(n, i, j, v[j] - v[i]) / has
         # separation: away from close neighbors, stronger when closer
         close = dist < self.separation_radius
-        push = delta[close] * ((self.separation_radius - dist[close]) / np.maximum(dist[close], 1e-3) ** 2)[:, None]
+        push = (
+            delta[close]
+            * ((self.separation_radius - dist[close]) / np.maximum(dist[close], 1e-3) ** 2)[:, None]
+        )
         separation = -pair_sum(n, i[close], j[close], push)
         alone = count == 0
         cohesion[alone] = 0.0
         alignment[alone] = 0.0
 
-        steer = self.separation * 4.0 * separation + self.alignment * 0.8 * alignment + self.cohesion * 0.6 * cohesion
+        steer = (
+            self.separation * 4.0 * separation
+            + self.alignment * 0.8 * alignment
+            + self.cohesion * 0.6 * cohesion
+        )
         # soft walls: turn back before the edge
         margin = 4.0
-        steer[:, 0] += np.clip(-self.hx + margin - p[:, 0], 0, None) - np.clip(p[:, 0] - self.hx + margin, 0, None)
-        steer[:, 1] += np.clip(-self.hy + margin - p[:, 1], 0, None) - np.clip(p[:, 1] - self.hy + margin, 0, None)
+        steer[:, 0] += np.clip(-self.hx + margin - p[:, 0], 0, None) - np.clip(
+            p[:, 0] - self.hx + margin, 0, None
+        )
+        steer[:, 1] += np.clip(-self.hy + margin - p[:, 1], 0, None) - np.clip(
+            p[:, 1] - self.hy + margin, 0, None
+        )
         # the hawk: flee
         if self.hawk is not None:
             away, d = unit_and_length(p - self.hawk)
@@ -164,10 +195,8 @@ class BatchBoids(SampleBase):
         i, j = self.pairs
         # local alignment: mean cos of the angle between neighbors (1: a flock flies as one)
         aligned = float(np.einsum("ij,ij->i", heading[i], heading[j]).mean()) if len(i) else 0.0
-        text = (f"{len(self.bodies)} boids  {self.flock_count} flocks  {len(i)} neighbor pairs  "
-                f"neighbor alignment {aligned:.2f}")
+        text = (
+            f"{len(self.bodies)} boids  {self.flock_count} flocks  {len(i)} neighbor pairs  "
+            f"neighbor alignment {aligned:.2f}"
+        )
         dd.draw_string((-self.hx, self.hy + 1.0), text, b2d.HexColor.White)
-
-
-if __name__ == "__main__":
-    BatchBoids.run()

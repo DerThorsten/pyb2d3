@@ -9,7 +9,9 @@ ground.create_shape(b2d.shape_def(), b2d.box(50, 1))
 
 # a dynamic box falling onto it
 body = world.create_dynamic_body(position=(0, 4))
-body.create_shape(b2d.shape_def(density=1, material=b2d.surface_material(friction=0.6)), b2d.box(0.5, 0.5))
+body.create_shape(
+    b2d.shape_def(density=1, material=b2d.surface_material(friction=0.6)), b2d.box(0.5, 0.5)
+)
 
 # simulate one second at 60 Hz with 4 sub-steps
 for _ in range(60):

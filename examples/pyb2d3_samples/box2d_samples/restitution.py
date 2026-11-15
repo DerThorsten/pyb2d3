@@ -52,7 +52,12 @@ class Varying(Box2dSample):
         self.create_bodies()
 
         self.frontend.add_widget(
-            widgets.Dropdown(label="Shape", options=["Circle", "Box"], value="Circle", callback=self.set_shape_type)
+            widgets.Dropdown(
+                label="Shape",
+                options=["Circle", "Box"],
+                value="Circle",
+                callback=self.set_shape_type,
+            )
         )
         self.frontend.add_widget(widgets.Button(label="Reset", callback=self.create_bodies))
 
@@ -93,7 +98,9 @@ class SingleBounce(Box2dSample):
         self.max_y = self.height
         self.body = self.world.create_dynamic_body(position=(0.0, self.height), safety_factor=0.01)
         material = b2d.surface_material(restitution=1.0, friction=0.0)
-        self.body.create_shape(b2d.shape_def(density=1.0, material=material, enable_hit_events=True), self.geometry)
+        self.body.create_shape(
+            b2d.shape_def(density=1.0, material=material, enable_hit_events=True), self.geometry
+        )
         self.energy = EnergyMeter(self.world, [self.body])
 
     def post_update(self, dt):
@@ -180,13 +187,19 @@ class CircleStackRestitution(ReboundSample):
                 callback=self.set_stack_count,
             )
         )
-        self.frontend.add_widget(widgets.Checkbox(label="Gravity", value=self.gravity, callback=self.set_gravity))
+        self.frontend.add_widget(
+            widgets.Checkbox(label="Gravity", value=self.gravity, callback=self.set_gravity)
+        )
         self.frontend.add_widget(widgets.Button(label="Reset", callback=self.create_scene))
 
     def create_ball(self, y, velocity_y, restitution, hit_events):
-        body = self.world.create_dynamic_body(position=(0.0, y), linear_velocity=(0.0, velocity_y), enable_sleep=False)
+        body = self.world.create_dynamic_body(
+            position=(0.0, y), linear_velocity=(0.0, velocity_y), enable_sleep=False
+        )
         material = b2d.surface_material(friction=0.0, restitution=restitution)
-        body.create_shape(b2d.shape_def(material=material, enable_hit_events=hit_events), b2d.circle(radius=0.5))
+        body.create_shape(
+            b2d.shape_def(material=material, enable_hit_events=hit_events), b2d.circle(radius=0.5)
+        )
         self.bodies.append(body)
         return body
 
@@ -199,7 +212,9 @@ class CircleStackRestitution(ReboundSample):
 
         # start half a step of travel above contact so the impact lands mid step, matching the test
         self.start_height = 0.5 + 1.0 * self.stack_count + 0.5 * self.impact_speed * (1.0 / 60.0)
-        self.impactor = self.create_ball(self.start_height, -self.impact_speed, self.restitution, True)
+        self.impactor = self.create_ball(
+            self.start_height, -self.impact_speed, self.restitution, True
+        )
 
         self.energy = EnergyMeter(self.world, self.bodies)
         self.reset_rebound()
@@ -221,7 +236,9 @@ class CircleStackRestitution(ReboundSample):
     def post_update(self, dt):
         self.vy = self.impactor.linear_velocity.y
         self.update_rebound(self.vy)
-        self.support_speed = max((body.speed for body in self.bodies[: self.stack_count]), default=0.0)
+        self.support_speed = max(
+            (body.speed for body in self.bodies[: self.stack_count]), default=0.0
+        )
         self.energy.update()
 
     def post_debug_draw(self):
@@ -277,7 +294,9 @@ class RestitutionPropagation(Box2dSample):
         for column in range(n):
             x = self.column_x(column)
             for k in range(column):
-                crate = self.world.create_dynamic_body(position=(x, 0.5 + 1.0 * k), enable_sleep=False)
+                crate = self.world.create_dynamic_body(
+                    position=(x, 0.5 + 1.0 * k), enable_sleep=False
+                )
                 crate.create_shape(b2d.shape_def(), b2d.box(0.5, 0.5))
                 self.crates.append(crate)
 
@@ -319,10 +338,14 @@ class RestitutionPropagation(Box2dSample):
             x = self.column_x(column)
             rest = self.rest_height[column]
             apex = self.apex[column]
-            self.debug_draw.draw_segment((x - 1.0, rest + self.drop_height), (x + 1.0, rest + self.drop_height), RED)
+            self.debug_draw.draw_segment(
+                (x - 1.0, rest + self.drop_height), (x + 1.0, rest + self.drop_height), RED
+            )
             if apex > 0.0:
                 self.debug_draw.draw_segment((x - 1.0, rest + apex), (x + 1.0, rest + apex), GREEN)
-            lines.append(f"{label}: apex {apex:.2f} m ({100.0 * apex / self.drop_height:.0f}% of drop)")
+            lines.append(
+                f"{label}: apex {apex:.2f} m ({100.0 * apex / self.drop_height:.0f}% of drop)"
+            )
         lines.append(f"peak crate speed {self.kick:.2f} m/s")
         draw_text_lines(self, lines)
 
@@ -348,7 +371,12 @@ class BoxRestitution(ReboundSample):
         self.frontend.add_widget(restitution_slider(self.restitution, self.set_restitution))
         self.frontend.add_widget(
             widgets.FloatSlider(
-                label="Spin", min_value=0.0, max_value=2.0, step=0.01, value=self.spin, callback=self.set_spin
+                label="Spin",
+                min_value=0.0,
+                max_value=2.0,
+                step=0.01,
+                value=self.spin,
+                callback=self.set_spin,
             )
         )
         self.frontend.add_widget(widgets.Button(label="Reset", callback=self.create_scene))
@@ -364,7 +392,8 @@ class BoxRestitution(ReboundSample):
         )
         material = b2d.surface_material(friction=0.0, restitution=self.restitution)
         self.box.create_shape(
-            b2d.shape_def(density=1.0, material=material, enable_hit_events=True), b2d.box(1.0, 0.25)
+            b2d.shape_def(density=1.0, material=material, enable_hit_events=True),
+            b2d.box(1.0, 0.25),
         )
         self.energy = EnergyMeter(self.world, [self.box])
         self.reset_rebound()
@@ -468,8 +497,12 @@ class RotatedBoxRestitution(Box2dSample):
             total = sum(compute_energy(self.world, [body]))
             percent = 100.0 * total / start if start != 0.0 else 0.0
             percents.append(percent)
-            self.debug_draw.draw_string((self.body_x(i) - 0.5, self.drop_height + 1.5), f"{percent:.1f}%", WHITE)
-        draw_text_lines(self, [f"energy: min {min(percents):.2f}%, max {max(percents):.2f}% of start"])
+            self.debug_draw.draw_string(
+                (self.body_x(i) - 0.5, self.drop_height + 1.5), f"{percent:.1f}%", WHITE
+            )
+        draw_text_lines(
+            self, [f"energy: min {min(percents):.2f}%, max {max(percents):.2f}% of start"]
+        )
 
 
 @register_sample("Restitution", "Two Box Restitution")
@@ -515,7 +548,9 @@ class CircleRestitution(Box2dSample):
         dr = 1.0 / (self.count - 1 if self.count > 1 else 1)
         for i in range(self.count):
             restitution = i * dr
-            shape_def = b2d.shape_def(density=1.0, material=b2d.surface_material(restitution=restitution))
+            shape_def = b2d.shape_def(
+                density=1.0, material=b2d.surface_material(restitution=restitution)
+            )
             x = -1.0 * (self.count - 1) + 2.0 * i
             for y in (1.0, 4.0):
                 body = self.world.create_dynamic_body(position=(x, y), name=f"{restitution:.2f}")

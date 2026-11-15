@@ -15,7 +15,7 @@ import ctypes
 import importlib
 import inspect
 import json
-import linecache
+import math
 import os
 import sys
 import time
@@ -23,6 +23,8 @@ import traceback
 from dataclasses import dataclass
 
 import pyjs
+
+import pyb2d3_sandbox_opengl  # noqa: F401 (first: switches PyOpenGL's per-call glGetError off)
 from OpenGL import GL as gl
 from pyb2d3 import Vec2
 
@@ -34,11 +36,11 @@ from pyb2d3_sandbox.frontend_base import (
     MouseDownEvent,
     MouseEnterEvent,
     MouseLeaveEvent,
-    MouseMoveEvent,
-    MouseUpEvent,
     MouseWheelEvent,
 )
 from pyb2d3_sandbox_opengl.debug_draw_gl import Camera, GLDebugDraw
+
+from .gestures import PointerGestures
 
 # DOM `KeyboardEvent.key` -> sandbox key names (letters / digits: themselves)
 KEY_NAMES = {
@@ -118,8 +120,9 @@ class _WebGLContextAttributes(ctypes.Structure):
     ]
 
 
-def create_webgl2_context(canvas):
-    """create a WebGL2 context on `canvas` and make it current (for PyOpenGL)"""
+def create_webgl2_context(canvas, antialias=True):
+    """create a WebGL2 context on `canvas` and make it current (for PyOpenGL);
+    `antialias`: multisampling (costly on mobile GPUs)"""
     pyjs.set_canvas(canvas)
     lib = ctypes.CDLL(None)
     attrs = _WebGLContextAttributes()
@@ -129,7 +132,7 @@ def create_webgl2_context(canvas):
     attrs.alpha = False
     attrs.depth = False
     attrs.stencil = False
-    attrs.antialias = True
+    attrs.antialias = bool(antialias)
 
     create = lib.emscripten_webgl_create_context
     create.restype = ctypes.c_size_t
@@ -150,34 +153,47 @@ def create_webgl2_context(canvas):
 
 # one listener per element + event; forwards the event to python. Pointer /
 # key events are reduced to plain values in JS (fewer JS <-> python calls).
+# cb(kind, x, y, a, b, key, flags, pointer id): pointer events carry the pointer id
+# and its type in `key` ("mouse" / "touch" / "pen", see gestures.py); enter / leave
+# only for the mouse (touches have no hover); wheel: a = deltaY in px, flags 1 = ctrl
+# (a trackpad pinch arrives as ctrl + wheel)
 _CANVAS_EVENTS_JS = """
 const mods = (e) => (e.ctrlKey ? 1 : 0) | (e.shiftKey ? 2 : 0) | (e.metaKey ? 4 : 0) | (e.altKey ? 8 : 0);
+const pressed = (e) => e.pointerType !== "mouse" || (e.buttons & 1);
 canvas.style.touchAction = "none";
 canvas.addEventListener("pointerdown", (e) => {
-  if (e.button !== 0) return;
+  if (e.pointerType === "mouse" && e.button !== 0) return;
   canvas.setPointerCapture(e.pointerId);
   canvas.focus();
-  cb("down", e.offsetX, e.offsetY, 0, 0, "", 0);
+  cb("down", e.offsetX, e.offsetY, 0, 0, e.pointerType, 0, e.pointerId);
 });
 canvas.addEventListener("pointermove", (e) => {
-  cb("move", e.offsetX, e.offsetY, e.movementX, e.movementY, "", e.buttons);
+  if (pressed(e)) cb("move", e.offsetX, e.offsetY, 0, 0, e.pointerType, 0, e.pointerId);
 });
 canvas.addEventListener("pointerup", (e) => {
-  if (e.button !== 0) return;
-  cb("up", e.offsetX, e.offsetY, 0, 0, "", 0);
+  if (e.pointerType === "mouse" && e.button !== 0) return;
+  cb("up", e.offsetX, e.offsetY, 0, 0, e.pointerType, 0, e.pointerId);
 });
-canvas.addEventListener("pointerenter", () => cb("enter", 0, 0, 0, 0, "", 0));
-canvas.addEventListener("pointerleave", () => cb("leave", 0, 0, 0, 0, "", 0));
+canvas.addEventListener("pointercancel", (e) => {
+  cb("cancel", e.offsetX, e.offsetY, 0, 0, e.pointerType, 0, e.pointerId);
+});
+canvas.addEventListener("pointerenter", (e) => {
+  if (e.pointerType === "mouse") cb("enter", 0, 0, 0, 0, "mouse", 0, e.pointerId);
+});
+canvas.addEventListener("pointerleave", (e) => {
+  if (e.pointerType === "mouse") cb("leave", 0, 0, 0, 0, "mouse", 0, e.pointerId);
+});
 canvas.addEventListener("wheel", (e) => {
   e.preventDefault();
-  cb("wheel", e.offsetX, e.offsetY, Math.sign(e.deltaY), 0, "", 0);
+  const px = e.deltaMode === 1 ? 16 * e.deltaY : e.deltaY;  // lines -> px
+  cb("wheel", e.offsetX, e.offsetY, px, 0, "", e.ctrlKey ? 1 : 0, 0);
 }, { passive: false });
 canvas.addEventListener("keydown", (e) => {
   if (e.repeat) return;
   if (e.key.startsWith("Arrow") || e.key.startsWith("Page") || e.key === " ") e.preventDefault();
-  cb("keydown", 0, 0, 0, 0, e.key, mods(e));
+  cb("keydown", 0, 0, 0, 0, e.key, mods(e), 0);
 });
-canvas.addEventListener("keyup", (e) => cb("keyup", 0, 0, 0, 0, e.key, 0));
+canvas.addEventListener("keyup", (e) => cb("keyup", 0, 0, 0, 0, e.key, 0, 0));
 """
 
 
@@ -237,13 +253,11 @@ class _Labels:
         self.used += 1
         span.textContent = text
         r, g, b = (int(c * 255) for c in rgb)
-        span.style.cssText = (
-            f"display:block;left:{screen_pos.x:.0f}px;top:{screen_pos.y:.0f}px;color:rgb({r},{g},{b})"
-        )
+        span.style.cssText = f"display:block;left:{screen_pos.x:.0f}px;top:{screen_pos.y:.0f}px;color:rgb({r},{g},{b})"
 
     def flush(self):
         """hide the labels not used in this frame"""
-        for span in self.spans[self.used:]:
+        for span in self.spans[self.used :]:
             span.style.display = "none"
         self.used = 0
 
@@ -259,6 +273,9 @@ class WebglFrontend(FrontendBase):
         canvas_id: str = "canvas"
         panel_id: str = "panel"
         labels_id: str = "labels"
+        # phones have devicePixelRatio 3: 2.25x more pixels for the shape shaders than
+        # at 2, hardly visible; at >= 2 multisampling is switched off as well
+        max_pixel_ratio: float = 2.0
 
     def __init__(self, settings):
         super().__init__(settings)
@@ -274,6 +291,9 @@ class WebglFrontend(FrontendBase):
         self._fps_t0 = time.perf_counter()
         self._physics_s = 0.0  # time in physics / drawing since the last fps update
         self._draw_s = 0.0
+        self._gestures = PointerGestures(self)  # pointers -> mouse events, pinch zoom
+        self._fit_zoom = None  # the zoom of the fitted view (center_sample)
+        self._landscape = None  # canvas orientation: re-fit when it flips
 
     # -- setup -------------------------------------------------------------
 
@@ -291,14 +311,19 @@ class WebglFrontend(FrontendBase):
             )
         self._labels = _Labels(self._dom, labels_layer)
 
-        create_webgl2_context(self.canvas)
+        # multisampling only on low density screens (the shaders smooth the shape
+        # edges themselves; MSAA is expensive on mobile GPUs)
+        create_webgl2_context(self.canvas, antialias=self._pixel_ratio() < 2.0)
         self.debug_draw = GLDebugDraw(self.camera, draw_text=self._labels.add)
+        # the canvas is ours alone: clear it instead of the full-screen noise shader
+        self.debug_draw.background.use_clear = True
         self.debug_draw.draw_shapes = True
         self.debug_draw.draw_joints = True
 
         self._resize()
         self._build_panel()
         self._fps_overlay = self._create_fps_overlay()
+        self._create_zoom_buttons()
         self._connect_canvas_events()
         self.ui_is_ready()  # creates the sample
 
@@ -312,17 +337,28 @@ class WebglFrontend(FrontendBase):
 
     # -- frames --------------------------------------------------------------
 
+    def _pixel_ratio(self):
+        """drawing buffer pixels per CSS pixel: devicePixelRatio, capped at
+        settings.max_pixel_ratio (fill rate on phones)"""
+        return min(float(pyjs.js.devicePixelRatio or 1.0), self.settings.max_pixel_ratio)
+
     def _resize(self):
-        """match the drawing buffer to the canvas' CSS size (x devicePixelRatio)"""
+        """match the drawing buffer to the canvas' CSS size (x the pixel ratio)"""
         css_w = max(1, int(self.canvas.clientWidth))
         css_h = max(1, int(self.canvas.clientHeight))
-        dpr = float(pyjs.js.devicePixelRatio or 1.0)
+        dpr = self._pixel_ratio()
         pixel_size = (max(1, round(css_w * dpr)), max(1, round(css_h * dpr)))
         if pixel_size != self._pixel_size:
             self._pixel_size = pixel_size
             self.canvas.width, self.canvas.height = pixel_size
         # the camera works in CSS px (the coordinates of the pointer events)
         self.camera.set_size(css_w, css_h)
+        # the device was turned (portrait <-> landscape): fit the sample again, it
+        # would be tiny or cut off in the other orientation
+        landscape = css_w >= css_h
+        if self._landscape is not None and landscape != self._landscape and self.sample is not None:
+            self.center_sample(10)
+        self._landscape = landscape
 
     def _frame(self, time_ms):
         """one animation frame: logic, physics, draw; False stops the loop"""
@@ -374,47 +410,26 @@ class WebglFrontend(FrontendBase):
             line = inspect.findsource(sample_class)[1] + 1
         except (OSError, TypeError):
             file, line = None, 0
-        self._dispatch("pyb2d3-sample", {"key": entry.key if entry else None, "file": file, "line": line})
+        self._dispatch(
+            "pyb2d3-sample", {"key": entry.key if entry else None, "file": file, "line": line}
+        )
 
-    def samples_in_file(self, path):
-        """the registered samples defined in the python file `path`, as JSON:
-        [{key, first, last}] with the line range of each sample class (the page's
-        Run button starts the sample the editor cursor is in)"""
-        path = os.path.abspath(path)
-        linecache.checkcache(path)  # the file may have been edited + re-imported
-        found = []
-        for entry in self.registry:
-            try:
-                if os.path.abspath(inspect.getsourcefile(entry.cls)) != path:
-                    continue
-                lines, first = inspect.getsourcelines(entry.cls)
-            except (OSError, TypeError):
-                continue
-            found.append({"key": entry.key, "first": first, "last": first + len(lines) - 1})
-        return json.dumps(found)
-
-    def reload_code(self, paths, key=None):
+    def reload_code(self, paths=()):
         """re-import the modules of the python files `paths` (edited in the
-        page and written to the file system) and start the sample `key`
-        ("Category/Name", default: the current one) with the new code; the
-        modules of both samples are always re-imported (last). Errors are
+        page and written to the file system) and restart the current sample with
+        the new code; its own module is always re-imported (last). Errors are
         reported like errors of the sample."""
-        if not key and self.sample_entry is not None:
-            key = self.sample_entry.key
-        try:
-            target = self.registry.get(key).cls if key else self.sample_class
-        except KeyError:
-            key, target = None, self.sample_class
-        # the samples' own modules last: they import from the edited helpers
-        last = []
-        for cls in (target, self.sample_class):
-            module = sys.modules.get(cls.__module__)
-            if module is not None and module not in last:
-                last.append(module)
+        key = self.sample_entry.key if self.sample_entry is not None else None
+        target = self.sample_class
+        # the sample's own module last: it imports from the edited files
+        own = sys.modules.get(target.__module__)
+        last = [own] if own is not None else []
         paths = {os.path.abspath(p) for p in paths}
         modules = [
-            m for m in list(sys.modules.values())
-            if m not in last and getattr(m, "__file__", None)
+            m
+            for m in list(sys.modules.values())
+            if m not in last
+            and getattr(m, "__file__", None)
             and os.path.abspath(m.__file__) in paths
         ] + last
         try:
@@ -446,17 +461,19 @@ class WebglFrontend(FrontendBase):
             self._fps_frames = 0
             self._physics_s = self._draw_s = 0.0
             self._fps_t0 = now
+            w, h = self._pixel_size  # the drawing buffer: what the GPU fills each frame
             self._fps_overlay.textContent = (
-                f"{fps:.0f} fps · physics {physics_ms:.1f} ms · draw {draw_ms:.1f} ms"
+                f"{fps:.0f} fps · physics {physics_ms:.1f} ms · draw {draw_ms:.1f} ms · {w}×{h} px"
             )
 
     def _create_fps_overlay(self):
-        """the fps counter: a small label in the top left corner of the canvas"""
+        """the fps counter: a small label in the bottom right corner of the canvas
+        (samples write their own text at the top left)"""
         overlay = self._dom.el("div", self.canvas.parentElement, "", cls="pyb2d3-fps")
         style = overlay.style
         style.position = "absolute"
-        style.top = "6px"
-        style.left = "8px"
+        style.bottom = "6px"
+        style.right = "8px"
         style.padding = "2px 6px"
         style.borderRadius = "4px"
         style.background = "rgba(0, 0, 0, 0.45)"
@@ -464,6 +481,21 @@ class WebglFrontend(FrontendBase):
         style.font = "12px monospace"
         style.pointerEvents = "none"
         return overlay
+
+    def _create_zoom_buttons(self):
+        """+ / - / fit buttons on the canvas (touch screens have no wheel); placed by
+        the page's CSS (class pyb2d3-zoom)"""
+        dom = self._dom
+        group = dom.el("div", self.canvas.parentElement, cls="pyb2d3-zoom")
+        center = lambda: (0.5 * self.camera.width, 0.5 * self.camera.height)  # noqa: E731
+        for text, title, action in (
+            ("+", "zoom in", lambda e: self.zoom_at(*center(), 1.25)),
+            ("−", "zoom out", lambda e: self.zoom_at(*center(), 1.0 / 1.25)),
+            ("fit", "show the whole sample", lambda e: self.center_sample(10)),
+        ):
+            button = dom.el("button", group, text, title=title, type="button")
+            dom.on(button, "click", action)
+        return group
 
     # -- input ---------------------------------------------------------------
 
@@ -476,29 +508,49 @@ class WebglFrontend(FrontendBase):
         """CSS px of the canvas -> world position"""
         return self.camera.convert_screen_to_world(Vec2(float(x), float(y)))
 
-    def _on_canvas_event(self, kind, x, y, a, b, key, flags):
+    # -- the host interface of PointerGestures (gestures.py) -----------------------------
+
+    def screen_to_world(self, x, y):
+        """canvas CSS px -> world position"""
+        return self._world(x, y)
+
+    def on_primary_down(self, x, y):
+        """the first pointer's press: the sample's mouse down + multi clicks"""
+        world = self._world(x, y)
+        self.sample.on_mouse_down(MouseDownEvent(world_position=world))
+        if self._multi_click_handler is not None:
+            self._multi_click_handler.handle_click(world_position=world)
+
+    def pan_screen(self, dx, dy):
+        """move the view with the fingers by a canvas px delta"""
+        self.drag_camera(self.camera.screen_delta_to_world_delta((dx, dy)))
+
+    def _on_canvas_event(self, kind, x, y, a, b, key, flags, pid=0):
         """a canvas event (reduced to plain values by _CANVAS_EVENTS_JS)"""
         if kind == "keydown" and str(key) in SAMPLE_KEYS:  # also while paused
             self.next_sample(SAMPLE_KEYS[str(key)])
             return
         if self.sample is None or self._is_paused:
+            if kind in ("up", "cancel"):  # keep the pointer bookkeeping straight
+                self._gestures.up(int(pid), float(x), float(y), cancelled=True)
             return
+        x, y = float(x), float(y)
         if kind == "down":
-            world = self._world(x, y)
-            self.sample.on_mouse_down(MouseDownEvent(world_position=world))
-            self._multi_click_handler.handle_click(world_position=world)
+            self._gestures.down(int(pid), x, y, str(key))
         elif kind == "move":
-            if int(flags) & 1:  # dragging with the primary button
-                delta = self.camera.screen_delta_to_world_delta((float(a), float(b)))
-                self.sample.on_mouse_move(
-                    MouseMoveEvent(world_position=self._world(x, y), world_delta=delta)
-                )
-        elif kind == "up":
-            self.sample.on_mouse_up(MouseUpEvent(world_position=self._world(x, y)))
+            self._gestures.move(int(pid), x, y)
+        elif kind in ("up", "cancel"):
+            self._gestures.up(int(pid), x, y, cancelled=(kind == "cancel"))
         elif kind == "wheel":
-            self.sample.on_mouse_wheel(
-                MouseWheelEvent(world_position=self._world(x, y), delta=float(a))
-            )
+            delta = float(a)
+            if int(flags) & 1:  # trackpad pinch (ctrl + wheel): zoom smoothly
+                self.zoom_at(x, y, math.exp(-0.01 * delta))
+            elif delta:
+                self.sample.on_mouse_wheel(
+                    MouseWheelEvent(
+                        world_position=self._world(x, y), delta=math.copysign(1.0, delta)
+                    )
+                )
         elif kind == "enter":
             self.sample.on_mouse_enter(MouseEnterEvent())
         elif kind == "leave":
@@ -523,6 +575,10 @@ class WebglFrontend(FrontendBase):
 
     # -- camera (FrontendBase) ------------------------------------------------
 
+    # zoom range relative to the sample's fitted view (center_sample)
+    MAX_ZOOM_IN = 50.0
+    MAX_ZOOM_OUT = 20.0
+
     def center_sample(self, margin_px=10):
         """fit the sample's bounding box into the canvas"""
         aabb = self.sample.aabb()
@@ -531,6 +587,7 @@ class WebglFrontend(FrontendBase):
         aspect = float(self.camera.width) / float(self.camera.height)
         self.camera.center = center
         self.camera.zoom = max(0.5 * size.x / aspect, 0.5 * size.y)
+        self._fit_zoom = self.camera.zoom
         self.camera._matrix = None
 
     def drag_camera(self, delta):
@@ -538,10 +595,26 @@ class WebglFrontend(FrontendBase):
         self.camera.center -= (delta[0], delta[1])
         self.camera._matrix = None
 
-    def change_zoom(self, delta):
-        """zoom in / out"""
-        self.camera.zoom = max(1.0, self.camera.zoom + delta)
+    def zoom_at(self, x, y, factor):
+        """zoom by `factor` (> 1: in) about the canvas point (x, y): the world point
+        under it stays in place; limited relative to the sample's fitted view"""
+        fit = getattr(self, "_fit_zoom", None) or self.camera.zoom
+        before = self._world(x, y)
+        zoom = self.camera.zoom / factor
+        self.camera.zoom = min(max(zoom, fit / self.MAX_ZOOM_IN), fit * self.MAX_ZOOM_OUT)
         self.camera._matrix = None
+        after = self._world(x, y)
+        self.camera.center += (before.x - after.x, before.y - after.y)
+        self.camera._matrix = None
+
+    def change_zoom(self, delta):
+        """zoom out (delta > 0) / in by wheel ticks, about the canvas center"""
+        self.zoom_at(0.5 * self.camera.width, 0.5 * self.camera.height, 1.1 ** (-delta))
+
+    def wheel_zoom(self, delta, world_position):
+        """zoom by wheel ticks about the mouse position (SampleBase.on_mouse_wheel)"""
+        screen = self.camera.convert_world_to_screen(Vec2(world_position[0], world_position[1]))
+        self.zoom_at(screen.x, screen.y, 1.1 ** (-delta))
 
     # -- the panel ------------------------------------------------------------
 
@@ -551,19 +624,21 @@ class WebglFrontend(FrontendBase):
         panel = self.panel
         panel.textContent = ""
 
-        # sample list
+        # sample choice: a category, then one of its samples (one list of all ~160
+        # samples is far too long, especially on phones)
         if len(self.registry):
-            section = dom.el("section", panel, cls="pyb2d3-section")
+            section = dom.el("section", panel, cls="pyb2d3-section pyb2d3-sample-section")
             dom.el("h3", section, "Sample")
-            self._sample_select = dom.el("select", section)
-            self._sample_classes = []
+            self._sample_classes = [entry.cls for entry in self.registry]
+            row = dom.el("div", section, cls="pyb2d3-row pyb2d3-sample-choice")
+            self._category_select = dom.el("select", row, cls="pyb2d3-category-select")
             for category in self.registry.categories():
-                group = dom.el("optgroup", self._sample_select, label=category)
-                for entry in self.registry.samples(category):
-                    option = dom.el("option", group, entry.name, value=len(self._sample_classes))
-                    if entry.cls is self.sample_class:
-                        option.selected = True
-                    self._sample_classes.append(entry.cls)
+                dom.el("option", self._category_select, category, value=category)
+            self._sample_select = dom.el("select", row, cls="pyb2d3-sample-select")
+            self._shown_category = None
+            entry = self.sample_entry
+            self._show_category(entry.category if entry else self.registry.categories()[0])
+            dom.on(self._category_select, "change", lambda e: self._on_select_category())
             dom.on(self._sample_select, "change", lambda e: self._on_select_sample())
             row = dom.el("div", section, cls="pyb2d3-row")
             previous = dom.el("button", row, "◀ Previous", title="previous sample (PageUp)")
@@ -583,15 +658,35 @@ class WebglFrontend(FrontendBase):
         dom.on(reset, "click", lambda e: self.stop())
 
         self._slider(
-            dom, section, "Hertz", 1, 120, 1, self.settings.hertz,
-            lambda v: setattr(self.settings, "hertz", v), fmt="{:.0f} Hz",
+            dom,
+            section,
+            "Hertz",
+            1,
+            120,
+            1,
+            self.settings.hertz,
+            lambda v: setattr(self.settings, "hertz", v),
+            fmt="{:.0f} Hz",
         )
         self._slider(
-            dom, section, "Substeps", 0, 30, 1, self.settings.substeps,
-            lambda v: setattr(self.settings, "substeps", int(v)), fmt="{:.0f}",
+            dom,
+            section,
+            "Substeps",
+            0,
+            30,
+            1,
+            self.settings.substeps,
+            lambda v: setattr(self.settings, "substeps", int(v)),
+            fmt="{:.0f}",
         )
         self._slider(
-            dom, section, "Speed", -4, 4, 0.1, 0.0,
+            dom,
+            section,
+            "Speed",
+            -4,
+            4,
+            0.1,
+            0.0,
             lambda v: setattr(self.settings, "speed", speed_from_slider(v)),
             fmt_value=lambda v: f"{speed_from_slider(v):.2f}x",
         )
@@ -601,7 +696,10 @@ class WebglFrontend(FrontendBase):
         dom.el("h3", section, "Debug draw")
         for name, label in DEBUG_DRAW_OPTIONS:
             self._checkbox(
-                dom, section, label, bool(getattr(self.debug_draw, name)),
+                dom,
+                section,
+                label,
+                bool(getattr(self.debug_draw, name)),
                 lambda v, name=name: setattr(self.debug_draw, name, v),
             )
 
@@ -609,10 +707,18 @@ class WebglFrontend(FrontendBase):
         section = dom.el("section", panel, cls="pyb2d3-section")
         self._sample_title = dom.el("h3", section, "")
         self._sample_help = dom.el("p", section, "", cls="pyb2d3-help")
-        dom.el("p", section, "mouse: drag bodies, drag the background to pan, wheel zooms", cls="pyb2d3-help")
+        dom.el(
+            "p",
+            section,
+            "mouse: drag bodies, drag the background to pan, wheel zooms\n"
+            "touch: drag bodies, one finger on empty space pans, two fingers zoom",
+            cls="pyb2d3-help",
+        )
         self._sample_widgets = dom.el("div", section)
 
-    def _slider(self, dom, parent, label, lo, hi, step, value, callback, fmt="{:.2f}", fmt_value=None):
+    def _slider(
+        self, dom, parent, label, lo, hi, step, value, callback, fmt="{:.2f}", fmt_value=None
+    ):
         """a labeled <input type=range> calling `callback(float)` on input"""
         fmt_value = fmt_value or fmt.format
         row = dom.el("label", parent, cls="pyb2d3-slider")
@@ -637,8 +743,31 @@ class WebglFrontend(FrontendBase):
         dom.on(box, "change", lambda e: callback(bool(box.checked)))
         return box
 
+    def _show_category(self, category):
+        """the category list shows `category`, the sample list its samples (values:
+        indices into _sample_classes); the running sample is selected if it is one"""
+        self._category_select.value = category
+        if category != self._shown_category:
+            self._shown_category = category
+            self._sample_select.textContent = ""
+            for entry in self.registry.samples(category):
+                self._dom.el(
+                    "option",
+                    self._sample_select,
+                    entry.name,
+                    value=self._sample_classes.index(entry.cls),
+                )
+        if self.sample_class in self._sample_classes:
+            self._sample_select.value = str(self._sample_classes.index(self.sample_class))
+
+    def _on_select_category(self):
+        """another category: show its samples and start the first one"""
+        category = str(self._category_select.value)
+        self._show_category(category)
+        self.set_sample(self.registry.samples(category)[0].cls)
+
     def _on_select_sample(self):
-        """the sample list changed"""
+        """a sample of the shown category chosen"""
         self.set_sample(self._sample_classes[int(self._sample_select.value)])
 
     def _toggle_pause(self):
@@ -661,18 +790,20 @@ class WebglFrontend(FrontendBase):
     # -- the sample's widgets (FrontendBase) ----------------------------------
 
     def pre_new_sample(self, sample_class, sample_settings):
-        """remove the widgets of the previous sample"""
+        """remove the widgets of the previous sample, forget its pointers"""
         if getattr(self, "_sample_widgets", None) is not None:
             self._sample_widgets.textContent = ""
         self._sample_dom.clear()
+        self._gestures.reset()
 
     def post_new_sample(self, sample_class, sample_settings):
         """show the title and the help text of the new sample, select it in the
         sample list, put it into the URL"""
         self._sample_title.textContent = self.sample_title
         self._sample_help.textContent = sample_class.help_text()
-        if sample_class in getattr(self, "_sample_classes", ()):
-            self._sample_select.value = str(self._sample_classes.index(sample_class))
+        entry = self.sample_entry
+        if entry is not None and getattr(self, "_category_select", None) is not None:
+            self._show_category(entry.category)  # (previous / next may change it)
         self._update_url()
         self._announce_sample(sample_class)
 
@@ -697,8 +828,14 @@ class WebglFrontend(FrontendBase):
                 element.callback(element.value)
 
             self._slider(
-                dom, parent, element.label, element.min_value, element.max_value,
-                element.step or (1 if is_int else 0.01), element.value, on_value,
+                dom,
+                parent,
+                element.label,
+                element.min_value,
+                element.max_value,
+                element.step or (1 if is_int else 0.01),
+                element.value,
+                on_value,
                 fmt="{:.0f}" if is_int else "{:.2f}",
             )
         elif isinstance(element, widgets.Checkbox):

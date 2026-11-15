@@ -112,7 +112,3 @@ class AngryShapes(SampleBase):
             lower_bound=(-50, -10),
             upper_bound=(35, 60),
         )
-
-
-if __name__ == "__main__":
-    AngryShapes.run()

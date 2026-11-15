@@ -10,7 +10,9 @@ wheel.create_shape(b2d.shape_def(density=1), b2d.circle(radius=0.5))
 
 # --- creating joints ---------------------------------------------------------------
 # create_<type>_joint(body_a, body_b, **def_fields)
-motor = world.create_revolute_joint(ground, wheel, enable_motor=True, motor_speed=2.0, max_motor_torque=100)
+motor = world.create_revolute_joint(
+    ground, wheel, enable_motor=True, motor_speed=2.0, max_motor_torque=100
+)
 
 # or from a def object (works for every joint type via world.create_joint)
 arm = world.create_dynamic_body(position=(2, 0))

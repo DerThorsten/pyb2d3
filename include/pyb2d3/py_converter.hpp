@@ -93,19 +93,19 @@ namespace nanobind::detail
         }
     }
 
-#define PYB2D3_ID_CASTER(ID_TYPE, WRAPPER, PY_NAME)                                     \
-    template <>                                                                         \
-    struct type_caster<ID_TYPE>                                                         \
-    {                                                                                   \
-        NB_TYPE_CASTER(ID_TYPE, const_name(PY_NAME))                                    \
-        bool from_python(handle src, uint8_t, cleanup_list*) noexcept                   \
-        {                                                                               \
-            return box2d_id_from_python<ID_TYPE, WRAPPER>(src, value);                  \
-        }                                                                               \
-        static handle from_cpp(const ID_TYPE& id, rv_policy, cleanup_list*) noexcept    \
-        {                                                                               \
-            return box2d_id_from_cpp(id);                                               \
-        }                                                                               \
+#define PYB2D3_ID_CASTER(ID_TYPE, WRAPPER, PY_NAME)                                  \
+    template <>                                                                      \
+    struct type_caster<ID_TYPE>                                                      \
+    {                                                                                \
+        NB_TYPE_CASTER(ID_TYPE, const_name(PY_NAME))                                 \
+        bool from_python(handle src, uint8_t, cleanup_list*) noexcept                \
+        {                                                                            \
+            return box2d_id_from_python<ID_TYPE, WRAPPER>(src, value);               \
+        }                                                                            \
+        static handle from_cpp(const ID_TYPE& id, rv_policy, cleanup_list*) noexcept \
+        {                                                                            \
+            return box2d_id_from_cpp(id);                                            \
+        }                                                                            \
     }
 
     PYB2D3_ID_CASTER(b2WorldId, WorldView, "WorldView");

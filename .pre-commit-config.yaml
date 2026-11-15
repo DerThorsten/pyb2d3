@@ -1,3 +1,5 @@
+# the generated docstrings (pixi run docstrings) must stay byte-identical to the generator output
+exclude: ^(include/pyb2d3/generated/|src/module/pyb2d3/_docstrings\.py)
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -8,7 +10,8 @@ repos:
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
   # Ruff version.
-  rev: v0.14.7
+  # keep in sync with ruff in pixi.toml (pixi run format)
+  rev: v0.17.5
   hooks:
     # Run the linter.
     - id: ruff-check

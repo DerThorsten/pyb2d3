@@ -18,13 +18,15 @@
 
 import numpy as np
 from OpenGL.GL import *  # noqa: F403
+import array
+import math
 import os
-from pyb2d3 import Vec2
+from pyb2d3 import Vec2, ensure_hex_color
 from .shader import create_program_from_files, create_program_from_strings, IS_GLES
 import ctypes
-import OpenGL
 
-OpenGL.ERROR_CHECKING = False
+# (PyOpenGL's error checking is switched off in this package's __init__: it has to
+# happen before the first OpenGL.GL import, setting it here is too late)
 
 
 def make_rgba8(hex_color, alpha=255):
@@ -33,6 +35,86 @@ def make_rgba8(hex_color, alpha=255):
     g = (hex_color >> 8) & 0xFF
     b = hex_color & 0xFF
     return (alpha << 24) | (b << 16) | (g << 8) | r
+
+
+_RGBA8 = {}  # color -> make_rgba8 value: a frame has few distinct colors
+
+
+def rgba8(color):
+    """a color (0xRRGGBB int, HexColor member, (r, g, b)) as packed RGBA8, cached
+    (it is converted once per shape and frame)"""
+    try:
+        return _RGBA8[color]
+    except KeyError:
+        if len(_RGBA8) > 65536:  # e.g. a sample with a new color per frame
+            _RGBA8.clear()
+        value = _RGBA8[color] = make_rgba8(ensure_hex_color(color))
+        return value
+    except TypeError:  # unhashable, e.g. an [r, g, b] list
+        return make_rgba8(ensure_hex_color(color))
+
+
+class Instances:
+    """this frame's instances of one shape type: tuples appended by the add_* methods
+    (a sample's own drawing, the python debug draw path) and blocks from a
+    b2d.BatchDebugDraw (float32 (n, k) arrays with the same memory layout as `dtype`)"""
+
+    def __init__(self, dtype):
+        self.dtype = dtype
+        self.tuples = []
+        self.blocks = []
+
+    def append(self, record):
+        """one instance as a tuple in the field order of `dtype`"""
+        self.tuples.append(record)
+
+    def add_block(self, block):
+        """instances collected in C++ (BatchDebugDraw), same layout as `dtype`;
+        keeps the drawing order (what was added before stays below it)"""
+        if len(block):
+            self._flush()
+            self.blocks.append(
+                np.ascontiguousarray(block, dtype=np.float32).view(self.dtype).reshape(-1)
+            )
+
+    def _flush(self):
+        """the tuples added so far as a block (keeps them in front of later blocks)"""
+        if self.tuples:
+            self.blocks.append(np.array(self.tuples, dtype=self.dtype))
+            self.tuples.clear()
+
+    def __bool__(self):
+        return bool(self.tuples) or bool(self.blocks)
+
+    def array(self):
+        """all instances in drawing order as one `dtype` array (no copy for a single block)"""
+        self._flush()
+        return self.blocks[0] if len(self.blocks) == 1 else np.concatenate(self.blocks)
+
+    def clear(self):
+        self.tuples.clear()
+        self.blocks.clear()
+
+
+def upload_vertices(vbo_id, data, capacity):
+    """upload `data` (bytes as a uint8 array) into the buffer `vbo_id`; the buffer
+    only grows (doubling) and is filled with glBufferSubData: reallocating it every
+    frame (glBufferData) is a GPU-CPU sync point. Returns the new capacity in bytes."""
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_id)
+    if data.nbytes > capacity:
+        capacity = max(data.nbytes, 2 * capacity, 4096)
+        glBufferData(GL_ARRAY_BUFFER, capacity, None, GL_DYNAMIC_DRAW)
+    glBufferSubData(GL_ARRAY_BUFFER, 0, data.nbytes, data)
+    return capacity
+
+
+def upload_instances(instances, batch_size):
+    """upload a structured instance array into the bound instance buffer and draw
+    it, `batch_size` instances (the buffer's capacity) at a time"""
+    for base in range(0, len(instances), batch_size):
+        batch = instances[base : base + batch_size]
+        glBufferSubData(GL_ARRAY_BUFFER, 0, batch.nbytes, batch)
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 6, len(batch))
 
 
 class GLBackground:
@@ -102,8 +184,20 @@ class GLBackground:
             glDeleteProgram(self.program_id)
             self.program_id = None
 
+    # True: a plain clear in the base color instead of the full-screen noise shader.
+    # The noise is static and barely visible (intensity 0.01), but costs a shader
+    # run per pixel, every frame: a lot of fill rate on phones / tablets (millions of
+    # pixels). Only for a frontend that owns the whole framebuffer (glClear ignores
+    # the viewport), e.g. the browser canvas, not the imgui window of the desktop one.
+    use_clear = False
+    base_color = (0.2, 0.2, 0.2)
+
     def draw(self):
         """Draw the background"""
+        if self.use_clear:
+            glClearColor(*self.base_color, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT)
+            return
         glUseProgram(self.program_id)
 
         # # Update uniforms
@@ -114,26 +208,49 @@ class GLBackground:
         glUniform1f(self.time_uniform, 0)
         # Use camera instance for resolution
         glUniform2f(self.resolution_uniform, float(self.camera.width), float(self.camera.height))
-        glUniform3f(self.base_color_uniform, 0.2, 0.2, 0.2)  # Gray background
+        glUniform3f(self.base_color_uniform, *self.base_color)  # Gray background
 
         # Draw quad
         glBindVertexArray(self.vao_id)
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
-
-        # Cleanup
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glBindVertexArray(0)
-        glUseProgram(0)
+        # (no reset of the GL state after each draw: GLDebugDraw.end_draw resets it
+        # once per frame; every GL call costs, especially python -> wasm -> JS)
 
 
-class CircleData:
-    """Storage class for circle instance data"""
-
-    def __init__(self, position, radius, rgba):
-        self.position = position  # Vec2
-        self.radius = radius  # float
-        self.size = np.array([position[0], position[1], radius, rgba], dtype=np.float32)
+# Instance layouts of the shapes (one record per shape, uploaded as they are). The
+# add_* methods append plain tuples, draw() turns them into one array per frame:
+# no numpy object per shape (that dominated the frame time with many bodies).
+# Colors are RGBA8 packed into a uint32 (make_rgba8: r in the lowest byte).
+CIRCLE_DTYPE = np.dtype(
+    [("x", np.float32), ("y", np.float32), ("radius", np.float32), ("color", np.uint32)]
+)
+SOLID_CIRCLE_DTYPE = np.dtype(
+    [
+        ("x", np.float32),
+        ("y", np.float32),
+        ("c", np.float32),
+        ("s", np.float32),
+        ("radius", np.float32),
+        ("color", np.uint32),
+    ]
+)
+CAPSULE_DTYPE = np.dtype(
+    [
+        ("x", np.float32),
+        ("y", np.float32),
+        ("axis_x", np.float32),
+        ("axis_y", np.float32),
+        ("radius", np.float32),
+        ("length", np.float32),
+        ("color", np.uint32),
+    ]
+)
+POINT_DTYPE = np.dtype(
+    [("x", np.float32), ("y", np.float32), ("size", np.float32), ("color", np.uint32)]
+)
+LINE_VERTEX_DTYPE = np.dtype([("x", np.float32), ("y", np.float32), ("color", np.uint32)])
+_NO_POINTS = (0.0,) * 16  # padding of the 8 polygon vertices
 
 
 class GLCircles:
@@ -144,7 +261,7 @@ class GLCircles:
         self.program_id = None
         self.projection_uniform = None
         self.pixel_scale_uniform = None
-        self.circles = []
+        self.circles = Instances(CIRCLE_DTYPE)
 
         # Get the directory containing this file
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -249,8 +366,7 @@ class GLCircles:
 
     def add_circle(self, center, radius, color):
         """Add circle for batch rendering"""
-        rgba = make_rgba8(color)
-        self.circles.append(CircleData(center, radius, rgba))
+        self.circles.append((center[0], center[1], radius, rgba8(color)))
 
     def draw(self):
         """Render all circles in batch"""
@@ -267,69 +383,11 @@ class GLCircles:
         glBindVertexArray(self.vao_id)
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo_ids[1])
 
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-        # Convert circles to numpy array for efficient upload
-        instance_data = np.array([c.size for c in self.circles], dtype=np.float32)
-
-        # Draw in batches if needed
-        count = len(self.circles)
-        base = 0
-        while count > 0:
-            batch_count = min(count, self.BATCH_SIZE)
-            batch_data = instance_data[base : base + batch_count]
-
-            glBufferSubData(GL_ARRAY_BUFFER, 0, batch_data.nbytes, batch_data)
-            glDrawArraysInstanced(GL_TRIANGLES, 0, 6, batch_count)
-
-            count -= self.BATCH_SIZE
-            base += self.BATCH_SIZE
-
-        glDisable(GL_BLEND)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glBindVertexArray(0)
-        glUseProgram(0)
+        upload_instances(self.circles.array(), self.BATCH_SIZE)
 
         self.circles.clear()
 
     BATCH_SIZE = 2048  # Maximum number of circles per batch
-
-
-class SolidCircleData:
-    """Storage class for solid circle instance data"""
-
-    __slots__ = ["size"]
-
-    def __init__(self, transform, radius, rgba):
-        # Use a structured dtype where color is uint32.
-        dtype = np.dtype(
-            [
-                ("p_x", np.float32),
-                ("p_y", np.float32),
-                ("q_s", np.float32),
-                ("q_c", np.float32),
-                ("radius", np.float32),
-                ("color", np.uint32),
-            ]
-        )
-        self.size = (
-            np.array(
-                [
-                    (
-                        transform.p[0],
-                        transform.p[1],
-                        transform.q.c,
-                        transform.q.s,
-                        radius,
-                        rgba,
-                    )
-                ],
-                dtype=dtype,
-            )
-            .view(np.float32)
-            .reshape(-1)
-        )
 
 
 class GLSolidCircles:
@@ -340,7 +398,7 @@ class GLSolidCircles:
         self.program_id = None
         self.projection_uniform = None
         self.pixel_scale_uniform = None
-        self.circles = []
+        self.circles = Instances(SOLID_CIRCLE_DTYPE)
 
         # Get the directory containing this file
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -445,8 +503,8 @@ class GLSolidCircles:
 
     def add_circle(self, transform, radius, color):
         """Add solid circle for batch rendering"""
-        rgba = make_rgba8(color)
-        self.circles.append(SolidCircleData(transform, radius, rgba))
+        p, q = transform.p, transform.q
+        self.circles.append((p[0], p[1], q.c, q.s, radius, rgba8(color)))
 
     def draw(self):
         """Render all solid circles in batch"""
@@ -463,68 +521,11 @@ class GLSolidCircles:
         glBindVertexArray(self.vao_id)
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo_ids[1])
 
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-        # Convert circles to numpy array for efficient upload
-        instance_data = np.array([c.size for c in self.circles], dtype=np.float32)
-
-        # Draw in batches if needed
-        count = len(self.circles)
-        base = 0
-        while count > 0:
-            batch_count = min(count, self.BATCH_SIZE)
-            batch_data = instance_data[base : base + batch_count]
-
-            glBufferSubData(GL_ARRAY_BUFFER, 0, batch_data.nbytes, batch_data)
-            glDrawArraysInstanced(GL_TRIANGLES, 0, 6, batch_count)
-
-            count -= self.BATCH_SIZE
-            base += self.BATCH_SIZE
-
-        glDisable(GL_BLEND)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glBindVertexArray(0)
-        glUseProgram(0)
+        upload_instances(self.circles.array(), self.BATCH_SIZE)
 
         self.circles.clear()
 
     BATCH_SIZE = 2048  # Maximum number of circles per batch
-
-
-class CapsuleData:
-    """Storage class for capsule instance data"""
-
-    def __init__(self, transform, radius, length, rgba):
-        dtype = np.dtype(
-            [
-                ("t0", np.float32),
-                ("t1", np.float32),
-                ("t2", np.float32),
-                ("t3", np.float32),
-                ("radius", np.float32),
-                ("length", np.float32),
-                ("color", np.uint32),
-            ]
-        )
-        self.size = (
-            np.array(
-                [
-                    (
-                        transform[0],
-                        transform[1],
-                        transform[2],
-                        transform[3],
-                        radius,
-                        length,
-                        rgba,
-                    )
-                ],
-                dtype=dtype,
-            )
-            .view(np.float32)
-            .reshape(-1)
-        )
 
 
 class GLSolidCapsules:
@@ -535,7 +536,7 @@ class GLSolidCapsules:
         self.program_id = None
         self.projection_uniform = None
         self.pixel_scale_uniform = None
-        self.capsules = []
+        self.capsules = Instances(CAPSULE_DTYPE)
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         vertex_shader = os.path.join(current_dir, "shaders", "solid_capsule.vs")
@@ -638,19 +639,24 @@ class GLSolidCapsules:
             self.program_id = None
 
     def add_capsule(self, p1, p2, radius, color):
-        """Add capsule for batch rendering"""
-        d = p2 - p1
-        length = np.sqrt(d[0] * d[0] + d[1] * d[1])
+        """Add capsule for batch rendering (center, axis, radius, length)"""
+        x1, y1, x2, y2 = p1[0], p1[1], p2[0], p2[1]
+        dx, dy = x2 - x1, y2 - y1
+        length = math.sqrt(dx * dx + dy * dy)
         if length < 0.001:
             print("WARNING: sample app: capsule too short!")
             return
-
-        axis = d / length
-        center = (p1 + p2) * 0.5
-        transform = (center[0], center[1], axis[0], axis[1])
-
-        rgba = make_rgba8(color)
-        self.capsules.append(CapsuleData(transform, radius, length, rgba))
+        self.capsules.append(
+            (
+                0.5 * (x1 + x2),
+                0.5 * (y1 + y2),
+                dx / length,
+                dy / length,
+                radius,
+                length,
+                rgba8(color),
+            )
+        )
 
     def draw(self):
         """Render all capsules in batch"""
@@ -667,29 +673,7 @@ class GLSolidCapsules:
         glBindVertexArray(self.vao_id)
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo_ids[1])
 
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-        # Convert capsules to numpy array for efficient upload
-        instance_data = np.array([c.size for c in self.capsules], dtype=np.float32)
-
-        # Draw in batches if needed
-        count = len(self.capsules)
-        base = 0
-        while count > 0:
-            batch_count = min(count, self.BATCH_SIZE)
-            batch_data = instance_data[base : base + batch_count]
-
-            glBufferSubData(GL_ARRAY_BUFFER, 0, batch_data.nbytes, batch_data)
-            glDrawArraysInstanced(GL_TRIANGLES, 0, 6, batch_count)
-
-            count -= self.BATCH_SIZE
-            base += self.BATCH_SIZE
-
-        glDisable(GL_BLEND)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glBindVertexArray(0)
-        glUseProgram(0)
+        upload_instances(self.capsules.array(), self.BATCH_SIZE)
 
         self.capsules.clear()
 
@@ -714,11 +698,13 @@ class GLSolidPolygons:
 
     def __init__(self, camera):
         self.camera = camera
-        # Preallocate buffers using the structured dtype.
-        self.instance_buffers = []  # Full batches filled this frame.
-        self.free_buffers = []  # Buffers available for reuse.
-        self.current_buffer = np.empty(self.BATCH_SIZE, dtype=polygon_dtype)
-        self.polygons_count = 0
+        # this frame's polygons as flat C arrays (array.array takes python floats at C
+        # speed and numpy reads its buffer without a copy; converting nested tuples /
+        # python lists to polygon_dtype is several times slower)
+        self.floats = array.array("f")  # per polygon 21: transform (4), points (16), radius
+        self.counts = array.array("i")
+        self.colors = array.array("I")
+        self.blocks = []  # from BatchDebugDraw (add_block)
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         vertex_shader = os.path.join(current_dir, "shaders", "solid_polygon.vs")
@@ -825,42 +811,55 @@ class GLSolidPolygons:
             radius: float
             color: uint32 bit pattern
         """
-        rgba = make_rgba8(color)
-        rec = self.current_buffer[self.polygons_count]
-        rec["transform"] = [
-            transform.p[0],
-            transform.p[1],
-            transform.q.c,
-            transform.q.s,
-        ]
-        pts = np.zeros(16, dtype=np.float32)
+        p, q = transform.p, transform.q
+        # (n, 2) local vertices, n <= 8: a numpy array from box2d, any sequence of
+        # points from a sample's own drawing code
+        if isinstance(points, np.ndarray):
+            pts = points.ravel().tolist()
+        else:
+            pts = [c for point in points for c in (float(point[0]), float(point[1]))]
+        floats = self.floats
+        floats.extend((p[0], p[1], q.c, q.s))
+        floats.extend(pts)
+        floats.extend(_NO_POINTS[len(pts) :])
+        floats.append(radius)
+        self.counts.append(count)
+        self.colors.append(rgba8(color))
 
-        n_points = len(points)
-        pts[: n_points * 2] = points.ravel()
+    def add_block(self, block):
+        """polygons collected in C++ (BatchDebugDraw.polygons: float32 (n, 23), the
+        polygon_dtype layout); keeps the drawing order"""
+        if len(block):
+            self._flush()
+            self.blocks.append(
+                np.ascontiguousarray(block, dtype=np.float32).view(polygon_dtype).reshape(-1)
+            )
 
-        # for i in range(count):
-        #     pts[i * 2] = points[i][0]
-        #     pts[i * 2 + 1] = points[i][1]
+    def _flush(self):
+        """the polygons added in python so far as a polygon_dtype block"""
+        if not self.counts:
+            return
+        f = np.frombuffer(self.floats, dtype=np.float32).reshape(-1, 21)
+        added = np.empty(len(f), dtype=polygon_dtype)
+        added["transform"] = f[:, :4]
+        added["points"] = f[:, 4:20]
+        added["radius"] = f[:, 20]
+        added["count"] = np.frombuffer(self.counts, dtype=np.int32)
+        added["color"] = np.frombuffer(self.colors, dtype=np.uint32)
+        self.blocks.append(added)
+        del f  # a live view of self.floats would block resizing it (BufferError)
+        del self.floats[:]
+        del self.counts[:]
+        del self.colors[:]
 
-        rec["points"] = pts
-        rec["count"] = count
-        rec["radius"] = radius
-        rec["color"] = rgba
-
-        self.polygons_count += 1
-
-        # When the current buffer is full, recycle it.
-        if self.polygons_count == self.BATCH_SIZE:
-            self.instance_buffers.append(self.current_buffer)
-            if self.free_buffers:
-                self.current_buffer = self.free_buffers.pop()
-            else:
-                self.current_buffer = np.empty(self.BATCH_SIZE, dtype=polygon_dtype)
-            self.polygons_count = 0
+    def instances(self):
+        """this frame's polygons in drawing order as a polygon_dtype array"""
+        self._flush()
+        return self.blocks[0] if len(self.blocks) == 1 else np.concatenate(self.blocks)
 
     def draw(self):
         """Render all polygons in batch"""
-        if self.polygons_count == 0 and not self.instance_buffers:
+        if not self.counts and not self.blocks:
             return
 
         glUseProgram(self.program_id)
@@ -870,37 +869,20 @@ class GLSolidPolygons:
 
         glBindVertexArray(self.vao_id)
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo_ids[1])
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        # Draw upload full batches.
-        for buf in self.instance_buffers:
-            glBufferSubData(GL_ARRAY_BUFFER, 0, buf.nbytes, buf.ravel())
-            glDrawArraysInstanced(GL_TRIANGLES, 0, 6, self.BATCH_SIZE)
+        upload_instances(self.instances(), self.BATCH_SIZE)
 
-        # Draw partial batch.
-        if self.polygons_count > 0:
-            buf = self.current_buffer[: self.polygons_count]
-            glBufferSubData(GL_ARRAY_BUFFER, 0, buf.nbytes, buf.ravel())
-            glDrawArraysInstanced(GL_TRIANGLES, 0, 6, self.polygons_count)
-
-        glDisable(GL_BLEND)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glBindVertexArray(0)
-        glUseProgram(0)
-
-        # Instead of discarding buffers, add them to the free pool for reuse.
-        self.free_buffers.extend(self.instance_buffers)
-        # Also, keep the current_buffer for future use.
-        # Reset for the next frame.
-        self.instance_buffers.clear()
-        self.polygons_count = 0
+        # (array.array has no clear(); deleting the items keeps the allocation)
+        self.blocks.clear()
+        del self.floats[:]
+        del self.counts[:]
+        del self.colors[:]
 
 
 class GLPoints:
     def __init__(self, camera):
         self.camera = camera
-        self.points = []  # list of (x, y, size, r, g, b, a)
+        self.points = Instances(POINT_DTYPE)
         vertex_shader = (
             "#version 330\n"
             "uniform mat4 projectionMatrix;\n"
@@ -930,6 +912,7 @@ class GLPoints:
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
         # Allocate an empty dynamic buffer
         glBufferData(GL_ARRAY_BUFFER, 0, None, GL_DYNAMIC_DRAW)
+        self.capacity = 0  # bytes of the vertex buffer (grows, see upload_vertices)
         stride = 2 * 4 + 4 + 4  # 2 floats (8 bytes) + 1 float (4 bytes) + 4 bytes for color
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(0))
@@ -941,27 +924,15 @@ class GLPoints:
         glBindVertexArray(0)
 
     def add_point(self, pos, size, color):
-        rgba = make_rgba8(color)
-        r = rgba & 0xFF
-        g = (rgba >> 8) & 0xFF
-        b = (rgba >> 16) & 0xFF
-        a = (rgba >> 24) & 0xFF
-        self.points.append((pos[0], pos[1], size, r, g, b, a))
+        """a point (x, y, size, rgba8) for this frame"""
+        self.points.append((pos[0], pos[1], size, rgba8(color)))
 
     def draw(self):
         if not self.points:
             return
-        dtype = np.dtype(
-            [("position", np.float32, 2), ("size", np.float32), ("color", np.uint8, 4)]
-        )
-        buffer = np.empty(len(self.points), dtype=dtype)
-        for i, pt in enumerate(self.points):
-            buffer["position"][i] = (pt[0], pt[1])
-            buffer["size"][i] = pt[2]
-            buffer["color"][i] = (pt[3], pt[4], pt[5], pt[6])
-        flat_data = buffer.view(np.uint8)
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
-        glBufferData(GL_ARRAY_BUFFER, flat_data.nbytes, flat_data, GL_DYNAMIC_DRAW)
+        # rgba8 as a little endian uint32 = the r, g, b, a bytes the shader reads
+        points = self.points.array()
+        self.capacity = upload_vertices(self.vbo_id, points.view(np.uint8), self.capacity)
         glUseProgram(self.program_id)
         proj = self.camera.build_projection_matrix(0.0)
         glUniformMatrix4fv(self.projection_uniform, 1, GL_FALSE, proj)
@@ -969,11 +940,9 @@ class GLPoints:
         # GLES (WebGL2) always uses gl_PointSize and has no GL_PROGRAM_POINT_SIZE
         if not IS_GLES:
             glEnable(GL_PROGRAM_POINT_SIZE)
-        glDrawArrays(GL_POINTS, 0, len(self.points))
+        glDrawArrays(GL_POINTS, 0, len(points))
         if not IS_GLES:
             glDisable(GL_PROGRAM_POINT_SIZE)
-        glBindVertexArray(0)
-        glUseProgram(0)
         self.points.clear()
 
     def destroy(self):
@@ -991,7 +960,7 @@ class GLPoints:
 class GLLines:
     def __init__(self, camera):
         self.camera = camera
-        self.lines = []  # list of vertices: each vertex as (x, y, r, g, b, a)
+        self.lines = Instances(LINE_VERTEX_DTYPE)  # two vertices per line
         vertex_shader = (
             "#version 330\n"
             "uniform mat4 projectionMatrix;\n"
@@ -1018,6 +987,7 @@ class GLLines:
         glBindVertexArray(self.vao_id)
         glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
         glBufferData(GL_ARRAY_BUFFER, 0, None, GL_DYNAMIC_DRAW)
+        self.capacity = 0  # bytes of the vertex buffer (grows, see upload_vertices)
         stride = 2 * 4 + 4  # 2 floats (8 bytes) + 4 bytes for color
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(0))
@@ -1027,32 +997,22 @@ class GLLines:
         glBindVertexArray(0)
 
     def add_line(self, p1, p2, color):
-        rgba = make_rgba8(color)
-        r = rgba & 0xFF
-        g = (rgba >> 8) & 0xFF
-        b = (rgba >> 16) & 0xFF
-        a = (rgba >> 24) & 0xFF
-        self.lines.append((p1[0], p1[1], r, g, b, a))
-        self.lines.append((p2[0], p2[1], r, g, b, a))
+        """a line: two vertices (x, y, rgba8) for this frame"""
+        rgba = rgba8(color)
+        self.lines.append((p1[0], p1[1], rgba))
+        self.lines.append((p2[0], p2[1], rgba))
 
     def draw(self):
         if not self.lines:
             return
-        dtype = np.dtype([("position", np.float32, 2), ("color", np.uint8, 4)])
-        buffer = np.empty(len(self.lines), dtype=dtype)
-        for i, vertex in enumerate(self.lines):
-            buffer["position"][i] = (vertex[0], vertex[1])
-            buffer["color"][i] = (vertex[2], vertex[3], vertex[4], vertex[5])
-        flat_data = buffer.view(np.uint8)
-        glBindBuffer(GL_ARRAY_BUFFER, self.vbo_id)
-        glBufferData(GL_ARRAY_BUFFER, flat_data.nbytes, flat_data, GL_DYNAMIC_DRAW)
+        # rgba8 as a little endian uint32 = the r, g, b, a bytes the shader reads
+        vertices = self.lines.array()
+        self.capacity = upload_vertices(self.vbo_id, vertices.view(np.uint8), self.capacity)
         glUseProgram(self.program_id)
         proj = self.camera.build_projection_matrix(0.0)
         glUniformMatrix4fv(self.projection_uniform, 1, GL_FALSE, proj)
         glBindVertexArray(self.vao_id)
-        glDrawArrays(GL_LINES, 0, len(self.lines))
-        glBindVertexArray(0)
-        glUseProgram(0)
+        glDrawArrays(GL_LINES, 0, len(vertices))
         self.lines.clear()
 
     def destroy(self):

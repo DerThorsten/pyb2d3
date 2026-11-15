@@ -37,7 +37,9 @@ class BatchMaxwellDemon(SampleBase):
         self.threshold = self.mean_speed  # fast / slow: the initial mean speed
         for widget in (
             widgets.Checkbox("demon on", self.demon_on, self.setter("demon_on")),
-            widgets.FloatSlider("speed threshold", 1.0, 12.0, 0.25, self.threshold, self.setter("threshold")),
+            widgets.FloatSlider(
+                "speed threshold", 1.0, 12.0, 0.25, self.threshold, self.setter("threshold")
+            ),
             widgets.Button("mix again", self.reset),
         ):
             self.frontend.add_widget(widget)
@@ -47,30 +49,49 @@ class BatchMaxwellDemon(SampleBase):
         return lambda value: setattr(self, name, value)
 
     def aabb(self):
-        return b2d.aabb(lower_bound=(-self.hx, -self.hy - 10.0), upper_bound=(self.hx, self.hy + 2.0))
+        return b2d.aabb(
+            lower_bound=(-self.hx, -self.hy - 10.0), upper_bound=(self.hx, self.hy + 2.0)
+        )
 
     def build_box(self):
         """the box and the wall with the gate in the middle"""
         self.anchor_body.create_chain(b2d.chain_box(center=(0, 0), hx=self.hx, hy=self.hy))
-        wall_def = b2d.shape_def(material=b2d.surface_material(friction=0.0, restitution=1.0,
-                                                                custom_color=b2d.HexColor.SlateGray))
+        wall_def = b2d.shape_def(
+            material=b2d.surface_material(
+                friction=0.0, restitution=1.0, custom_color=b2d.HexColor.SlateGray
+            )
+        )
         length = 0.5 * (self.hy - self.gate)
         for side in (1.0, -1.0):
-            self.anchor_body.create_shape(wall_def, b2d.box(0.15, length, center=(0.0, side * (self.gate + length))))
+            self.anchor_body.create_shape(
+                wall_def, b2d.box(0.15, length, center=(0.0, side * (self.gate + length)))
+            )
 
     def reset(self):
         """molecules spread over both chambers with random (2d Maxwell) velocities"""
         destroy_bodies(self, self.bodies)
         n = self.count
         m = 0.5
-        positions = self.rng.uniform((-self.hx + m, -self.hy + m), (self.hx - m, self.hy - m), (n, 2))
+        positions = self.rng.uniform(
+            (-self.hx + m, -self.hy + m), (self.hx - m, self.hy - m), (n, 2)
+        )
         positions[np.abs(positions[:, 0]) < 0.5, 0] += 1.0  # not inside the wall
         velocities = self.rng.normal(scale=4.0, size=(n, 2))
-        self.bodies = create_circles(self.world, positions, self.radius, colors=self.speed_colors(velocities),
-                                     friction=0.0, restitution=1.0, linear_damping=0.0, enable_sleep=False)
+        self.bodies = create_circles(
+            self.world,
+            positions,
+            self.radius,
+            colors=self.speed_colors(velocities),
+            friction=0.0,
+            restitution=1.0,
+            linear_damping=0.0,
+            enable_sleep=False,
+        )
         self.bodies.linear_velocity = velocities
         self.mean_speed = float(np.linalg.norm(velocities, axis=1).mean())
-        self.energy = float(np.einsum("ij,ij->", velocities, velocities))  # sum of v^2, kept constant
+        self.energy = float(
+            np.einsum("ij,ij->", velocities, velocities)
+        )  # sum of v^2, kept constant
         self.shape_list = [body.shapes[0] for body in self.bodies]
         self.band = np.full(n, -1)
 
@@ -132,7 +153,10 @@ class BatchMaxwellDemon(SampleBase):
         """mean kinetic energy per molecule (m = 1 units) of left / right chamber"""
         left, right, speed = self.chambers()
         ke = 0.5 * speed**2
-        return (float(ke[left].mean()) if left.any() else 0.0, float(ke[right].mean()) if right.any() else 0.0)
+        return (
+            float(ke[left].mean()) if left.any() else 0.0,
+            float(ke[right].mean()) if right.any() else 0.0,
+        )
 
     # ---- drawing -----------------------------------------------------------------------------
 
@@ -143,17 +167,19 @@ class BatchMaxwellDemon(SampleBase):
         dd.draw_segment((0.0, -self.gate), (0.0, self.gate), gate_color)
         left, right, speed = self.chambers()
         t_left, t_right = self.temperatures()
-        text = (f"left: {int(left.sum())} molecules, T {t_left:.1f}    "
-                f"right: {int(right.sum())} molecules, T {t_right:.1f}    "
-                f"total energy {0.5 * float((speed**2).sum()):.0f}")
+        text = (
+            f"left: {int(left.sum())} molecules, T {t_left:.1f}    "
+            f"right: {int(right.sum())} molecules, T {t_right:.1f}    "
+            f"total energy {0.5 * float((speed**2).sum()):.0f}"
+        )
         dd.draw_string((-self.hx, self.hy + 1.0), text, b2d.HexColor.White)
         bins = np.linspace(0.0, 15.0, 16)
         for mask, x0 in ((left, -self.hx), (right, 1.0)):
             counts, _ = np.histogram(speed[mask], bins=bins)
-            draw_histogram(dd, (x0, -self.hy - 9.0), (self.hx - 1.0, 7.5), counts, b2d.HexColor.Orange)
-        dd.draw_string((-self.hx, -self.hy - 1.0), "speeds left chamber (0 .. 15)", b2d.HexColor.White)
+            draw_histogram(
+                dd, (x0, -self.hy - 9.0), (self.hx - 1.0, 7.5), counts, b2d.HexColor.Orange
+            )
+        dd.draw_string(
+            (-self.hx, -self.hy - 1.0), "speeds left chamber (0 .. 15)", b2d.HexColor.White
+        )
         dd.draw_string((1.0, -self.hy - 1.0), "speeds right chamber (0 .. 15)", b2d.HexColor.White)
-
-
-if __name__ == "__main__":
-    BatchMaxwellDemon.run()

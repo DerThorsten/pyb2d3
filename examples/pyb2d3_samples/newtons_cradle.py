@@ -81,7 +81,3 @@ class NewtonsCradle(SampleBase):
                 b2d.shape_def(density=1, material=material),
                 b2d.circle(radius=self.actual_radius),
             )
-
-
-if __name__ == "__main__":
-    NewtonsCradle.run()
