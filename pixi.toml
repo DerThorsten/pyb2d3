@@ -21,8 +21,8 @@ numpy = "*"
 pytest = "*"
 pre-commit = "*"
 # formatting (pixi run format; the same tools as .pre-commit-config.yaml)
-ruff = ">=0.14"
-clang-format = ">=21,<22"
+ruff = "0.17.5.*"  # = the rev in .pre-commit-config.yaml (versions format differently)
+clang-format = "21.*"
 # sandbox frontends and samples
 imgui-bundle = "*"
 pyopengl = "*"

@@ -10,7 +10,8 @@ repos:
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
   # Ruff version.
-  rev: v0.14.7
+  # keep in sync with ruff in pixi.toml (pixi run format)
+  rev: v0.17.5
   hooks:
     # Run the linter.
     - id: ruff-check
