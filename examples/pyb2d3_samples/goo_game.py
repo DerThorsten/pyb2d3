@@ -548,6 +548,14 @@ class GooGame(SampleBase):
 
 
 class Level1(GooGame):
+    """Build structures from goo balls connected by spring joints (like World of Goo).
+
+    Mouse: press and move to preview, release to place a goo; it links to nearby goos.
+    Release near the middle of two unlinked goos to add only an edge between them.
+    Pressing where no goo fits drags the camera.
+    Widget "Goo Type": Plain, Ballon (floats up, one link), Drip (light, chains), Heavy.
+    """
+
     @dataclass
     class Settings(GooGame.Settings):
         pass

@@ -436,7 +436,10 @@ class MouseDrag(object):
         drag.end()                 # on mouse up
     """
 
-    def __init__(self, world, hertz=7.5, damping_ratio=1.0, force_scale=100.0, angular_friction=0.25):
+    # force_scale: max pulling force as a multiple of the weight of the grabbed
+    # body + everything jointed to it (box2d's samples use 100 x the grabbed
+    # body alone: strong enough to yank whole contraptions around)
+    def __init__(self, world, hertz=7.5, damping_ratio=1.0, force_scale=10.0, angular_friction=0.25):
         self.world = world
         self.hertz = hertz
         self.damping_ratio = damping_ratio
@@ -464,7 +467,9 @@ class MouseDrag(object):
 
         mass_data = body.mass_data
         g = float(np.linalg.norm(self.world.gravity))
-        mg = mass_data.mass * (g if g > 0 else 10.0)
+        # the spring force scales with the weight of everything that is pulled
+        # along: the grabbed body + all bodies jointed to it (a tank, a ragdoll)
+        mg = self.jointed_mass(body) * (g if g > 0 else 10.0)
 
         joint_def = motor_joint_def(
             body_a=self._mouse_body,
@@ -482,6 +487,22 @@ class MouseDrag(object):
         self.joint = self.world.create_motor_joint(joint_def)
         self.body = body
         return body
+
+    @staticmethod
+    def jointed_mass(body):
+        """Total mass of `body` and all dynamic bodies connected to it by joints."""
+        seen = {body}
+        todo = [body]
+        total = 0.0
+        while todo:
+            current = todo.pop()
+            total += current.mass
+            for joint in current.joints:
+                for other in (joint.body_a, joint.body_b):
+                    if other not in seen and other.type == BodyType.DYNAMIC:
+                        seen.add(other)
+                        todo.append(other)
+        return total
 
     def update(self, point):
         self._target = (float(point[0]), float(point[1]))

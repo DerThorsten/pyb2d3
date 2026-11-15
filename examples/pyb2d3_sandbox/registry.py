@@ -13,6 +13,12 @@ switch between samples.
 from dataclasses import dataclass
 
 
+def _same_class(a, b):
+    """the same class, or a new version of it (its module re-imported after
+    editing the code: same module and qualified name)"""
+    return a is b or (a.__module__ == b.__module__ and a.__qualname__ == b.__qualname__)
+
+
 @dataclass(frozen=True)
 class SampleEntry:
     category: str
@@ -32,7 +38,7 @@ class SampleRegistry(object):
     def register(self, cls, category, name=None):
         name = name or cls.__name__
         entries = self._categories.setdefault(category, {})
-        if name in entries and entries[name].cls is not cls:
+        if name in entries and not _same_class(entries[name].cls, cls):
             raise ValueError(f"a different sample is already registered as '{category}/{name}'")
         entries[name] = SampleEntry(category, name, cls)
         cls.sample_category = category
@@ -70,6 +76,21 @@ class SampleRegistry(object):
             if entry.cls is cls:
                 return entry
         return None
+
+    def replace_classes(self, modules):
+        """Point the entries of samples defined in `modules` to the classes of the
+        same name in them (after the modules were re-imported). Returns {old: new}."""
+        by_name = {module.__name__: module for module in modules}
+        replaced = {}
+        for entries in self._categories.values():
+            for name, entry in entries.items():
+                module = by_name.get(entry.cls.__module__)
+                new = getattr(module, entry.cls.__qualname__, None) if module else None
+                if isinstance(new, type) and new is not entry.cls:
+                    replaced[entry.cls] = new
+                    entries[name] = SampleEntry(entry.category, entry.name, new)
+                    new.sample_category, new.sample_name = entry.category, entry.name
+        return replaced
 
     def neighbor(self, cls, step=1):
         """The entry `step` places after (or before) `cls`, wrapping around."""

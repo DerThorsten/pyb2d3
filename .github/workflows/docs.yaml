@@ -18,6 +18,11 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@v0.8.1
 
+      # the sandbox page (docs/_build/html/sandbox) runs this commit's pyb2d3:
+      # the emscripten-forge package built here (emscripten_forge/output)
+      - name: emscripten-forge package of pyb2d3
+        run: pixi run emscripten
+
       - name: build docs
         run: pixi run docs
 

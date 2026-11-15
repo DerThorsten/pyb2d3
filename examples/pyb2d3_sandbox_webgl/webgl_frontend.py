@@ -12,7 +12,14 @@ panel, and a label layer positioned over the canvas.
 """
 
 import ctypes
+import importlib
+import inspect
+import json
+import linecache
+import os
+import sys
 import time
+import traceback
 from dataclasses import dataclass
 
 import pyjs
@@ -48,6 +55,13 @@ KEY_NAMES = {
     "Meta": "meta",
     "Alt": "alt",
 }
+
+# DOM keys switching to the previous / next sample (like the pygame frontend)
+SAMPLE_KEYS = {"PageUp": -1, "PageDown": 1}
+
+# URL query parameter with the current sample ("Category/Name"): the page
+# starts with it, the frontend keeps it up to date (reload / share a link)
+SAMPLE_QUERY_PARAMETER = "sample"
 
 DEBUG_DRAW_OPTIONS = [
     ("draw_shapes", "Shapes"),
@@ -160,7 +174,7 @@ canvas.addEventListener("wheel", (e) => {
 }, { passive: false });
 canvas.addEventListener("keydown", (e) => {
   if (e.repeat) return;
-  if (e.key.startsWith("Arrow") || e.key === " ") e.preventDefault();
+  if (e.key.startsWith("Arrow") || e.key.startsWith("Page") || e.key === " ") e.preventDefault();
   cb("keydown", 0, 0, 0, 0, e.key, mods(e));
 });
 canvas.addEventListener("keyup", (e) => cb("keyup", 0, 0, 0, 0, e.key, 0));
@@ -258,6 +272,8 @@ class WebglFrontend(FrontendBase):
         self._pixel_size = (0, 0)
         self._fps_frames = 0
         self._fps_t0 = time.perf_counter()
+        self._physics_s = 0.0  # time in physics / drawing since the last fps update
+        self._draw_s = 0.0
 
     # -- setup -------------------------------------------------------------
 
@@ -282,6 +298,7 @@ class WebglFrontend(FrontendBase):
 
         self._resize()
         self._build_panel()
+        self._fps_overlay = self._create_fps_overlay()
         self._connect_canvas_events()
         self.ui_is_ready()  # creates the sample
 
@@ -310,29 +327,143 @@ class WebglFrontend(FrontendBase):
     def _frame(self, time_ms):
         """one animation frame: logic, physics, draw; False stops the loop"""
         self._resize()
-        self.update_frontend_logic()
-        if self.sample is not None:
-            if self._single_step:
-                self._single_step = False
-                self.update_physics_single_step()
-            elif not self._is_paused:
-                self.update_physics()
+        starting = self.change_sample_class_requested
+        try:
+            self.update_frontend_logic()
+            if self.sample is not None:
+                t0 = time.perf_counter()
+                if self._single_step:
+                    self._single_step = False
+                    self.update_physics_single_step()
+                elif not self._is_paused:
+                    self.update_physics()
+                t1 = time.perf_counter()
 
-            gl.glViewport(0, 0, *self._pixel_size)
-            self.draw_physics()
-            self._labels.flush()
+                gl.glViewport(0, 0, *self._pixel_size)
+                self.draw_physics()
+                self._labels.flush()
+                self._physics_s += t1 - t0
+                self._draw_s += time.perf_counter() - t1
+        except Exception:
+            # an error in the sample (e.g. code edited in the page): keep the
+            # page alive, pause, show the error; "run" / another sample goes on
+            if starting:
+                self.sample = None  # its constructor failed
+            self._set_paused_ui(True)
+            self._report_error(traceback.format_exc())
         self._count_fps()
         return True
 
+    # -- the page: events for the code editor (examples/web) -------------------
+
+    def _dispatch(self, name, detail):
+        """a CustomEvent `name` with the JSON-able `detail` on window"""
+        init = pyjs.js.JSON.parse(json.dumps({"detail": detail}))
+        pyjs.js.window.dispatchEvent(pyjs.js.CustomEvent.new(name, init))
+
+    def _report_error(self, text):
+        """an error of the sample: the console + event "pyb2d3-error" (detail: the traceback)"""
+        pyjs.js.console.error(text)
+        self._dispatch("pyb2d3-error", text)
+
+    def _announce_sample(self, sample_class):
+        """event "pyb2d3-sample" (detail: key, source file, line of the class)"""
+        entry = self.sample_entry
+        try:
+            file = inspect.getsourcefile(sample_class)
+            line = inspect.findsource(sample_class)[1] + 1
+        except (OSError, TypeError):
+            file, line = None, 0
+        self._dispatch("pyb2d3-sample", {"key": entry.key if entry else None, "file": file, "line": line})
+
+    def samples_in_file(self, path):
+        """the registered samples defined in the python file `path`, as JSON:
+        [{key, first, last}] with the line range of each sample class (the page's
+        Run button starts the sample the editor cursor is in)"""
+        path = os.path.abspath(path)
+        linecache.checkcache(path)  # the file may have been edited + re-imported
+        found = []
+        for entry in self.registry:
+            try:
+                if os.path.abspath(inspect.getsourcefile(entry.cls)) != path:
+                    continue
+                lines, first = inspect.getsourcelines(entry.cls)
+            except (OSError, TypeError):
+                continue
+            found.append({"key": entry.key, "first": first, "last": first + len(lines) - 1})
+        return json.dumps(found)
+
+    def reload_code(self, paths, key=None):
+        """re-import the modules of the python files `paths` (edited in the
+        page and written to the file system) and start the sample `key`
+        ("Category/Name", default: the current one) with the new code; the
+        modules of both samples are always re-imported (last). Errors are
+        reported like errors of the sample."""
+        if not key and self.sample_entry is not None:
+            key = self.sample_entry.key
+        try:
+            target = self.registry.get(key).cls if key else self.sample_class
+        except KeyError:
+            key, target = None, self.sample_class
+        # the samples' own modules last: they import from the edited helpers
+        last = []
+        for cls in (target, self.sample_class):
+            module = sys.modules.get(cls.__module__)
+            if module is not None and module not in last:
+                last.append(module)
+        paths = {os.path.abspath(p) for p in paths}
+        modules = [
+            m for m in list(sys.modules.values())
+            if m not in last and getattr(m, "__file__", None)
+            and os.path.abspath(m.__file__) in paths
+        ] + last
+        try:
+            importlib.invalidate_caches()
+            for module in modules:
+                importlib.reload(module)
+        except Exception:
+            self._report_error(traceback.format_exc())
+            return
+        replaced = self.registry.replace_classes(modules)
+        if getattr(self, "_sample_classes", None):
+            # the sample list's classes (same order as built in _build_panel)
+            self._sample_classes = [entry.cls for entry in self.registry]
+        self._set_paused_ui(False)
+        # by key: modules that register their samples themselves (the box2d
+        # ports) already put the new classes into the registry while re-imported
+        self.set_sample(self.registry.get(key).cls if key else replaced.get(target, target))
+
     def _count_fps(self):
-        """update the fps display about twice a second"""
+        """update the fps overlay about twice a second: frames per second and the
+        time per frame spent in physics (sample + world.step) and in drawing"""
         self._fps_frames += 1
         now = time.perf_counter()
         if now - self._fps_t0 >= 0.5:
-            fps = self._fps_frames / (now - self._fps_t0)
+            frames = self._fps_frames
+            fps = frames / (now - self._fps_t0)
+            physics_ms = 1000.0 * self._physics_s / frames
+            draw_ms = 1000.0 * self._draw_s / frames
             self._fps_frames = 0
+            self._physics_s = self._draw_s = 0.0
             self._fps_t0 = now
-            self._stats.textContent = f"{fps:.0f} fps"
+            self._fps_overlay.textContent = (
+                f"{fps:.0f} fps · physics {physics_ms:.1f} ms · draw {draw_ms:.1f} ms"
+            )
+
+    def _create_fps_overlay(self):
+        """the fps counter: a small label in the top left corner of the canvas"""
+        overlay = self._dom.el("div", self.canvas.parentElement, "", cls="pyb2d3-fps")
+        style = overlay.style
+        style.position = "absolute"
+        style.top = "6px"
+        style.left = "8px"
+        style.padding = "2px 6px"
+        style.borderRadius = "4px"
+        style.background = "rgba(0, 0, 0, 0.45)"
+        style.color = "#d9dce1"
+        style.font = "12px monospace"
+        style.pointerEvents = "none"
+        return overlay
 
     # -- input ---------------------------------------------------------------
 
@@ -347,6 +478,9 @@ class WebglFrontend(FrontendBase):
 
     def _on_canvas_event(self, kind, x, y, a, b, key, flags):
         """a canvas event (reduced to plain values by _CANVAS_EVENTS_JS)"""
+        if kind == "keydown" and str(key) in SAMPLE_KEYS:  # also while paused
+            self.next_sample(SAMPLE_KEYS[str(key)])
+            return
         if self.sample is None or self._is_paused:
             return
         if kind == "down":
@@ -431,6 +565,11 @@ class WebglFrontend(FrontendBase):
                         option.selected = True
                     self._sample_classes.append(entry.cls)
             dom.on(self._sample_select, "change", lambda e: self._on_select_sample())
+            row = dom.el("div", section, cls="pyb2d3-row")
+            previous = dom.el("button", row, "◀ Previous", title="previous sample (PageUp)")
+            dom.on(previous, "click", lambda e: self.next_sample(-1))
+            following = dom.el("button", row, "Next ▶", title="next sample (PageDown)")
+            dom.on(following, "click", lambda e: self.next_sample(1))
 
         # controls
         section = dom.el("section", panel, cls="pyb2d3-section")
@@ -442,7 +581,6 @@ class WebglFrontend(FrontendBase):
         dom.on(self._step_button, "click", lambda e: self._request_single_step())
         reset = dom.el("button", row, "Reset")
         dom.on(reset, "click", lambda e: self.stop())
-        self._stats = dom.el("span", row, "", cls="pyb2d3-stats")
 
         self._slider(
             dom, section, "Hertz", 1, 120, 1, self.settings.hertz,
@@ -467,9 +605,11 @@ class WebglFrontend(FrontendBase):
                 lambda v, name=name: setattr(self.debug_draw, name, v),
             )
 
-        # the sample's widgets (filled by add_widget)
+        # the sample: title, help text, its widgets (filled by add_widget)
         section = dom.el("section", panel, cls="pyb2d3-section")
         self._sample_title = dom.el("h3", section, "")
+        self._sample_help = dom.el("p", section, "", cls="pyb2d3-help")
+        dom.el("p", section, "mouse: drag bodies, drag the background to pan, wheel zooms", cls="pyb2d3-help")
         self._sample_widgets = dom.el("div", section)
 
     def _slider(self, dom, parent, label, lo, hi, step, value, callback, fmt="{:.2f}", fmt_value=None):
@@ -503,11 +643,14 @@ class WebglFrontend(FrontendBase):
 
     def _toggle_pause(self):
         """play / pause"""
-        if self.is_paused():
-            self.set_running()
-        else:
+        self._set_paused_ui(not self.is_paused())
+
+    def _set_paused_ui(self, paused):
+        """pause / run the simulation and update the play / step buttons"""
+        if paused:
             self.set_paused()
-        paused = self.is_paused()
+        else:
+            self.set_running()
         self._play_button.textContent = "Play" if paused else "Pause"
         self._step_button.disabled = not paused
 
@@ -524,8 +667,24 @@ class WebglFrontend(FrontendBase):
         self._sample_dom.clear()
 
     def post_new_sample(self, sample_class, sample_settings):
-        """show the title of the new sample"""
+        """show the title and the help text of the new sample, select it in the
+        sample list, put it into the URL"""
         self._sample_title.textContent = self.sample_title
+        self._sample_help.textContent = sample_class.help_text()
+        if sample_class in getattr(self, "_sample_classes", ()):
+            self._sample_select.value = str(self._sample_classes.index(sample_class))
+        self._update_url()
+        self._announce_sample(sample_class)
+
+    def _update_url(self):
+        """`?sample=Category/Name` of the current sample in the address bar
+        (replaceState: switching samples adds no history entries)"""
+        entry = self.sample_entry
+        if entry is None:
+            return
+        url = pyjs.js.URL.new(pyjs.js.location.href)
+        url.searchParams.set(SAMPLE_QUERY_PARAMETER, entry.key)
+        pyjs.js.history.replaceState(None, "", url.href)
 
     def add_widget(self, element):
         """an HTML control for a sandbox widget of the sample"""

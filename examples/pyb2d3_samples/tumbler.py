@@ -5,6 +5,12 @@ import random
 
 
 class Tumbler(SampleBase):
+    """A box turned slowly by a revolute joint motor, tumbling 2000 small capsules.
+
+    Keys: hold g to switch gravity off.
+    Mouse: double click for an explosion, triple click to pull bodies in.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
 

@@ -18,6 +18,13 @@ def test_samples_are_registered():
     assert {"Games", "Demos", "Queries"} <= set(registry.categories())
 
 
+@pytest.mark.parametrize("entry", SAMPLES, ids=[entry.key for entry in SAMPLES])
+def test_sample_has_help(entry):
+    """every sample explains itself (shown by the frontends): `help`, class or module docstring"""
+    text = entry.cls.help_text()
+    assert len(text.split()) >= 5, f"{entry.key}: no help text (set `help` or a docstring)"
+
+
 # every registered sample, grouped by category in the test ids ("Games/Billiard", ...)
 @pytest.mark.parametrize("entry", SAMPLES, ids=[entry.key for entry in SAMPLES])
 def test_sample(entry):

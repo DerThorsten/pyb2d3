@@ -4,6 +4,12 @@ from pyb2d3_sandbox import SampleBase
 
 
 class Meteor(SampleBase):
+    """A huge pyramid of blocks waiting for a heavy, fast falling meteor.
+
+    Mouse: double click high above the pyramid to drop a meteor there.
+    Keys: m creates a meteor at the origin (the left foot of the pyramid).
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, -10)))
 

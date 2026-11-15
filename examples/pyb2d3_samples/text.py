@@ -5,6 +5,12 @@ from .examples_common import create_boxes_from_text
 
 
 class Text(SampleBase):
+    """The text "notebook link" rendered to pixels, one small dynamic box per pixel.
+
+    The letters fall and crumble on the floor of the surrounding box.
+    Mouse: drag the boxes around.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, -10)))
         self.box_radius = 15

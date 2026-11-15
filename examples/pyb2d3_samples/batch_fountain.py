@@ -20,7 +20,11 @@ BAND_COLORS = [int(c) for c in hsv_colors(np.linspace(0.66, 0.5, len(SPEED_BANDS
 
 
 class BatchFountain(SampleBase):
-    """A fountain of recycled particles, steered by masks."""
+    """A fountain of recycled particles: a fixed pool of bodies, emitted and parked with numpy masks.
+
+    Sliders: emission rate, jet speed and spread, wind.
+    Hint: a large rate with a small pool shows the recycling of the oldest particles.
+    """
 
     nozzle = np.array([0.0, 4.0])
     radius = 0.15

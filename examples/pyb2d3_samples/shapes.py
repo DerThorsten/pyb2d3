@@ -17,6 +17,12 @@ def approx_circle(radius, n_segments):
 
 
 class Shapes(SampleBase):
+    """All shape types in a box: circles, capsules, (rounded) boxes, convex polygons and
+    compound bodies made of several shapes, plus 400 small balls.
+
+    Mouse: drag a body, double click for an explosion, triple click to pull bodies in.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
         self.outer_box_radius = 10

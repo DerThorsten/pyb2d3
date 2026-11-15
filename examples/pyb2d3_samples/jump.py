@@ -15,6 +15,12 @@ def grid_iterate(shape):
 
 
 class Jump(SampleBase):
+    """A stream of balls (up to 3000) shot down a slope over a ski jump into a pit.
+
+    Keys: hold g to switch gravity off.
+    Mouse: double click for an explosion.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, -50)))
         self.outer_box_radius = 100

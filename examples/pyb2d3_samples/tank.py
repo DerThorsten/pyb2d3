@@ -212,7 +212,11 @@ class Tank:
 
 
 class TankSample(SampleBase):
-    """A tank with chain tracks on suspended road wheels and an explosive gun."""
+    """A tank with chain tracks on suspended road wheels and an explosive gun.
+
+    Keys: a / d drive, w / s raise / lower the gun, space fires, r puts a flipped tank back.
+    Hint: shoot the legs of the watchtowers; uncheck "follow tank" to look around.
+    """
 
     start = (0.0, 1.6)
     substeps = 8  # the long chain of track links needs more sub-steps

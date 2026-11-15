@@ -2,6 +2,9 @@
 // (pyb2d3_sandbox_webgl: the instanced GL shaders via PyOpenGL, HTML panel).
 // config.json is written by build_page.py.
 // URL parameter `sample` selects the first sample, e.g. ?sample=Joints/Ragdoll
+// (the frontend keeps it up to date when switching samples)
+
+import { setupEditor } from "./editor.js";
 
 const statusEl = document.getElementById("status");
 
@@ -14,17 +17,11 @@ function status(text, isError = false) {
 /** the python code starting the sandbox (the sources are mounted at /examples) */
 function startScript(sample) {
   return `
-import sys, glob
+import sys
 sys.path.insert(0, "/examples")
-
-# which pyb2d3 build was installed (local channel or published)
-import json, pyb2d3
-for meta in glob.glob("/conda-meta/pyb2d3-*.json") + glob.glob(sys.prefix + "/conda-meta/pyb2d3-*.json"):
-    with open(meta) as f:
-        info = json.load(f)
-    print("pyb2d3 conda package:", meta, info.get("build"), info.get("channel"), info.get("url"))
-print("pyb2d3 module:", pyb2d3.__file__, "has cast_ray_circle:", hasattr(pyb2d3, "cast_ray_circle"))
-print("pyb2d3 dist-info:", glob.glob("/lib/python3.14/site-packages/pyb2d3*.dist-info"))
+# no .pyc files: code edited in the page (editor.js) is re-imported, a cached
+# .pyc with the same mtime (1 s resolution) + size could win over the source
+sys.dont_write_bytecode = True
 
 import pyb2d3_samples  # registers the samples
 from pyb2d3_sandbox import run_sample_browser
@@ -55,6 +52,7 @@ async function main() {
   });
   globalThis.pyjs = pyjs; // for the browser console
 
+  setupEditor(pyjs); // before the start: the frontend announces the first sample
   status("starting the sandbox…");
   const sample = new URLSearchParams(location.search).get("sample");
   await pyjs.async_exec_eval(startScript(sample));

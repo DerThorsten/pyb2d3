@@ -7,7 +7,8 @@ import pyb2d3 as b2d
 from pyb2d3_sandbox import register_sample, widgets
 
 from ._common import Box2dSample
-from ._continuous_helpers import attr_slider, create_box_walls, create_human, destroy_human
+from ..examples_common.ragdoll import Human
+from ._continuous_helpers import attr_slider, create_box_walls
 
 SHAPE_TYPES = ["Circle", "Capsule", "Box"]
 
@@ -111,7 +112,7 @@ class BounceHumans(Box2dSample):
 
     def pre_update(self, dt):
         if len(self.humans) < 5 and self.count_down <= 0.0:
-            self.humans.append(create_human(self.world, (0, 5), 1.0, 0.0, 1.0, 0.1))
+            self.humans.append(Human(self.world, (0, 5), 1.0, 0.0, 1.0, 0.1, colorize=True))
             self.count_down = 2.0
 
         self.time += dt
@@ -520,7 +521,7 @@ class Drop(Box2dSample):
         _destroy(*self.bodies)
         self.bodies = []
         if self.human is not None:
-            destroy_human(self.human)
+            self.human.destroy()
             self.human = None
 
     def create_ground(self, *shapes):
@@ -560,7 +561,7 @@ class Drop(Box2dSample):
         """ragdoll"""
         self.clear()
         self.create_ground(*self.tiled_ground())
-        self.human = create_human(self.world, (0, 40), 1.0, 0.03, 1.0, 0.5)
+        self.human = Human(self.world, (0, 40), 1.0, 0.03, 1.0, 0.5, colorize=True)
         self.frame_count = 1
 
     def scene4(self):

@@ -16,7 +16,11 @@ from .batch_common import create_circles, destroy_bodies, hsv_colors, perpendicu
 
 
 class BatchSwarm(SampleBase):
-    """Thousands of bodies following the mouse, steered by vectorized numpy forces."""
+    """Thousands of bodies following the mouse, steered by vectorized numpy forces.
+
+    Mouse: the swarm chases the cursor, hold the button to scatter it.
+    Hint: raise "bodies" to see how far one batch call per step scales.
+    """
 
     hx, hy = 40.0, 25.0  # arena half size
     radius = 0.2

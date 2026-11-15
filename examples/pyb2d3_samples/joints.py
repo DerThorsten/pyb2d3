@@ -13,6 +13,11 @@ def grid_iterate(shape):
 
 
 class Joints(SampleBase):
+    """Four basic joints side by side: revolute, prismatic (45 degree axis), weld and spring distance joint.
+
+    Mouse: drag the boxes to see how each joint constrains the motion.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
 

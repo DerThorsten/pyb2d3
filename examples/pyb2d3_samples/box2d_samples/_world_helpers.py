@@ -1,7 +1,7 @@
 """Ports of the box2d sample helpers used by the World samples.
 
-human.c (CreateHuman), donut.cpp (Donut), car.cpp (Car), utils.c (RandomPolygon)
-and Sample::ParsePath.
+donut.cpp (Donut), car.cpp (Car), utils.c (RandomPolygon) and Sample::ParsePath
+(human.c: examples_common/ragdoll.py).
 """
 
 import math
@@ -10,90 +10,6 @@ import random
 import pyb2d3 as b2d
 
 LINEAR_SLOP = 0.005
-
-# name, parent, body y, linear damping, friction scale, capsule (y1, y2, radius),
-# color, pivot y, (lower, upper) angle in units of pi, has foot, frame A angle in units of pi
-_HUMAN_BONES = (
-    ("hip", None, 0.95, 0.0, 1.0, (-0.02, 0.02, 0.095), "pant", None, None, False, 0.0),
-    ("torso", "hip", 1.2, 0.0, 0.5, (-0.135, 0.135, 0.09), "shirt", 1.0, (-0.25, 0.0), False, 0.0),
-    ("head", "torso", 1.475, 0.1, 0.25, (-0.038, 0.039, 0.075), "skin", 1.4, (-0.3, 0.1), False, 0.0),
-    ("upper_left_leg", "hip", 0.775, 0.0, 1.0, (-0.125, 0.125, 0.06), "pant", 0.9, (-0.05, 0.4), False, 0.0),
-    ("lower_left_leg", "upper_left_leg", 0.475, 0.0, 0.5, (-0.155, 0.125, 0.045), "pant", 0.625, (-0.5, -0.02), True, 0.0),
-    ("upper_right_leg", "hip", 0.775, 0.0, 1.0, (-0.125, 0.125, 0.06), "pant", 0.9, (-0.05, 0.4), False, 0.0),
-    ("lower_right_leg", "upper_right_leg", 0.475, 0.0, 0.5, (-0.155, 0.125, 0.045), "pant", 0.625, (-0.5, -0.02), True, 0.0),
-    ("upper_left_arm", "torso", 1.225, 0.0, 0.5, (-0.125, 0.125, 0.035), "shirt", 1.35, (-0.1, 0.8), False, 0.0),
-    ("lower_left_arm", "upper_left_arm", 0.975, 0.1, 0.1, (-0.125, 0.125, 0.03), "skin", 1.1, (-0.2, 0.3), False, 0.25),
-    ("upper_right_arm", "torso", 1.225, 0.0, 0.5, (-0.125, 0.125, 0.035), "shirt", 1.35, (-0.1, 0.8), False, 0.0),
-    ("lower_right_arm", "upper_right_arm", 0.975, 0.1, 0.1, (-0.125, 0.125, 0.03), "skin", 1.1, (-0.2, 0.3), False, 0.25),
-)
-
-_SKIN_COLORS = (b2d.HexColor.NavajoWhite, b2d.HexColor.LightYellow, b2d.HexColor.Peru, b2d.HexColor.Tan)
-
-
-def create_human(
-    world, position, scale, friction_torque, hertz, damping_ratio, group_index, colorize=False
-):
-    """Port of CreateHuman: a ragdoll of capsules and revolute joints. Returns {bone name: (body, joint)}."""
-    s = scale
-    px, py = position
-    max_torque = friction_torque * s
-    colors = {
-        "shirt": b2d.HexColor.MediumTurquoise.value,
-        "pant": b2d.HexColor.DodgerBlue.value,
-        "skin": _SKIN_COLORS[group_index % 4].value,
-    }
-
-    def make_shape_def(friction, mask_bits):
-        return b2d.shape_def(
-            material=b2d.surface_material(friction=friction),
-            filter=b2d.make_filter(group_index=-group_index, category_bits=2, mask_bits=mask_bits),
-        )
-
-    shape_def = make_shape_def(0.2, 1 | 2)
-    # feet don't collide with ragdolls
-    foot_shape_def = make_shape_def(0.05, 1)
-    if colorize:
-        foot_shape_def.material.custom_color = b2d.HexColor.SaddleBrown.value
-    foot = b2d.polygon(
-        [(-0.03 * s, -0.185 * s), (0.11 * s, -0.185 * s), (0.11 * s, -0.16 * s), (-0.03 * s, -0.14 * s)],
-        radius=0.015 * s,
-    )
-
-    bones = {}
-    for name, parent, y, damping, friction_scale, (y1, y2, r), color, pivot_y, limits, has_foot, frame_angle in _HUMAN_BONES:
-        body = world.create_dynamic_body(
-            position=(px, py + y * s), linear_damping=damping, sleep_threshold=0.1, name=name
-        )
-        if colorize:
-            shape_def.material.custom_color = colors[color]
-        body.create_shape(shape_def, b2d.capsule((0, y1 * s), (0, y2 * s), r * s))
-        if has_foot:
-            body.create_shape(foot_shape_def, foot)
-
-        joint = None
-        if parent is not None:
-            parent_body = bones[parent][0]
-            pivot = (px, py + pivot_y * s)
-            joint = world.create_revolute_joint(
-                body_a=parent_body,
-                body_b=body,
-                local_frame_a=b2d.transform(
-                    p=parent_body.local_point(pivot), q=b2d.make_rot(frame_angle * math.pi)
-                ),
-                local_anchor_b=body.local_point(pivot),
-                enable_limit=True,
-                lower_angle=limits[0] * math.pi,
-                upper_angle=limits[1] * math.pi,
-                enable_motor=True,
-                max_motor_torque=friction_scale * max_torque,
-                enable_spring=hertz > 0.0,
-                hertz=hertz,
-                damping_ratio=damping_ratio,
-                draw_scale=0.05,
-            )
-        bones[name] = (body, joint)
-    return bones
-
 
 def create_donut(world, position, scale, group_index=0, enable_sensor_events=False, sides=7):
     """Port of Donut::Create: a ring of capsules welded together. Returns the bodies."""

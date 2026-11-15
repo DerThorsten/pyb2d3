@@ -202,7 +202,10 @@ class CircleStack(Box2dSample):
 
 @register_sample("Stacking", "Capsule Stack")
 class CapsuleStack(Box2dSample):
-    """A stack of capsules."""
+    """A vertical stack of 20 capsules, testing stacking stability of rounded shapes.
+
+    Mouse: drag a capsule to knock the stack over.
+    """
 
     camera_center = (0.0, 5.0)
     camera_zoom = 6.0

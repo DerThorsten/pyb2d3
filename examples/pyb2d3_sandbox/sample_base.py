@@ -5,7 +5,30 @@ from pyb2d3_sandbox.default_frontend import get_default_frontend
 from pyb2d3_sandbox.registry import registry as default_registry
 
 from dataclasses import dataclass
+import inspect
+import re
+import sys
 import weakref
+
+
+# a line starting with a label ("Keys:", "Mouse:", "Hint:") starts a new line
+_LABEL = re.compile(r"^[A-Z][A-Za-z /-]{0,20}:")
+
+
+def _reflow(text):
+    """docstring -> display text: the hard line breaks inside a paragraph become
+    spaces (the frontends wrap), except before labelled lines; paragraphs stay"""
+    paragraphs = []
+    for paragraph in re.split(r"\n\s*\n", inspect.cleandoc(text)):
+        lines = []
+        for line in paragraph.splitlines():
+            line = line.strip()
+            if lines and not _LABEL.match(line):
+                lines[-1] += " " + line
+            else:
+                lines.append(line)
+        paragraphs.append("\n".join(lines))
+    return "\n\n".join(paragraphs)
 
 
 @dataclass
@@ -23,6 +46,23 @@ class SampleBase(object):
     # sub-steps per world step for this sample (None: the frontend's setting); e.g. long
     # chains of joints need more
     substeps = None
+
+    # what the sample shows and how to use it (keys, mouse), shown by the frontends;
+    # None: the class docstring, else the module docstring (see help_text)
+    help = None
+
+    @classmethod
+    def help_text(cls):
+        """The help / info text of the sample: `help`, else the docstring of the
+        class, else of its module ("" if there is none), reflowed (see _reflow)."""
+        if cls.help:
+            return _reflow(cls.help)
+        own_doc = cls.__dict__.get("__doc__")  # not inherited from SampleBase & co
+        if own_doc:
+            return _reflow(own_doc)
+        module = sys.modules.get(cls.__module__)
+        module_doc = getattr(module, "__doc__", None)
+        return _reflow(module_doc) if module_doc else ""
 
     # classmethod
     @classmethod

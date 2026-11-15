@@ -435,7 +435,10 @@ class FrontendBase(ABC):
         # do we need to change the sample class?
         if self.change_sample_class_requested:
             self.change_sample_class_requested = False
-            self.sample.post_run()
+            if self.sample is not None:  # None: the last sample failed to start
+                self.sample.post_run()
+                self.sample = None
+                self._multi_click_handler = None  # (bound to the old sample)
             self._set_new_sample(self.sample_class, self.sample_settings)
 
         # click handler update

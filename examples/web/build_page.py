@@ -86,7 +86,7 @@ def build(out, pyjs_dir, pyjs_url, channels, packages, local_pkgs=()):
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
-    for name in ["index.html", "main.js"]:
+    for name in ["index.html", "main.js", "editor.js"]:
         shutil.copy(HERE / name, out / name)
     pack_examples(out)
     # archives the page unpacks (untarjs) before python starts

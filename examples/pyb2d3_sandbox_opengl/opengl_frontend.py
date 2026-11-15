@@ -71,6 +71,8 @@ ICON_PLAY = icons_fontawesome_6.ICON_FA_PLAY
 ICON_PAUSE = icons_fontawesome_6.ICON_FA_PAUSE
 ICON_STOP = icons_fontawesome_6.ICON_FA_STOP
 ICON_FORWARD_STEP = icons_fontawesome_6.ICON_FA_FORWARD_STEP
+ICON_CHEVRON_LEFT = icons_fontawesome_6.ICON_FA_CHEVRON_LEFT
+ICON_CHEVRON_RIGHT = icons_fontawesome_6.ICON_FA_CHEVRON_RIGHT
 
 
 KEY_MAP = {
@@ -308,16 +310,37 @@ class OpenglFrontend(FrontendBase):
         return window
 
     def samples_browser_gui_function(self):
+        # previous / next sample: buttons + PageUp / PageDown (anywhere, also
+        # while paused), like the pygame and the browser frontend
+        if imgui.button(f"{ICON_CHEVRON_LEFT} Previous"):
+            self.next_sample(-1)
+        imgui.set_item_tooltip("previous sample (PageUp)")
+        imgui.same_line()
+        if imgui.button(f"Next {ICON_CHEVRON_RIGHT}"):
+            self.next_sample(1)
+        imgui.set_item_tooltip("next sample (PageDown)")
+        if imgui.is_key_pressed(imgui.Key.page_up, repeat=False):
+            self.next_sample(-1)
+        if imgui.is_key_pressed(imgui.Key.page_down, repeat=False):
+            self.next_sample(1)
+        imgui.separator()
+
         # one tree node per category, like box2d's sample browser
         current = self.sample_class
+        # the sample changed (also by the buttons / keys): open its category, scroll to it
+        changed = current is not getattr(self, "_browser_shown_sample", None)
+        self._browser_shown_sample = current
         for category in self.registry.categories():
             entries = self.registry.samples(category)
-            flags = imgui.TreeNodeFlags_.none
-            if any(entry.cls is current for entry in entries):
-                flags = imgui.TreeNodeFlags_.default_open
+            contains_current = any(entry.cls is current for entry in entries)
+            flags = imgui.TreeNodeFlags_.default_open if contains_current else imgui.TreeNodeFlags_.none
+            if changed and contains_current:
+                imgui.set_next_item_open(True)
             if imgui.tree_node_ex(category, flags):
                 for entry in entries:
                     clicked, _ = imgui.selectable(entry.name, entry.cls is current)
+                    if changed and entry.cls is current:
+                        imgui.set_scroll_here_y()
                     if clicked and entry.cls is not current:
                         self.set_sample(entry.cls)
                 imgui.tree_pop()
@@ -363,6 +386,12 @@ class OpenglFrontend(FrontendBase):
         return window
 
     def samples_ui_gui_function(self):
+        # the sample's help text (controls + hints), collapsible
+        if self.sample_class is not None:
+            if imgui.collapsing_header("Help", imgui.TreeNodeFlags_.default_open):
+                imgui.text_wrapped(self.sample_class.help_text())
+                imgui.text_disabled("mouse: drag bodies, drag the background to pan, wheel zooms")
+            imgui.separator()
         for element in self._per_sample_widgets:
             if isinstance(element, widgets.FloatSlider):
                 # draw a float slider

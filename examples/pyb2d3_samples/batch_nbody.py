@@ -17,7 +17,11 @@ from .batch_common import Ema, create_circles, destroy_bodies, hsv_colors
 
 
 class BatchNBody(SampleBase):
-    """A protoplanetary disc: n^2 gravitational forces per step with numpy."""
+    """A protoplanetary disc: n^2 gravitational forces per step with numpy.
+
+    Mouse: drag the sun (or any planet) around.
+    Hint: a higher G clumps the disc into planets faster; the text shows the force time.
+    """
 
     sun_mass = 4000.0
     sun_radius = 2.0

@@ -5,7 +5,7 @@ import random
 
 import pyb2d3 as b2d
 
-from ..examples_common.ragdoll import Ragdoll
+from ..examples_common.ragdoll import Human  # noqa: F401  (re-exported for the events samples)
 
 ROUNDED_BOX = b2d.box(0.45, 0.45, radius=0.05)
 
@@ -89,36 +89,3 @@ class Donut:
         self.bodies, self.joints = [], []
 
 
-class Human:
-    """box2d's Human (shared/human.c): a ragdoll whose joint motors act as joint friction."""
-
-    def __init__(self, world, position, scale, friction_torque, hertz, damping_ratio, group_index, user_data, colorize):
-        ragdoll = Ragdoll(
-            world,
-            position=position,
-            scale=scale,
-            friction_torque=friction_torque,
-            hertz=hertz,
-            damping_ratio=damping_ratio,
-            group_index=group_index,
-            user_data=user_data,
-            colorize=colorize,
-        )
-        self.bodies = [bone.body for bone in ragdoll.bones]
-        self.joints = [bone.joint for bone in ragdoll.bones if bone.joint is not None]
-        for joint in self.joints:
-            joint.motor_enabled = True
-
-    def enable_sensor_events(self, flag=True):
-        for body in self.bodies:
-            for shape in body.shapes:
-                shape.sensor_events_enabled = flag
-
-    def destroy(self):
-        # joints first: destroying a body also destroys its joints and a second destroy would crash
-        # (Ragdoll.destroy interleaves them)
-        for joint in self.joints:
-            joint.destroy()
-        for body in self.bodies:
-            body.destroy()
-        self.bodies, self.joints = [], []

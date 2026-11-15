@@ -18,7 +18,11 @@ BATCH, LOOP = "batch API", "python loop"
 
 
 class BatchVsLoop(SampleBase):
-    """A vortex on many bodies: python loop vs. one batch call, timed live."""
+    """A vortex on many bodies: a python loop vs. one batch call, timed live.
+
+    Mouse: the vortex follows the cursor.
+    Hint: switch "mode" and compare the measured force times next to box2d's step time.
+    """
 
     half = 25.0
     radius = 0.25
