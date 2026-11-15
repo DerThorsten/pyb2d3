@@ -224,13 +224,8 @@ def run_in_headless_test_frontend(sample_class, sample_settings=None, repeats=10
     total_time_budget_sec = 1
 
     print(f"Running sample: {sample_class.__name__} ")
-    t0 = time.time()
-    # run(
-    #     sample_class=sample_class,
-    #     sample_settings=sample_settings,
-    #     frontend_class=HeadlessTestFrontend,
-    #     frontend_settings=frontend_settings,
-    # )
+    # perf_counter: time.time() can be too coarse on Windows (a fast sample took "0 s")
+    t0 = time.perf_counter()
 
     sample_class.run(
         sample_settings=sample_settings,
@@ -238,13 +233,13 @@ def run_in_headless_test_frontend(sample_class, sample_settings=None, repeats=10
         frontend_settings=frontend_settings,
     )
 
-    elapsed_time = time.time() - t0
+    elapsed_time = time.perf_counter() - t0
     time_left = total_time_budget_sec - elapsed_time
 
     print(f"Sample {sample_class.__name__} took {elapsed_time:.2f} seconds to run.")
 
     if time_left > elapsed_time:
-        repeats = int(time_left / elapsed_time)
+        repeats = int(time_left / max(elapsed_time, 1e-3))
         repeats = min(repeats, 4)  # Limit to 5 repeats in total (4 additional runs)
         for i in range(repeats):
             print(
