@@ -1,4 +1,4 @@
-# This python version of the Box2D Ragdoll example is based on the original C code
+# This python version of the Box2D ragdoll ("human") is based on the original C code
 # from Erin Catto's Box2D library.
 # The original C code is available at:
 #
@@ -29,39 +29,68 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""The one ragdoll of the samples: box2d's human (shared/human.c).
+
+`Ragdoll` is used by the hand-written samples, `Human` (joint motors as joint
+friction, box2d's argument order) by the ports of box2d's samples.
+"""
+
 import math
-from enum import Enum
-from dataclasses import dataclass
+import random
+from collections import namedtuple
+
 import pyb2d3 as b2d
 
-
-class RagdollBoneId(Enum):
-    hip = 0
-    torso = 1
-    head = 2
-    upper_left_leg = 3
-    lower_left_leg = 4
-    upper_right_leg = 5
-    lower_right_leg = 6
-    upper_left_arm = 7
-    lower_left_arm = 8
-    upper_right_arm = 9
-    lower_right_arm = 10
-    bone_count = 11
+# heights / pivots in units of the scale, capsule (y1, y2, radius) too,
+# limits and the frame A angle in units of pi; color: "shirt" / "pant" / "skin"
+BoneSpec = namedtuple(
+    "BoneSpec",
+    "name parent height linear_damping friction_scale capsule pivot limits frame_angle foot color",
+)
 
 
-@dataclass
-class RagdollBone:
-    body: b2d.Body = None
-    joint: b2d.Joint = None
-    friction_scale: float = 1.0
-    max_motor_torque: float = 1000.0
-    parent_index: int = -1
+def _bone_specs():
+    """The 11 bones of the human, parents before children."""
+    yield BoneSpec("hip", None, 0.95, 0.0, 1.0, (-0.02, 0.02, 0.095), None, None, 0.0, False, "pant")
+    yield BoneSpec("torso", "hip", 1.2, 0.0, 0.5, (-0.135, 0.135, 0.09), 1.0, (-0.25, 0.0), 0.0, False, "shirt")
+    yield BoneSpec("head", "torso", 1.475, 0.1, 0.25, (-0.038, 0.039, 0.075), 1.4, (-0.3, 0.1), 0.0, False, "skin")
+    for side in ("left", "right"):
+        upper, lower = f"upper_{side}_leg", f"lower_{side}_leg"
+        yield BoneSpec(upper, "hip", 0.775, 0.0, 1.0, (-0.125, 0.125, 0.06), 0.9, (-0.05, 0.4), 0.0, False, "pant")
+        yield BoneSpec(lower, upper, 0.475, 0.0, 0.5, (-0.155, 0.125, 0.045), 0.625, (-0.5, -0.02), 0.0, True, "pant")
+    for side in ("left", "right"):
+        upper, lower = f"upper_{side}_arm", f"lower_{side}_arm"
+        yield BoneSpec(upper, "torso", 1.225, 0.0, 0.5, (-0.125, 0.125, 0.035), 1.35, (-0.1, 0.8), 0.0, False, "shirt")
+        # box2d >= 3.2: the reference angle is the rotation of the local frame A
+        yield BoneSpec(lower, upper, 0.975, 0.1, 0.1, (-0.125, 0.125, 0.03), 1.1, (-0.2, 0.3), 0.25, False, "skin")
 
 
-class Ragdoll(object):
-    Bone = RagdollBone
-    BoneId = RagdollBoneId
+BONE_SPECS = tuple(_bone_specs())
+FOOT_POINTS = ((-0.03, -0.185), (0.11, -0.185), (0.11, -0.16), (-0.03, -0.14))
+SKIN_COLORS = (b2d.HexColor.NavajoWhite, b2d.HexColor.LightYellow, b2d.HexColor.Peru, b2d.HexColor.Tan)
+CLOTH_COLORS = {"shirt": b2d.HexColor.MediumTurquoise, "pant": b2d.HexColor.DodgerBlue}
+
+
+class Bone:
+    """One bone: its body and the joint to its parent (None for the hip)."""
+
+    def __init__(self, spec, body, joint):
+        self.spec = spec
+        self.body = body
+        self.joint = joint
+
+    @property
+    def name(self):
+        return self.spec.name
+
+    @property
+    def friction_scale(self):
+        return self.spec.friction_scale
+
+
+class Ragdoll:
+    """box2d's human: 11 capsule bones connected by revolute joints with limits
+    and springs; with `joint_friction` the joint motors act as joint friction."""
 
     def __init__(
         self,
@@ -74,410 +103,188 @@ class Ragdoll(object):
         group_index=0,
         user_data=0,
         colorize=False,
+        joint_friction=False,
     ):
-        self._is_spawned = True
         position = b2d.Vec2(position)
-
-        self.bones = [RagdollBone() for _ in range(RagdollBoneId.bone_count.value)]
-        self.friction_torque = friction_torque
-        self.orginal_scale = scale
+        s = scale
+        self.original_scale = scale
         self.scale = scale
-        self.hertz = hertz
+        self.friction_torque = friction_torque
 
-        body_def = b2d.body_def()
-        body_def.type = b2d.BodyType.DYNAMIC
-        body_def.user_data = user_data
-        body_def.sleep_threshold = 0.1
-
-        shape_def = b2d.shape_def()
-        shape_def.material.friction = 0.2
-        shape_def.filter.group_index = -group_index
-        shape_def.filter.category_bits = 2
-        shape_def.filter.mask_bits = 1 | 2
-
-        foot_shape_def = shape_def.copy()
-        foot_shape_def.material.friction = 0.05
-
-        # feet dont collide with ragdolls
-        foot_shape_def.filter.category_bits = 2
-        foot_shape_def.filter.mask_bits = 1
-
+        shape_def = b2d.shape_def(
+            material=b2d.surface_material(friction=0.2),
+            filter=b2d.make_filter(group_index=-group_index, category_bits=2, mask_bits=1 | 2),
+        )
+        # feet don't collide with ragdolls
+        foot_shape_def = b2d.shape_def(
+            material=b2d.surface_material(friction=0.05),
+            filter=b2d.make_filter(group_index=-group_index, category_bits=2, mask_bits=1),
+        )
         if colorize:
             foot_shape_def.material.custom_color = b2d.HexColor.SaddleBrown.value
+        foot = b2d.polygon([(s * x, s * y) for x, y in FOOT_POINTS], radius=0.015 * s)
+        colors = {**CLOTH_COLORS, "skin": SKIN_COLORS[group_index % len(SKIN_COLORS)]}
 
-        s = scale
-        max_motor_torque = friction_torque * s
-        enable_motor = False
-        enable_limit = True
-        draw_size = 0.05
+        self.bones = []
+        by_name = {}
+        for spec in BONE_SPECS:
+            body = world.create_dynamic_body(
+                position=position + (0.0, spec.height * s),
+                linear_damping=spec.linear_damping,
+                sleep_threshold=0.1,
+                name=spec.name,
+                user_data=user_data,
+            )
+            if colorize:
+                shape_def.material.custom_color = colors[spec.color].value
+            y1, y2, radius = spec.capsule
+            body.create_shape(shape_def, b2d.capsule((0.0, y1 * s), (0.0, y2 * s), radius * s))
+            if spec.foot:
+                body.create_shape(foot_shape_def, foot)
 
-        shirt_color = b2d.HexColor.MediumTurquoise.value
-        pant_color = b2d.HexColor.DodgerBlue.value
+            joint = None
+            if spec.parent is not None:
+                parent = by_name[spec.parent].body
+                pivot = position + (0.0, spec.pivot * s)
+                lower, upper = spec.limits
+                joint = world.create_revolute_joint(
+                    body_a=parent,
+                    body_b=body,
+                    local_frame_a=b2d.transform(p=parent.local_point(pivot), q=b2d.make_rot(spec.frame_angle * math.pi)),
+                    local_anchor_b=body.local_point(pivot),
+                    enable_limit=True,
+                    lower_angle=lower * math.pi,
+                    upper_angle=upper * math.pi,
+                    enable_motor=joint_friction,
+                    max_motor_torque=spec.friction_scale * friction_torque * s,
+                    enable_spring=hertz > 0.0,
+                    hertz=hertz,
+                    damping_ratio=damping_ratio,
+                    draw_scale=0.05,
+                )
+            bone = Bone(spec, body, joint)
+            by_name[spec.name] = bone
+            self.bones.append(bone)
+        self._by_name = by_name
 
-        skin_colors = [
-            b2d.HexColor.NavajoWhite.value,
-            b2d.HexColor.LightYellow.value,
-            b2d.HexColor.Peru.value,
-            b2d.HexColor.SandyBrown.value,
-        ]
-        skin_color = skin_colors[group_index % 4]
+    # ---- access -------------------------------------------------------------------------
 
-        # hip
-        bone = self.bones[RagdollBoneId.hip.value]
-        bone.parent_index = -1
+    def bone(self, name):
+        """the bone named `name` ("hip", "torso", "head", "upper_left_leg", ...)"""
+        return self._by_name[name]
 
-        body_def.position = position + (0.0, 0.95 * s)
-        body_def.linear_damping = 0.0
-        body_def.name = "hip"
-        bone.body = world.create_body(body_def)
-        if colorize:
-            shape_def.material.custom_color = pant_color
+    @property
+    def bodies(self):
+        return [bone.body for bone in self.bones]
 
-        capsule = b2d.capsule((0.0, -0.02 * s), (0.0, 0.02 * s), 0.095 * s)
-        bone.body.create_shape(shape_def, capsule)
+    @property
+    def joints(self):
+        return [bone.joint for bone in self.bones if bone.joint is not None]
 
-        # torso
-        bone = self.bones[RagdollBoneId.torso.value]
-        bone.parent_index = RagdollBoneId.hip.value
-        body_def.position = position + (0.0, 1.2 * s)
-        body_def.linear_damping = 0.0
-        body_def.name = "torso"
+    @property
+    def jointed_bones(self):
+        return self.bones[1:]
 
-        bone.body = world.create_body(body_def)
-        bone.friction_scale = 0.5
-        body_def.type = b2d.BodyType.DYNAMIC
-
-        if colorize:
-            shape_def.material.custom_color = shirt_color
-
-        capsule = b2d.capsule((0.0, -0.135 * s), (0.0, 0.135 * s), 0.09 * s)
-        bone.body.create_shape(shape_def, capsule)
-
-        pivot = position + (0.0, 1.0 * s)
-        joint_def = b2d.revolute_joint_def()
-        joint_def.body_a = self.bones[bone.parent_index].body
-        joint_def.body_b = bone.body
-        joint_def.local_anchor_a = joint_def.body_a.local_point(pivot)
-        joint_def.local_anchor_b = joint_def.body_b.local_point(pivot)
-        joint_def.enable_limit = enable_limit
-        joint_def.lower_angle = -0.25 * math.pi
-        joint_def.upper_angle = 0.0
-        joint_def.enable_motor = enable_motor
-        joint_def.max_motor_torque = bone.friction_scale * max_motor_torque
-        joint_def.enable_spring = hertz > 0.0
-        joint_def.hertz = hertz
-        joint_def.damping_ratio = damping_ratio
-        joint_def.draw_scale = draw_size
-        bone.joint = world.create_joint(joint_def)
-
-        # head
-        bone = self.bones[RagdollBoneId.head.value]
-        bone.parent_index = RagdollBoneId.torso.value
-        body_def.position = position + (0.0, 1.475 * s)
-        body_def.linear_damping = 0.1
-        body_def.name = "head"
-        bone.body = world.create_body(body_def)
-        bone.friction_scale = 0.25
-        if colorize:
-            shape_def.material.custom_color = skin_color
-        capsule = b2d.capsule((0.0, -0.038 * s), (0.0, 0.039 * s), 0.075 * s)
-        bone.body.create_shape(shape_def, capsule)
-
-        # neck
-        pivot = position + (0.0, 1.4 * s)
-        joint_def = b2d.revolute_joint_def()
-        joint_def.body_a = self.bones[bone.parent_index].body
-        joint_def.body_b = bone.body
-        joint_def.local_anchor_a = joint_def.body_a.local_point(pivot)
-        joint_def.local_anchor_b = joint_def.body_b.local_point(pivot)
-        joint_def.enable_limit = enable_limit
-        joint_def.lower_angle = -0.3 * math.pi
-        joint_def.upper_angle = 0.1 * math.pi
-        joint_def.enable_motor = enable_motor
-        joint_def.max_motor_torque = bone.friction_scale * max_motor_torque
-        joint_def.enable_spring = hertz > 0.0
-        joint_def.hertz = hertz
-        joint_def.damping_ratio = damping_ratio
-        joint_def.draw_scale = draw_size
-        bone.joint = world.create_joint(joint_def)
-
-        # upper left leg
-        bone = self.bones[RagdollBoneId.upper_left_leg.value]
-        bone.parent_index = RagdollBoneId.hip.value
-        body_def.position = position + (0.0, 0.775 * s)
-        body_def.linear_damping = 0.0
-        body_def.name = "upper_left_leg"
-
-        bone.body = world.create_body(body_def)
-        bone.friction_scale = 1.0
-
-        if colorize:
-            shape_def.material.custom_color = pant_color
-
-        capsule = b2d.capsule((0.0, -0.125 * s), (0.0, 0.125 * s), 0.06 * s)
-        bone.body.create_shape(shape_def, capsule)
-
-        pivot = position + (0.0, 0.9 * s)
-        joint_def = b2d.revolute_joint_def()
-        joint_def.body_a = self.bones[bone.parent_index].body
-        joint_def.body_b = bone.body
-        joint_def.local_anchor_a = joint_def.body_a.local_point(pivot)
-        joint_def.local_anchor_b = joint_def.body_b.local_point(pivot)
-        joint_def.enable_limit = enable_limit
-        joint_def.lower_angle = -0.05 * math.pi
-        joint_def.upper_angle = 0.4 * math.pi
-        joint_def.enable_motor = enable_motor
-        joint_def.max_motor_torque = bone.friction_scale * max_motor_torque
-        joint_def.enable_spring = hertz > 0.0
-        joint_def.hertz = hertz
-        joint_def.damping_ratio = damping_ratio
-        joint_def.draw_scale = draw_size
-        bone.joint = world.create_joint(joint_def)
-
-        points = [
-            (-0.03 * s, -0.185 * s),
-            (0.11 * s, -0.185 * s),
-            (0.11 * s, -0.16 * s),
-            (-0.03 * s, -0.14 * s),
-        ]
-        foot_polygon = b2d.polygon(points, radius=0.015 * s)
-
-        # lower left leg
-        bone = self.bones[RagdollBoneId.lower_left_leg.value]
-        bone.parent_index = RagdollBoneId.upper_left_leg.value
-
-        body_def.position = position + (0.0, 0.475 * s)
-        body_def.linear_damping = 0.0
-        body_def.name = "lower_left_leg"
-
-        bone.body = world.create_body(body_def)
-        bone.friction_scale = 0.5
-
-        if colorize:
-            shape_def.material.custom_color = pant_color
-
-        capsule = b2d.capsule((0.0, -0.155 * s), (0.0, 0.125 * s), 0.045 * s)
-        bone.body.create_shape(shape_def, capsule)
-
-        bone.body.create_shape(foot_shape_def, foot_polygon)
-
-        pivot = position + (0.0, 0.625 * s)
-        joint_def = b2d.revolute_joint_def()
-        joint_def.body_a = self.bones[bone.parent_index].body
-        joint_def.body_b = bone.body
-        joint_def.local_anchor_a = joint_def.body_a.local_point(pivot)
-        joint_def.local_anchor_b = joint_def.body_b.local_point(pivot)
-        joint_def.enable_limit = enable_limit
-        joint_def.lower_angle = -0.5 * math.pi
-        joint_def.upper_angle = -0.02 * math.pi
-        joint_def.enable_motor = enable_motor
-        joint_def.max_motor_torque = bone.friction_scale * max_motor_torque
-        joint_def.enable_spring = hertz > 0.0
-        joint_def.hertz = hertz
-        joint_def.damping_ratio = damping_ratio
-        joint_def.draw_scale = draw_size
-        bone.joint = world.create_joint(joint_def)
-
-        # upper right leg
-        bone = self.bones[RagdollBoneId.upper_right_leg.value]
-        bone.parent_index = RagdollBoneId.hip.value
-        body_def.position = position + (0.0, 0.775 * s)
-        body_def.linear_damping = 0.0
-        body_def.name = "upper_right_leg"
-
-        bone.body = world.create_body(body_def)
-        bone.friction_scale = 1.0
-
-        if colorize:
-            shape_def.material.custom_color = pant_color
-
-        capsule = b2d.capsule((0.0, -0.125 * s), (0.0, 0.125 * s), 0.06 * s)
-        bone.body.create_shape(shape_def, capsule)
-
-        pivot = position + (0.0, 0.9 * s)
-        joint_def = b2d.revolute_joint_def()
-        joint_def.body_a = self.bones[bone.parent_index].body
-        joint_def.body_b = bone.body
-        joint_def.local_anchor_a = joint_def.body_a.local_point(pivot)
-        joint_def.local_anchor_b = joint_def.body_b.local_point(pivot)
-        joint_def.enable_limit = enable_limit
-        joint_def.lower_angle = -0.05 * math.pi
-        joint_def.upper_angle = 0.4 * math.pi
-        joint_def.enable_motor = enable_motor
-        joint_def.max_motor_torque = bone.friction_scale * max_motor_torque
-        joint_def.enable_spring = hertz > 0.0
-        joint_def.hertz = hertz
-        joint_def.damping_ratio = damping_ratio
-        joint_def.draw_scale = draw_size
-        bone.joint = world.create_joint(joint_def)
-
-        # lower right leg
-        bone = self.bones[RagdollBoneId.lower_right_leg.value]
-        bone.parent_index = RagdollBoneId.upper_right_leg.value
-        body_def.position = position + (0.0, 0.475 * s)
-        body_def.linear_damping = 0.0
-        body_def.name = "lower_right_leg"
-        bone.body = world.create_body(body_def)
-        bone.friction_scale = 0.5
-        if colorize:
-            shape_def.material.custom_color = pant_color
-        capsule = b2d.capsule((0.0, -0.155 * s), (0.0, 0.125 * s), 0.045 * s)
-        bone.body.create_shape(shape_def, capsule)
-        bone.body.create_shape(foot_shape_def, foot_polygon)
-        pivot = position + (0.0, 0.625 * s)
-        joint_def = b2d.revolute_joint_def()
-        joint_def.body_a = self.bones[bone.parent_index].body
-        joint_def.body_b = bone.body
-        joint_def.local_anchor_a = joint_def.body_a.local_point(pivot)
-        joint_def.local_anchor_b = joint_def.body_b.local_point(pivot)
-        joint_def.enable_limit = enable_limit
-        joint_def.lower_angle = -0.5 * math.pi
-        joint_def.upper_angle = -0.02 * math.pi
-        joint_def.enable_motor = enable_motor
-        joint_def.max_motor_torque = bone.friction_scale * max_motor_torque
-        joint_def.enable_spring = hertz > 0.0
-        joint_def.hertz = hertz
-        joint_def.damping_ratio = damping_ratio
-        joint_def.draw_scale = draw_size
-        bone.joint = world.create_joint(joint_def)
-
-        # upper left arm
-        bone = self.bones[RagdollBoneId.upper_left_arm.value]
-        bone.parent_index = RagdollBoneId.torso.value
-        body_def.position = position + (0.0, 1.225 * s)
-        body_def.linear_damping = 0.0
-        body_def.name = "upper_left_arm"
-        bone.body = world.create_body(body_def)
-        bone.friction_scale = 0.5
-        if colorize:
-            shape_def.material.custom_color = shirt_color
-        capsule = b2d.capsule((0.0, -0.125 * s), (0.0, 0.125 * s), 0.035 * s)
-        bone.body.create_shape(shape_def, capsule)
-        pivot = position + (0.0, 1.35 * s)
-        joint_def = b2d.revolute_joint_def()
-        joint_def.body_a = self.bones[bone.parent_index].body
-        joint_def.body_b = bone.body
-        joint_def.local_anchor_a = joint_def.body_a.local_point(pivot)
-        joint_def.local_anchor_b = joint_def.body_b.local_point(pivot)
-        joint_def.enable_limit = enable_limit
-        joint_def.lower_angle = -0.1 * math.pi
-        joint_def.upper_angle = 0.8 * math.pi
-        joint_def.enable_motor = enable_motor
-        joint_def.max_motor_torque = bone.friction_scale * max_motor_torque
-        joint_def.enable_spring = hertz > 0.0
-        joint_def.hertz = hertz
-        joint_def.damping_ratio = damping_ratio
-        joint_def.draw_scale = draw_size
-        bone.joint = world.create_joint(joint_def)
-
-        # lower left arm
-        bone = self.bones[RagdollBoneId.lower_left_arm.value]
-        bone.parent_index = RagdollBoneId.upper_left_arm.value
-        body_def.position = position + (0.0, 0.975 * s)
-        body_def.linear_damping = 0.1
-        body_def.name = "lower_left_arm"
-        bone.body = world.create_body(body_def)
-        bone.friction_scale = 0.1
-        if colorize:
-            shape_def.material.custom_color = skin_color
-        capsule = b2d.capsule((0.0, -0.125 * s), (0.0, 0.125 * s), 0.03 * s)
-        bone.body.create_shape(shape_def, capsule)
-        pivot = position + (0.0, 1.1 * s)
-        joint_def = b2d.revolute_joint_def()
-        joint_def.body_a = self.bones[bone.parent_index].body
-        joint_def.body_b = bone.body
-        joint_def.local_anchor_a = joint_def.body_a.local_point(pivot)
-        joint_def.local_anchor_b = joint_def.body_b.local_point(pivot)
-        # box2d >= 3.2: the reference angle is the rotation of the local frame
-        joint_def.local_frame_a = b2d.transform(p=joint_def.local_anchor_a, q=0.25 * math.pi)
-        joint_def.enable_limit = enable_limit
-        joint_def.lower_angle = -0.2 * math.pi
-        joint_def.upper_angle = 0.3 * math.pi
-        joint_def.enable_motor = enable_motor
-        joint_def.max_motor_torque = bone.friction_scale * max_motor_torque
-        joint_def.enable_spring = hertz > 0.0
-        joint_def.hertz = hertz
-        joint_def.damping_ratio = damping_ratio
-        joint_def.draw_scale = draw_size
-        bone.joint = world.create_joint(joint_def)
-
-        # upper right arm
-        bone = self.bones[RagdollBoneId.upper_right_arm.value]
-        bone.parent_index = RagdollBoneId.torso.value
-        body_def.position = position + (0.0, 1.225 * s)
-        body_def.linear_damping = 0.0
-        body_def.name = "upper_right_arm"
-        bone.body = world.create_body(body_def)
-        bone.friction_scale = 0.5
-        if colorize:
-            shape_def.material.custom_color = shirt_color
-        capsule = b2d.capsule((0.0, -0.125 * s), (0.0, 0.125 * s), 0.035 * s)
-        bone.body.create_shape(shape_def, capsule)
-        pivot = position + (0.0, 1.35 * s)
-        joint_def = b2d.revolute_joint_def()
-        joint_def.body_a = self.bones[bone.parent_index].body
-        joint_def.body_b = bone.body
-        joint_def.local_anchor_a = joint_def.body_a.local_point(pivot)
-        joint_def.local_anchor_b = joint_def.body_b.local_point(pivot)
-        joint_def.enable_limit = enable_limit
-        joint_def.lower_angle = -0.1 * math.pi
-        joint_def.upper_angle = 0.8 * math.pi
-        joint_def.enable_motor = enable_motor
-        joint_def.max_motor_torque = bone.friction_scale * max_motor_torque
-        joint_def.enable_spring = hertz > 0.0
-        joint_def.hertz = hertz
-        joint_def.damping_ratio = damping_ratio
-        joint_def.draw_scale = draw_size
-        bone.joint = world.create_joint(joint_def)
-
-        # lower right arm
-        bone = self.bones[RagdollBoneId.lower_right_arm.value]
-        bone.parent_index = RagdollBoneId.upper_right_arm.value
-        body_def.position = position + (0.0, 0.975 * s)
-        body_def.linear_damping = 0.1
-        body_def.name = "lower_right_arm"
-        bone.body = world.create_body(body_def)
-        bone.friction_scale = 0.1
-        if colorize:
-            shape_def.material.custom_color = skin_color
-        capsule = b2d.capsule((0.0, -0.125 * s), (0.0, 0.125 * s), 0.03 * s)
-        bone.body.create_shape(shape_def, capsule)
-        pivot = position + (0.0, 1.1 * s)
-        joint_def = b2d.revolute_joint_def()
-        joint_def.body_a = self.bones[bone.parent_index].body
-        joint_def.body_b = bone.body
-        joint_def.local_anchor_a = joint_def.body_a.local_point(pivot)
-        joint_def.local_anchor_b = joint_def.body_b.local_point(pivot)
-        # box2d >= 3.2: the reference angle is the rotation of the local frame
-        joint_def.local_frame_a = b2d.transform(p=joint_def.local_anchor_a, q=0.25 * math.pi)
-        joint_def.enable_limit = enable_limit
-        joint_def.lower_angle = -0.2 * math.pi
-        joint_def.upper_angle = 0.3 * math.pi
-        joint_def.enable_motor = enable_motor
-        joint_def.max_motor_torque = bone.friction_scale * max_motor_torque
-        joint_def.enable_spring = hertz > 0.0
-        joint_def.hertz = hertz
-        joint_def.damping_ratio = damping_ratio
-        joint_def.draw_scale = draw_size
-        bone.joint = world.create_joint(joint_def)
+    # ---- changes ------------------------------------------------------------------------
 
     def destroy(self):
-        if not self._is_spawned:
-            return
-
+        """destroy joints first, then bodies (destroying a body also destroys its joints)"""
         for bone in self.bones:
-            if bone.joint is not None:
+            if bone.joint is not None and bone.joint.is_valid:
                 bone.joint.destroy()
-                bone.joint = None
-
-            if bone.body is not None:
+        for bone in self.bones:
+            if bone.body.is_valid:
                 bone.body.destroy()
-                bone.body = None
-
-        self._is_spawned = False
+        self.bones = []
+        self._by_name = {}
 
     def set_velocity(self, velocity):
-        assert self._is_spawned, "Ragdoll not be destroyed before setting velocity."
+        """same linear velocity for every bone"""
         for bone in self.bones:
-            if bone.body is not None:
-                bone.body.set_linear_velocity(b2d.Vec2(velocity))
+            bone.body.linear_velocity = velocity
+
+    def apply_random_angular_impulse(self, magnitude):
+        """a random spin on the torso"""
+        self.bone("torso").body.apply_angular_impulse(random.uniform(-magnitude, magnitude), True)
+
+    def enable_sensor_events(self, flag=True):
+        for body in self.bodies:
+            for shape in body.shapes:
+                shape.sensor_events_enabled = flag
+
+    def set_joint_friction_torque(self, torque):
+        """joint friction via the joint motors, 0 switches them off"""
+        for bone in self.jointed_bones:
+            bone.joint.motor_enabled = torque != 0.0
+            if torque != 0.0:
+                bone.joint.max_motor_torque = self.scale * bone.friction_scale * torque
+
+    def set_joint_spring_hertz(self, hertz):
+        for bone in self.jointed_bones:
+            bone.joint.spring_enabled = hertz != 0.0
+            if hertz != 0.0:
+                bone.joint.spring_hertz = hertz
+
+    def set_joint_damping_ratio(self, damping_ratio):
+        for bone in self.jointed_bones:
+            bone.joint.spring_damping_ratio = damping_ratio
+
+    def set_scale(self, scale):
+        """rescale the whole ragdoll in place around the hip"""
+        assert 0.01 < scale < 100.0
+        ratio = scale / self.scale
+
+        # torque scales by pow(length, 4) due to mass and length change, gravity is also a factor so use pow(length, 3)
+        friction_torque = (scale / self.original_scale) ** 3 * self.friction_torque
+
+        origin = self.bones[0].body.position
+        for bone in self.bones:
+            body = bone.body
+            if bone.joint is not None:
+                transform = body.transform
+                body.set_transform(origin + (transform.p - origin) * ratio, transform.q)
+
+                for attr in ("local_frame_a", "local_frame_b"):
+                    frame = getattr(bone.joint, attr)
+                    frame.p = b2d.Vec2(frame.p) * ratio
+                    setattr(bone.joint, attr, frame)
+
+                bone.joint.max_motor_torque = bone.friction_scale * friction_torque
+
+            for shape in body.shapes:
+                if isinstance(shape, b2d.CapsuleShape):
+                    capsule = shape.capsule
+                    shape.capsule = b2d.capsule(
+                        b2d.Vec2(capsule.center1) * ratio, b2d.Vec2(capsule.center2) * ratio, capsule.radius * ratio
+                    )
+                elif isinstance(shape, b2d.PolygonShape):
+                    # like box2d: scale in place (the normals stay valid under uniform scaling)
+                    polygon = shape.polygon
+                    polygon.vertices = polygon.vertices * ratio
+                    polygon.centroid = b2d.Vec2(polygon.centroid) * ratio
+                    polygon.radius *= ratio
+                    shape.polygon = polygon
+
+            body.update_mass_from_shapes()
+
+        self.scale = scale
+
+
+class Human(Ragdoll):
+    """box2d's CreateHuman (argument order of human.c): joint motors on, as joint friction."""
+
+    def __init__(
+        self, world, position, scale, friction_torque, hertz, damping_ratio, group_index=1, user_data=0, colorize=False
+    ):
+        super().__init__(
+            world,
+            position=position,
+            scale=scale,
+            friction_torque=friction_torque,
+            hertz=hertz,
+            damping_ratio=damping_ratio,
+            group_index=group_index,
+            user_data=user_data,
+            colorize=colorize,
+            joint_friction=True,
+        )

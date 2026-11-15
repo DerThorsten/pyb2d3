@@ -8,6 +8,12 @@ import math
 
 
 class Mirror(SampleBase):
+    """A laser beam reflected up to three times, from repeated cast_ray_closest calls
+    and the surface normals of the hits.
+
+    Mouse: drag and turn the yellow laser box (or the other boxes) to aim the beam.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
         self.box_radius = 10

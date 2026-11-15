@@ -8,6 +8,12 @@ import math
 
 
 class CastRayCallback(SampleBase):
+    """world.cast_ray with a Python callback and a query filter: the yellow laser's ray
+    passes through green boxes and is clipped to 20% at blue boxes (callback return values).
+
+    Mouse: drag and turn the laser (or the boxes) to see which hits are reported.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
         self.box_radius = 10

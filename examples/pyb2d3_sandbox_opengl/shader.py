@@ -16,7 +16,22 @@
 # WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+import sys
+
 from OpenGL.GL import *  # noqa: F403
+
+# in the browser (emscripten) GL is WebGL2 = OpenGL ES 3.0: shaders are GLSL ES 3.00
+IS_GLES = sys.platform == "emscripten"
+
+_GLES_HEADER = "#version 300 es\nprecision highp float;\nprecision highp int;\n"
+
+
+def to_gles_source(source):
+    """Turn a `#version 330` (desktop GLSL) shader into GLSL ES 3.00 (WebGL2):
+    the GLES version line must be the very first line (the shader files start
+    with a license comment), followed by default precisions."""
+    lines = [line for line in source.splitlines(keepends=True) if not line.strip().startswith("#version")]
+    return _GLES_HEADER + "".join(lines)
 
 
 def dump_gl_info():
@@ -62,6 +77,8 @@ def print_gl_log(obj):
 
 def _create_shader_from_string(source, shader_type):
     """Create a shader from source string."""
+    if IS_GLES:
+        source = to_gles_source(source)
     try:
         shader = glCreateShader(shader_type)
         glShaderSource(shader, source)

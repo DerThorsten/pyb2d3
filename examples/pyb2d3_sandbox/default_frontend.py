@@ -1,4 +1,5 @@
 import os
+import sys
 import traceback
 
 _CachedDefaultFrontend = None
@@ -16,8 +17,17 @@ def _pygame():
     return PygameFrontend
 
 
-# in order of preference
-_FRONTENDS = {"opengl": _opengl, "pygame": _pygame}
+def _webgl():
+    from pyb2d3_sandbox_webgl import WebglFrontend
+
+    return WebglFrontend
+
+
+# in order of preference (in the browser: the WebGL frontend, no imgui)
+if sys.platform == "emscripten":
+    _FRONTENDS = {"webgl": _webgl, "opengl": _opengl}
+else:
+    _FRONTENDS = {"opengl": _opengl, "pygame": _pygame}
 
 
 def get_default_frontend():

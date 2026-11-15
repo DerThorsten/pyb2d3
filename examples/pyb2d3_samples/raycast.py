@@ -8,6 +8,12 @@ import math
 
 
 class Raycast(SampleBase):
+    """100 rays cast from a ball in all directions with world.cast_ray_closest,
+    each drawn up to the closest hit.
+
+    Mouse: drag the ball (or a box) and watch the rays follow.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
         self.box_radius = 10

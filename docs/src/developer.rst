@@ -81,7 +81,7 @@ handle types and bind the C functions **directly**, without writing a C++ method
 ``examples/``
     Not part of the package: the sandbox core (``pyb2d3_sandbox``), its frontends
     (``pyb2d3_sandbox_opengl``, ``pyb2d3_sandbox_pygame``), the samples (``pyb2d3_samples``,
-    with the ports of Box2D's own samples in ``pyb2d3_samples/box2d``) and the launcher
+    with the ports of Box2D's own samples in ``pyb2d3_samples/box2d_samples``) and the launcher
     ``sandbox.py``.
 
 Releasing

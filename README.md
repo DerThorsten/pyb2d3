@@ -8,6 +8,10 @@ Python bindings for [Box2D](https://box2d.org) v3.2, the 2D physics engine.
 - a sandbox with OpenGL and pygame frontends and ~140 interactive samples, including ports of
   Box2D's own sample browser
 
+**[Try the sandbox in your browser](https://derthorsten.github.io/pyb2d3/sandbox/)**: all
+samples, running on Python in WebAssembly ([pyjs](https://github.com/emscripten-forge/pyjs)),
+with a code editor to change them live.
+
 ```python
 import pyb2d3 as b2d
 
@@ -45,6 +49,10 @@ pixi run sandbox                    # OpenGL frontend, samples grouped by catego
 pixi run sandbox "Joints/Ragdoll"   # start at a sample
 pixi run sandbox-pygame             # pygame frontend
 ```
+
+The browser version (WebGL frontend, `examples/web/`) is built with the docs (`pixi run docs`,
+at `docs/_build/html/sandbox/`); `https://derthorsten.github.io/pyb2d3/sandbox/?sample=Joints/Ragdoll`
+starts at a sample.
 
 ## Development
 

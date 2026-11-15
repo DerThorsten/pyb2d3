@@ -271,6 +271,8 @@ class PygameFrontend(FrontendBase):
         if not self.settings.headless:
             hint = "   (PageUp / PageDown: switch sample)" if len(self.registry) > 1 else ""
             pygame.display.set_caption(f"{self.sample_title}{hint}")
+            # pygame has no panel: the help text goes to the console
+            print(f"\n== {self.sample_title} ==\n{sample_class.help_text()}", flush=True)
 
     def _dispatch_events(self):
         for event in pygame.event.get():

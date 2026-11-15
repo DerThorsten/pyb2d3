@@ -7,6 +7,11 @@ from .examples_common import Ragdoll as RagdollComposit
 
 
 class Ragdoll(SampleBase):
+    """Fifteen colorful jointed ragdolls in a box.
+
+    Mouse: drag a limb, double click for an explosion, triple click to pull bodies in.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
 

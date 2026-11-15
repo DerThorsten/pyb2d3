@@ -1,0 +1,5 @@
+/* "run in the browser" link of the sample gallery tiles (sandbox_links.js) */
+a.pyb2d3-sandbox-link {
+  margin-left: 0.8em;
+  white-space: nowrap;
+}

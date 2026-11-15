@@ -5,6 +5,12 @@ from .examples_common import stacked_blocks
 
 
 class AngryShapes(SampleBase):
+    """A slingshot game: shoot a ball at a pyramid of blocks, it explodes on impact.
+
+    Mouse: drag the red ball away from its anchor and release to launch it.
+    The further you pull, the stronger the shot. A new ball appears after each hit.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, -10)))
 

@@ -4,6 +4,12 @@ from pyb2d3_sandbox import SampleBase
 
 
 class NewtonsCradle(SampleBase):
+    """Newton's cradle: ten elastic balls on rigid distance joints pass the momentum along.
+
+    Keys: a adds a loose ball at the position of the first ball.
+    Mouse: drag a ball sideways and let it go.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
 

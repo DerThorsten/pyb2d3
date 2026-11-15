@@ -7,7 +7,8 @@ import pyb2d3 as b2d
 from pyb2d3_sandbox import register_sample, widgets
 
 from ._common import Box2dSample
-from ._world_helpers import Car, create_donut, create_human, parse_path, random_polygon
+from ..examples_common.ragdoll import Human
+from ._world_helpers import Car, create_donut, parse_path, random_polygon
 
 
 @register_sample("World", "Tiles")
@@ -62,7 +63,7 @@ class TileWorld(Box2dSample):
             elif remainder == 1:
                 for i in range(5):
                     human_index += 1
-                    create_human(world, (x_base - 2.0 + i, 10.0), 1.5, 0.05, 0.0, 0.0, human_index)
+                    Human(world, (x_base - 2.0 + i, 10.0), 1.5, 0.05, 0.0, 0.0, human_index)
             else:
                 for i in range(5):
                     create_donut(world, (x_base - 4.0 + 2.0 * i, 12.0), 0.75)
@@ -193,7 +194,7 @@ class FarRagdolls(Box2dSample):
                 x = 2.4 * scale * (j - 0.5 * (self.column_count - 1)) + random.uniform(-0.3, 0.3)
                 y = 2.0 + 2.2 * scale * i
                 index += 1
-                create_human(self.world, (ox + x, oy + y), scale, 0.05, 1.0, 0.5, index)
+                Human(self.world, (ox + x, oy + y), scale, 0.05, 1.0, 0.5, index)
 
 
 GATE_PATH = (

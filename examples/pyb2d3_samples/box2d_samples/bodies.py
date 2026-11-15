@@ -10,6 +10,13 @@ from ._common import Box2dSample
 
 @register_sample("Bodies", "Body Type")
 class BodyType(Box2dSample):
+    """Switching body types at runtime: a platform with jointed attachments, payloads,
+    a body on the ground and a floating body.
+
+    Widget "Type": static, kinematic (the platform moves back and forth) or dynamic.
+    Widget "Enable": enables / disables the left attachment, a payload and the floater.
+    """
+
     camera_center = (0.8, 6.4)
     camera_zoom = 25.0 * 0.4
 

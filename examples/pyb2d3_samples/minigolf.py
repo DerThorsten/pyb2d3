@@ -14,6 +14,13 @@ class GolfState(Enum):
 
 
 class Minigolf(SampleBase):
+    """A minigolf lane seen from above; a distance joint pulls the ball into the hole.
+
+    Mouse: press on the ball, drag back (away from the shot direction) and release to putt.
+    The line turns from yellow to red with the strength of the shot.
+    The level restarts once the ball is in the hole.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
 

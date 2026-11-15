@@ -1,4 +1,5 @@
 # this file
+import html
 from pathlib import Path
 import sys
 import pyb2d3  # noqa: F401
@@ -85,6 +86,10 @@ def create_sample_videos():
 
         :octicon:`mark-github` `{title} <{url}>`__
 
+        .. raw:: html
+
+            <a class="pyb2d3-sandbox-link" data-sample="{sample_key}">&#9654; run in the browser</a>
+
 
 
     """
@@ -100,8 +105,13 @@ def create_sample_videos():
         url = f"{github_main_url}/examples/{filename}"
         entry = registry.find(sample_class)
         title = f"{entry.category} / {entry.name}" if entry else sample_class.__name__
+        # the sandbox page (docs root /sandbox/) starts with ?sample=<key>; the
+        # link + a click on the video get their href from _static/sandbox_links.js
+        sample_key = html.escape(entry.key if entry else "", quote=True)
 
-        rst_content.append(template_str.format(video_name=lower_name, url=url, title=title))
+        rst_content.append(
+            template_str.format(video_name=lower_name, url=url, title=title, sample_key=sample_key)
+        )
 
     rst_file = docs_root / "src" / "samples" / "sample_videos.rst"
     with rst_file.open("w") as f:

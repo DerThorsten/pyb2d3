@@ -20,7 +20,8 @@ import numpy as np
 from OpenGL.GL import *  # noqa: F403
 import os
 from pyb2d3 import Vec2
-from .shader import create_program_from_files, create_program_from_strings
+from .shader import create_program_from_files, create_program_from_strings, IS_GLES
+import ctypes
 import OpenGL
 
 OpenGL.ERROR_CHECKING = False
@@ -965,9 +966,12 @@ class GLPoints:
         proj = self.camera.build_projection_matrix(0.0)
         glUniformMatrix4fv(self.projection_uniform, 1, GL_FALSE, proj)
         glBindVertexArray(self.vao_id)
-        glEnable(GL_PROGRAM_POINT_SIZE)
+        # GLES (WebGL2) always uses gl_PointSize and has no GL_PROGRAM_POINT_SIZE
+        if not IS_GLES:
+            glEnable(GL_PROGRAM_POINT_SIZE)
         glDrawArrays(GL_POINTS, 0, len(self.points))
-        glDisable(GL_PROGRAM_POINT_SIZE)
+        if not IS_GLES:
+            glDisable(GL_PROGRAM_POINT_SIZE)
         glBindVertexArray(0)
         glUseProgram(0)
         self.points.clear()

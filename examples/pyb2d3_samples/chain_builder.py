@@ -4,6 +4,12 @@ from pyb2d3_sandbox import SampleBase
 
 
 class ChainBuilder(SampleBase):
+    """Static chain shapes drawn with b2d.PathBuilder: lines plus arcs (clockwise or not,
+    minor or major arc), and a billiard table outline with pockets.
+
+    There are no dynamic bodies; zoom with the mouse wheel to look at the outlines.
+    """
+
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
         self.box_radius = 50
