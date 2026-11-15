@@ -86,7 +86,3 @@ class Raycast(SampleBase):
                 self.debug_draw.draw_segment(
                     b2d.Vec2(start), ray_result.point, color=(255, 255, 125)
                 )
-
-
-if __name__ == "__main__":
-    Raycast.run()

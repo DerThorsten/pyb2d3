@@ -20,6 +20,9 @@ numpy = "*"
 # tests
 pytest = "*"
 pre-commit = "*"
+# formatting (pixi run format; the same tools as .pre-commit-config.yaml)
+ruff = ">=0.14"
+clang-format = ">=21,<22"
 # sandbox frontends and samples
 imgui-bundle = "*"
 pyopengl = "*"
@@ -65,6 +68,15 @@ description = "Run the tests (in-place build)"
 cmd = "python -m pytest tests"
 depends-on = ["build"]
 
+# the generated docstrings are excluded (pyproject.toml / .clang-format-ignore)
+[tasks.format]
+description = "Format python (ruff) and C++ (clang-format)"
+cmd = "ruff format && ruff check --fix && clang-format -i include/**/*.hpp src/**/*.hpp src/**/*.cpp"
+
+[tasks.format-check]
+description = "Like format, but only report what would change (exit 1 if anything would)"
+cmd = "ruff format --check && ruff check && clang-format --dry-run --Werror include/**/*.hpp src/**/*.hpp src/**/*.cpp"
+
 [tasks.docstrings]
 description = "Regenerate the docstrings from the box2d header comments (after binding changes or a box2d update)"
 cmd = "python scripts/generate_docstrings.py"
@@ -99,6 +111,11 @@ depends-on = ["build"]
 [tasks.smoke-opengl]
 description = "Run every sample a few frames in the OpenGL frontend (needs a display), fails on errors"
 cmd = "python examples/opengl_smoke_test.py"
+depends-on = ["build"]
+
+[tasks.bench-draw]
+description = "Time the drawing of many bodies in the OpenGL frontend (same draw code as the browser; needs a display)"
+cmd = "python examples/bench_draw.py"
 depends-on = ["build"]
 
 [tasks.emscripten]

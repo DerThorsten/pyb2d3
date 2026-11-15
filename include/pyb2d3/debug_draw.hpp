@@ -49,7 +49,8 @@ namespace pyb2d
                 }
                 self(ctx)->draw_polygon(world, n, c);
             };
-            DrawSolidPolygonFcn = [](b2WorldTransform t, const b2Vec2* v, int n, float r, b2HexColor c, void* ctx)
+            DrawSolidPolygonFcn =
+                [](b2WorldTransform t, const b2Vec2* v, int n, float r, b2HexColor c, void* ctx)
             {
                 self(ctx)->draw_solid_polygon(t, v, n, r, c);
             };

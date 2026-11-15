@@ -131,6 +131,10 @@ class FrontendBaseSettings:
     hertz: int = 60  # Physics update frequency
     speed: float = 1.0  # Speed multiplier for the simulation
     substeps: int = 5
+    # catching up with real time: at most this many physics steps per frame, the rest
+    # of the backlog is dropped (slow frames would otherwise run more steps, making
+    # the next frame slower still); the simulation then runs slower than real time
+    max_steps_per_frame: int = 4
 
     # depcrecated as as we center examples automatically
     ppm: float = 40.0  # Pixels per meter
@@ -424,14 +428,18 @@ class FrontendBase(ABC):
 
         dt = now - self.last_world_update_time
 
-        while dt >= expected_dt:
+        steps = 0
+        while dt >= expected_dt and steps < self.settings.max_steps_per_frame:
             self.update_physics_single_step()
             dt -= expected_dt
             self.last_world_update_time += expected_dt
+            steps += 1
+        if dt >= expected_dt:  # too far behind: drop the backlog (see max_steps_per_frame)
+            self.last_world_update_time = now
 
     def update_frontend_logic(self):
         if self._is_paused:
-            self._last_world_update_time = None
+            self.last_world_update_time = None  # no catching up with the paused time
         # do we need to change the sample class?
         if self.change_sample_class_requested:
             self.change_sample_class_requested = False
@@ -452,13 +460,28 @@ class FrontendBase(ABC):
 
         self.sample.pre_debug_draw()
         if self.settings.debug_draw.enabled:
-            self.sample.world.draw(self.debug_draw, call_begin_end=False)
+            self.draw_world()
 
         self.sample.post_debug_draw()
 
         if self.settings.debug_draw.enabled:
             self.debug_draw.end_draw()
         self.acc_debug_draw_time += time.time() - t0
+
+    def wheel_zoom(self, delta, world_position):
+        """zoom by mouse wheel ticks; frontends that can, zoom about `world_position`
+        (the mouse), the default zooms like before (change_zoom)"""
+        self.change_zoom(delta)
+
+    def draw_world(self):
+        """the sample's world with the debug draw: its own `draw_world(world)` if it
+        has one (GLDebugDraw collects everything in C++), else the per-shape
+        callbacks of world.draw (e.g. the pygame frontend)"""
+        draw_world = getattr(self.debug_draw, "draw_world", None)
+        if draw_world is not None:
+            draw_world(self.sample.world)
+        else:
+            self.sample.world.draw(self.debug_draw, call_begin_end=False)
 
     def stop(self):
         self.set_sample(self.sample_class, self.sample_settings)

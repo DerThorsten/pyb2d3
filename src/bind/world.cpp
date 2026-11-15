@@ -1,8 +1,8 @@
 #include <array>
 #include <cmath>
 #include <optional>
-#include <type_traits>
 #include <tuple>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -12,10 +12,10 @@
 #include <nanobind/stl/tuple.h>
 
 #include "bind.hpp"
-#include "query_context.hpp"
 #include "pyb2d3/core/binder.hpp"
 #include "pyb2d3/py_converter.hpp"
 #include "pyb2d3/recording.hpp"
+#include "query_context.hpp"
 
 namespace pyb2d3::bind
 {
@@ -188,7 +188,8 @@ namespace pyb2d3::bind
         static_assert(std::is_same_v<b2FrictionCallbackFcn, b2RestitutionCallbackFcn>);
 
         template <Mixing K, int... I>
-        constexpr std::array<b2FrictionCallbackFcn*, sizeof...(I)> make_trampolines(std::integer_sequence<int, I...>)
+        constexpr std::array<b2FrictionCallbackFcn*, sizeof...(I)>
+        make_trampolines(std::integer_sequence<int, I...>)
         {
             return {&mixing_trampoline<K, I>...};
         }
@@ -203,8 +204,9 @@ namespace pyb2d3::bind
             const bool clear = fn.is_none();
             mixing_callbacks()[index].get(kind) = clear ? nb::object() : std::move(fn);
             b2FrictionCallbackFcn* trampoline = clear ? nullptr
-                                                      : (kind == Mixing::friction ? trampolines<Mixing::friction>
-                                                                                  : trampolines<Mixing::restitution>)[index];
+                                                      : (kind == Mixing::friction
+                                                             ? trampolines<Mixing::friction>
+                                                             : trampolines<Mixing::restitution>) [index];
             if (kind == Mixing::friction)
             {
                 b2World_SetFrictionCallback(world, trampoline);
@@ -330,12 +332,7 @@ namespace pyb2d3::bind
             .def<b2CreateWheelJoint>("_create_wheel_joint", nb::arg("def"))
 
             // queries without callback
-            .def<b2World_CastRayClosest>(
-                "cast_ray_closest",
-                nb::arg("origin"),
-                nb::arg("translation"),
-                query_filter
-            );
+            .def<b2World_CastRayClosest>("cast_ray_closest", nb::arg("origin"), nb::arg("translation"), query_filter);
 
         cls.def(
                "destroy",
@@ -416,8 +413,15 @@ namespace pyb2d3::bind
                    b2Vec2 origin_)
                 {
                     QueryContext q(std::move(callback));
-                    auto stats =
-                        b2World_CastShape(self.id, origin_, &proxy, translation, filter, cast_trampoline, &q);
+                    auto stats = b2World_CastShape(
+                        self.id,
+                        origin_,
+                        &proxy,
+                        translation,
+                        filter,
+                        cast_trampoline,
+                        &q
+                    );
                     q.rethrow();
                     return stats;
                 },

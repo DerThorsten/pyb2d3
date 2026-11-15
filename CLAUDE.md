@@ -1,6 +1,6 @@
 pyb2d3 are python bindings with nanobind for box2d >= 3
 
-box2d 3 is a **C** library for 2D physics simulation. 
+box2d 3 is a **C** library for 2D physics simulation.
 box2d 3 has this somewhat python-unfriendly API, so pyb2d3 is a thin wrapper around it to make it more pythonic.
 
 The problem is, its all just free c functions like
@@ -30,10 +30,17 @@ where id ist an opaque handle to a joint.
   every registered sample headless and drives all of its widgets.
 - `examples/` (not packages, put on `sys.path` by tests/docs/`examples/sandbox.py`): the
   sandbox core `pyb2d3_sandbox`, the frontends `pyb2d3_sandbox_opengl` / `pyb2d3_sandbox_pygame`
-  (pygame also renders the docs videos), the samples `pyb2d3_samples` and in
-  `pyb2d3_samples/box2d` the ports of box2d's sample browser (one module per `sample_*.cpp`).
+  (pygame also renders the docs videos) / `pyb2d3_sandbox_webgl` (browser, pyjs), the samples
+  `pyb2d3_samples` and in `pyb2d3_samples/box2d_samples` the ports of box2d's sample browser
+  (one module per `sample_*.cpp`).
+- `examples/web/`: the browser sandbox page (pyjs npm package from jsDelivr, WebGL frontend,
+  Monaco code editor `editor.js`, `?sample=Category/Name`). `build_page.py` builds it;
+  `docs/conf.py` calls it, so `pixi run docs` puts it at `docs/_build/html/sandbox/` with the
+  local emscripten build of pyb2d3 (`pixi run emscripten` first; the docs workflow does both).
 - `pixi.toml` is the dev environment and task runner: `pixi run build|test|install|wheel|test-installed|docs|
-  docs-quick|docs-serve|sandbox|sandbox-pygame|smoke-opengl|emscripten`. `smoke-opengl` runs every sample
+  docs-quick|docs-serve|sandbox|sandbox-pygame|smoke-opengl|emscripten|format|format-check`.
+  Run `pixi run format` after editing (ruff + clang-format, the same tools as pre-commit;
+  the generated docstrings are excluded). `smoke-opengl` runs every sample
   in the real OpenGL frontend (the headless tests draw with pygame, OpenGL needs a window).
 - Docstrings are generated from box2d's `///` header comments: `pixi run docstrings`
   (scripts/generate_docstrings.py) writes `include/pyb2d3/generated/docstrings.hpp`

@@ -263,7 +263,3 @@ class CoupledMinigolf(SampleBase):
             lower_bound=(min_x - margin, min_y - margin),
             upper_bound=(max_x + margin, max_y + margin),
         )
-
-
-if __name__ == "__main__":
-    CoupledMinigolf.run()

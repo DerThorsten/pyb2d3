@@ -30,16 +30,16 @@ from .batch_galton import BatchGalton
 from .batch_brazil_nut import BatchBrazilNut
 from .batch_earthquake import BatchEarthquake
 from .my_sample import MySample
+from .batch_many_shapes import BatchManyShapes
 from .batch_dam_break import BatchDamBreak
+from .batch_dam_break_balls import BatchDamBreakBalls
 from .batch_phase import BatchPhaseTransitions
 from .batch_ferrofluid import BatchFerrofluid
 from .batch_snow_rain import BatchSnowRain
 from .batch_boids import BatchBoids
 from .batch_predator_prey import BatchPredatorPrey
 from .batch_epidemic import BatchEpidemic
-from .batch_crowd import BatchCrowd
 from .batch_maxwell_demon import BatchMaxwellDemon
-from .batch_coulomb import BatchCoulomb
 from .batch_galaxies import BatchGalaxyCollision
 from .batch_black_hole import BatchBlackHole
 from .batch_portals import BatchPortals
@@ -47,6 +47,19 @@ from .batch_fireworks import BatchFireworks
 
 # category -> [(sample class, display name)], shown as groups in the sandbox
 _categories = {
+    # the first sample is the one a sandbox starts with (no sample given)
+    "Demos": [
+        (Ragdoll, "Ragdoll"),
+        (RubeGoldberg, "Rube Goldberg"),
+        (Joints, "Joints"),
+        (NewtonsCradle, "Newton's Cradle"),
+        (SoftBodies, "Soft Bodies"),
+        (Shapes, "Shapes"),
+        (ChainBuilder, "Chain Builder"),
+        (Meteor, "Meteor"),
+        (Tumbler, "Tumbler"),
+        (Text, "Text"),
+    ],
     "Games": [
         (TankSample, "Tank"),
         (AngryShapes, "Angry Shapes"),
@@ -55,18 +68,6 @@ _categories = {
         (CoupledMinigolf, "Coupled Minigolf"),
         (GooGameLevel1, "Goo Game"),
         (Jump, "Jump"),
-    ],
-    "Demos": [
-        (RubeGoldberg, "Rube Goldberg"),
-        (Joints, "Joints"),
-        (Ragdoll, "Ragdoll"),
-        (NewtonsCradle, "Newton's Cradle"),
-        (SoftBodies, "Soft Bodies"),
-        (Shapes, "Shapes"),
-        (ChainBuilder, "Chain Builder"),
-        (Meteor, "Meteor"),
-        (Tumbler, "Tumbler"),
-        (Text, "Text"),
     ],
     "Queries": [
         (Raycast, "Raycast"),
@@ -79,12 +80,12 @@ _categories = {
         (BatchFountain, "Fountain"),
         (BatchVsLoop, "Loop vs Batch"),
         (BatchMaxwellDemon, "Maxwell's Demon"),
+        (BatchManyShapes, "Many Shapes"),
     ],
     "Agents": [
         (BatchBoids, "Boids Flocking"),
         (BatchPredatorPrey, "Predator & Prey"),
         (BatchEpidemic, "Epidemic (SIR)"),
-        (BatchCrowd, "Crowd Evacuation"),
     ],
     "Granular": [
         (BatchHourglass, "Hourglass"),
@@ -94,12 +95,12 @@ _categories = {
     ],
     "Fluids & Matter": [
         (BatchDamBreak, "Dam Break"),
+        (BatchDamBreakBalls, "Dam Break (Balls)"),
         (BatchPhaseTransitions, "Phase Transitions"),
         (BatchFerrofluid, "Ferrofluid"),
         (BatchSnowRain, "Snow Globe & Rain"),
     ],
     "Fields & Space": [
-        (BatchCoulomb, "Coulomb Crystals"),
         (BatchGalaxyCollision, "Galaxy Collision"),
         (BatchBlackHole, "Black Hole"),
         (BatchPortals, "Portals"),

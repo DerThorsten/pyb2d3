@@ -46,7 +46,9 @@ def joint_setter(joints, attr, wake=True):
 def random_polygon(extent, radius=0.0):
     """Port of RandomPolygon (shared/utils.c), optionally rounded."""
     count = random.randint(3, 8)
-    points = [(random.uniform(-extent, extent), random.uniform(-extent, extent)) for _ in range(count)]
+    points = [
+        (random.uniform(-extent, extent), random.uniform(-extent, extent)) for _ in range(count)
+    ]
     hull = b2d.compute_hull(points)
     if hull.count > 0:
         return b2d.make_polygon(hull, radius)
@@ -87,7 +89,9 @@ class Car:
 
     def __init__(self, world, position, scale, hertz, damping_ratio, torque):
         position = b2d.Vec2(position)
-        chassis = b2d.polygon([(0.85 * scale * x, 0.85 * scale * y) for x, y in self.vertices], radius=0.15 * scale)
+        chassis = b2d.polygon(
+            [(0.85 * scale * x, 0.85 * scale * y) for x, y in self.vertices], radius=0.15 * scale
+        )
 
         self.chassis = world.create_dynamic_body(position=position + (0.0, scale))
         self.chassis.create_shape(
@@ -163,7 +167,10 @@ class Donut:
         for i in range(self.sides):
             angle = i * delta_angle
             body = world.create_dynamic_body(
-                position=(radius * math.cos(angle) + position[0], radius * math.sin(angle) + position[1]),
+                position=(
+                    radius * math.cos(angle) + position[0],
+                    radius * math.sin(angle) + position[1],
+                ),
                 rotation=angle,
             )
             body.create_shape(shape_def, capsule)

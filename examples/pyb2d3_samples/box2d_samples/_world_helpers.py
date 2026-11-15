@@ -11,6 +11,7 @@ import pyb2d3 as b2d
 
 LINEAR_SLOP = 0.005
 
+
 def create_donut(world, position, scale, group_index=0, enable_sensor_events=False, sides=7):
     """Port of Donut::Create: a ring of capsules welded together. Returns the bodies."""
     radius = 1.0 * scale
@@ -27,7 +28,10 @@ def create_donut(world, position, scale, group_index=0, enable_sensor_events=Fal
     for i in range(sides):
         angle = i * delta_angle
         body = world.create_dynamic_body(
-            position=(radius * math.cos(angle) + position[0], radius * math.sin(angle) + position[1]),
+            position=(
+                radius * math.cos(angle) + position[0],
+                radius * math.sin(angle) + position[1],
+            ),
             rotation=b2d.make_rot(angle),
         )
         body.create_shape(shape_def, capsule)
@@ -54,7 +58,9 @@ class Car:
     def __init__(self, world, position, scale, hertz, damping_ratio, torque):
         px, py = position
         vertices = [(-1.5, -0.5), (1.5, -0.5), (1.5, 0.0), (0.0, 0.9), (-1.15, 0.9), (-1.5, 0.2)]
-        chassis = b2d.polygon([(0.85 * scale * x, 0.85 * scale * y) for x, y in vertices], radius=0.15 * scale)
+        chassis = b2d.polygon(
+            [(0.85 * scale * x, 0.85 * scale * y) for x, y in vertices], radius=0.15 * scale
+        )
 
         self.chassis = world.create_dynamic_body(position=(px, py + 1.0 * scale))
         self.chassis.create_shape(
@@ -67,14 +73,18 @@ class Car:
         circle = b2d.circle(radius=0.4 * scale)
         self.axles = []
         for x, y in ((-1.0, 0.35), (1.0, 0.4)):
-            wheel = world.create_dynamic_body(position=(px + x * scale, py + y * scale), allow_fast_rotation=True)
+            wheel = world.create_dynamic_body(
+                position=(px + x * scale, py + y * scale), allow_fast_rotation=True
+            )
             wheel.create_shape(wheel_shape_def, circle)
             pivot = wheel.position
             self.axles.append(
                 world.create_wheel_joint(
                     body_a=self.chassis,
                     body_b=wheel,
-                    local_frame_a=b2d.transform(p=self.chassis.local_point(pivot), q=b2d.make_rot(0.5 * math.pi)),
+                    local_frame_a=b2d.transform(
+                        p=self.chassis.local_point(pivot), q=b2d.make_rot(0.5 * math.pi)
+                    ),
                     local_anchor_b=wheel.local_point(pivot),
                     motor_speed=0.0,
                     max_motor_torque=torque,
@@ -95,7 +105,10 @@ class Car:
 
 def random_polygon(extent, radius=0.0):
     """Port of RandomPolygon: the hull of 3 to 8 random points, a square if that fails."""
-    points = [(random.uniform(-extent, extent), random.uniform(-extent, extent)) for _ in range(random.randint(3, 8))]
+    points = [
+        (random.uniform(-extent, extent), random.uniform(-extent, extent))
+        for _ in range(random.randint(3, 8))
+    ]
     hull = b2d.compute_hull(points)
     if hull.count > 0:
         return b2d.make_polygon(hull, radius)

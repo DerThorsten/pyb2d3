@@ -19,7 +19,9 @@ html_dir = Path(__file__).resolve().parent / "_build" / "html"
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--port", type=int, default=8000)
-    parser.add_argument("--no-browser", action="store_true", help="only serve, don't open a browser")
+    parser.add_argument(
+        "--no-browser", action="store_true", help="only serve, don't open a browser"
+    )
     args = parser.parse_args()
 
     if not (html_dir / "index.html").exists():

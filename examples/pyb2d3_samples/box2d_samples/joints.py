@@ -27,7 +27,17 @@ def degrees_to_radians(degrees):
     return math.pi * degrees / 180.0
 
 
-def create_joint_gallery(world, ground, kinds, start, spacing, body_def, collide_connected=False, motor_force=None, weld=None):
+def create_joint_gallery(
+    world,
+    ground,
+    kinds,
+    start,
+    spacing,
+    body_def,
+    collide_connected=False,
+    motor_force=None,
+    weld=None,
+):
     """One box per joint kind, each attached to the ground. Returns the bodies and the joints."""
     box = b2d.box(1.0, 1.0)
     bodies, joints = [], []
@@ -57,7 +67,9 @@ def create_joint_gallery(world, ground, kinds, start, spacing, body_def, collide
         elif kind == "revolute":
             joint = world.create_revolute_joint(**side, collide_connected=collide_connected)
         elif kind == "weld":
-            joint = world.create_weld_joint(**side, **(weld or {}), collide_connected=collide_connected)
+            joint = world.create_weld_joint(
+                **side, **(weld or {}), collide_connected=collide_connected
+            )
         elif kind == "wheel":
             joint = world.create_wheel_joint(
                 **side,
@@ -130,10 +142,14 @@ class DistanceJoint(JointSample):
         self.bodies, self.joints = [], []
         prev = self.ground
         for i in range(count):
-            body = self.world.create_dynamic_body(angular_damping=1.0, position=(self.length * (i + 1), y_offset))
+            body = self.world.create_dynamic_body(
+                angular_damping=1.0, position=(self.length * (i + 1), y_offset)
+            )
             body.create_shape(shape_def, circle)
             joint = self.world.create_distance_joint(
-                **pinned(prev, body, (self.length * i, y_offset), (self.length * (i + 1), y_offset)),
+                **pinned(
+                    prev, body, (self.length * i, y_offset), (self.length * (i + 1), y_offset)
+                ),
                 hertz=self.hertz,
                 damping_ratio=self.damping_ratio,
                 length=self.length,
@@ -162,7 +178,9 @@ class DistanceJoint(JointSample):
         self.for_each_joint(lambda joint: setattr(joint, "spring_enabled", value))
 
     def set_spring_force_range(self):
-        self.for_each_joint(lambda joint: joint.set_spring_force_range(-self.tension_force, self.compression_force))
+        self.for_each_joint(
+            lambda joint: joint.set_spring_force_range(-self.tension_force, self.compression_force)
+        )
 
     def set_tension(self, value):
         self.tension_force = value
@@ -254,9 +272,24 @@ class MotorJoint(JointSample):
         joints = [self.joint]
         self.add_widgets(
             slider("Speed", -5.0, 5.0, self.speed, self.set_speed, step=1.0),
-            slider("Max Force", 0.0, 10000.0, self.max_force, joint_setter(joints, "max_spring_force", False)),
-            slider("Max Torque", 0.0, 10000.0, self.max_torque, joint_setter(joints, "max_spring_torque", False)),
-            Button("Apply Impulse", lambda: self.body.apply_linear_impulse_to_center((100.0, 0.0), True)),
+            slider(
+                "Max Force",
+                0.0,
+                10000.0,
+                self.max_force,
+                joint_setter(joints, "max_spring_force", False),
+            ),
+            slider(
+                "Max Torque",
+                0.0,
+                10000.0,
+                self.max_torque,
+                joint_setter(joints, "max_spring_torque", False),
+            ),
+            Button(
+                "Apply Impulse",
+                lambda: self.body.apply_linear_impulse_to_center((100.0, 0.0), True),
+            ),
         )
 
     def set_speed(self, value):
@@ -266,7 +299,9 @@ class MotorJoint(JointSample):
         if dt > 0.0:
             self.time += self.speed * dt
             t = self.time
-            self.target_transform = b2d.transform(p=(6.0 * math.sin(2.0 * t), 8.0 + 4.0 * math.sin(t)), q=2.0 * t)
+            self.target_transform = b2d.transform(
+                p=(6.0 * math.sin(2.0 * t), 8.0 + 4.0 * math.sin(t)), q=2.0 * t
+            )
             self.target.set_target_transform(self.target_transform, dt, True)
 
     def post_debug_draw(self):
@@ -396,12 +431,33 @@ class RevoluteJoint(JointSample):
         self.add_widgets(
             Checkbox("Limit", self.enable_limit, joint_setter(joints, "limit_enabled")),
             Checkbox("Motor", self.enable_motor, joint_setter(joints, "motor_enabled")),
-            slider("Max Torque", 0.0, 5000.0, self.motor_torque, joint_setter(joints, "max_motor_torque")),
-            slider("Speed", -20.0, 20.0, self.motor_speed, joint_setter(joints, "target_motor_speed"), step=1.0),
+            slider(
+                "Max Torque",
+                0.0,
+                5000.0,
+                self.motor_torque,
+                joint_setter(joints, "max_motor_torque"),
+            ),
+            slider(
+                "Speed",
+                -20.0,
+                20.0,
+                self.motor_speed,
+                joint_setter(joints, "target_motor_speed"),
+                step=1.0,
+            ),
             Checkbox("Spring", self.enable_spring, joint_setter(joints, "spring_enabled")),
             slider("Hertz", 0.0, 30.0, self.hertz, joint_setter(joints, "spring_hertz")),
-            slider("Damping", 0.0, 2.0, self.damping_ratio, joint_setter(joints, "spring_damping_ratio")),
-            slider("Degrees", -180.0, 180.0, self.target_degrees, self.set_target_degrees, step=1.0),
+            slider(
+                "Damping",
+                0.0,
+                2.0,
+                self.damping_ratio,
+                joint_setter(joints, "spring_damping_ratio"),
+            ),
+            slider(
+                "Degrees", -180.0, 180.0, self.target_degrees, self.set_target_degrees, step=1.0
+            ),
         )
 
     def set_target_degrees(self, degrees):
@@ -452,12 +508,33 @@ class PrismaticJoint(JointSample):
         self.add_widgets(
             Checkbox("Limit", self.enable_limit, joint_setter(joints, "limit_enabled")),
             Checkbox("Motor", self.enable_motor, joint_setter(joints, "motor_enabled")),
-            slider("Max Force", 0.0, 200.0, self.motor_force, joint_setter(joints, "max_motor_force")),
-            slider("Speed", -40.0, 40.0, self.motor_speed, joint_setter(joints, "target_motor_speed"), step=1.0),
+            slider(
+                "Max Force", 0.0, 200.0, self.motor_force, joint_setter(joints, "max_motor_force")
+            ),
+            slider(
+                "Speed",
+                -40.0,
+                40.0,
+                self.motor_speed,
+                joint_setter(joints, "target_motor_speed"),
+                step=1.0,
+            ),
             Checkbox("Spring", self.enable_spring, joint_setter(joints, "spring_enabled")),
             slider("Hertz", 0.0, 10.0, self.hertz, joint_setter(joints, "spring_hertz")),
-            slider("Damping", 0.0, 2.0, self.damping_ratio, joint_setter(joints, "spring_damping_ratio")),
-            slider("Translation", -15.0, 15.0, self.translation, joint_setter(joints, "target_translation")),
+            slider(
+                "Damping",
+                0.0,
+                2.0,
+                self.damping_ratio,
+                joint_setter(joints, "spring_damping_ratio"),
+            ),
+            slider(
+                "Translation",
+                -15.0,
+                15.0,
+                self.translation,
+                joint_setter(joints, "target_translation"),
+            ),
         )
 
 
@@ -501,11 +578,29 @@ class WheelJoint(JointSample):
         self.add_widgets(
             Checkbox("Limit", self.enable_limit, joint_setter(joints, "limit_enabled", False)),
             Checkbox("Motor", self.enable_motor, joint_setter(joints, "motor_enabled", False)),
-            slider("Torque", 0.0, 20.0, self.motor_torque, joint_setter(joints, "max_motor_torque", False)),
-            slider("Speed", -20.0, 20.0, self.motor_speed, joint_setter(joints, "target_motor_speed", False)),
+            slider(
+                "Torque",
+                0.0,
+                20.0,
+                self.motor_torque,
+                joint_setter(joints, "max_motor_torque", False),
+            ),
+            slider(
+                "Speed",
+                -20.0,
+                20.0,
+                self.motor_speed,
+                joint_setter(joints, "target_motor_speed", False),
+            ),
             Checkbox("Spring", self.enable_spring, joint_setter(joints, "spring_enabled", False)),
             slider("Hertz", 0.0, 10.0, self.hertz, joint_setter(joints, "spring_hertz", False)),
-            slider("Damping", 0.0, 2.0, self.damping_ratio, joint_setter(joints, "spring_damping_ratio", False)),
+            slider(
+                "Damping",
+                0.0,
+                2.0,
+                self.damping_ratio,
+                joint_setter(joints, "spring_damping_ratio", False),
+            ),
         )
 
 
@@ -551,10 +646,14 @@ class Bridge(JointSample):
                 position=(x_base + 0.5 + i, 20.0), linear_damping=0.1, angular_damping=0.1
             )
             body.create_shape(shape_def, box)
-            self.joints.append(world.create_revolute_joint(**pinned(prev, body, (x_base + i, 20.0)), **joint_def))
+            self.joints.append(
+                world.create_revolute_joint(**pinned(prev, body, (x_base + i, 20.0)), **joint_def)
+            )
             prev = body
         self.joints.append(
-            world.create_revolute_joint(**pinned(prev, ground, (x_base + self.count, 20.0)), **joint_def)
+            world.create_revolute_joint(
+                **pinned(prev, ground, (x_base + self.count, 20.0)), **joint_def
+            )
         )
 
         triangle = b2d.polygon([(-0.5, 0.0), (0.5, 0.0), (0.0, 1.5)])
@@ -568,11 +667,37 @@ class Bridge(JointSample):
 
         joints = self.joints
         self.add_widgets(
-            slider("Joint Friction", 0.0, 10000.0, self.friction_torque, joint_setter(joints, "max_motor_torque", False)),
-            slider("Spring hertz", 0.0, 30.0, self.spring_hertz, joint_setter(joints, "spring_hertz", False)),
-            slider("Spring damping", 0.0, 2.0, self.spring_damping_ratio, joint_setter(joints, "spring_damping_ratio", False)),
-            slider("Constraint hertz", 15.0, 240.0, self.constraint_hertz, self.set_constraint_hertz),
-            slider("Constraint damping", 0.0, 10.0, self.constraint_damping_ratio, self.set_constraint_damping_ratio),
+            slider(
+                "Joint Friction",
+                0.0,
+                10000.0,
+                self.friction_torque,
+                joint_setter(joints, "max_motor_torque", False),
+            ),
+            slider(
+                "Spring hertz",
+                0.0,
+                30.0,
+                self.spring_hertz,
+                joint_setter(joints, "spring_hertz", False),
+            ),
+            slider(
+                "Spring damping",
+                0.0,
+                2.0,
+                self.spring_damping_ratio,
+                joint_setter(joints, "spring_damping_ratio", False),
+            ),
+            slider(
+                "Constraint hertz", 15.0, 240.0, self.constraint_hertz, self.set_constraint_hertz
+            ),
+            slider(
+                "Constraint damping",
+                0.0,
+                10.0,
+                self.constraint_damping_ratio,
+                self.set_constraint_damping_ratio,
+            ),
         )
 
     def update_constraint_tuning(self):
@@ -606,24 +731,38 @@ class BallAndChain(JointSample):
         hx = 0.5
         y = self.count * hx
         capsule = b2d.capsule((-hx, 0.0), (hx, 0.0), 0.125)
-        link_def = b2d.shape_def(density=20.0, filter=b2d.make_filter(category_bits=0x1, mask_bits=0x2))
+        link_def = b2d.shape_def(
+            density=20.0, filter=b2d.make_filter(category_bits=0x1, mask_bits=0x2)
+        )
 
         self.joints = []
         prev = ground
         for i in range(self.count):
             body = world.create_dynamic_body(position=((1.0 + 2.0 * i) * hx, y))
             body.create_shape(link_def, capsule)
-            self.joints.append(self.create_link_joint(prev, body, (2.0 * i * hx, y), enable_spring=i > 0))
+            self.joints.append(
+                self.create_link_joint(prev, body, (2.0 * i * hx, y), enable_spring=i > 0)
+            )
             prev = body
 
         radius = 4.0
         ball = world.create_dynamic_body(position=((1.0 + 2.0 * self.count) * hx + radius - hx, y))
-        ball_def = b2d.shape_def(density=20.0, filter=b2d.make_filter(category_bits=0x2, mask_bits=0x1))
+        ball_def = b2d.shape_def(
+            density=20.0, filter=b2d.make_filter(category_bits=0x2, mask_bits=0x1)
+        )
         ball.create_shape(ball_def, b2d.circle(radius=radius))
-        self.joints.append(self.create_link_joint(prev, ball, (2.0 * self.count * hx, y), enable_spring=True))
+        self.joints.append(
+            self.create_link_joint(prev, ball, (2.0 * self.count * hx, y), enable_spring=True)
+        )
 
         self.add_widgets(
-            slider("Joint Friction", 0.0, 1000.0, self.friction_torque, joint_setter(self.joints, "max_motor_torque", False))
+            slider(
+                "Joint Friction",
+                0.0,
+                1000.0,
+                self.friction_torque,
+                joint_setter(self.joints, "max_motor_torque", False),
+            )
         )
 
     def create_link_joint(self, body_a, body_b, pivot, enable_spring):
@@ -682,7 +821,13 @@ class Cantilever(JointSample):
 
         joints = self.joints
         self.add_widgets(
-            slider("Linear Hertz", 0.0, 20.0, self.linear_hertz, joint_setter(joints, "linear_hertz", False)),
+            slider(
+                "Linear Hertz",
+                0.0,
+                20.0,
+                self.linear_hertz,
+                joint_setter(joints, "linear_hertz", False),
+            ),
             slider(
                 "Linear Damping Ratio",
                 0.0,
@@ -690,7 +835,13 @@ class Cantilever(JointSample):
                 self.linear_damping_ratio,
                 joint_setter(joints, "linear_damping_ratio", False),
             ),
-            slider("Angular Hertz", 0.0, 20.0, self.angular_hertz, joint_setter(joints, "angular_hertz", False)),
+            slider(
+                "Angular Hertz",
+                0.0,
+                20.0,
+                self.angular_hertz,
+                joint_setter(joints, "angular_hertz", False),
+            ),
             slider(
                 "Angular Damping Ratio",
                 0.0,
@@ -699,7 +850,11 @@ class Cantilever(JointSample):
                 joint_setter(joints, "angular_damping_ratio", False),
             ),
             slider("Gravity Scale", -1.0, 1.0, self.gravity_scale, self.set_gravity_scale),
-            Checkbox("Collide Connected", self.collide_connected, joint_setter(joints, "collide_connected", False)),
+            Checkbox(
+                "Collide Connected",
+                self.collide_connected,
+                joint_setter(joints, "collide_connected", False),
+            ),
         )
 
     def set_gravity_scale(self, value):
@@ -728,7 +883,12 @@ class MotionLocks(JointSample):
             spacing=5.0,
             body_def=body_def,
             motor_force=(200.0, 200.0),
-            weld=dict(angular_hertz=1.0, angular_damping_ratio=0.5, linear_hertz=1.0, linear_damping_ratio=0.5),
+            weld=dict(
+                angular_hertz=1.0,
+                angular_damping_ratio=0.5,
+                linear_hertz=1.0,
+                linear_damping_ratio=0.5,
+            ),
         )
 
         self.add_widgets(
@@ -863,13 +1023,17 @@ class JointSeparation(JointSample):
 
     def apply_impulse(self):
         for body in self.bodies:
-            body.apply_linear_impulse((self.impulse, -self.impulse), body.world_point((1.0, 1.0)), True)
+            body.apply_linear_impulse(
+                (self.impulse, -self.impulse), body.world_point((1.0, 1.0)), True
+            )
 
     def post_debug_draw(self):
         for joint in self.joints:
             linear = joint.linear_separation
             angular = math.degrees(joint.angular_separation)
-            self.debug_draw.draw_string(joint.local_frame_a.p, f"{linear:.2f} m, {angular:.1f} deg", WHITE)
+            self.debug_draw.draw_string(
+                joint.local_frame_a.p, f"{linear:.2f} m, {angular:.1f} deg", WHITE
+            )
 
 
 @register_sample("Joints", "User Constraint")
@@ -888,7 +1052,9 @@ class UserConstraint(JointSample):
 
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
-        self.body = self.world.create_dynamic_body(gravity_scale=1.0, angular_damping=0.5, linear_damping=0.2)
+        self.body = self.world.create_dynamic_body(
+            gravity_scale=1.0, angular_damping=0.5, linear_damping=0.2
+        )
         self.body.create_shape(b2d.shape_def(density=20.0), b2d.box(1.0, 0.5))
         self.impulses = [0.0, 0.0]
         self.lines = []
@@ -1009,11 +1175,15 @@ class Driving(JointSample):
             world.create_revolute_joint(**pinned(prev, body, (160.0 + 2.0 * i, -0.125)))
             prev = body
         world.create_revolute_joint(
-            **pinned(prev, ground, (160.0 + 2.0 * n, -0.125)), enable_motor=True, max_motor_torque=50.0
+            **pinned(prev, ground, (160.0 + 2.0 * n, -0.125)),
+            enable_motor=True,
+            max_motor_torque=50.0,
         )
 
         # boxes
-        box_def = b2d.shape_def(density=0.25, material=b2d.surface_material(friction=0.25, restitution=0.25))
+        box_def = b2d.shape_def(
+            density=0.25, material=b2d.surface_material(friction=0.25, restitution=0.25)
+        )
         for y in (0.5, 1.5, 2.5, 3.5, 4.5):
             body = world.create_dynamic_body(position=(230.0, y))
             body.create_shape(box_def, b2d.box(0.5, 0.5))
@@ -1229,8 +1399,12 @@ class ScissorLift(JointSample):
         joints = [self.lift_joint]
         self.add_widgets(
             Checkbox("Motor", self.enable_motor, joint_setter(joints, "motor_enabled")),
-            slider("Max Force", 0.0, 3000.0, self.motor_force, joint_setter(joints, "max_motor_force")),
-            slider("Speed", -0.3, 0.3, self.motor_speed, joint_setter(joints, "target_motor_speed")),
+            slider(
+                "Max Force", 0.0, 3000.0, self.motor_force, joint_setter(joints, "max_motor_force")
+            ),
+            slider(
+                "Speed", -0.3, 0.3, self.motor_speed, joint_setter(joints, "target_motor_speed")
+            ),
         )
 
 
@@ -1269,8 +1443,14 @@ class GearLift(JointSample):
 
         gear_position1 = b2d.Vec2(-4.25, 9.75)
         gear_position2 = gear_position1 + (2.0, 1.0)
-        link_attach_position = gear_position2 + (self.gear_radius + 2.0 * self.tooth_half_width + self.tooth_radius, 0.0)
-        door_position = link_attach_position - (0.0, 2.0 * self.link_count * self.link_half_length + self.door_half_height)
+        link_attach_position = gear_position2 + (
+            self.gear_radius + 2.0 * self.tooth_half_width + self.tooth_radius,
+            0.0,
+        )
+        door_position = link_attach_position - (
+            0.0,
+            2.0 * self.link_count * self.link_half_length + self.door_half_height,
+        )
 
         # the driver gear
         self.motor_torque = 80.0
@@ -1302,8 +1482,13 @@ class GearLift(JointSample):
         )
 
         # the chain
-        link_capsule = b2d.capsule((0.0, -self.link_half_length), (0.0, self.link_half_length), self.link_radius)
-        link_def = b2d.shape_def(density=2.0, material=b2d.surface_material(custom_color=b2d.HexColor.LightSteelBlue.value))
+        link_capsule = b2d.capsule(
+            (0.0, -self.link_half_length), (0.0, self.link_half_length), self.link_radius
+        )
+        link_def = b2d.shape_def(
+            density=2.0,
+            material=b2d.surface_material(custom_color=b2d.HexColor.LightSteelBlue.value),
+        )
         position = link_attach_position - (0.0, self.link_half_length)
         prev = follower
         for _ in range(self.link_count):
@@ -1320,7 +1505,9 @@ class GearLift(JointSample):
 
         # the door
         door = world.create_dynamic_body(position=door_position)
-        door_def = b2d.shape_def(material=b2d.surface_material(friction=0.1, custom_color=b2d.HexColor.DarkCyan.value))
+        door_def = b2d.shape_def(
+            material=b2d.surface_material(friction=0.1, custom_color=b2d.HexColor.DarkCyan.value)
+        )
         door.create_shape(door_def, b2d.box(0.15, self.door_half_height))
         world.create_revolute_joint(
             body_a=prev,
@@ -1343,35 +1530,52 @@ class GearLift(JointSample):
 
         # the rubble
         colors = [
-            getattr(b2d.HexColor, name).value for name in ("Gray", "Gainsboro", "LightGray", "LightSlateGray", "DarkGray")
+            getattr(b2d.HexColor, name).value
+            for name in ("Gray", "Gainsboro", "LightGray", "LightSlateGray", "DarkGray")
         ]
         for i in range(20):
             for j in range(10):
                 body = world.create_dynamic_body(position=(-3.15 + 0.2 * j, 4.25 + 0.2 * i))
                 shape_def = b2d.shape_def(
-                    material=b2d.surface_material(rolling_resistance=0.3, custom_color=random.choice(colors))
+                    material=b2d.surface_material(
+                        rolling_resistance=0.3, custom_color=random.choice(colors)
+                    )
                 )
                 body.create_shape(shape_def, random_polygon(0.1, radius=random.uniform(0.01, 0.02)))
 
         joints = [self.driver_joint]
         self.add_widgets(
             Checkbox("Motor", self.enable_motor, joint_setter(joints, "motor_enabled")),
-            slider("Max Torque", 0.0, 100.0, self.motor_torque, joint_setter(joints, "max_motor_torque")),
+            slider(
+                "Max Torque",
+                0.0,
+                100.0,
+                self.motor_torque,
+                joint_setter(joints, "max_motor_torque"),
+            ),
             slider("Speed", -0.3, 0.3, self.motor_speed, self.set_motor_speed),
         )
 
     def create_gear(self, position, tooth_offset):
         body = self.world.create_dynamic_body(position=position)
-        hub_def = b2d.shape_def(material=b2d.surface_material(friction=0.1, custom_color=b2d.HexColor.SaddleBrown.value))
+        hub_def = b2d.shape_def(
+            material=b2d.surface_material(friction=0.1, custom_color=b2d.HexColor.SaddleBrown.value)
+        )
         body.create_shape(hub_def, b2d.circle(radius=self.gear_radius))
 
-        tooth_def = b2d.shape_def(material=b2d.surface_material(friction=0.1, custom_color=b2d.HexColor.Gray.value))
+        tooth_def = b2d.shape_def(
+            material=b2d.surface_material(friction=0.1, custom_color=b2d.HexColor.Gray.value)
+        )
         count = 16
         for i in range(count):
             angle = 2.0 * math.pi * i / count
             center = b2d.rotate_vector(b2d.make_rot(angle), (self.gear_radius + tooth_offset, 0.0))
             tooth = b2d.box(
-                self.tooth_half_width, self.tooth_half_height, center=center, rotation=angle, radius=self.tooth_radius
+                self.tooth_half_width,
+                self.tooth_half_height,
+                center=center,
+                rotation=angle,
+                radius=self.tooth_radius,
             )
             body.create_shape(tooth_def, tooth)
         return body
@@ -1437,7 +1641,9 @@ class Door(JointSample):
             slider("magnitude", 1000.0, 100000.0, self.impulse, self.set_impulse, step=1000.0),
             slider("hertz", 15.0, 480.0, self.joint_hertz, self.set_joint_hertz, step=1.0),
             slider("damping", 0.0, 10.0, self.joint_damping_ratio, self.set_joint_damping_ratio),
-            Checkbox("limit", self.enable_limit, joint_setter([self.joint], "limit_enabled", False)),
+            Checkbox(
+                "limit", self.enable_limit, joint_setter([self.joint], "limit_enabled", False)
+            ),
         )
 
     def apply_impulse(self):
@@ -1459,7 +1665,9 @@ class Door(JointSample):
         self.translation_error = max(self.translation_error, self.joint.linear_separation)
 
     def post_debug_draw(self):
-        self.debug_draw.draw_point(self.door.world_point((0.0, 1.5)), 5.0, b2d.HexColor.DarkKhaki.value)
+        self.debug_draw.draw_point(
+            self.door.world_point((0.0, 1.5)), 5.0, b2d.HexColor.DarkKhaki.value
+        )
 
 
 @register_sample("Joints", "Scale Ragdoll")
@@ -1501,7 +1709,11 @@ class TheoJansen(JointSample):
         pivot = b2d.Vec2(0.0, 0.8)
 
         ground = world.create_static_body()
-        for p1, p2 in (((-50.0, 0.0), (50.0, 0.0)), ((-50.0, 0.0), (-50.0, 10.0)), ((50.0, 0.0), (50.0, 10.0))):
+        for p1, p2 in (
+            ((-50.0, 0.0), (50.0, 0.0)),
+            ((-50.0, 0.0), (-50.0, 10.0)),
+            ((50.0, 0.0), (50.0, 10.0)),
+        ):
             ground.create_shape(b2d.shape_def(), b2d.segment(p1, p2))
 
         for i in range(40):
@@ -1529,7 +1741,9 @@ class TheoJansen(JointSample):
         # stagger three leg pairs around the wheel so some feet always touch the ground
         for angle in (0.0, 120.0, -120.0):
             if angle != 0.0:
-                self.wheel.set_transform(self.wheel.position, b2d.make_rot(degrees_to_radians(angle)))
+                self.wheel.set_transform(
+                    self.wheel.position, b2d.make_rot(degrees_to_radians(angle))
+                )
             self.create_leg(-1.0, wheel_anchor)
             self.create_leg(1.0, wheel_anchor)
 
@@ -1656,9 +1870,15 @@ class DeskLamp(JointSample):
         # the base is static so the linkage is all that moves
         base = world.create_static_body()
         post_half_height = 0.5 * (pivot_height - 2.0 * base_half_height)
-        base.create_shape(b2d.shape_def(), b2d.box(base_half_width, base_half_height, center=(0.0, base_half_height)))
         base.create_shape(
-            b2d.shape_def(), b2d.box(post_half_width, post_half_height, center=(0.0, pivot_height - post_half_height))
+            b2d.shape_def(),
+            b2d.box(base_half_width, base_half_height, center=(0.0, base_half_height)),
+        )
+        base.create_shape(
+            b2d.shape_def(),
+            b2d.box(
+                post_half_width, post_half_height, center=(0.0, pivot_height - post_half_height)
+            ),
         )
 
         link_def = b2d.shape_def(density=20.0)
@@ -1671,29 +1891,55 @@ class DeskLamp(JointSample):
 
         # both long links run past their feet into the levers the springs pull on
         self.top_link = link(
-            post_pivot, top_rotation, [b2d.capsule((0.0, -top_lever_length), (0.0, top_link_length), tube_radius)]
+            post_pivot,
+            top_rotation,
+            [b2d.capsule((0.0, -top_lever_length), (0.0, top_link_length), tube_radius)],
         )
         lower_link = link(
-            lower_foot, top_rotation, [b2d.capsule((0.0, -lower_lever_length), (0.0, lower_link_length), tube_radius)]
+            lower_foot,
+            top_rotation,
+            [b2d.capsule((0.0, -lower_lever_length), (0.0, lower_link_length), tube_radius)],
         )
-        silver_def = b2d.shape_def(density=20.0, material=b2d.surface_material(custom_color=b2d.HexColor.Silver.value))
+        silver_def = b2d.shape_def(
+            density=20.0, material=b2d.surface_material(custom_color=b2d.HexColor.Silver.value)
+        )
         silver = link(
-            silver_base, silver_rotation, [b2d.capsule((0.0, 0.0), (0.0, silver_length), 1.4 * tube_radius)], silver_def
+            silver_base,
+            silver_rotation,
+            [b2d.capsule((0.0, 0.0), (0.0, silver_length), 1.4 * tube_radius)],
+            silver_def,
         )
-        upper_arm = link(upper_pin, upper_rotation, [b2d.capsule((0.0, 0.0), (0.0, upper_arm_length), 0.8 * tube_radius)])
+        upper_arm = link(
+            upper_pin,
+            upper_rotation,
+            [b2d.capsule((0.0, 0.0), (0.0, upper_arm_length), 0.8 * tube_radius)],
+        )
         # the coupler span reaches back to the lower link pin
-        upper_arm.create_shape(link_def, b2d.capsule((0.0, 0.0), upper_arm.local_point(lower_pin), tube_radius))
+        upper_arm.create_shape(
+            link_def, b2d.capsule((0.0, 0.0), upper_arm.local_point(lower_pin), tube_radius)
+        )
 
-        pin_def = dict(draw_scale=0.03 * scale, constraint_hertz=240.0, constraint_damping_ratio=2.0)
+        pin_def = dict(
+            draw_scale=0.03 * scale, constraint_hertz=240.0, constraint_damping_ratio=2.0
+        )
 
         def pin(body_a, body_b, anchor_a, anchor_b=(0.0, 0.0), **kwargs):
             return world.create_revolute_joint(
-                body_a=body_a, body_b=body_b, local_anchor_a=anchor_a, local_anchor_b=anchor_b, **pin_def, **kwargs
+                body_a=body_a,
+                body_b=body_b,
+                local_anchor_a=anchor_a,
+                local_anchor_b=anchor_b,
+                **pin_def,
+                **kwargs,
             )
 
         # only the top link reaches the post, the springs carry it, so it needs little friction
         self.post_joint = pin(
-            base, self.top_link, base.local_point(post_pivot), enable_motor=True, max_motor_torque=self.lower_friction
+            base,
+            self.top_link,
+            base.local_point(post_pivot),
+            enable_motor=True,
+            max_motor_torque=self.lower_friction,
         )
         # the silver link hangs off the top link and carries the foot of the lower link
         pin(self.top_link, silver, (0.0, silver_foot))
@@ -1702,7 +1948,11 @@ class DeskLamp(JointSample):
         pin(lower_link, upper_arm, (0.0, lower_link_length), upper_arm.local_point(lower_pin))
         # no spring reaches the elbow, so it is a friction pivot like the real one
         self.elbow_joint = pin(
-            self.top_link, upper_arm, (0.0, top_link_length), enable_motor=True, max_motor_torque=self.elbow_friction
+            self.top_link,
+            upper_arm,
+            (0.0, top_link_length),
+            enable_motor=True,
+            max_motor_torque=self.elbow_friction,
         )
 
         # Carwardine's trick. With almost no free length the spring torque about the pivot is
@@ -1748,7 +1998,8 @@ class DeskLamp(JointSample):
             body_a=upper_arm,
             body_b=head,
             local_frame_a=b2d.transform(
-                p=(0.0, upper_arm_length), q=b2d.inv_mul_rot(upper_rotation, b2d.make_rot(shade_tilt))
+                p=(0.0, upper_arm_length),
+                q=b2d.inv_mul_rot(upper_rotation, b2d.make_rot(shade_tilt)),
             ),
             enable_motor=False,
             max_motor_torque=10.0,
@@ -1764,10 +2015,42 @@ class DeskLamp(JointSample):
 
         springs = self.spring_joints
         self.add_widgets(
-            slider("Arm Spring", 0.0, 20.0, self.spring_hertz[0], joint_setter(springs[:1], "spring_hertz")),
-            slider("Head Spring", 0.0, 20.0, self.spring_hertz[1], joint_setter(springs[1:], "spring_hertz")),
-            slider("Spring Damping", 0.0, 5.0, self.spring_damping, joint_setter(springs, "spring_damping_ratio")),
-            slider("Post Friction", 0.0, 20.0, self.lower_friction, joint_setter([self.post_joint], "max_motor_torque")),
-            slider("Elbow Friction", 0.0, 60.0, self.elbow_friction, joint_setter([self.elbow_joint], "max_motor_torque")),
-            slider("Head", -1.2, 1.2, self.head_angle, joint_setter([self.head_joint], "target_angle")),
+            slider(
+                "Arm Spring",
+                0.0,
+                20.0,
+                self.spring_hertz[0],
+                joint_setter(springs[:1], "spring_hertz"),
+            ),
+            slider(
+                "Head Spring",
+                0.0,
+                20.0,
+                self.spring_hertz[1],
+                joint_setter(springs[1:], "spring_hertz"),
+            ),
+            slider(
+                "Spring Damping",
+                0.0,
+                5.0,
+                self.spring_damping,
+                joint_setter(springs, "spring_damping_ratio"),
+            ),
+            slider(
+                "Post Friction",
+                0.0,
+                20.0,
+                self.lower_friction,
+                joint_setter([self.post_joint], "max_motor_torque"),
+            ),
+            slider(
+                "Elbow Friction",
+                0.0,
+                60.0,
+                self.elbow_friction,
+                joint_setter([self.elbow_joint], "max_motor_torque"),
+            ),
+            slider(
+                "Head", -1.2, 1.2, self.head_angle, joint_setter([self.head_joint], "target_angle")
+            ),
         )

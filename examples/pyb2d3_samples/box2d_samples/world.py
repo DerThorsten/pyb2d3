@@ -45,7 +45,13 @@ class TileWorld(Box2dSample):
             for j in range(y_count):
                 ground.create_shape(
                     shape_def,
-                    b2d.box(0.4 * grid_size, 0.4 * grid_size, center=(x_shape, j * grid_size), rotation=0.0, radius=0.1),
+                    b2d.box(
+                        0.4 * grid_size,
+                        0.4 * grid_size,
+                        center=(x_shape, j * grid_size),
+                        rotation=0.0,
+                        radius=0.1,
+                    ),
                 )
             x_body += grid_size
             x_shape += grid_size
@@ -58,7 +64,9 @@ class TileWorld(Box2dSample):
             if remainder == 0:
                 for i in range(10):
                     for j in range(5):
-                        body = world.create_dynamic_body(position=(x_base - 3.0 + 0.6 * i, 10.0 + 0.5 * j))
+                        body = world.create_dynamic_body(
+                            position=(x_base - 3.0 + 0.6 * i, 10.0 + 0.5 * j)
+                        )
                         body.create_shape(b2d.shape_def(), box)
             elif remainder == 1:
                 for i in range(5):
@@ -78,12 +86,23 @@ class TileWorld(Box2dSample):
         self.step_count = 0
 
         self.speed_slider = widgets.FloatSlider(
-            label="speed", min_value=-400.0, max_value=400.0, step=1.0, value=self.speed, callback=self.set_speed
+            label="speed",
+            min_value=-400.0,
+            max_value=400.0,
+            step=1.0,
+            value=self.speed,
+            callback=self.set_speed,
         )
         self.frontend.add_widget(self.speed_slider)
         self.frontend.add_widget(widgets.Button(label="stop", callback=self.stop))
-        self.frontend.add_widget(widgets.Checkbox(label="explode", value=self.explode, callback=self.set_explode))
-        self.frontend.add_widget(widgets.Checkbox(label="follow car", value=self.follow_car, callback=self.set_follow_car))
+        self.frontend.add_widget(
+            widgets.Checkbox(label="explode", value=self.explode, callback=self.set_explode)
+        )
+        self.frontend.add_widget(
+            widgets.Checkbox(
+                label="follow car", value=self.follow_car, callback=self.set_follow_car
+            )
+        )
 
     def set_speed(self, speed):
         self.speed = speed
@@ -114,7 +133,9 @@ class TileWorld(Box2dSample):
 
         if self.step_count % 2 == 1 and self.explode:
             self.explosion_position.x = (0.5 + self.cycle_index) * self.period - span
-            self.world.explode(position=self.explosion_position, radius=2.0, falloff=0.1, impulse_per_length=1.0)
+            self.world.explode(
+                position=self.explosion_position, radius=2.0, falloff=0.1, impulse_per_length=1.0
+            )
             self.cycle_index = (self.cycle_index + 1) % self.cycle_count
 
         for key, speed in (("a", 20.0), ("s", 0.0), ("d", -5.0)):
@@ -165,7 +186,9 @@ class FarPyramid(Box2dSample):
             y = (2.0 * i + 1.0) * h
             for j in range(i, self.base_count):
                 x = (i + 1.0) * h + 2.0 * (j - i) * h - h * self.base_count
-                self.world.create_dynamic_body(position=(ox + x, oy + y)).create_shape(shape_def, box)
+                self.world.create_dynamic_body(position=(ox + x, oy + y)).create_shape(
+                    shape_def, box
+                )
 
 
 @register_far_sample("World", "Far Ragdolls")
@@ -223,7 +246,9 @@ class FarGate(Box2dSample):
         points = parse_path(GATE_PATH, offset=(-120.0, -200.0), scale=0.2)
         ground.create_chain(
             b2d.chain_def(
-                points, material=b2d.surface_material(custom_color=b2d.HexColor.DarkSeaGreen.value), is_loop=True
+                points,
+                material=b2d.surface_material(custom_color=b2d.HexColor.DarkSeaGreen.value),
+                is_loop=True,
             )
         )
 
@@ -238,7 +263,10 @@ class FarGate(Box2dSample):
 
         gear_position1 = (ox - 4.25, oy + 9.75)
         gear_position2 = (gear_position1[0] + 2.0, gear_position1[1] + 1.0)
-        link_attach_position = (gear_position2[0] + gear_radius + 2.0 * tooth_half_width + tooth_radius, gear_position2[1])
+        link_attach_position = (
+            gear_position2[0] + gear_radius + 2.0 * tooth_half_width + tooth_radius,
+            gear_position2[1],
+        )
         door_position = (
             link_attach_position[0],
             link_attach_position[1] - (2.0 * link_count * link_half_length + door_half_height),
@@ -247,7 +275,9 @@ class FarGate(Box2dSample):
         def create_gear(position, tooth_offset):
             body = world.create_dynamic_body(position=position)
             shape_def = b2d.shape_def(
-                material=b2d.surface_material(friction=0.1, custom_color=b2d.HexColor.SaddleBrown.value)
+                material=b2d.surface_material(
+                    friction=0.1, custom_color=b2d.HexColor.SaddleBrown.value
+                )
             )
             body.create_shape(shape_def, b2d.circle(radius=gear_radius))
             shape_def.material.custom_color = b2d.HexColor.Gray.value
@@ -257,7 +287,13 @@ class FarGate(Box2dSample):
             for _ in range(16):
                 body.create_shape(
                     shape_def,
-                    b2d.box(tooth_half_width, tooth_half_height, center=center, rotation=rotation, radius=tooth_radius),
+                    b2d.box(
+                        tooth_half_width,
+                        tooth_half_height,
+                        center=center,
+                        rotation=rotation,
+                        radius=tooth_radius,
+                    ),
                 )
                 rotation = b2d.mul_rot(dq, rotation)
                 center = b2d.rotate_vector(rotation, (gear_radius + tooth_offset, 0.0))
@@ -282,7 +318,9 @@ class FarGate(Box2dSample):
         world.create_revolute_joint(
             body_a=ground,
             body_b=follower,
-            local_frame_a=b2d.transform(p=ground.local_point(gear_position2), q=b2d.make_rot(0.25 * math.pi)),
+            local_frame_a=b2d.transform(
+                p=ground.local_point(gear_position2), q=b2d.make_rot(0.25 * math.pi)
+            ),
             local_anchor_b=(0, 0),
             enable_motor=True,
             max_motor_torque=0.5,
@@ -292,7 +330,8 @@ class FarGate(Box2dSample):
         )
 
         link_shape_def = b2d.shape_def(
-            density=2.0, material=b2d.surface_material(custom_color=b2d.HexColor.LightSteelBlue.value)
+            density=2.0,
+            material=b2d.surface_material(custom_color=b2d.HexColor.LightSteelBlue.value),
         )
         capsule = b2d.capsule((0, -link_half_length), (0, link_half_length), link_radius)
         x, y = link_attach_position[0], link_attach_position[1] - link_half_length
@@ -315,7 +354,11 @@ class FarGate(Box2dSample):
 
         door = world.create_dynamic_body(position=door_position)
         door.create_shape(
-            b2d.shape_def(material=b2d.surface_material(friction=0.1, custom_color=b2d.HexColor.DarkCyan.value)),
+            b2d.shape_def(
+                material=b2d.surface_material(
+                    friction=0.1, custom_color=b2d.HexColor.DarkCyan.value
+                )
+            ),
             b2d.box(0.15, door_half_height),
         )
         pivot = (door_position[0], door_position[1] + door_half_height)
@@ -351,11 +394,17 @@ class FarGate(Box2dSample):
         ]
         for i in range(20):
             for j in range(10):
-                body = world.create_dynamic_body(position=(ox - 3.15 + 0.2 * j, oy + 4.25 + 0.2 * i))
+                body = world.create_dynamic_body(
+                    position=(ox - 3.15 + 0.2 * j, oy + 4.25 + 0.2 * i)
+                )
                 debris_def.material.custom_color = random.choice(colors)
-                body.create_shape(debris_def, random_polygon(0.1, radius=random.uniform(0.01, 0.02)))
+                body.create_shape(
+                    debris_def, random_polygon(0.1, radius=random.uniform(0.01, 0.02))
+                )
 
-        self.frontend.add_widget(widgets.Checkbox(label="Motor", value=self.enable_motor, callback=self.set_enable_motor))
+        self.frontend.add_widget(
+            widgets.Checkbox(label="Motor", value=self.enable_motor, callback=self.set_enable_motor)
+        )
         self.frontend.add_widget(
             widgets.FloatSlider(
                 label="Max Torque",
@@ -367,7 +416,12 @@ class FarGate(Box2dSample):
             )
         )
         self.speed_slider = widgets.FloatSlider(
-            label="Speed", min_value=-0.3, max_value=0.3, step=0.01, value=self.motor_speed, callback=self.set_motor_speed
+            label="Speed",
+            min_value=-0.3,
+            max_value=0.3,
+            step=0.01,
+            value=self.motor_speed,
+            callback=self.set_motor_speed,
         )
         self.frontend.add_widget(self.speed_slider)
 

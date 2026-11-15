@@ -203,7 +203,3 @@ class Shapes(SampleBase):
             lower_bound=(-r, -r),
             upper_bound=(r, r),
         )
-
-
-if __name__ == "__main__":
-    Shapes.run()

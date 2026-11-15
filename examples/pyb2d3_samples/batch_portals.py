@@ -77,13 +77,18 @@ class BatchPortals(SampleBase):
         self.rate = 0.0
         for widget in (
             widgets.IntSlider("balls", 50, 1000, 50, self.count, self.set_count),
-            widgets.FloatSlider("exit speed cap", 4.0, 30.0, 1.0, self.max_speed, self.set_max_speed),
+            widgets.FloatSlider(
+                "exit speed cap", 4.0, 30.0, 1.0, self.max_speed, self.set_max_speed
+            ),
             widgets.Button("reset", self.create_balls),
         ):
             self.frontend.add_widget(widget)
 
     def aabb(self):
-        return b2d.aabb(lower_bound=(-self.half_width - 1, -1.0), upper_bound=(self.half_width + 1, self.height + 2.0))
+        return b2d.aabb(
+            lower_bound=(-self.half_width - 1, -1.0),
+            upper_bound=(self.half_width + 1, self.height + 2.0),
+        )
 
     def set_count(self, value):
         self.count = int(value)
@@ -98,11 +103,20 @@ class BatchPortals(SampleBase):
         """walls, ceiling and a funnel down to the floor portal"""
         w, h = self.half_width, self.height
         room = self.world.create_static_body()
-        wall = b2d.shape_def(material=b2d.surface_material(friction=0.2, restitution=0.2,
-                                                          custom_color=b2d.HexColor.SlateGray))
+        wall = b2d.shape_def(
+            material=b2d.surface_material(
+                friction=0.2, restitution=0.2, custom_color=b2d.HexColor.SlateGray
+            )
+        )
         hw, top = self.funnel_half_width, self.funnel_top
-        for a, b in [((-w, top), (-w, h)), ((w, top), (w, h)), ((-w, h), (w, h)),
-                     ((-w, top), (-hw, 0.0)), ((w, top), (hw, 0.0)), ((-hw, 0.0), (hw, 0.0))]:
+        for a, b in [
+            ((-w, top), (-w, h)),
+            ((w, top), (w, h)),
+            ((-w, h), (w, h)),
+            ((-w, top), (-hw, 0.0)),
+            ((w, top), (hw, 0.0)),
+            ((-hw, 0.0), (hw, 0.0)),
+        ]:
             room.create_shape(wall, b2d.segment(a, b))
 
     def create_balls(self):
@@ -115,8 +129,16 @@ class BatchPortals(SampleBase):
         gx, gy = np.meshgrid(xs, ys)
         positions = np.stack([gx.ravel(), gy.ravel()], axis=1)[: self.count]
         colors = hsv_colors(np.linspace(0.0, 1.0, len(positions), endpoint=False), 0.55, 1.0)
-        self.bodies = create_circles(self.world, positions, self.ball_radius, colors=colors, density=1.0,
-                                     friction=0.1, restitution=0.3, enable_sleep=False)
+        self.bodies = create_circles(
+            self.world,
+            positions,
+            self.ball_radius,
+            colors=colors,
+            density=1.0,
+            friction=0.1,
+            restitution=0.3,
+            enable_sleep=False,
+        )
         self.since_teleport = np.full(len(positions), self.cooldown)
 
     # ---- teleporting ------------------------------------------------------------------------
@@ -135,17 +157,24 @@ class BatchPortals(SampleBase):
             into = v @ portal.normal  # < 0: moving into the portal
             # reach: touching, or touching within this step (fast balls would bounce first)
             reach = self.ball_radius + 0.12 + np.maximum(-into, 0.0) * dt
-            mask = ((np.abs(along) < portal.half_width - 0.5 * self.ball_radius)
-                    & (depth < reach) & (depth > -self.ball_radius)
-                    & (into < 0.5) & (self.since_teleport >= self.cooldown))
+            mask = (
+                (np.abs(along) < portal.half_width - 0.5 * self.ball_radius)
+                & (depth < reach)
+                & (depth > -self.ball_radius)
+                & (into < 0.5)
+                & (self.since_teleport >= self.cooldown)
+            )
             if not mask.any():
                 continue
             out = self.portals[self.partner[i]]
             # going in along -normal = coming out along the partner's normal
             rot = rotation_between(-portal.normal, out.normal)
             limit = out.half_width - self.ball_radius
-            positions = (out.center + np.clip(along[mask], -limit, limit)[:, None] * (rot @ portal.tangent)
-                         + (self.ball_radius + 0.05) * out.normal)
+            positions = (
+                out.center
+                + np.clip(along[mask], -limit, limit)[:, None] * (rot @ portal.tangent)
+                + (self.ball_radius + 0.05) * out.normal
+            )
             velocities = v[mask] @ rot.T
             speed = np.linalg.norm(velocities, axis=1)
             velocities *= (np.minimum(speed, self.max_speed) / np.maximum(speed, 1e-6))[:, None]
@@ -173,10 +202,8 @@ class BatchPortals(SampleBase):
                 b = portal.center + portal.half_width * portal.tangent + shift
                 dd.draw_segment(tuple(a), tuple(b), portal.color)
         speed = np.linalg.norm(self.bodies.linear_velocity, axis=1)
-        text = (f"{len(self.bodies)} balls, {self.teleports} teleports ({self.rate:.0f}/s), "
-                f"mean speed {float(speed.mean()):.1f}")
+        text = (
+            f"{len(self.bodies)} balls, {self.teleports} teleports ({self.rate:.0f}/s), "
+            f"mean speed {float(speed.mean()):.1f}"
+        )
         dd.draw_string((-self.half_width, self.height + 1.2), text, b2d.HexColor.White)
-
-
-if __name__ == "__main__":
-    BatchPortals.run()

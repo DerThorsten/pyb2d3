@@ -16,7 +16,10 @@ from .batch_common import create_circles, destroy_bodies, hsv_colors
 
 # speed bands -> colors (slow: deep blue ... fast: white-ish cyan)
 SPEED_BANDS = np.array([3.0, 6.0, 10.0, 15.0])
-BAND_COLORS = [int(c) for c in hsv_colors(np.linspace(0.66, 0.5, len(SPEED_BANDS) + 1), np.linspace(0.9, 0.2, 5), 1.0)]
+BAND_COLORS = [
+    int(c)
+    for c in hsv_colors(np.linspace(0.66, 0.5, len(SPEED_BANDS) + 1), np.linspace(0.9, 0.2, 5), 1.0)
+]
 
 
 class BatchFountain(SampleBase):
@@ -49,7 +52,9 @@ class BatchFountain(SampleBase):
         for widget in (
             widgets.IntSlider("pool size", 200, 4000, 100, self.pool_size, self.set_pool_size),
             widgets.FloatSlider("rate (1/s)", 20.0, 1000.0, 10.0, self.rate, self.setter("rate")),
-            widgets.FloatSlider("jet speed", 5.0, 35.0, 1.0, self.jet_speed, self.setter("jet_speed")),
+            widgets.FloatSlider(
+                "jet speed", 5.0, 35.0, 1.0, self.jet_speed, self.setter("jet_speed")
+            ),
             widgets.FloatSlider("spread (deg)", 0.0, 30.0, 1.0, self.spread, self.setter("spread")),
             widgets.FloatSlider("wind", -15.0, 15.0, 0.5, self.wind, self.setter("wind")),
         ):
@@ -65,19 +70,30 @@ class BatchFountain(SampleBase):
         # the nozzle sits on a column; sloped basins on both sides run off into drains
         ground = self.world.create_static_body()
         shape_def = b2d.shape_def(material=b2d.surface_material(friction=0.2))
-        ground.create_shape(shape_def, b2d.box(0.5, 0.5 * self.nozzle[1] - 0.2, center=(0.0, 0.5 * self.nozzle[1] - 0.4)))
+        ground.create_shape(
+            shape_def,
+            b2d.box(0.5, 0.5 * self.nozzle[1] - 0.2, center=(0.0, 0.5 * self.nozzle[1] - 0.4)),
+        )
         for side in (-1.0, 1.0):
-            ground.create_shape(shape_def, b2d.segment((side * 0.5, 2.5), (side * 14.0, 0.0)))  # basin
-            ground.create_shape(shape_def, b2d.segment((side * 16.0, -1.0), (side * 20.0, 7.0)))  # outer rim
+            ground.create_shape(
+                shape_def, b2d.segment((side * 0.5, 2.5), (side * 14.0, 0.0))
+            )  # basin
+            ground.create_shape(
+                shape_def, b2d.segment((side * 16.0, -1.0), (side * 20.0, 7.0))
+            )  # outer rim
         # drains between basin and rim: particles that fall through are recycled
 
     def create_pool(self):
         destroy_bodies(self, self.bodies)
         n = self.pool_size
         positions = np.tile(self.parking, (n, 1))
-        self.bodies = create_circles(self.world, positions, self.radius, colors=BAND_COLORS[0], restitution=0.2, friction=0.1)
+        self.bodies = create_circles(
+            self.world, positions, self.radius, colors=BAND_COLORS[0], restitution=0.2, friction=0.1
+        )
         self.bodies.enabled = False  # everything starts parked
-        self.shape_list = [body.shapes[0] for body in self.bodies]  # for the per-shape material changes
+        self.shape_list = [
+            body.shapes[0] for body in self.bodies
+        ]  # for the per-shape material changes
         self.active = np.zeros(n, dtype=bool)
         self.age = np.zeros(n)
         self.band = np.zeros(n, dtype=int)
@@ -104,7 +120,10 @@ class BatchFountain(SampleBase):
         # too old, out of the basin, or come to rest (the puddle drains away)
         resting = (self.age > 1.0) & (self.bodies.speed < self.rest_speed)
         expired = self.active & (
-            (self.age > self.lifetime) | resting | (positions[:, 1] < -5.0) | (np.abs(positions[:, 0]) > 40.0)
+            (self.age > self.lifetime)
+            | resting
+            | (positions[:, 1] < -5.0)
+            | (np.abs(positions[:, 0]) > 40.0)
         )
         if expired.any():
             parked = self.bodies[expired]
@@ -156,7 +175,3 @@ class BatchFountain(SampleBase):
             dd.draw_point(arrow, 6.0, b2d.HexColor.LightGray)
         text = f"{int(self.active.sum())} / {self.pool_size} particles in flight"
         dd.draw_string((0.0, 30.0), text, b2d.HexColor.White)
-
-
-if __name__ == "__main__":
-    BatchFountain.run()

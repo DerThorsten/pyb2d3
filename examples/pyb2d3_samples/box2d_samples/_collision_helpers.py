@@ -36,7 +36,9 @@ def draw_geometry(debug_draw, shape, transform, color, radius=None):
     """Draw a Circle / Capsule / Segment / Polygon placed at `transform`."""
     tp = lambda p: b2d.transform_point(transform, p)  # noqa: E731
     if isinstance(shape, b2d.Circle):
-        debug_draw.draw_solid_circle(with_position(transform, tp(shape.center)), shape.radius, color)
+        debug_draw.draw_solid_circle(
+            with_position(transform, tp(shape.center)), shape.radius, color
+        )
     elif isinstance(shape, b2d.Capsule):
         debug_draw.draw_solid_capsule(tp(shape.center1), tp(shape.center2), shape.radius, color)
     elif isinstance(shape, b2d.Segment):
@@ -147,7 +149,9 @@ class ProxyPairSample(TransformDragSample):
 
     shape_types = ("point", "segment", "triangle", "box")
 
-    def __init__(self, frontend, settings, segment, box, type_a, type_b, radius_a, radius_b, **kwargs):
+    def __init__(
+        self, frontend, settings, segment, box, type_a, type_b, radius_a, radius_b, **kwargs
+    ):
         super().__init__(frontend, settings, **kwargs)
         self.segment = segment
         self.triangle = b2d.polygon(points=[(-0.5, 0.0), (0.5, 0.0), (0.0, 1.0)])
@@ -175,11 +179,23 @@ class ProxyPairSample(TransformDragSample):
         add = self.frontend.add_widget
         types = list(self.shape_types)
         add(widgets.Dropdown("shape A", types, self.type_a, lambda v: setattr(self, "type_a", v)))
-        add(widgets.FloatSlider("radius A", 0.0, 0.5, 0.01, self.radius_a, lambda v: setattr(self, "radius_a", v)))
+        add(
+            widgets.FloatSlider(
+                "radius A", 0.0, 0.5, 0.01, self.radius_a, lambda v: setattr(self, "radius_a", v)
+            )
+        )
         add(widgets.Dropdown("shape B", types, self.type_b, lambda v: setattr(self, "type_b", v)))
-        add(widgets.FloatSlider("radius B", 0.0, 0.5, 0.01, self.radius_b, lambda v: setattr(self, "radius_b", v)))
+        add(
+            widgets.FloatSlider(
+                "radius B", 0.0, 0.5, 0.01, self.radius_b, lambda v: setattr(self, "radius_b", v)
+            )
+        )
         self.add_transform_widgets()
-        add(widgets.Checkbox("show indices", self.show_indices, lambda v: setattr(self, "show_indices", v)))
+        add(
+            widgets.Checkbox(
+                "show indices", self.show_indices, lambda v: setattr(self, "show_indices", v)
+            )
+        )
 
     def draw_shape(self, shape_type, transform, radius, color):
         dd = self.debug_draw
@@ -204,7 +220,9 @@ class ProxyPairSample(TransformDragSample):
             return
         for proxy, transform in ((self.proxy_a, b2d.Transform()), (self.proxy_b, self.transform)):
             for i, p in enumerate(proxy.points):
-                self.debug_draw.draw_string(b2d.transform_point(transform, p), f" {i}", colors.White)
+                self.debug_draw.draw_string(
+                    b2d.transform_point(transform, p), f" {i}", colors.White
+                )
 
 
 class BodySlotsSample(Box2dSample):
@@ -267,4 +285,3 @@ class BodySlotsSample(Box2dSample):
         ignored = self.bodies[self.ignore_index]
         if ignored is not None:
             self.debug_draw.draw_string(ignored.position - (0.2, 0.0), text, colors.White)
-

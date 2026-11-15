@@ -11,7 +11,6 @@ from pyb2d3_sandbox import SampleBase, widgets
 from .batch_common import Ema, destroy_bodies, draw_plot, hsv_colors, neighbor_pairs, pair_sum
 
 
-
 class BatchPhaseTransitions(SampleBase):
     """Lennard-Jones particles in a box with a thermostat: hot = gas, warm =
     droplets that merge, cold = hexagonal crystals.
@@ -62,8 +61,11 @@ class BatchPhaseTransitions(SampleBase):
         """the walls"""
         w, h = self.box
         walls = self.world.create_static_body()
-        wall_def = b2d.shape_def(material=b2d.surface_material(friction=0.0, restitution=1.0,
-                                                               custom_color=b2d.HexColor.SlateGray))
+        wall_def = b2d.shape_def(
+            material=b2d.surface_material(
+                friction=0.0, restitution=1.0, custom_color=b2d.HexColor.SlateGray
+            )
+        )
         corners = [(0.0, 0.0), (w, 0.0), (w, h), (0.0, h)]
         for p, q in zip(corners, corners[1:] + corners[:1]):
             walls.create_shape(wall_def, b2d.segment(p, q))
@@ -79,7 +81,9 @@ class BatchPhaseTransitions(SampleBase):
         bodies = b2d.Bodies()
         # the particles collide as circles of diameter r_min: box2d's contacts
         # are the hard core (the LJ core is far too stiff for an explicit step)
-        shape_def = b2d.shape_def(density=1.0, material=b2d.surface_material(friction=0.0, restitution=1.0))
+        shape_def = b2d.shape_def(
+            density=1.0, material=b2d.surface_material(friction=0.0, restitution=1.0)
+        )
         for x, y in positions:
             body = self.world.create_dynamic_body(position=(float(x), float(y)), enable_sleep=False)
             body.create_shape(shape_def, b2d.circle(radius=0.5 * self.r_min))
@@ -162,14 +166,24 @@ class BatchPhaseTransitions(SampleBase):
     def post_debug_draw(self):
         w, h = self.box
         state, condensed, crystal = self.phase()
-        text = (f"T {self.temperature:.2f} (target {self.target:.2f})   {state}: condensed {100 * condensed:.0f} %, "
-                f"crystal {100 * crystal:.0f} %   forces {self.timing.value or 0:.1f} ms")
+        text = (
+            f"T {self.temperature:.2f} (target {self.target:.2f})   {state}: condensed {100 * condensed:.0f} %, "
+            f"crystal {100 * crystal:.0f} %   forces {self.timing.value or 0:.1f} ms"
+        )
         self.debug_draw.draw_string((0.0, h + 0.8), text, b2d.HexColor.White)
         if len(self.history) > 1:
             series = np.array(self.history)
-            draw_plot(self.debug_draw, (w + 0.8, 0.0), (4.5, h), [series[:, 0], series[:, 1]],
-                      [b2d.HexColor.Orange, b2d.HexColor.White], y_max=2.0)
+            draw_plot(
+                self.debug_draw,
+                (w + 0.8, 0.0),
+                (4.5, h),
+                [series[:, 0], series[:, 1]],
+                [b2d.HexColor.Orange, b2d.HexColor.White],
+                y_max=2.0,
+            )
 
 
 # close neighbors 0..6 -> colors (gas: blue ... crystal: white-ish yellow)
-BOND_COLORS = [int(c) for c in hsv_colors(np.linspace(0.62, 0.12, 7), np.linspace(0.8, 0.35, 7), 1.0)]
+BOND_COLORS = [
+    int(c) for c in hsv_colors(np.linspace(0.62, 0.12, 7), np.linspace(0.8, 0.35, 7), 1.0)
+]

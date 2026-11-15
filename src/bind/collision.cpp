@@ -179,13 +179,7 @@ namespace pyb2d3::bind
         );
         m.def("validate_hull", &b2ValidateHull, nb::arg("hull"), docs::doc<&b2ValidateHull>);
 
-        m.def(
-            "make_polygon",
-            &b2MakePolygon,
-            nb::arg("hull"),
-            nb::arg("radius") = 0.0f,
-            docs::doc<&b2MakePolygon>
-        );
+        m.def("make_polygon", &b2MakePolygon, nb::arg("hull"), nb::arg("radius") = 0.0f, docs::doc<&b2MakePolygon>);
         m.def(
             "make_offset_polygon",
             &b2MakeOffsetPolygon,
@@ -289,13 +283,7 @@ namespace pyb2d3::bind
             nb::arg("transform"),
             docs::doc<&b2ComputeSegmentBounds>
         );
-        m.def(
-            "point_in_circle",
-            &b2PointInCircle,
-            nb::arg("shape"),
-            nb::arg("point"),
-            docs::doc<&b2PointInCircle>
-        );
+        m.def("point_in_circle", &b2PointInCircle, nb::arg("shape"), nb::arg("point"), docs::doc<&b2PointInCircle>);
         m.def(
             "point_in_capsule",
             &b2PointInCapsule,
@@ -369,13 +357,7 @@ namespace pyb2d3::bind
             .def_rw("iterations", &b2CastOutput::iterations)
             .def_rw("hit", &b2CastOutput::hit);
 
-        m.def(
-            "cast_ray_circle",
-            &b2CastRayCircle,
-            nb::arg("shape"),
-            nb::arg("input"),
-            docs::doc<&b2CastRayCircle>
-        );
+        m.def("cast_ray_circle", &b2CastRayCircle, nb::arg("shape"), nb::arg("input"), docs::doc<&b2CastRayCircle>);
         m.def(
             "cast_ray_capsule",
             &b2CastRayCapsule,
@@ -550,12 +532,7 @@ namespace pyb2d3::bind
             .def_ro("point", &b2TOIOutput::point)
             .def_ro("normal", &b2TOIOutput::normal)
             .def_ro("fraction", &b2TOIOutput::fraction);
-        m.def(
-            "compute_time_of_impact",
-            &b2ComputeTimeOfImpact,
-            nb::arg("input"),
-            docs::doc<&b2ComputeTimeOfImpact>
-        );
+        m.def("compute_time_of_impact", &b2ComputeTimeOfImpact, nb::arg("input"), docs::doc<&b2ComputeTimeOfImpact>);
 
         // ---- manifolds --------------------------------------------------------------------------
         nb::class_<b2ManifoldPoint>(m, "ManifoldPoint")
@@ -730,7 +707,11 @@ namespace pyb2d3::bind
             "solve_planes",
             [](b2Vec2 target_delta, std::vector<b2CollisionPlane> planes)
             {
-                b2PlaneSolverResult r = b2SolvePlanes(target_delta, planes.data(), static_cast<int>(planes.size()));
+                b2PlaneSolverResult r = b2SolvePlanes(
+                    target_delta,
+                    planes.data(),
+                    static_cast<int>(planes.size())
+                );
                 return std::make_tuple(r, planes);
             },
             nb::arg("target_delta"),

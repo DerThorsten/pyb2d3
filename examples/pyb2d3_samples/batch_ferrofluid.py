@@ -56,7 +56,9 @@ class BatchFerrofluid(SampleBase):
         self.create_tank()
         self.reset()
         for widget in (
-            widgets.FloatSlider("magnet strength", 0.0, 3.0, 0.05, self.strength, self.set_strength),
+            widgets.FloatSlider(
+                "magnet strength", 0.0, 3.0, 0.05, self.strength, self.set_strength
+            ),
             widgets.FloatSlider("viscosity", 0.5, 15.0, 0.25, self.viscosity, self.set_viscosity),
             widgets.Checkbox("magnet on (space)", self.magnet_on, self.set_magnet_on),
             widgets.Button("reset", self.reset),
@@ -71,7 +73,9 @@ class BatchFerrofluid(SampleBase):
         """floor and side walls"""
         w, h = self.tank
         tank = self.world.create_static_body()
-        wall_def = b2d.shape_def(material=b2d.surface_material(friction=0.3, custom_color=b2d.HexColor.SlateGray))
+        wall_def = b2d.shape_def(
+            material=b2d.surface_material(friction=0.3, custom_color=b2d.HexColor.SlateGray)
+        )
         tank.create_shape(wall_def, b2d.box(w / 2 + 0.3, 0.15, center=(w / 2, -0.15)))
         tank.create_shape(wall_def, b2d.box(0.15, h / 2, center=(-0.15, h / 2)))
         tank.create_shape(wall_def, b2d.box(0.15, h / 2, center=(w + 0.15, h / 2)))
@@ -84,7 +88,9 @@ class BatchFerrofluid(SampleBase):
         rows = int(np.ceil(self.count / columns))
         gx, gy = np.meshgrid(np.arange(columns), np.arange(rows))
         x0 = 0.5 * self.tank[0] - 0.5 * columns * step
-        positions = np.stack([x0 + gx.ravel() * step, 0.1 + gy.ravel() * step], axis=1)[: self.count]
+        positions = np.stack([x0 + gx.ravel() * step, 0.1 + gy.ravel() * step], axis=1)[
+            : self.count
+        ]
         positions += self.rng.uniform(-0.005, 0.005, positions.shape)
         n = len(positions)
         colors = hsv_colors(np.full(n, 0.7), 0.25, self.rng.uniform(0.15, 0.35, n))  # oily black
@@ -93,8 +99,10 @@ class BatchFerrofluid(SampleBase):
         for (x, y), color in zip(positions, colors):
             body = self.world.create_dynamic_body(position=(float(x), float(y)), enable_sleep=False)
             material = b2d.surface_material(friction=0.0, custom_color=int(color))
-            body.create_shape(b2d.shape_def(density=1.0, material=material, filter=shape_filter),
-                              b2d.circle(radius=self.radius))
+            body.create_shape(
+                b2d.shape_def(density=1.0, material=material, filter=shape_filter),
+                b2d.circle(radius=self.radius),
+            )
             bodies.append(body)
         self.particles = bodies
         self.mass = float(bodies.mass[0])
@@ -157,7 +165,9 @@ class BatchFerrofluid(SampleBase):
         top = np.full(count, -np.inf)
         np.maximum.at(top, column, positions[:, 1])
         filled = np.isfinite(top)
-        top = np.where(filled, top, np.interp(np.arange(count), np.flatnonzero(filled), top[filled]))
+        top = np.where(
+            filled, top, np.interp(np.arange(count), np.flatnonzero(filled), top[filled])
+        )
         kernel = np.ones(self.smooth_columns) / self.smooth_columns
         padded = np.pad(top, self.smooth_columns // 2, mode="edge")
         smooth = np.convolve(padded, kernel, mode="valid")[:count]
@@ -166,7 +176,9 @@ class BatchFerrofluid(SampleBase):
         # layer) is lifted, up to the saturation height of the spikes
         height = positions[:, 1] - smooth[column]
         in_bump = (height > -2.5 * self.radius) & (height < self.spike_height)
-        return np.where(in_bump, self.lift * size * np.minimum(excess[column], self.spike_height), 0.0)
+        return np.where(
+            in_bump, self.lift * size * np.minimum(excess[column], self.spike_height), 0.0
+        )
 
     def pre_update(self, dt):
         """SPH pressure + viscosity + magnet pull + dipole-dipole forces, one batch call"""
@@ -179,7 +191,9 @@ class BatchFerrofluid(SampleBase):
         # the liquid (as in the dam break): pressure apart, viscosity together
         pressure = self.stiffness * (density - self.rest_density)
         push = (pressure[i] + pressure[j]) * q + self.stiffness * (near[i] + near[j]) * q**2
-        accel = -push[:, None] * rhat + self.viscosity * q[:, None] * (velocities[j] - velocities[i])
+        accel = -push[:, None] * rhat + self.viscosity * q[:, None] * (
+            velocities[j] - velocities[i]
+        )
         single = np.zeros((n, 2))
         if self.magnet_on and self.strength > 0.0:
             direction, size, to_magnet = self.field(positions)
@@ -233,7 +247,9 @@ class BatchFerrofluid(SampleBase):
         filled = ~np.isnan(top)
         top = np.interp(np.arange(len(top)), np.flatnonzero(filled), top[filled])
         window = 9
-        smooth = np.convolve(np.pad(top, window // 2, mode="edge"), np.ones(window) / window, mode="valid")
+        smooth = np.convolve(
+            np.pad(top, window // 2, mode="edge"), np.ones(window) / window, mode="valid"
+        )
         high = (top - smooth) > 0.5
         starts = high & ~np.concatenate([[False], high[:-1]])
         return int(np.count_nonzero(starts)), float(top.max())
@@ -246,6 +262,8 @@ class BatchFerrofluid(SampleBase):
         dd.draw_segment((m[0] - 0.5, m[1]), (m[0] + 0.5, m[1]), color)  # the magnet
         dd.draw_point(tuple(m), 12.0, color)
         count, highest = self.spikes()
-        text = (f"magnet {'on' if self.magnet_on else 'off'} ({self.strength:.2f})   "
-                f"{count} spikes, highest {highest:.2f} m   forces {self.timing.value or 0:.1f} ms")
+        text = (
+            f"magnet {'on' if self.magnet_on else 'off'} ({self.strength:.2f})   "
+            f"{count} spikes, highest {highest:.2f} m   forces {self.timing.value or 0:.1f} ms"
+        )
         dd.draw_string((0.0, self.tank[1] + 0.5), text, b2d.HexColor.White)

@@ -65,4 +65,6 @@ class UnstableWindmill(Box2dSample):
             body = world.create_dynamic_body(position=position, gravity_scale=0.0)
             body.create_shape(shape_def, b2d.box(hx, hy))
             # this simulation can be stabilized by using a lower constraint stiffness (constraint_hertz=30)
-            world.create_weld_joint(body_a=center, body_b=body, local_anchor_a=anchor_a, local_anchor_b=anchor_b)
+            world.create_weld_joint(
+                body_a=center, body_b=body, local_anchor_a=anchor_a, local_anchor_b=anchor_b
+            )

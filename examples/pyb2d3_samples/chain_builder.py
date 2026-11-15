@@ -107,7 +107,3 @@ class ChainBuilder(SampleBase):
             lower_bound=(-self.box_radius, -self.box_radius),
             upper_bound=(self.box_radius, self.box_radius),
         )
-
-
-if __name__ == "__main__":
-    ChainBuilder.run()

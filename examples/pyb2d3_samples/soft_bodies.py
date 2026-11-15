@@ -131,7 +131,3 @@ class SoftBodies(SampleBase):
             lower_bound=(-r, -r),
             upper_bound=(r, r),
         )
-
-
-if __name__ == "__main__":
-    SoftBodies.run()

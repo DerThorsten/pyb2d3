@@ -49,7 +49,8 @@ namespace pyb2d3::bind
                 "__repr__",
                 [](const b2Version& v)
                 {
-                    return std::to_string(v.major) + "." + std::to_string(v.minor) + "." + std::to_string(v.revision);
+                    return std::to_string(v.major) + "." + std::to_string(v.minor) + "."
+                           + std::to_string(v.revision);
                 }
             );
 

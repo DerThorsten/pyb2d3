@@ -2,7 +2,9 @@
 // (pyb2d3_sandbox_webgl: the instanced GL shaders via PyOpenGL, HTML panel).
 // config.json is written by build_page.py.
 // URL parameter `sample` selects the first sample, e.g. ?sample=Joints/Ragdoll
-// (the frontend keeps it up to date when switching samples)
+// (the frontend keeps it up to date when switching samples); `dpr` caps the
+// drawing buffer's pixels per CSS pixel (default 2), e.g. ?dpr=1 to check whether
+// a slow device is limited by the GPU's fill rate
 
 import { setupEditor } from "./editor.js";
 
@@ -15,7 +17,8 @@ function status(text, isError = false) {
 }
 
 /** the python code starting the sandbox (the sources are mounted at /examples) */
-function startScript(sample) {
+function startScript(sample, maxPixelRatio) {
+  const settings = maxPixelRatio > 0 ? `WebglFrontend.Settings(max_pixel_ratio=${maxPixelRatio})` : "None";
   return `
 import sys
 sys.path.insert(0, "/examples")
@@ -30,9 +33,35 @@ from pyb2d3_sandbox_webgl import WebglFrontend
 # returns right away (frames come from requestAnimationFrame); keep the
 # frontend alive in a global
 _sandbox_frontend = run_sample_browser(
-    start=${sample ? JSON.stringify(sample) : "None"}, frontend_class=WebglFrontend
+    start=${sample ? JSON.stringify(sample) : "None"}, frontend_class=WebglFrontend,
+    frontend_settings=${settings},
 )
 `;
+}
+
+/** compact screens (phones, small tablets; see index.html): the panel is a bottom
+ * sheet (portrait) or a drawer (landscape) over the canvas, opened / closed by the
+ * ☰ button or the sheet's grip (class panel-open on #app; the desktop layout
+ * ignores it) */
+function setupLayout() {
+  const app = document.getElementById("app");
+  const toggleButton = document.getElementById("panel-toggle");
+  const toggle = () => {
+    const open = app.classList.toggle("panel-open");
+    toggleButton.classList.toggle("active", open);
+  };
+  toggleButton.addEventListener("click", toggle);
+  document.getElementById("side-grip").addEventListener("click", toggle);
+}
+
+/** keys go to the focused canvas: give it the focus whenever a sample starts (after
+ * the sample select / buttons / the first start), unless the user is in the code pane */
+function setupKeyFocus() {
+  const canvas = document.getElementById("canvas");
+  const code = document.getElementById("code");
+  window.addEventListener("pyb2d3-sample", () => {
+    if (!code.contains(document.activeElement)) canvas.focus({ preventScroll: true });
+  });
 }
 
 /** load pyjs + packages + sources, start the sandbox */
@@ -52,13 +81,17 @@ async function main() {
   });
   globalThis.pyjs = pyjs; // for the browser console
 
-  setupEditor(pyjs); // before the start: the frontend announces the first sample
+  const editor = setupEditor(pyjs); // before the start: the frontend announces the first sample
   status("starting the sandbox…");
-  const sample = new URLSearchParams(location.search).get("sample");
-  await pyjs.async_exec_eval(startScript(sample));
+  const params = new URLSearchParams(location.search);
+  const dpr = parseFloat(params.get("dpr")); // NaN without the parameter
+  await pyjs.async_exec_eval(startScript(params.get("sample"), dpr));
   status("");
+  editor.preload(); // the code pane opens instantly later (monaco: several MB)
 }
 
+setupLayout();
+setupKeyFocus();
 main().catch((e) => {
   console.error(e);
   status(`error: ${e?.message ?? e}`, true);

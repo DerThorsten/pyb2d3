@@ -56,5 +56,6 @@ def get_default_frontend():
 
     raise ImportError(
         "No sandbox frontend available, the OpenGL frontend needs imgui-bundle and PyOpenGL, "
-        "the pygame frontend needs pygame.\nTracebacks of the import errors:\n" + "".join(tracebacks)
+        "the pygame frontend needs pygame.\nTracebacks of the import errors:\n"
+        + "".join(tracebacks)
     )

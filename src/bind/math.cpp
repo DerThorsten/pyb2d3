@@ -53,12 +53,7 @@ namespace pyb2d3::bind
             .def_rw("p", &b2Transform::p)
             .def_rw("q", &b2Transform::q)
             .def("transform_point", &b2TransformPoint, nb::arg("point"), docs::doc<&b2TransformPoint>)
-            .def(
-                "inv_transform_point",
-                &b2InvTransformPoint,
-                nb::arg("point"),
-                docs::doc<&b2InvTransformPoint>
-            )
+            .def("inv_transform_point", &b2InvTransformPoint, nb::arg("point"), docs::doc<&b2InvTransformPoint>)
             .def(
                 "__repr__",
                 [](const b2Transform& t)
@@ -143,13 +138,7 @@ namespace pyb2d3::bind
         m.def("length", &b2Length, nb::arg("v"), docs::doc<&b2Length>);
         m.def("length_squared", &b2LengthSquared, nb::arg("v"), docs::doc<&b2LengthSquared>);
         m.def("distance", &b2Distance, nb::arg("a"), nb::arg("b"), docs::doc<&b2Distance>);
-        m.def(
-            "distance_squared",
-            &b2DistanceSquared,
-            nb::arg("a"),
-            nb::arg("b"),
-            docs::doc<&b2DistanceSquared>
-        );
+        m.def("distance_squared", &b2DistanceSquared, nb::arg("a"), nb::arg("b"), docs::doc<&b2DistanceSquared>);
         m.def("normalize", &b2Normalize, nb::arg("v"), docs::doc<&b2Normalize>);
         m.def("is_normalized", &b2IsNormalized, nb::arg("v"), docs::doc<&b2IsNormalized>);
         m.def(
@@ -211,13 +200,7 @@ namespace pyb2d3::bind
         m.def("inv_mul_rot", &b2InvMulRot, nb::arg("q"), nb::arg("r"), docs::doc<&b2InvMulRot>);
         m.def("relative_angle", &b2RelativeAngle, nb::arg("a"), nb::arg("b"), docs::doc<&b2RelativeAngle>);
         m.def("rotate_vector", &b2RotateVector, nb::arg("q"), nb::arg("v"), docs::doc<&b2RotateVector>);
-        m.def(
-            "inv_rotate_vector",
-            &b2InvRotateVector,
-            nb::arg("q"),
-            nb::arg("v"),
-            docs::doc<&b2InvRotateVector>
-        );
+        m.def("inv_rotate_vector", &b2InvRotateVector, nb::arg("q"), nb::arg("v"), docs::doc<&b2InvRotateVector>);
 
         // ---- transforms / matrices -----------------------------------------------------------
         m.def("transform_point", &b2TransformPoint, nb::arg("t"), nb::arg("p"), docs::doc<&b2TransformPoint>);
@@ -229,13 +212,7 @@ namespace pyb2d3::bind
             docs::doc<&b2InvTransformPoint>
         );
         m.def("mul_transforms", &b2MulTransforms, nb::arg("a"), nb::arg("b"), docs::doc<&b2MulTransforms>);
-        m.def(
-            "inv_mul_transforms",
-            &b2InvMulTransforms,
-            nb::arg("a"),
-            nb::arg("b"),
-            docs::doc<&b2InvMulTransforms>
-        );
+        m.def("inv_mul_transforms", &b2InvMulTransforms, nb::arg("a"), nb::arg("b"), docs::doc<&b2InvMulTransforms>);
         m.def("mul_mv", &b2MulMV, nb::arg("a"), nb::arg("v"), docs::doc<&b2MulMV>);
         m.def("get_inverse22", &b2GetInverse22, nb::arg("a"), docs::doc<&b2GetInverse22>);
         m.def("solve22", &b2Solve22, nb::arg("a"), nb::arg("b"), docs::doc<&b2Solve22>);

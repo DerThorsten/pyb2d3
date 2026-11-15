@@ -28,7 +28,9 @@ assert len(grown) == 10
 
 # from a world query: all bodies with a shape in a box
 found = []
-world.overlap_aabb(b2d.aabb(lower_bound=(-5, 0), upper_bound=(5, 3)), lambda shape: found.append(shape.body))
+world.overlap_aabb(
+    b2d.aabb(lower_bound=(-5, 0), upper_bound=(5, 3)), lambda shape: found.append(shape.body)
+)
 in_box = b2d.Bodies(b for b in found if b.type == b2d.BodyType.DYNAMIC)
 print("bodies in the box:", len(in_box))
 

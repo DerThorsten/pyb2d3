@@ -91,7 +91,10 @@ namespace pyb2d3::bind
                     return GetCastedShape(self.id);
                 }
             )
-            .def_prop_ro("contact_data", &collect<b2ContactData, b2Shape_GetContactCapacity, b2Shape_GetContactData>)
+            .def_prop_ro(
+                "contact_data",
+                &collect<b2ContactData, b2Shape_GetContactCapacity, b2Shape_GetContactData>
+            )
             .def_prop_ro("sensor_overlaps", &collect<b2ShapeId, b2Shape_GetSensorCapacity, b2Shape_GetSensorData>);
 
         bind_geometry_shape<CircleShape, b2Shape_GetCircle, b2Shape_SetCircle>(m, "CircleShape", "circle");
@@ -99,10 +102,11 @@ namespace pyb2d3::bind
         bind_geometry_shape<SegmentShape, b2Shape_GetSegment, b2Shape_SetSegment>(m, "SegmentShape", "segment");
         bind_geometry_shape<PolygonShape, b2Shape_GetPolygon, b2Shape_SetPolygon>(m, "PolygonShape", "polygon");
 
-        auto chain_segment_cls = bind_geometry_shape<
-            ChainSegmentShape,
-            b2Shape_GetChainSegment,
-            b2Shape_SetChainSegment>(m, "ChainSegmentShape", "chain_segment");
+        auto chain_segment_cls = bind_geometry_shape<ChainSegmentShape, b2Shape_GetChainSegment, b2Shape_SetChainSegment>(
+            m,
+            "ChainSegmentShape",
+            "chain_segment"
+        );
         Binder<ChainSegmentShape, Shape>(chain_segment_cls).ro<b2Shape_GetParentChain>("parent_chain");
         chain_segment_cls.def_prop_ro(
             "segment",

@@ -126,7 +126,3 @@ class Minigolf(SampleBase):
                 self.drag_pos,
                 color=b2d.hex_color(*color),
             )
-
-
-if __name__ == "__main__":
-    Minigolf.run()

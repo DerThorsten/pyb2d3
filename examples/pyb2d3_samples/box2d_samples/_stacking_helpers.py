@@ -12,7 +12,10 @@ ROUNDED_BOX = b2d.box(0.45, 0.45, radius=0.05)
 
 def random_polygon(extent):
     """A random convex polygon with 3 to 8 vertices inside [-extent, extent]^2."""
-    points = [(random.uniform(-extent, extent), random.uniform(-extent, extent)) for _ in range(random.randint(3, 8))]
+    points = [
+        (random.uniform(-extent, extent), random.uniform(-extent, extent))
+        for _ in range(random.randint(3, 8))
+    ]
     hull = b2d.compute_hull(points)
     if hull.count > 0:
         return b2d.make_polygon(hull)
@@ -42,7 +45,9 @@ class Donut:
 
     sides = 7
 
-    def __init__(self, world, position, scale=1.0, group_index=0, enable_sensor_events=False, user_data=0):
+    def __init__(
+        self, world, position, scale=1.0, group_index=0, enable_sensor_events=False, user_data=0
+    ):
         radius = 1.0 * scale
         delta_angle = 2.0 * math.pi / self.sides
         length = 2.0 * math.pi * radius / self.sides
@@ -87,5 +92,3 @@ class Donut:
         for body in self.bodies:
             body.destroy()
         self.bodies, self.joints = [], []
-
-

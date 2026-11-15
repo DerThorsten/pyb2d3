@@ -333,7 +333,9 @@ class OpenglFrontend(FrontendBase):
         for category in self.registry.categories():
             entries = self.registry.samples(category)
             contains_current = any(entry.cls is current for entry in entries)
-            flags = imgui.TreeNodeFlags_.default_open if contains_current else imgui.TreeNodeFlags_.none
+            flags = (
+                imgui.TreeNodeFlags_.default_open if contains_current else imgui.TreeNodeFlags_.none
+            )
             if changed and contains_current:
                 imgui.set_next_item_open(True)
             if imgui.tree_node_ex(category, flags):
@@ -623,5 +625,7 @@ class OpenglFrontend(FrontendBase):
         self.runner_params.docking_params.main_dock_space_node_flags = imgui.DockNodeFlags_.none
         # the layout depends on the registered samples (sample browser panel or not), so
         # always apply it instead of restoring an older layout from imgui.ini
-        self.runner_params.docking_params.layout_condition = hello_imgui.DockingLayoutCondition.application_start
+        self.runner_params.docking_params.layout_condition = (
+            hello_imgui.DockingLayoutCondition.application_start
+        )
         hello_imgui.run(self.runner_params)

@@ -11,6 +11,12 @@ archive the page mounts at /examples.
     python -m http.server -d build/web_sandbox 8000   # open http://localhost:8000
 
 Without --pyjs the page loads the pyjs npm package from jsDelivr (--pyjs-url).
+
+The page is plain ES modules (index.html, main.js, editor.js), copied as they are:
+no package.json, no bundler. Its dependencies come from CDNs at runtime (pyjs from
+jsDelivr, Monaco from cdnjs), the logic lives in python (pyb2d3_sandbox_webgl).
+A package.json + bundler would only pay off with TypeScript, npm dependencies that
+are not on a CDN, or unit tests of the JS.
 """
 
 import argparse
@@ -23,7 +29,12 @@ HERE = Path(__file__).resolve().parent
 EXAMPLES = HERE.parent
 # the python packages of examples/ the sandbox needs
 # (pyb2d3_sandbox_opengl: only its GL renderers + shaders are used, no imgui)
-SANDBOX_PACKAGES = ["pyb2d3_sandbox", "pyb2d3_sandbox_opengl", "pyb2d3_sandbox_webgl", "pyb2d3_samples"]
+SANDBOX_PACKAGES = [
+    "pyb2d3_sandbox",
+    "pyb2d3_sandbox_opengl",
+    "pyb2d3_sandbox_webgl",
+    "pyb2d3_samples",
+]
 # conda packages installed at runtime
 # (pillow: text rendering of some samples, examples_common/text.py)
 CONDA_PACKAGES = ["pyb2d3", "pyopengl", "numpy", "pillow"]
@@ -67,7 +78,7 @@ def pack_local_pkg(out, conda_pkg):
             raise SystemExit(f"{conda_pkg} has no files in {prefix}")
         for member in members:
             data = src.extractfile(member)
-            member.name = member.name[len(prefix):]
+            member.name = member.name[len(prefix) :]
             dst.addfile(member, data)
     return archive
 
@@ -122,27 +133,43 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", type=Path, required=True, help="page directory (recreated)")
     parser.add_argument("--pyjs", type=Path, help="local pyjs npm package dir (dist/ + assets/)")
-    parser.add_argument("--pyjs-url", default=DEFAULT_PYJS_URL, help="pyjs entry module without --pyjs")
     parser.add_argument(
-        "--channel", type=Path, action="append", default=[],
+        "--pyjs-url", default=DEFAULT_PYJS_URL, help="pyjs entry module without --pyjs"
+    )
+    parser.add_argument(
+        "--channel",
+        type=Path,
+        action="append",
+        default=[],
         help="local conda channel (e.g. a rattler-build output dir), copied into the page; repeatable",
     )
     parser.add_argument(
-        "--package", action="append", default=None,
+        "--package",
+        action="append",
+        default=None,
         help=f"conda package to install (default: {' '.join(CONDA_PACKAGES)}); repeatable",
     )
     parser.add_argument(
-        "--local-pkg", type=Path, action="append", default=[],
+        "--local-pkg",
+        type=Path,
+        action="append",
+        default=[],
         help="a locally built conda package (.tar.bz2, e.g. pyb2d3, pyopengl): its "
         "site-packages content is packed + unpacked by the page instead of "
         "installing the package from a channel; repeatable",
     )
     args = parser.parse_args()
     build(
-        args.out.resolve(), args.pyjs, args.pyjs_url, args.channel,
-        args.package or CONDA_PACKAGES, args.local_pkg,
+        args.out.resolve(),
+        args.pyjs,
+        args.pyjs_url,
+        args.channel,
+        args.package or CONDA_PACKAGES,
+        args.local_pkg,
     )
-    print(f"page written to {args.out}, serve it e.g. with: python -m http.server -d {args.out} 8000")
+    print(
+        f"page written to {args.out}, serve it e.g. with: python -m http.server -d {args.out} 8000"
+    )
 
 
 if __name__ == "__main__":

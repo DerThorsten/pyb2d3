@@ -15,29 +15,29 @@ namespace pyb2d3
     // (full function names on purpose, no token pasting: they stay greppable for
     //  the api coverage test and for IDE navigation)
 #define PYB2D3_ID_TRAITS(ID, LOAD, STORE, IS_VALID, GET_USER_DATA, SET_USER_DATA) \
-    template <>                                                                  \
-    struct IdTraits<ID>                                                          \
-    {                                                                            \
-        static ID load(uint64_t v)                                               \
-        {                                                                        \
-            return LOAD(v);                                                      \
-        }                                                                        \
-        static uint64_t store(ID id)                                             \
-        {                                                                        \
-            return STORE(id);                                                    \
-        }                                                                        \
-        static bool is_valid(ID id)                                              \
-        {                                                                        \
-            return IS_VALID(id);                                                 \
-        }                                                                        \
-        static void* get_user_data(ID id)                                        \
-        {                                                                        \
-            return GET_USER_DATA(id);                                            \
-        }                                                                        \
-        static void set_user_data(ID id, void* data)                             \
-        {                                                                        \
-            SET_USER_DATA(id, data);                                             \
-        }                                                                        \
+    template <>                                                                   \
+    struct IdTraits<ID>                                                           \
+    {                                                                             \
+        static ID load(uint64_t v)                                                \
+        {                                                                         \
+            return LOAD(v);                                                       \
+        }                                                                         \
+        static uint64_t store(ID id)                                              \
+        {                                                                         \
+            return STORE(id);                                                     \
+        }                                                                         \
+        static bool is_valid(ID id)                                               \
+        {                                                                         \
+            return IS_VALID(id);                                                  \
+        }                                                                         \
+        static void* get_user_data(ID id)                                         \
+        {                                                                         \
+            return GET_USER_DATA(id);                                             \
+        }                                                                         \
+        static void set_user_data(ID id, void* data)                              \
+        {                                                                         \
+            SET_USER_DATA(id, data);                                              \
+        }                                                                         \
     }
 
     PYB2D3_ID_TRAITS(b2WorldId, b2LoadWorldId, b2StoreWorldId, b2World_IsValid, b2World_GetUserData, b2World_SetUserData);

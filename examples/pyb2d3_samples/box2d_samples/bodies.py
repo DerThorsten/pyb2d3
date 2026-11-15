@@ -33,9 +33,7 @@ class BodyType(Box2dSample):
         self.attachment.create_shape(b2d.shape_def(density=1), b2d.box(0.5, 2.0))
 
         # second attachment
-        self.second_attachment = world.create_body(
-            type=self.type, position=(3, 3), name="attach2"
-        )
+        self.second_attachment = world.create_body(type=self.type, position=(3, 3), name="attach2")
         self.second_attachment.create_shape(b2d.shape_def(density=1), b2d.box(0.5, 2.0))
 
         # platform
@@ -87,7 +85,9 @@ class BodyType(Box2dSample):
         self.floating = world.create_body(
             type=self.type, position=(-8, 12), gravity_scale=0.0, name="floater"
         )
-        self.floating.create_shape(b2d.shape_def(density=2), b2d.circle(center=(0, 0.5), radius=0.25))
+        self.floating.create_shape(
+            b2d.shape_def(density=2), b2d.circle(center=(0, 0.5), radius=0.25)
+        )
 
         self.frontend.add_widget(
             widgets.RadioButtons(
@@ -97,7 +97,9 @@ class BodyType(Box2dSample):
                 callback=self.set_type,
             )
         )
-        self.frontend.add_widget(widgets.Checkbox(label="Enable", value=True, callback=self.set_enabled))
+        self.frontend.add_widget(
+            widgets.Checkbox(label="Enable", value=True, callback=self.set_enabled)
+        )
 
     @property
     def switched_bodies(self):
@@ -147,18 +149,24 @@ class Weeble(Box2dSample):
         self.explosion_magnitude = 8.0
 
         self.world.set_friction_callback(lambda friction_a, material_a, friction_b, material_b: 0.1)
-        self.world.set_restitution_callback(lambda restitution_a, material_a, restitution_b, material_b: 1.0)
+        self.world.set_restitution_callback(
+            lambda restitution_a, material_a, restitution_b, material_b: 1.0
+        )
 
         self.create_ground_segment()
 
-        self.weeble = self.world.create_dynamic_body(position=(0, 3), rotation=b2d.make_rot(0.25 * math.pi))
+        self.weeble = self.world.create_dynamic_body(
+            position=(0, 3), rotation=b2d.make_rot(0.25 * math.pi)
+        )
         self.weeble.create_shape(b2d.shape_def(), b2d.capsule((0, -1), (0, 1), 1.0))
 
         # lower the center of mass, see https://en.wikipedia.org/wiki/Parallel_axis_theorem
         offset = 1.5
         mass_data = self.weeble.mass_data
         mass_data.center = (0, -offset)
-        mass_data.rotational_inertia = self.weeble.rotational_inertia + mass_data.mass * offset * offset
+        mass_data.rotational_inertia = (
+            self.weeble.rotational_inertia + mass_data.mass * offset * offset
+        )
         self.weeble.mass_data = mass_data
 
         self.frontend.add_widget(widgets.Button(label="Teleport", callback=self.teleport))
@@ -189,7 +197,9 @@ class Weeble(Box2dSample):
         self.explosion_magnitude = value
 
     def post_debug_draw(self):
-        self.debug_draw.draw_circle(self.explosion_position, self.explosion_radius, b2d.HexColor.Azure.value)
+        self.debug_draw.draw_circle(
+            self.explosion_position, self.explosion_radius, b2d.HexColor.Azure.value
+        )
 
         # the velocity of a point on a body, computed from a local and from a world point
         local_point = (0, 2)
@@ -198,7 +208,9 @@ class Weeble(Box2dSample):
         v2 = self.weeble.world_point_velocity(world_point)
         offset = b2d.Vec2(0.05, 0)
         self.debug_draw.draw_segment(world_point, world_point + v1, b2d.HexColor.Red.value)
-        self.debug_draw.draw_segment(world_point + offset, world_point + v2 + offset, b2d.HexColor.Green.value)
+        self.debug_draw.draw_segment(
+            world_point + offset, world_point + v2 + offset, b2d.HexColor.Green.value
+        )
 
 
 @register_sample("Bodies", "Sleep")
@@ -221,10 +233,13 @@ class Sleep(Box2dSample):
         self.sensors = []
         self.sensor_touching = {}
         for i in range(2):
-            body = world.create_dynamic_body(position=(-4, 3 + 2 * i), is_awake=False, enable_sleep=True)
+            body = world.create_dynamic_body(
+                position=(-4, 3 + 2 * i), is_awake=False, enable_sleep=True
+            )
             body.create_shape(b2d.shape_def(), b2d.capsule((0, 1), (1, 1), 0.75))
             sensor = body.create_shape(
-                b2d.shape_def(is_sensor=True, enable_sensor_events=True), b2d.capsule((0, 1), (1, 1), 1.0)
+                b2d.shape_def(is_sensor=True, enable_sensor_events=True),
+                b2d.capsule((0, 1), (1, 1), 1.0),
             )
             self.sensors.append((sensor, body))
             self.sensor_touching[sensor] = False
@@ -235,7 +250,9 @@ class Sleep(Box2dSample):
 
         # awake body and sleep is disabled
         body = world.create_dynamic_body(position=(5, 3), is_awake=True, enable_sleep=False)
-        body.create_shape(b2d.shape_def(), b2d.box(1.0, 1.0, center=(0, 1), rotation=0.25 * math.pi))
+        body.create_shape(
+            b2d.shape_def(), b2d.box(1.0, 1.0, center=(0, 1), rotation=0.25 * math.pi)
+        )
 
         # sleeping bodies to test waking on contact creation (x=5) and destruction (x=-10)
         for x in (5.0, -10.0):
@@ -244,7 +261,9 @@ class Sleep(Box2dSample):
 
         # a long pendulum
         pivot = (0, 100)
-        self.pendulum = world.create_dynamic_body(position=pivot, angular_damping=0.5, sleep_threshold=0.05)
+        self.pendulum = world.create_dynamic_body(
+            position=pivot, angular_damping=0.5, sleep_threshold=0.05
+        )
         self.pendulum.create_shape(b2d.shape_def(), b2d.capsule((0, 0), (90, 0), 0.25))
         world.create_revolute_joint(
             body_a=ground,
@@ -275,7 +294,9 @@ class Sleep(Box2dSample):
                 callback=self.set_angular_damping,
             )
         )
-        self.frontend.add_widget(widgets.Button(label="Create / Destroy", callback=self.toggle_invoker))
+        self.frontend.add_widget(
+            widgets.Button(label="Create / Destroy", callback=self.toggle_invoker)
+        )
 
     def set_sleep_velocity(self, value):
         self.pendulum.sleep_threshold = value
@@ -298,9 +319,15 @@ class Sleep(Box2dSample):
     def post_update(self, dt):
         # detect sensors touching the ground
         events = self.world.get_sensor_events()
-        for touching, sensor_events in ((True, events.begin_events()), (False, events.end_events())):
+        for touching, sensor_events in (
+            (True, events.begin_events()),
+            (False, events.end_events()),
+        ):
             for event in sensor_events:
-                if event.visitor_shape == self.ground_shape and event.sensor_shape in self.sensor_touching:
+                if (
+                    event.visitor_shape == self.ground_shape
+                    and event.sensor_shape in self.sensor_touching
+                ):
                     self.sensor_touching[event.sensor_shape] = touching
 
     def post_debug_draw(self):
@@ -326,7 +353,9 @@ class BadBody(Box2dSample):
         capsule = b2d.capsule((0, -1), (0, 1), 1.0)
         rotation = b2d.make_rot(0.25 * math.pi)
 
-        self.bad_body = self.world.create_dynamic_body(position=(0, 3), angular_velocity=0.5, rotation=rotation)
+        self.bad_body = self.world.create_dynamic_body(
+            position=(0, 3), angular_velocity=0.5, rotation=rotation
+        )
         # density set to zero intentionally to create a bad body
         self.bad_body.create_shape(b2d.shape_def(density=0.0), capsule)
 
@@ -352,7 +381,9 @@ class Pivot(Box2dSample):
         self.create_ground_segment()
 
         v = (5.0, 0.0)
-        self.body = self.world.create_dynamic_body(position=(0, 3), gravity_scale=1.0, linear_velocity=v)
+        self.body = self.world.create_dynamic_body(
+            position=(0, 3), gravity_scale=1.0, linear_velocity=v
+        )
         r = (0.0, -self.lever)
         self.body.angular_velocity = b2d.cross(v, r) / b2d.dot(r, r)
         self.body.create_shape(b2d.shape_def(), b2d.box(0.1, self.lever))
@@ -361,7 +392,9 @@ class Pivot(Box2dSample):
         r = self.body.world_vector((0, -self.lever))
         vp = self.body.linear_velocity + b2d.cross_sv(self.body.angular_velocity, r)
         self.debug_draw.draw_string(
-            self.body.position + r, f"pivot velocity = ({vp.x:g}, {vp.y:g})", b2d.HexColor.White.value
+            self.body.position + r,
+            f"pivot velocity = ({vp.x:g}, {vp.y:g})",
+            b2d.HexColor.White.value,
         )
 
 
@@ -385,7 +418,10 @@ class Kinematic(Box2dSample):
     def pre_update(self, dt):
         if dt <= 0.0:
             return
-        point = (2.0 * self.amplitude * math.cos(self.time), self.amplitude * math.sin(2.0 * self.time))
+        point = (
+            2.0 * self.amplitude * math.cos(self.time),
+            self.amplitude * math.sin(2.0 * self.time),
+        )
         self.target = b2d.transform(p=point, q=b2d.make_rot(2.0 * self.time))
         self.body.set_target_transform(self.target, dt, wake=True)
 
@@ -426,7 +462,9 @@ class MixedLocks(Box2dSample):
             ((-1, 2.5), dict(linear_y=True, angular_z=True), "lin y ang z"),
             ((0, 1), dict(linear_x=True, linear_y=True, angular_z=True), "full"),
         ):
-            body = self.world.create_dynamic_body(position=position, motion_locks=b2d.MotionLocks(**locks), name=name)
+            body = self.world.create_dynamic_body(
+                position=position, motion_locks=b2d.MotionLocks(**locks), name=name
+            )
             body.create_shape(shape_def, box)
 
 
@@ -468,4 +506,6 @@ class WakeTouching(Box2dSample):
             body = self.world.create_dynamic_body(position=(-1.0 * (self.count - 1) + 2.0 * i, 4.0))
             body.create_shape(shape_def, box)
 
-        self.frontend.add_widget(widgets.Button(label="Wake Touching", callback=self.ground.wake_touching))
+        self.frontend.add_widget(
+            widgets.Button(label="Wake Touching", callback=self.ground.wake_touching)
+        )

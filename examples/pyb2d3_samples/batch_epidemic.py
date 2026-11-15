@@ -8,7 +8,11 @@ from pyb2d3_sandbox import SampleBase, widgets
 from .batch_common import create_circles, destroy_bodies, draw_plot, neighbor_pairs, unit_and_length
 
 SUSCEPTIBLE, INFECTED, RECOVERED = 0, 1, 2
-STATE_COLORS = [int(b2d.HexColor.LightSkyBlue.value), int(b2d.HexColor.OrangeRed.value), int(b2d.HexColor.DimGray.value)]
+STATE_COLORS = [
+    int(b2d.HexColor.LightSkyBlue.value),
+    int(b2d.HexColor.OrangeRed.value),
+    int(b2d.HexColor.DimGray.value),
+]
 STATE_NAMES = ["susceptible", "infected", "recovered"]
 
 
@@ -40,9 +44,17 @@ class BatchEpidemic(SampleBase):
         self.bodies = b2d.Bodies()
         self.reset()
         for widget in (
-            widgets.FloatSlider("infection radius", 0.65, 3.0, 0.05, self.infection_radius,
-                                self.setter("infection_radius")),
-            widgets.FloatSlider("infection rate", 0.1, 5.0, 0.1, self.infection_rate, self.setter("infection_rate")),
+            widgets.FloatSlider(
+                "infection radius",
+                0.65,
+                3.0,
+                0.05,
+                self.infection_radius,
+                self.setter("infection_radius"),
+            ),
+            widgets.FloatSlider(
+                "infection rate", 0.1, 5.0, 0.1, self.infection_rate, self.setter("infection_rate")
+            ),
             widgets.FloatSlider("at home", 0.0, 0.9, 0.05, self.at_home, self.set_at_home),
             widgets.Button("reset", self.reset),
         ):
@@ -60,11 +72,19 @@ class BatchEpidemic(SampleBase):
         destroy_bodies(self, self.bodies)
         n = self.count
         m = 1.0
-        positions = self.rng.uniform((-self.hx + m, -self.hy + m), (self.hx - m, self.hy - m), (n, 2))
+        positions = self.rng.uniform(
+            (-self.hx + m, -self.hy + m), (self.hx - m, self.hy - m), (n, 2)
+        )
         self.state = np.full(n, SUSCEPTIBLE)
         self.state[:5] = INFECTED
-        self.bodies = create_circles(self.world, positions, self.radius, colors=[STATE_COLORS[s] for s in self.state],
-                                     friction=0.0, restitution=0.6)
+        self.bodies = create_circles(
+            self.world,
+            positions,
+            self.radius,
+            colors=[STATE_COLORS[s] for s in self.state],
+            friction=0.0,
+            restitution=0.6,
+        )
         self.shape_list = [body.shapes[0] for body in self.bodies]  # for the per-agent recolor
         self.shown = self.state.copy()  # the state each shape is colored with
         self.infected_time = np.zeros(n)
@@ -89,7 +109,9 @@ class BatchEpidemic(SampleBase):
         v = bodies.linear_velocity
 
         # random walk: the heading turns a little each step
-        self.heading, _ = unit_and_length(self.heading + self.rng.normal(scale=0.15, size=self.heading.shape))
+        self.heading, _ = unit_and_length(
+            self.heading + self.rng.normal(scale=0.15, size=self.heading.shape)
+        )
         desired = self.speed * self.heading
         desired[self.home] = 0.0
         bodies.apply_force_to_center(3.0 * bodies.mass[:, None] * (desired - v))
@@ -131,11 +153,13 @@ class BatchEpidemic(SampleBase):
         counts = np.bincount(self.state, minlength=3)
         text = "  ".join(f"{name} {c}" for name, c in zip(STATE_NAMES, counts))
         peak = max(self.history[1]) if self.history[1] else 0
-        dd.draw_string((-self.hx, self.hy + 1.0), f"{text}   peak infected {peak}", b2d.HexColor.White)
+        dd.draw_string(
+            (-self.hx, self.hy + 1.0), f"{text}   peak infected {peak}", b2d.HexColor.White
+        )
         origin, size = (self.hx + 2.0, -10.0), (18.0, 20.0)
         draw_plot(dd, origin, size, self.history, STATE_COLORS, y_max=len(self.state))
-        dd.draw_string((origin[0], origin[1] + size[1] + 0.8), "S (blue)  I (red)  R (gray)", b2d.HexColor.White)
-
-
-if __name__ == "__main__":
-    BatchEpidemic.run()
+        dd.draw_string(
+            (origin[0], origin[1] + size[1] + 0.8),
+            "S (blue)  I (red)  R (gray)",
+            b2d.HexColor.White,
+        )

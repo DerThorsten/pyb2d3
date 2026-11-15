@@ -2,7 +2,9 @@ import pyb2d3 as b2d
 
 world = b2d.World(gravity=(0, -10))
 ground = world.create_static_body(position=(0, -1))
-ground_shape = ground.create_shape(b2d.shape_def(enable_contact_events=True, enable_hit_events=True), b2d.box(20, 1))
+ground_shape = ground.create_shape(
+    b2d.shape_def(enable_contact_events=True, enable_hit_events=True), b2d.box(20, 1)
+)
 
 sensor_body = world.create_static_body(position=(0, 3))
 sensor_body.create_shape(b2d.shape_def(is_sensor=True, enable_sensor_events=True), b2d.box(1, 1))

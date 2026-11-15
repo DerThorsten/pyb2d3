@@ -161,10 +161,8 @@ class BatchBlackHole(SampleBase):
         hole = (float(self.hole[0]), float(self.hole[1]))
         dd.draw_circle(hole, self.horizon, b2d.HexColor.White)
         dd.draw_circle(hole, 0.5 * self.horizon, b2d.HexColor.DimGray)
-        text = (f"{len(self.bodies)} particles, swallowed {self.swallowed} "
-                f"({self.rate.value or 0.0:.0f}/s), forces {self.force_time.value or 0.0:.2f} ms")
+        text = (
+            f"{len(self.bodies)} particles, swallowed {self.swallowed} "
+            f"({self.rate.value or 0.0:.0f}/s), forces {self.force_time.value or 0.0:.2f} ms"
+        )
         dd.draw_string((-self.feed[1], self.feed[1] + 1.4), text, b2d.HexColor.White)
-
-
-if __name__ == "__main__":
-    BatchBlackHole.run()

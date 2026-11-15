@@ -30,7 +30,9 @@ def to_gles_source(source):
     """Turn a `#version 330` (desktop GLSL) shader into GLSL ES 3.00 (WebGL2):
     the GLES version line must be the very first line (the shader files start
     with a license comment), followed by default precisions."""
-    lines = [line for line in source.splitlines(keepends=True) if not line.strip().startswith("#version")]
+    lines = [
+        line for line in source.splitlines(keepends=True) if not line.strip().startswith("#version")
+    ]
     return _GLES_HEADER + "".join(lines)
 
 

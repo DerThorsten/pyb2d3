@@ -41,7 +41,9 @@ class BatchSwarm(SampleBase):
 
         for widget in (
             widgets.IntSlider("bodies", 200, 6000, 100, self.count, self.set_count),
-            widgets.FloatSlider("max speed", 2.0, 40.0, 1.0, self.max_speed, self.setter("max_speed")),
+            widgets.FloatSlider(
+                "max speed", 2.0, 40.0, 1.0, self.max_speed, self.setter("max_speed")
+            ),
             widgets.FloatSlider("steering", 0.5, 20.0, 0.5, self.steering, self.setter("steering")),
             widgets.FloatSlider("swirl (deg)", 0.0, 90.0, 5.0, self.swirl, self.setter("swirl")),
         ):
@@ -57,10 +59,14 @@ class BatchSwarm(SampleBase):
         destroy_bodies(self, self.bodies)
         n = self.count
         margin = 2.0 * self.radius
-        positions = self.rng.uniform((-self.hx + margin, -self.hy + margin), (self.hx - margin, self.hy - margin), (n, 2))
+        positions = self.rng.uniform(
+            (-self.hx + margin, -self.hy + margin), (self.hx - margin, self.hy - margin), (n, 2)
+        )
         # color by the starting position: the swarm keeps mixing these up
         colors = hsv_colors(0.5 + 0.5 * np.arctan2(positions[:, 1], positions[:, 0]) / math.pi)
-        self.bodies = create_circles(self.world, positions, self.radius, colors=colors, friction=0.0, restitution=0.3)
+        self.bodies = create_circles(
+            self.world, positions, self.radius, colors=colors, friction=0.0, restitution=0.3
+        )
         # a small per-body speed variation makes the swarm look alive
         self.speed_factor = self.rng.uniform(0.6, 1.0, n)
 
@@ -72,10 +78,16 @@ class BatchSwarm(SampleBase):
 
     def wandering_target(self):
         t = self.world_time
-        return np.array([0.7 * self.hx * math.sin(0.31 * t), 0.7 * self.hy * math.sin(0.47 * t + 1.0)])
+        return np.array(
+            [0.7 * self.hx * math.sin(0.31 * t), 0.7 * self.hy * math.sin(0.47 * t + 1.0)]
+        )
 
     def pre_update(self, dt):
-        self.target = np.array(self.mouse_pos, dtype=np.float64) if self.mouse_pos is not None else self.wandering_target()
+        self.target = (
+            np.array(self.mouse_pos, dtype=np.float64)
+            if self.mouse_pos is not None
+            else self.wandering_target()
+        )
 
         bodies = self.bodies
         positions = bodies.position  # (n, 2)
@@ -86,7 +98,9 @@ class BatchSwarm(SampleBase):
         # seek the target, slowing down on arrival, and swirl around it
         speed = self.max_speed * self.speed_factor * np.minimum(1.0, distance / 4.0)
         angle = math.radians(self.swirl)
-        desired = speed[:, None] * (math.cos(angle) * direction + math.sin(angle) * perpendicular(direction))
+        desired = speed[:, None] * (
+            math.cos(angle) * direction + math.sin(angle) * perpendicular(direction)
+        )
         desired += self.rng.normal(scale=0.5, size=desired.shape)
 
         force = self.steering * masses[:, None] * (desired - velocities)
@@ -119,8 +133,8 @@ class BatchSwarm(SampleBase):
         color = b2d.HexColor.OrangeRed if self.repel else b2d.HexColor.Gold
         dd.draw_circle(target, 12.0 if self.repel else 1.0, color)
         dd.draw_point(target, 8.0, color)
-        dd.draw_string((0.0, self.hy - 1.5),f"{len(self.bodies)} bodies, one apply_force_to_center call", b2d.HexColor.White)
-
-
-if __name__ == "__main__":
-    BatchSwarm.run()
+        dd.draw_string(
+            (0.0, self.hy - 1.5),
+            f"{len(self.bodies)} bodies, one apply_force_to_center call",
+            b2d.HexColor.White,
+        )

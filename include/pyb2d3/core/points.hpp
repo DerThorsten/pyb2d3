@@ -51,7 +51,10 @@ namespace nanobind::detail
     template <>
     struct type_caster<pyb2d3::Points>
     {
-        NB_TYPE_CASTER(pyb2d3::Points, const_name("collections.abc.Iterable[Vec2-like] | numpy.ndarray[float32, (n, 2)]"))
+        NB_TYPE_CASTER(
+            pyb2d3::Points,
+            const_name("collections.abc.Iterable[Vec2-like] | numpy.ndarray[float32, (n, 2)]")
+        )
 
         using FastArray = ndarray<const float, shape<-1, 2>, c_contig, device::cpu>;
 
@@ -66,7 +69,8 @@ namespace nanobind::detail
             }
 
             // 2. array-likes: let numpy convert them in one go
-            if (PyObject_CheckBuffer(src.ptr()) || hasattr(src, "__array_interface__") || hasattr(src, "__array__"))
+            if (PyObject_CheckBuffer(src.ptr()) || hasattr(src, "__array_interface__")
+                || hasattr(src, "__array__"))
             {
                 try
                 {

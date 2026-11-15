@@ -24,7 +24,11 @@ def shape_type_dropdown(value, callback):
 def create_box_container(world):
     """Ground box with a wall on each side, used by the Rounded and Ellipse samples."""
     ground = world.create_static_body()
-    for hx, hy, center in ((20.0, 1.0, (0.0, -1.0)), (1.0, 5.0, (19.0, 5.0)), (1.0, 5.0, (-19.0, 5.0))):
+    for hx, hy, center in (
+        (20.0, 1.0, (0.0, -1.0)),
+        (1.0, 5.0, (19.0, 5.0)),
+        (1.0, 5.0, (-19.0, 5.0)),
+    ):
         ground.create_shape(b2d.shape_def(), b2d.box(hx, hy, center=center))
     return ground
 
@@ -53,18 +57,30 @@ class ChainShape(Box2dSample):
         self.body = None
 
         ground = self.world.create_static_body()
-        self.chain = ground.create_chain(b2d.chain_def(self.points, material=self.material, is_loop=True))
+        self.chain = ground.create_chain(
+            b2d.chain_def(self.points, material=self.material, is_loop=True)
+        )
         self.launch()
 
         self.frontend.add_widget(shape_type_dropdown(self.shape_type, self.set_shape_type))
         self.frontend.add_widget(
             widgets.FloatSlider(
-                label="Friction", min_value=0.0, max_value=1.0, step=0.01, value=0.2, callback=self.set_friction
+                label="Friction",
+                min_value=0.0,
+                max_value=1.0,
+                step=0.01,
+                value=0.2,
+                callback=self.set_friction,
             )
         )
         self.frontend.add_widget(
             widgets.FloatSlider(
-                label="Restitution", min_value=0.0, max_value=2.0, step=0.1, value=0.0, callback=self.set_restitution
+                label="Restitution",
+                min_value=0.0,
+                max_value=2.0,
+                step=0.1,
+                value=0.0,
+                callback=self.set_restitution,
             )
         )
         self.frontend.add_widget(widgets.Button(label="Launch", callback=self.launch))
@@ -122,7 +138,8 @@ class ChainSegment(Box2dSample):
 
         ground = self.world.create_static_body()
         self.segment_shapes = [
-            ground.create_shape(b2d.shape_def(), self.chain_segment(i)) for i in range(self.segment_count)
+            ground.create_shape(b2d.shape_def(), self.chain_segment(i))
+            for i in range(self.segment_count)
         ]
         self.launch()
 
@@ -194,7 +211,10 @@ class CompoundShapes(Box2dSample):
             self.tables.append(table)
 
         self.ships = []
-        for x, left_mid, right_mid in ((5.0, (0.0, 4.0 / 3.0), (0.0, 4.0 / 3.0)), (15.0, (1.0, 2.0), (-1.0, 2.0))):
+        for x, left_mid, right_mid in (
+            (5.0, (0.0, 4.0 / 3.0), (0.0, 4.0 / 3.0)),
+            (15.0, (1.0, 2.0), (-1.0, 2.0)),
+        ):
             ship = world.create_dynamic_body(position=(x, 1.0))
             ship.create_shapes(
                 b2d.shape_def(),
@@ -206,13 +226,17 @@ class CompoundShapes(Box2dSample):
             self.ships.append(ship)
 
         self.frontend.add_widget(widgets.Button(label="Intrude", callback=self.spawn))
-        self.frontend.add_widget(widgets.Checkbox(label="Body AABBs", value=False, callback=self.set_draw_body_aabbs))
+        self.frontend.add_widget(
+            widgets.Checkbox(label="Body AABBs", value=False, callback=self.set_draw_body_aabbs)
+        )
 
     def spawn(self):
         obstructions = [(table, b2d.box(4.0, 0.1, center=(0.0, 3.0))) for table in self.tables]
         obstructions += [(ship, b2d.circle(center=(0.0, 2.0), radius=0.5)) for ship in self.ships]
         for body, geometry in obstructions:
-            obstruction = self.world.create_dynamic_body(position=body.position, rotation=body.rotation)
+            obstruction = self.world.create_dynamic_body(
+                position=body.position, rotation=body.rotation
+            )
             obstruction.create_shape(b2d.shape_def(), geometry)
 
     def set_draw_body_aabbs(self, flag):
@@ -241,7 +265,9 @@ class Filter(Box2dSample):
 
         ground = world.create_static_body()
         ground.create_shape(
-            b2d.shape_def(filter=b2d.make_filter(category_bits=self.GROUND, mask_bits=self.ALL_BITS)),
+            b2d.shape_def(
+                filter=b2d.make_filter(category_bits=self.GROUND, mask_bits=self.ALL_BITS)
+            ),
             b2d.segment((-20.0, 0.0), (20.0, 0.0)),
         )
 
@@ -308,7 +334,9 @@ class CustomFilter(Box2dSample):
         self.bodies = []
         for i in range(self.count):
             body = world.create_dynamic_body(position=(-self.count + 2.0 * i, 5.0))
-            body.create_shape(b2d.shape_def(enable_custom_filtering=True, user_data=i + 1), b2d.make_square(1.0))
+            body.create_shape(
+                b2d.shape_def(enable_custom_filtering=True, user_data=i + 1), b2d.make_square(1.0)
+            )
             self.bodies.append(body)
 
     def post_debug_draw(self):
@@ -342,7 +370,8 @@ class Friction(Box2dSample):
         for i, friction in enumerate((0.75, 0.5, 0.35, 0.1, 0.0)):
             body = world.create_dynamic_body(position=(-15.0 + 4.0 * i, 28.0))
             body.create_shape(
-                b2d.shape_def(density=25.0, material=b2d.surface_material(friction=friction)), b2d.box(0.5, 0.5)
+                b2d.shape_def(density=25.0, material=b2d.surface_material(friction=friction)),
+                b2d.box(0.5, 0.5),
             )
 
 
@@ -369,7 +398,9 @@ class RollingResistance(Box2dSample):
 
         for i in range(20):
             ground = self.world.create_static_body()
-            ground.create_shape(b2d.shape_def(), b2d.segment((-40.0, 2.0 * i), (40.0, 2.0 * i + self.lift)))
+            ground.create_shape(
+                b2d.shape_def(), b2d.segment((-40.0, 2.0 * i), (40.0, 2.0 * i + self.lift))
+            )
 
             body = self.world.create_dynamic_body(
                 position=(-39.5, 2.0 * i + 0.75), angular_velocity=-10.0, linear_velocity=(5.0, 0.0)
@@ -385,7 +416,9 @@ class RollingResistance(Box2dSample):
 
     def post_debug_draw(self):
         for i in range(20):
-            self.debug_draw.draw_string((-41.5, 2.0 * i + 1.0), f"{self.resist_scale * i:.2f}", WHITE)
+            self.debug_draw.draw_string(
+                (-41.5, 2.0 * i + 1.0), f"{self.resist_scale * i:.2f}", WHITE
+            )
 
 
 @register_sample("Shapes", "Conveyor Belt")
@@ -424,7 +457,15 @@ class TangentSpeed(Box2dSample):
         "-26.45833,-13.22917 -23.81251,-21.16666 h -13.22916 v 44.97916 H 68.791712 V 0 h -21.16671 v "
         "206.375 l 566.208398,-1e-5 z"
     )
-    belt_colors = ("DarkBlue", "DarkCyan", "DarkGoldenrod", "DarkGray", "DarkGreen", "DarkKhaki", "DarkMagenta")
+    belt_colors = (
+        "DarkBlue",
+        "DarkCyan",
+        "DarkGoldenrod",
+        "DarkGray",
+        "DarkGreen",
+        "DarkKhaki",
+        "DarkMagenta",
+    )
 
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
@@ -444,7 +485,12 @@ class TangentSpeed(Box2dSample):
 
         self.frontend.add_widget(
             widgets.FloatSlider(
-                label="Friction", min_value=0.0, max_value=2.0, step=0.01, value=self.friction, callback=self.set_friction
+                label="Friction",
+                min_value=0.0,
+                max_value=2.0,
+                step=0.01,
+                value=self.friction,
+                callback=self.set_friction,
             )
         )
         self.frontend.add_widget(
@@ -460,7 +506,9 @@ class TangentSpeed(Box2dSample):
 
     def drop_ball(self):
         body = self.world.create_dynamic_body(position=(110.0, -30.0))
-        material = b2d.surface_material(friction=self.friction, rolling_resistance=self.rolling_resistance)
+        material = b2d.surface_material(
+            friction=self.friction, rolling_resistance=self.rolling_resistance
+        )
         body.create_shape(b2d.shape_def(material=material), b2d.circle(radius=0.5))
         return body
 
@@ -496,8 +544,16 @@ class ModifyGeometry(Box2dSample):
     # shape class, geometry property, geometry for a scale
     geometries = {
         "Circle": (b2d.CircleShape, "circle", lambda s: b2d.circle(radius=0.5 * s)),
-        "Capsule": (b2d.CapsuleShape, "capsule", lambda s: b2d.capsule((-0.5 * s, 0.0), (0.0, 0.5 * s), 0.5 * s)),
-        "Segment": (b2d.SegmentShape, "segment", lambda s: b2d.segment((-0.5 * s, 0.0), (0.75 * s, 0.0))),
+        "Capsule": (
+            b2d.CapsuleShape,
+            "capsule",
+            lambda s: b2d.capsule((-0.5 * s, 0.0), (0.0, 0.5 * s), 0.5 * s),
+        ),
+        "Segment": (
+            b2d.SegmentShape,
+            "segment",
+            lambda s: b2d.segment((-0.5 * s, 0.0), (0.75 * s, 0.0)),
+        ),
         "Polygon": (b2d.PolygonShape, "polygon", lambda s: b2d.box(0.5 * s, 0.75 * s)),
     }
 
@@ -518,12 +574,20 @@ class ModifyGeometry(Box2dSample):
 
         self.frontend.add_widget(
             widgets.RadioButtons(
-                label="Shape", options=list(self.geometries), value=self.shape_type, callback=self.set_shape_type
+                label="Shape",
+                options=list(self.geometries),
+                value=self.shape_type,
+                callback=self.set_shape_type,
             )
         )
         self.frontend.add_widget(
             widgets.FloatSlider(
-                label="Scale", min_value=0.1, max_value=10.0, step=0.01, value=self.scale, callback=self.set_scale
+                label="Scale",
+                min_value=0.1,
+                max_value=10.0,
+                step=0.01,
+                value=self.scale,
+                callback=self.set_scale,
             )
         )
         self.frontend.add_widget(
@@ -618,7 +682,14 @@ class Ellipse(Box2dSample):
         super().__init__(frontend, settings)
         create_box_container(self.world)
 
-        diamond = [(0.0, -0.25), (0.0, 0.25), (0.05, 0.075), (-0.05, 0.075), (0.05, -0.075), (-0.05, -0.075)]
+        diamond = [
+            (0.0, -0.25),
+            (0.0, 0.25),
+            (0.05, 0.075),
+            (-0.05, 0.075),
+            (0.05, -0.075),
+            (-0.05, -0.075),
+        ]
         polygon = b2d.polygon(points=diamond, radius=0.2)
         shape_def = b2d.shape_def(material=b2d.surface_material(rolling_resistance=0.2))
         for i in range(10):
@@ -639,13 +710,17 @@ class Offset(Box2dSample):
         world = self.world
 
         ground = world.create_static_body(position=(-1.0, 1.0))
-        ground.create_shape(b2d.shape_def(), b2d.box(1.0, 1.0, center=(10.0, -2.0), rotation=0.5 * math.pi))
+        ground.create_shape(
+            b2d.shape_def(), b2d.box(1.0, 1.0, center=(10.0, -2.0), rotation=0.5 * math.pi)
+        )
 
         body = world.create_dynamic_body(position=(13.5, -0.75))
         body.create_shape(b2d.shape_def(), b2d.capsule((-5.0, 1.0), (-4.0, 1.0), 0.25))
 
         body = world.create_dynamic_body(position=(0.0, 0.0))
-        body.create_shape(b2d.shape_def(), b2d.box(0.75, 0.5, center=(9.0, 2.0), rotation=0.5 * math.pi))
+        body.create_shape(
+            b2d.shape_def(), b2d.box(0.75, 0.5, center=(9.0, 2.0), rotation=0.5 * math.pi)
+        )
 
     def post_debug_draw(self):
         self.debug_draw.draw_transform(b2d.transform())
@@ -700,7 +775,12 @@ class Explosion(Box2dSample):
             )
 
     def explode(self):
-        self.world.explode(position=(0, 0), radius=self.radius, falloff=self.falloff, impulse_per_length=self.impulse)
+        self.world.explode(
+            position=(0, 0),
+            radius=self.radius,
+            falloff=self.falloff,
+            impulse_per_length=self.impulse,
+        )
 
     def pre_update(self, dt):
         self.reference_angle = b2d.unwind_angle(self.reference_angle + math.radians(60.0) * dt)
@@ -710,7 +790,9 @@ class Explosion(Box2dSample):
             joint.local_frame_a = frame
 
     def post_debug_draw(self):
-        self.debug_draw.draw_circle((0, 0), self.radius + self.falloff, b2d.HexColor.Box2DBlue.value)
+        self.debug_draw.draw_circle(
+            (0, 0), self.radius + self.falloff, b2d.HexColor.Box2DBlue.value
+        )
         self.debug_draw.draw_circle((0, 0), self.radius, b2d.HexColor.Box2DYellow.value)
 
 
@@ -773,17 +855,32 @@ class Wind(Box2dSample):
             )
         self.frontend.add_widget(
             widgets.FloatSlider(
-                label="Drag", min_value=0.0, max_value=1.0, step=0.01, value=self.drag, callback=partial(setattr, self, "drag")
+                label="Drag",
+                min_value=0.0,
+                max_value=1.0,
+                step=0.01,
+                value=self.drag,
+                callback=partial(setattr, self, "drag"),
             )
         )
         self.frontend.add_widget(
             widgets.FloatSlider(
-                label="Lift", min_value=0.0, max_value=4.0, step=0.01, value=self.lift, callback=partial(setattr, self, "lift")
+                label="Lift",
+                min_value=0.0,
+                max_value=4.0,
+                step=0.01,
+                value=self.lift,
+                callback=partial(setattr, self, "lift"),
             )
         )
         self.frontend.add_widget(
             widgets.IntSlider(
-                label="Count", min_value=1, max_value=self.max_count, step=1, value=self.count, callback=self.set_count
+                label="Count",
+                min_value=1,
+                max_value=self.max_count,
+                step=1,
+                value=self.count,
+                callback=self.set_count,
             )
         )
 

@@ -51,7 +51,11 @@ class ShapeDistance(ProxyPairSample):
         self.add_shape_widgets()
         add(widgets.Checkbox("use cache", self.use_cache, setter(self, "use_cache")))
         add(widgets.Checkbox("draw simplex", self.draw_simplex, self.set_draw_simplex))
-        add(widgets.IntSlider("index", 0, self.simplex_capacity - 1, 1, 0, setter(self, "simplex_index")))
+        add(
+            widgets.IntSlider(
+                "index", 0, self.simplex_capacity - 1, 1, 0, setter(self, "simplex_index")
+            )
+        )
 
     def set_draw_simplex(self, value):
         self.draw_simplex = value
@@ -76,7 +80,9 @@ class ShapeDistance(ProxyPairSample):
         distance_input.use_radii = self.radius_a > 0.0 or self.radius_b > 0.0
         if not self.use_cache:
             self.cache = b2d.SimplexCache()
-        output, simplexes = b2d.compute_shape_distance(distance_input, self.cache, self.simplex_capacity)
+        output, simplexes = b2d.compute_shape_distance(
+            distance_input, self.cache, self.simplex_capacity
+        )
 
         # shape A is at the origin, so the distance output is in world coordinates
         self.draw_shape(self.type_a, b2d.Transform(), self.radius_a, colors.Cyan)
@@ -152,13 +158,25 @@ class DynamicTree(Box2dSample):
         add(widgets.FloatSlider("fill", 0.0, 1.0, 0.01, self.fill, rebuilding("fill")))
         add(widgets.FloatSlider("grid", 0.5, 2.0, 0.01, self.grid, rebuilding("grid")))
         add(widgets.FloatSlider("ratio", 1.0, 10.0, 0.01, self.ratio, rebuilding("ratio")))
-        add(widgets.FloatSlider("move", 0.0, 1.0, 0.01, self.move_fraction, setter(self, "move_fraction")))
-        add(widgets.FloatSlider("delta", 0.0, 1.0, 0.01, self.move_delta, setter(self, "move_delta")))
+        add(
+            widgets.FloatSlider(
+                "move", 0.0, 1.0, 0.01, self.move_fraction, setter(self, "move_fraction")
+            )
+        )
+        add(
+            widgets.FloatSlider(
+                "delta", 0.0, 1.0, 0.01, self.move_delta, setter(self, "move_delta")
+            )
+        )
 
     def build_tree(self):
         rng = self.rng
-        rows, columns = np.meshgrid(np.arange(self.row_count), np.arange(self.column_count), indexing="ij")
-        corners = np.stack([-40.0 + columns.ravel() * self.grid, -4.0 + rows.ravel() * self.grid], axis=1)
+        rows, columns = np.meshgrid(
+            np.arange(self.row_count), np.arange(self.column_count), indexing="ij"
+        )
+        corners = np.stack(
+            [-40.0 + columns.ravel() * self.grid, -4.0 + rows.ravel() * self.grid], axis=1
+        )
         corners = corners[rng.uniform(0.0, 1.0, len(corners)) <= self.fill]
         count = len(corners)
 
@@ -166,7 +184,9 @@ class DynamicTree(Box2dSample):
         width = rng.uniform(0.1, 0.5, count)
         wide = rng.uniform(-1.0, 1.0, count) > 0.0
         self.positions = corners
-        self.widths = np.where(wide[:, None], np.stack([ratio * width, width], 1), np.stack([width, ratio * width], 1))
+        self.widths = np.where(
+            wide[:, None], np.stack([ratio * width, width], 1), np.stack([width, ratio * width], 1)
+        )
         self.lower = corners.copy()
         self.upper = corners + self.widths
         self.fat_lower = self.lower - self.aabb_margin
@@ -191,7 +211,9 @@ class DynamicTree(Box2dSample):
         self.end_point = event.world_position
 
     def query_box(self):
-        return b2d.aabb(b2d.min(self.start_point, self.end_point), b2d.max(self.start_point, self.end_point))
+        return b2d.aabb(
+            b2d.min(self.start_point, self.end_point), b2d.max(self.start_point, self.end_point)
+        )
 
     def query(self):
         hits = set()
@@ -213,7 +235,9 @@ class DynamicTree(Box2dSample):
         self.hits = hits
 
     def move_proxies(self):
-        moving = np.flatnonzero(self.move_fraction > self.rng.uniform(0.0, 1.0, len(self.positions)))
+        moving = np.flatnonzero(
+            self.move_fraction > self.rng.uniform(0.0, 1.0, len(self.positions))
+        )
         delta = self.move_delta * self.rng.uniform(-1.0, 1.0, (len(moving), 2))
         self.positions[moving] += delta
         self.lower[moving] = self.positions[moving] + delta
@@ -424,8 +448,16 @@ class CastWorld(BodySlotsSample):
 
         add = self.frontend.add_widget
         add(widgets.Checkbox("Simple", self.simple, setter(self, "simple")))
-        add(widgets.Dropdown("Type", list(self.cast_types), self.cast_type, setter(self, "cast_type")))
-        add(widgets.FloatSlider("Radius", 0.0, 2.0, 0.1, self.cast_radius, setter(self, "cast_radius")))
+        add(
+            widgets.Dropdown(
+                "Type", list(self.cast_types), self.cast_type, setter(self, "cast_type")
+            )
+        )
+        add(
+            widgets.FloatSlider(
+                "Radius", 0.0, 2.0, 0.1, self.cast_radius, setter(self, "cast_radius")
+            )
+        )
         add(widgets.Dropdown("Mode", list(self.modes), self.mode, setter(self, "mode")))
         self.add_slot_widgets(["Polygon", "Box", "Circle", "Capsule", "Segment", "Chain"])
 
@@ -473,7 +505,9 @@ class CastWorld(BodySlotsSample):
             return shape, b2d.make_proxy([shape.center], r)
         if self.cast_type == "Capsule":
             shape = b2d.capsule(
-                b2d.rotate_vector(rotation, (-0.25, 0.0)), b2d.rotate_vector(rotation, (0.25, 0.0)), r
+                b2d.rotate_vector(rotation, (-0.25, 0.0)),
+                b2d.rotate_vector(rotation, (0.25, 0.0)),
+                r,
             )
             return shape, b2d.make_proxy([shape.center1, shape.center2], r)
         shape = b2d.make_offset_rounded_box(0.125, 0.25, (0.0, 0.0), rotation, r)
@@ -488,7 +522,9 @@ class CastWorld(BodySlotsSample):
             result = self.world.cast_ray_closest(self.ray_start, translation)
             if result.hit and result.fraction > 0.0:
                 dd.draw_point(result.point, 5.0, colors.Green)
-                dd.draw_segment(self.ray_start, self.ray_start + result.fraction * translation, colors.LightGray)
+                dd.draw_segment(
+                    self.ray_start, self.ray_start + result.fraction * translation, colors.LightGray
+                )
                 dd.draw_segment(result.point, result.point + 0.5 * result.normal, colors.Magenta)
             else:
                 dd.draw_segment(self.ray_start, self.ray_end, colors.LightGray)
@@ -502,7 +538,9 @@ class CastWorld(BodySlotsSample):
                 shape, proxy = self.cast_shape()
                 self.world.cast_shape(proxy, translation, callback, origin=self.ray_start)
 
-            for (fraction, point, normal), color in zip(context.hits, (colors.Red, colors.Green, colors.Blue)):
+            for (fraction, point, normal), color in zip(
+                context.hits, (colors.Red, colors.Green, colors.Blue)
+            ):
                 c = self.ray_start + fraction * translation
                 dd.draw_point(point, 5.0, color)
                 dd.draw_segment(self.ray_start, c, colors.LightGray)
@@ -555,9 +593,16 @@ class OverlapWorld(BodySlotsSample):
 
         self.create_n(0, 10)
 
-        self.add_slot_widgets(["Polygon 1", "Polygon 2", "Polygon 3", "Box", "Circle", "Capsule", "Segment"])
+        self.add_slot_widgets(
+            ["Polygon 1", "Polygon 2", "Polygon 3", "Box", "Circle", "Capsule", "Segment"]
+        )
         self.frontend.add_widget(
-            widgets.RadioButtons("Overlap Shape", list(self.query_shapes), self.shape_type, setter(self, "shape_type"))
+            widgets.RadioButtons(
+                "Overlap Shape",
+                list(self.query_shapes),
+                self.shape_type,
+                setter(self, "shape_type"),
+            )
         )
 
     def create_shape(self, body, kind, slot):
@@ -590,7 +635,11 @@ class OverlapWorld(BodySlotsSample):
             shape = b2d.circle((0.0, 0.0), 1.0)
             return shape, b2d.make_proxy([shape.center], shape.radius)
         if self.shape_type == "Capsule":
-            shape = b2d.capsule(b2d.rotate_vector(rotation, (-1.0, 0.0)), b2d.rotate_vector(rotation, (1.0, 0.0)), 0.5)
+            shape = b2d.capsule(
+                b2d.rotate_vector(rotation, (-1.0, 0.0)),
+                b2d.rotate_vector(rotation, (1.0, 0.0)),
+                0.5,
+            )
             return shape, b2d.make_proxy([shape.center1, shape.center2], shape.radius)
         shape = b2d.make_offset_box(2.0, 0.5, (0.0, 0.0), rotation)
         return shape, b2d.make_proxy(shape.vertices, shape.radius)
@@ -681,9 +730,20 @@ class Manifold(_ManifoldDrawing, TransformDragSample):
         self.reset_caches()
         self.wedge = b2d.compute_hull([(-0.1, -0.5), (0.1, -0.5), (0.0, 0.5)])
 
-        p1s = [(0.175740838, 0.224936664), (-0.301293969, 0.194021404), (-0.105151534, -0.432157338)]
-        p2s = [(-0.427884758, -0.225028217), (0.0566576123, -0.128772855), (0.176625848, 0.338923335)]
-        self.wedges = (b2d.polygon(points=p1s, radius=0.158798501), b2d.polygon(points=p2s, radius=0.205900759))
+        p1s = [
+            (0.175740838, 0.224936664),
+            (-0.301293969, 0.194021404),
+            (-0.105151534, -0.432157338),
+        ]
+        p2s = [
+            (-0.427884758, -0.225028217),
+            (0.0566576123, -0.128772855),
+            (0.176625848, 0.338923335),
+        ]
+        self.wedges = (
+            b2d.polygon(points=p1s, radius=0.158798501),
+            b2d.polygon(points=p2s, radius=0.205900759),
+        )
 
         def chain_segment(ghost1, point1, point2, ghost2):
             return b2d.chain_segment(b2d.segment(point1, point2), ghost1, ghost2)
@@ -749,7 +809,9 @@ class Manifold(_ManifoldDrawing, TransformDragSample):
     def collide(self, offset, shape_a, shape_b, cache=None):
         transform_a = b2d.transform(p=offset)
         transform_b = b2d.transform(p=self.position + offset, q=b2d.make_rot(self.angle))
-        manifold = _collide(shape_a, shape_b, b2d.inv_mul_transforms(transform_a, transform_b), cache)
+        manifold = _collide(
+            shape_a, shape_b, b2d.inv_mul_transforms(transform_a, transform_b), cache
+        )
         return transform_a, transform_b, manifold
 
     def draw_pair(self, offset, shape_a, shape_b, draw_cores):
@@ -777,7 +839,10 @@ class Manifold(_ManifoldDrawing, TransformDragSample):
     def draw_chain_segments(self, transform_a):
         dd = self.debug_draw
         tp = lambda p: b2d.transform_point(transform_a, p)  # noqa: E731
-        for chain_segment, ghost_is_next in ((self.chain_segment1, True), (self.chain_segment2, False)):
+        for chain_segment, ghost_is_next in (
+            (self.chain_segment1, True),
+            (self.chain_segment2, False),
+        ):
             p1, p2 = tp(chain_segment.segment.point1), tp(chain_segment.segment.point2)
             dd.draw_segment(p1, p2, colors.Aquamarine)
             dd.draw_point(p1, 4.0, colors.Aquamarine)
@@ -818,7 +883,9 @@ class Manifold(_ManifoldDrawing, TransformDragSample):
         for shape, caches in ((rox, self.rox_caches), (capsule, self.capsule_caches)):
             manifolds = []
             for chain_segment, cache in zip((self.chain_segment1, self.chain_segment2), caches):
-                transform_a, transform_b, manifold = self.collide(offset, chain_segment, shape, cache)
+                transform_a, transform_b, manifold = self.collide(
+                    offset, chain_segment, shape, cache
+                )
                 manifolds.append(manifold)
             self.draw_chain_segments(transform_a)
             draw_geometry(dd, shape, transform_b, colors.PaleGoldenrod)
@@ -826,7 +893,8 @@ class Manifold(_ManifoldDrawing, TransformDragSample):
                 center = b2d.transform_point(transform_b, shape.centroid)
             else:
                 center = b2d.mid_point(
-                    b2d.transform_point(transform_b, shape.center1), b2d.transform_point(transform_b, shape.center2)
+                    b2d.transform_point(transform_b, shape.center1),
+                    b2d.transform_point(transform_b, shape.center2),
                 )
             dd.draw_point(center, 5.0, colors.Gainsboro)
             for manifold in manifolds:
@@ -872,11 +940,19 @@ class SmoothManifold(_ManifoldDrawing, TransformDragSample):
         ]
 
         add = self.frontend.add_widget
-        add(widgets.Dropdown("Shape", ["Circle", "Box"], self.shape_type, setter(self, "shape_type")))
+        add(
+            widgets.Dropdown(
+                "Shape", ["Circle", "Box"], self.shape_type, setter(self, "shape_type")
+            )
+        )
         self.add_transform_widgets(("x Offset", "y Offset", "Angle"))
         add(widgets.FloatSlider("Round", 0.0, 0.4, 0.1, self.round, setter(self, "round")))
         self.add_manifold_checkboxes(
-            {"show_ids": "Show Ids", "show_separation": "Show Separation", "show_anchors": "Show Anchors"}
+            {
+                "show_ids": "Show Ids",
+                "show_separation": "Show Separation",
+                "show_anchors": "Show Anchors",
+            }
         )
         add(widgets.Button("Reset", self.reset_transform))
 
@@ -901,7 +977,11 @@ class SmoothManifold(_ManifoldDrawing, TransformDragSample):
             cache = None if self.shape_type == "Circle" else b2d.SimplexCache()
             manifold = _collide(segment, shape, xf, cache)
             self.draw_manifold(
-                manifold, transform_a, line_color=colors.White, point_size=5.0, point_color=colors.Green
+                manifold,
+                transform_a,
+                line_color=colors.White,
+                point_size=5.0,
+                point_color=colors.Green,
             )
 
 
@@ -929,7 +1009,9 @@ class ShapeCast(ProxyPairSample):
         self.encroach = False
 
         self.add_shape_widgets()
-        self.frontend.add_widget(widgets.Checkbox("encroach", self.encroach, setter(self, "encroach")))
+        self.frontend.add_widget(
+            widgets.Checkbox("encroach", self.encroach, setter(self, "encroach"))
+        )
 
     def on_mouse_move(self, event):
         super().on_mouse_move(event)
@@ -1033,7 +1115,9 @@ class TimeOfImpact(Box2dSample):
 
         dd.draw_polygon(world_points(self.sweep_a, self.vertices_a, 0.0), colors.Gray)
         # B at t = 0, at the time of impact and at t = 1
-        dd.draw_solid_capsule(*world_points(self.sweep_b, self.vertices_b, 0.0), self.radius_b, colors.Green)
+        dd.draw_solid_capsule(
+            *world_points(self.sweep_b, self.vertices_b, 0.0), self.radius_b, colors.Green
+        )
         dd.draw_polygon(world_points(self.sweep_b, self.vertices_b, output.fraction), colors.Orange)
         end_points = world_points(self.sweep_b, self.vertices_b, 1.0)
         dd.draw_solid_capsule(*end_points, self.radius_b, colors.Red)

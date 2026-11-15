@@ -1,3 +1,5 @@
+#include "pyb2d3/recording.hpp"
+
 #include <string>
 
 #include <nanobind/nanobind.h>
@@ -6,7 +8,6 @@
 #include "bind.hpp"
 #include "pyb2d3/core/binder.hpp"
 #include "pyb2d3/py_converter.hpp"
-#include "pyb2d3/recording.hpp"
 
 namespace pyb2d3::bind
 {
@@ -23,9 +24,7 @@ namespace pyb2d3::bind
                     return nb::bytes(b2Recording_GetData(self.id), b2Recording_GetSize(self.id));
                 }
             );
-        Binder(rec)
-            .ro<b2Recording_GetSize>("size")
-            .def<&b2Recording_SaveToFile>("save_to_file", nb::arg("path"));
+        Binder(rec).ro<b2Recording_GetSize>("size").def<&b2Recording_SaveToFile>("save_to_file", nb::arg("path"));
 
         m.def(
             "validate_recording",

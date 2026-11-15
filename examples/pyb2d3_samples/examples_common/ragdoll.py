@@ -51,23 +51,92 @@ BoneSpec = namedtuple(
 
 def _bone_specs():
     """The 11 bones of the human, parents before children."""
-    yield BoneSpec("hip", None, 0.95, 0.0, 1.0, (-0.02, 0.02, 0.095), None, None, 0.0, False, "pant")
-    yield BoneSpec("torso", "hip", 1.2, 0.0, 0.5, (-0.135, 0.135, 0.09), 1.0, (-0.25, 0.0), 0.0, False, "shirt")
-    yield BoneSpec("head", "torso", 1.475, 0.1, 0.25, (-0.038, 0.039, 0.075), 1.4, (-0.3, 0.1), 0.0, False, "skin")
+    yield BoneSpec(
+        "hip", None, 0.95, 0.0, 1.0, (-0.02, 0.02, 0.095), None, None, 0.0, False, "pant"
+    )
+    yield BoneSpec(
+        "torso", "hip", 1.2, 0.0, 0.5, (-0.135, 0.135, 0.09), 1.0, (-0.25, 0.0), 0.0, False, "shirt"
+    )
+    yield BoneSpec(
+        "head",
+        "torso",
+        1.475,
+        0.1,
+        0.25,
+        (-0.038, 0.039, 0.075),
+        1.4,
+        (-0.3, 0.1),
+        0.0,
+        False,
+        "skin",
+    )
     for side in ("left", "right"):
         upper, lower = f"upper_{side}_leg", f"lower_{side}_leg"
-        yield BoneSpec(upper, "hip", 0.775, 0.0, 1.0, (-0.125, 0.125, 0.06), 0.9, (-0.05, 0.4), 0.0, False, "pant")
-        yield BoneSpec(lower, upper, 0.475, 0.0, 0.5, (-0.155, 0.125, 0.045), 0.625, (-0.5, -0.02), 0.0, True, "pant")
+        yield BoneSpec(
+            upper,
+            "hip",
+            0.775,
+            0.0,
+            1.0,
+            (-0.125, 0.125, 0.06),
+            0.9,
+            (-0.05, 0.4),
+            0.0,
+            False,
+            "pant",
+        )
+        yield BoneSpec(
+            lower,
+            upper,
+            0.475,
+            0.0,
+            0.5,
+            (-0.155, 0.125, 0.045),
+            0.625,
+            (-0.5, -0.02),
+            0.0,
+            True,
+            "pant",
+        )
     for side in ("left", "right"):
         upper, lower = f"upper_{side}_arm", f"lower_{side}_arm"
-        yield BoneSpec(upper, "torso", 1.225, 0.0, 0.5, (-0.125, 0.125, 0.035), 1.35, (-0.1, 0.8), 0.0, False, "shirt")
+        yield BoneSpec(
+            upper,
+            "torso",
+            1.225,
+            0.0,
+            0.5,
+            (-0.125, 0.125, 0.035),
+            1.35,
+            (-0.1, 0.8),
+            0.0,
+            False,
+            "shirt",
+        )
         # box2d >= 3.2: the reference angle is the rotation of the local frame A
-        yield BoneSpec(lower, upper, 0.975, 0.1, 0.1, (-0.125, 0.125, 0.03), 1.1, (-0.2, 0.3), 0.25, False, "skin")
+        yield BoneSpec(
+            lower,
+            upper,
+            0.975,
+            0.1,
+            0.1,
+            (-0.125, 0.125, 0.03),
+            1.1,
+            (-0.2, 0.3),
+            0.25,
+            False,
+            "skin",
+        )
 
 
 BONE_SPECS = tuple(_bone_specs())
 FOOT_POINTS = ((-0.03, -0.185), (0.11, -0.185), (0.11, -0.16), (-0.03, -0.14))
-SKIN_COLORS = (b2d.HexColor.NavajoWhite, b2d.HexColor.LightYellow, b2d.HexColor.Peru, b2d.HexColor.Tan)
+SKIN_COLORS = (
+    b2d.HexColor.NavajoWhite,
+    b2d.HexColor.LightYellow,
+    b2d.HexColor.Peru,
+    b2d.HexColor.Tan,
+)
 CLOTH_COLORS = {"shirt": b2d.HexColor.MediumTurquoise, "pant": b2d.HexColor.DodgerBlue}
 
 
@@ -150,7 +219,9 @@ class Ragdoll:
                 joint = world.create_revolute_joint(
                     body_a=parent,
                     body_b=body,
-                    local_frame_a=b2d.transform(p=parent.local_point(pivot), q=b2d.make_rot(spec.frame_angle * math.pi)),
+                    local_frame_a=b2d.transform(
+                        p=parent.local_point(pivot), q=b2d.make_rot(spec.frame_angle * math.pi)
+                    ),
                     local_anchor_b=body.local_point(pivot),
                     enable_limit=True,
                     lower_angle=lower * math.pi,
@@ -255,7 +326,9 @@ class Ragdoll:
                 if isinstance(shape, b2d.CapsuleShape):
                     capsule = shape.capsule
                     shape.capsule = b2d.capsule(
-                        b2d.Vec2(capsule.center1) * ratio, b2d.Vec2(capsule.center2) * ratio, capsule.radius * ratio
+                        b2d.Vec2(capsule.center1) * ratio,
+                        b2d.Vec2(capsule.center2) * ratio,
+                        capsule.radius * ratio,
                     )
                 elif isinstance(shape, b2d.PolygonShape):
                     # like box2d: scale in place (the normals stay valid under uniform scaling)
@@ -274,7 +347,16 @@ class Human(Ragdoll):
     """box2d's CreateHuman (argument order of human.c): joint motors on, as joint friction."""
 
     def __init__(
-        self, world, position, scale, friction_torque, hertz, damping_ratio, group_index=1, user_data=0, colorize=False
+        self,
+        world,
+        position,
+        scale,
+        friction_torque,
+        hertz,
+        damping_ratio,
+        group_index=1,
+        user_data=0,
+        colorize=False,
     ):
         super().__init__(
             world,

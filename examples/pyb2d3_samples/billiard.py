@@ -304,7 +304,3 @@ class Billiard(SampleBase):
             lower_bound=(center[0] - (hx + margin), center[1] - (hy + margin)),
             upper_bound=(center[0] + (hx + margin), center[1] + (hy + margin)),
         )
-
-
-if __name__ == "__main__":
-    Billiard.run()

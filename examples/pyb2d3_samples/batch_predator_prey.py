@@ -50,8 +50,12 @@ class BatchPredatorPrey(SampleBase):
         self.predators = None
         self.reset()
         for widget in (
-            widgets.FloatSlider("prey birth rate", 0.05, 1.0, 0.05, self.prey_birth, self.setter("prey_birth")),
-            widgets.FloatSlider("predator hunger", 0.2, 2.0, 0.1, self.hunger, self.setter("hunger")),
+            widgets.FloatSlider(
+                "prey birth rate", 0.05, 1.0, 0.05, self.prey_birth, self.setter("prey_birth")
+            ),
+            widgets.FloatSlider(
+                "predator hunger", 0.2, 2.0, 0.1, self.hunger, self.setter("hunger")
+            ),
             widgets.Button("reset", self.reset),
         ):
             self.frontend.add_widget(widget)
@@ -68,10 +72,22 @@ class BatchPredatorPrey(SampleBase):
         for pool in (self.prey, self.predators):
             if pool is not None:
                 pool.destroy(self)
-        self.prey = ParticlePool(self.world, self.prey_capacity, self.prey_radius, int(b2d.HexColor.LimeGreen.value),
-                                 friction=0.0, restitution=0.2)
-        self.predators = ParticlePool(self.world, self.predator_capacity, self.predator_radius,
-                                      int(b2d.HexColor.OrangeRed.value), friction=0.0, restitution=0.2)
+        self.prey = ParticlePool(
+            self.world,
+            self.prey_capacity,
+            self.prey_radius,
+            int(b2d.HexColor.LimeGreen.value),
+            friction=0.0,
+            restitution=0.2,
+        )
+        self.predators = ParticlePool(
+            self.world,
+            self.predator_capacity,
+            self.predator_radius,
+            int(b2d.HexColor.OrangeRed.value),
+            friction=0.0,
+            restitution=0.2,
+        )
         self.energy = np.zeros(self.predator_capacity)
         self.spawn(self.prey, 250)
         born = self.spawn(self.predators, 12)
@@ -87,10 +103,15 @@ class BatchPredatorPrey(SampleBase):
             return np.zeros(0, dtype=np.int64)
         m = 1.0
         if near is None:
-            positions = self.rng.uniform((-self.hx + m, -self.hy + m), (self.hx - m, self.hy - m), (count, 2))
+            positions = self.rng.uniform(
+                (-self.hx + m, -self.hy + m), (self.hx - m, self.hy - m), (count, 2)
+            )
         else:
-            positions = np.clip(near[:count] + self.rng.normal(scale=0.8, size=(count, 2)),
-                                (-self.hx + m, -self.hy + m), (self.hx - m, self.hy - m))
+            positions = np.clip(
+                near[:count] + self.rng.normal(scale=0.8, size=(count, 2)),
+                (-self.hx + m, -self.hy + m),
+                (self.hx - m, self.hy - m),
+            )
         angle = self.rng.uniform(0, 2 * np.pi, count)
         velocities = 2.0 * np.stack([np.cos(angle), np.sin(angle)], axis=1)
         return pool.emit(positions, velocities)
@@ -128,7 +149,9 @@ class BatchPredatorPrey(SampleBase):
         weight = (1.0 - dist / self.sight) ** 2
         flee = np.zeros((n_prey, 2))
         for axis in range(2):
-            flee[:, axis] = -np.bincount(a, to_pred[:, axis] / np.maximum(dist, 1e-3) * weight, n_prey)
+            flee[:, axis] = -np.bincount(
+                a, to_pred[:, axis] / np.maximum(dist, 1e-3) * weight, n_prey
+            )
         scared = np.bincount(a, minlength=n_prey) > 0
         direction, _ = unit_and_length(flee[scared])
         prey_desired[scared] = self.prey_speed * direction
@@ -183,7 +206,9 @@ class BatchPredatorPrey(SampleBase):
         if len(idx) == 0:
             return
         bodies = pool.bodies[idx]
-        bodies.apply_force_to_center(4.0 * bodies.mass[:, None] * (desired - bodies.linear_velocity))
+        bodies.apply_force_to_center(
+            4.0 * bodies.mass[:, None] * (desired - bodies.linear_velocity)
+        )
 
     def post_update(self, dt):
         """population history (4 samples per second)"""
@@ -225,15 +250,24 @@ class BatchPredatorPrey(SampleBase):
             dd.draw_circle(tuple(self.safe), 10.0, b2d.HexColor.LightSkyBlue)
         prey = int(np.count_nonzero(self.prey.active))
         predators = int(np.count_nonzero(self.predators.active))
-        dd.draw_string((-self.hx, self.hy + 1.0), f"prey {prey}  predators {predators}  eaten {self.eaten}",
-                       b2d.HexColor.White)
+        dd.draw_string(
+            (-self.hx, self.hy + 1.0),
+            f"prey {prey}  predators {predators}  eaten {self.eaten}",
+            b2d.HexColor.White,
+        )
         origin, size = (self.hx + 2.0, -10.0), (18.0, 20.0)
         prey_curve = [v / 5.0 for v in self.history[0]]
         top = max([1.0] + prey_curve + self.history[1])
-        draw_plot(dd, origin, size, [prey_curve, self.history[1]], [b2d.HexColor.LimeGreen, b2d.HexColor.OrangeRed],
-                  y_max=top)
-        dd.draw_string((origin[0], origin[1] + size[1] + 0.8), "prey / 5 (green), predators (red)", b2d.HexColor.White)
-
-
-if __name__ == "__main__":
-    BatchPredatorPrey.run()
+        draw_plot(
+            dd,
+            origin,
+            size,
+            [prey_curve, self.history[1]],
+            [b2d.HexColor.LimeGreen, b2d.HexColor.OrangeRed],
+            y_max=top,
+        )
+        dd.draw_string(
+            (origin[0], origin[1] + size[1] + 0.8),
+            "prey / 5 (green), predators (red)",
+            b2d.HexColor.White,
+        )

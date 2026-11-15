@@ -68,10 +68,14 @@ class BatchNBody(SampleBase):
         sun = self.world.create_dynamic_body(position=(0, 0))
         sun_density = self.sun_mass / (math.pi * self.sun_radius**2)
         sun.create_shape(
-            b2d.shape_def(density=sun_density, material=b2d.surface_material(custom_color=b2d.HexColor.Gold)),
+            b2d.shape_def(
+                density=sun_density, material=b2d.surface_material(custom_color=b2d.HexColor.Gold)
+            ),
             b2d.circle(radius=self.sun_radius),
         )
-        planets = create_circles(self.world, positions, radii, colors=colors, density=1.0, restitution=0.1, friction=0.6)
+        planets = create_circles(
+            self.world, positions, radii, colors=colors, density=1.0, restitution=0.1, friction=0.6
+        )
         self.bodies = b2d.Bodies([sun, *planets])
 
         # circular orbits: v = sqrt(G * M_inside / r), perpendicular to the radius
@@ -98,7 +102,11 @@ class BatchNBody(SampleBase):
         inv_d3 = d2**-1.5
         np.fill_diagonal(inv_d3, 0.0)
         # F_i = G m_i sum_j m_j (p_j - p_i) / |p_j - p_i|^3
-        forces = self.gravity * masses[:, None] * np.einsum("ij,ijk->ik", inv_d3 * masses[None, :], delta)
+        forces = (
+            self.gravity
+            * masses[:, None]
+            * np.einsum("ij,ijk->ik", inv_d3 * masses[None, :], delta)
+        )
         bodies.apply_force_to_center(forces)
         self.force_time(1000.0 * (time.perf_counter() - t0))
 
@@ -112,7 +120,3 @@ class BatchNBody(SampleBase):
         n = len(self.bodies)
         text = f"{n} bodies, {n * (n - 1)} pair forces: {self.force_time.value or 0.0:.2f} ms"
         dd.draw_string((0.0, self.disc[1] + 1.0), text, b2d.HexColor.White)
-
-
-if __name__ == "__main__":
-    BatchNBody.run()
