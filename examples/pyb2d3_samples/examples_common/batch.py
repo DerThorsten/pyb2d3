@@ -27,20 +27,22 @@ def create_circles(
 ):
     """One dynamic circle body per row of `positions`, returned as a `b2d.Bodies` batch.
 
-    `radius` and `colors` are a single value or one value per body.
+    `radius` and `colors` are a single value or one value per body. Creating bodies is
+    a python loop, but only once (frequent emission: `ParticlePool`).
     """
-    bodies = world.create_dynamic_bodies(len(positions), **body_kwargs)
-    bodies.position = positions
-    material = b2d.surface_material(friction=friction, restitution=restitution)
-    radius = np.asarray(radius, dtype=np.float64)
-    circles = (
-        b2d.circle(radius=float(radius))
-        if radius.ndim == 0
-        else [b2d.circle(radius=float(r)) for r in radius]
-    )
-    shapes = bodies.create_shape(b2d.shape_def(density=density, material=material), circles)
-    if colors is not None:
-        shapes.custom_color = colors
+    n = len(positions)
+    radii = np.broadcast_to(np.asarray(radius, dtype=np.float64), (n,))
+    colors = np.broadcast_to(np.asarray(0 if colors is None else colors, dtype=np.uint32), (n,))
+    bodies = b2d.Bodies()
+    for (x, y), r, color in zip(positions, radii, colors):
+        body = world.create_dynamic_body(position=(float(x), float(y)), **body_kwargs)
+        material = b2d.surface_material(
+            friction=friction, restitution=restitution, custom_color=int(color)
+        )
+        body.create_shape(
+            b2d.shape_def(density=density, material=material), b2d.circle(radius=float(r))
+        )
+        bodies.append(body)
     return bodies
 
 

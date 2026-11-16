@@ -42,7 +42,7 @@ SANDBOX_PACKAGES = [
     "pyb2d3_samples",
 ]
 # packed with the local pyb2d3 build, downloaded from emscripten-forge into
-# PACKAGE_CACHE (no pillow: the "Text" sample, which needs it, is not registered)
+# PACKAGE_CACHE
 CHANNEL = "https://repo.prefix.dev/emscripten-forge/6x/emscripten-wasm32"
 PACKAGES = ["numpy", "openblas", "pyopengl"]
 PACKAGE_CACHE = REPO / "build" / "conda-packages"

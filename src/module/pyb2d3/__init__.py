@@ -261,21 +261,6 @@ def _extend_world():
     WorldView.create_static_body = partialmethod(WorldView.create_body, type=BodyType.STATIC)
     WorldView.create_kinematic_body = partialmethod(WorldView.create_body, type=BodyType.KINEMATIC)
 
-    def create_bodies(self, count, body_def=None, **kwargs):
-        """`count` bodies from one body def (or the keyword arguments of `body_def`), as
-        `Bodies`; set what differs per body afterwards with the batch setters, e.g.
-        `bodies.position = positions`."""
-        if body_def is None:
-            body_def = _body_def_func(**kwargs)
-        else:
-            _set_attributes(body_def, kwargs)
-        return self.create_bodies_from_def(body_def, count)
-
-    WorldView.create_bodies = create_bodies
-    WorldView.create_dynamic_bodies = partialmethod(create_bodies, type=BodyType.DYNAMIC)
-    WorldView.create_static_bodies = partialmethod(create_bodies, type=BodyType.STATIC)
-    WorldView.create_kinematic_bodies = partialmethod(create_bodies, type=BodyType.KINEMATIC)
-
     def draw(self, debug_draw, call_begin_end=True):
         if call_begin_end:
             debug_draw.begin_draw()
@@ -368,17 +353,6 @@ def _extend_body():
         return getattr(self, creator)(shape_def, shape)
 
     Body.create_shape = create_shape
-
-    def create_shape_on_each(self, shape_def, shape):
-        """one shape on every body (`Shapes`): one shape def, the geometry is one for all
-        bodies or a sequence with one per body (all of the same type)"""
-        one = type(shape) in _creators
-        creator = _creators.get(type(shape) if one else type(next(iter(shape), None)))
-        if creator is None:
-            raise ValueError(f"shape {shape} not recognized")
-        return getattr(self, creator)(shape_def, shape)
-
-    Bodies.create_shape = create_shape_on_each
 
     def create_shapes(self, shape_def, shapes):
         return [self.create_shape(shape_def, shape) for shape in shapes]

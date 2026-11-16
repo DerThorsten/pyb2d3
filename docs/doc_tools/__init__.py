@@ -24,8 +24,7 @@ from pyb2d3_sandbox import registry  # noqa: E402
 github_url = "https://github.com/DerThorsten/pyb2d3"
 github_main_url = f"{github_url}/blob/main"
 
-# not in the docs: the "Text" sample needs pillow, which the web sandbox does not have
-doc_samples = [entry.cls for entry in registry if entry.key != "Demos/Text"]
+doc_samples = [entry.cls for entry in registry]
 
 
 def create_sample_videos():

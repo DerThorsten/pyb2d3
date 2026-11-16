@@ -67,10 +67,7 @@ build-verbosity = 1
 
 # run the tests against the built wheel (without the repo's verbose pytest options)
 test-command = "pytest {project}/tests -q -o addopts="
-test-requires = [
-  "pytest",
-  "pillow"
-]
+test-requires = ["pytest"]
 
 archs = ["auto64"]          # Only target 64 bit architectures
 

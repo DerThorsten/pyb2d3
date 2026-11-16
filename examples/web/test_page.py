@@ -64,9 +64,11 @@ def main():
     parser.add_argument("page", type=Path, help="the built page directory")
     parser.add_argument("--sample", default="Games/Bridge Builder", help="the start sample")
     parser.add_argument("--timeout", type=float, default=240.0, help="seconds per load")
+    parser.add_argument("--query", default="", help='more query parameters, e.g. "text=b64:aGk"')
+    parser.add_argument("--screenshot", type=Path, help="save a screenshot after the last load")
     args = parser.parse_args()
 
-    url = serve(args.page) + f"?sample={args.sample}"
+    url = serve(args.page) + f"?sample={args.sample}" + (f"&{args.query}" if args.query else "")
     failed = False
     with sync_playwright() as p:
         # webgl without a gpu: swiftshader
@@ -78,6 +80,9 @@ def main():
             for problem in problems:
                 print(f"   {problem}")
             failed |= bool(problems)
+        if args.screenshot:
+            page.wait_for_timeout(2000)  # let the sample run a bit
+            page.screenshot(path=str(args.screenshot))
         browser.close()
     sys.exit(1 if failed else 0)
 

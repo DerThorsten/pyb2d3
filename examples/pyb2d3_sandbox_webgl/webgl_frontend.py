@@ -871,6 +871,15 @@ class WebglFrontend(FrontendBase):
             dom.el("hr", parent)
             if element.label:
                 dom.el("b", parent, element.label)
+        elif isinstance(element, widgets.TextInput):
+            dom.el("span", parent, element.label)
+            area = dom.el("textarea", parent, element.value, cls="pyb2d3-wide", rows=3)
+
+            def on_text(e, element=element, area=area):
+                element.value = str(area.value)
+                element.callback(element.value)
+
+            dom.on(area, "input", on_text)
         elif isinstance(element, widgets.Button):
             button = dom.el("button", parent, element.label, cls="pyb2d3-wide")
             dom.on(button, "click", lambda e, element=element: element.callback())

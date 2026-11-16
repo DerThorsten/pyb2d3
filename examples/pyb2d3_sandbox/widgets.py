@@ -47,6 +47,15 @@ class RadioButtons:
         self.callback = callback
 
 
+class TextInput:
+    """A (multiline) text field; `callback(text)` on every edit."""
+
+    def __init__(self, label, value, callback):
+        self.label = label
+        self.value = value
+        self.callback = callback
+
+
 class Separator:
     """A line between groups of widgets, with an optional heading for the next group."""
 

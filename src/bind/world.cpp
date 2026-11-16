@@ -349,23 +349,6 @@ namespace pyb2d3::bind
                }
         )
             .def(
-                "create_bodies_from_def",
-                [](WorldView& self, const b2BodyDef& body_def, int count)
-                {
-                    Batch<Body> bodies;
-                    bodies.ids.reserve(count);
-                    for (int i = 0; i < count; ++i)
-                    {
-                        bodies.ids.push_back(Body::id_to_int(b2CreateBody(self.id, &body_def)));
-                    }
-                    return bodies;
-                },
-                nb::arg("body_def"),
-                nb::arg("count"),
-                "Create `count` bodies from one body definition (Bodies); set what differs per "
-                "body afterwards with the batch setters (position, angle, linear_velocity, ...)."
-            )
-            .def(
                 "step",
                 [](WorldView& self, float time_step, int sub_step_count)
                 {

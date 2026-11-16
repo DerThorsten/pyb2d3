@@ -116,35 +116,6 @@ def test_shapes_and_joints_batches(world, body_list):
     assert isinstance(joints[0], b2d.RevoluteJoint)
 
 
-def test_create_bodies(world):
-    bodies = world.create_dynamic_bodies(N, linear_damping=0.5)
-    assert isinstance(bodies, b2d.Bodies) and len(bodies) == N
-    assert (bodies.type == b2d.BodyType.DYNAMIC.value).all()
-    assert bodies.linear_damping == approx(np.full(N, 0.5))
-    assert len(world.create_bodies(3, b2d.body_def(type=b2d.BodyType.STATIC))) == 3
-
-
-def test_create_shape_on_each(world):
-    bodies = world.create_dynamic_bodies(N)
-    shape_def = b2d.shape_def(density=2.0)
-    circles = bodies.create_shape(shape_def, b2d.circle(radius=0.5))  # one for all
-    assert isinstance(circles, b2d.Shapes) and len(circles) == N
-    assert all(isinstance(s, b2d.CircleShape) for s in circles)
-    assert circles.density == approx(np.full(N, 2.0))
-    radii = np.linspace(0.1, 1.0, N)
-    sized = bodies.create_shape(shape_def, [b2d.circle(radius=r) for r in radii])  # one per body
-    assert [s.circle.radius for s in sized] == approx(radii)
-    for geometry, cls in [
-        (b2d.box(0.5, 0.5), b2d.PolygonShape),
-        (b2d.capsule((0, 0), (1, 0), 0.2), b2d.CapsuleShape),
-        (b2d.segment((0, 0), (1, 0)), b2d.SegmentShape),
-    ]:
-        assert all(isinstance(s, cls) for s in bodies.create_shape(shape_def, geometry))
-    assert (bodies.shape_count == 5).all()
-    with pytest.raises(ValueError):
-        bodies.create_shape(shape_def, [b2d.circle(radius=1.0)] * (N - 1))
-
-
 def test_custom_color(world, body_list):
     shapes = b2d.Shapes([b.shapes[0] for b in body_list])
     colors = np.arange(N, dtype=np.uint32) * 0x010203

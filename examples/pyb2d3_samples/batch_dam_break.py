@@ -93,15 +93,17 @@ class BatchDamBreak(SampleBase):
         ]
         positions += self.rng.uniform(-0.01, 0.01, positions.shape)
         colors = hsv_colors(0.55 + 0.05 * positions[:, 1] / positions[:, 1].max(), 0.7, 0.95)
-        self.particles = self.world.create_dynamic_bodies(len(positions))
-        self.particles.position = positions
-        shape_def = b2d.shape_def(
-            density=1.0,
-            material=b2d.surface_material(friction=0.0),
-            filter=b2d.make_filter(group_index=FLUID_GROUP),
-        )
-        shapes = self.particles.create_shape(shape_def, b2d.circle(radius=self.radius))
-        shapes.custom_color = colors
+        bodies = b2d.Bodies()
+        fluid_filter = b2d.make_filter(group_index=FLUID_GROUP)
+        for (x, y), color in zip(positions, colors):
+            body = self.world.create_dynamic_body(position=(float(x), float(y)))
+            material = b2d.surface_material(friction=0.0, custom_color=int(color))
+            body.create_shape(
+                b2d.shape_def(density=1.0, material=material, filter=fluid_filter),
+                b2d.circle(radius=self.radius),
+            )
+            bodies.append(body)
+        self.particles = bodies
         # rest density: the density inside the initial packing
         _, density, _ = sph_densities(positions, self.smoothing)
         self.rest_density = float(np.median(density))

@@ -55,6 +55,8 @@ class WidgetFrontend(HeadlessTestFrontend):
             return [element.min_value, element.max_value, element.value]
         if isinstance(element, widgets.Button):
             return [None]
+        if isinstance(element, widgets.TextInput):
+            return ["", "a\nb ? ä", element.value]
         if isinstance(element, widgets.Separator):
             return []  # nothing to drive
         raise TypeError(f"unknown widget {element!r}")

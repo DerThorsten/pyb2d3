@@ -3,16 +3,11 @@ the import order below is the order of the sample browser (the first sample is t
 sandbox starts with when no sample is given)."""
 
 # ruff: noqa: E402, F401
-import importlib.util
-
 from pyb2d3_sandbox import registry
 
 # Demos
 from . import ragdoll, rube_goldberg, joints, newtons_cradle, soft_bodies, shapes
-from . import chain_builder, meteor, tumbler
-
-if importlib.util.find_spec("PIL"):  # pillow is not installed in the web sandbox
-    from . import text
+from . import chain_builder, meteor, tumbler, text
 
 # Games
 from . import tank, angry_shapes, billiard, minigolf, coupled_minigolf, goo_game, jump
@@ -23,7 +18,7 @@ from . import raycast, cast_ray_callback, mirror
 
 # Batch API
 from . import batch_swarm, batch_nbody, batch_fountain, batch_vs_loop
-from . import batch_creation, batch_many_shapes
+from . import batch_many_shapes
 
 # Agents
 from . import batch_boids

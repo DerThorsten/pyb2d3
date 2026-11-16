@@ -440,6 +440,15 @@ class OpenglFrontend(FrontendBase):
                 if changed:
                     element.value = options[index]
                     element.callback(element.value)
+            elif isinstance(element, widgets.TextInput):
+                imgui.text(element.label)
+                size = imgui.ImVec2(-1, 3 * imgui.get_text_line_height_with_spacing())
+                changed, value = imgui.input_text_multiline(
+                    f"##{element.label}", element.value, size
+                )
+                if changed:
+                    element.value = value
+                    element.callback(value)
             elif isinstance(element, widgets.Button):
                 if ui_button(element.label):
                     element.callback()

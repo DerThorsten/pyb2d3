@@ -90,16 +90,18 @@ class BatchFerrofluid(SampleBase):
         positions += self.rng.uniform(-0.005, 0.005, positions.shape)
         n = len(positions)
         colors = hsv_colors(np.full(n, 0.7), 0.25, self.rng.uniform(0.15, 0.35, n))  # oily black
-        self.particles = self.world.create_dynamic_bodies(n, enable_sleep=False)
-        self.particles.position = positions
-        shape_def = b2d.shape_def(
-            density=1.0,
-            material=b2d.surface_material(friction=0.0),
-            filter=b2d.make_filter(group_index=FLUID_GROUP),
-        )
-        shapes = self.particles.create_shape(shape_def, b2d.circle(radius=self.radius))
-        shapes.custom_color = colors
-        self.mass = float(self.particles.mass[0])
+        bodies = b2d.Bodies()
+        shape_filter = b2d.make_filter(group_index=FLUID_GROUP)
+        for (x, y), color in zip(positions, colors):
+            body = self.world.create_dynamic_body(position=(float(x), float(y)), enable_sleep=False)
+            material = b2d.surface_material(friction=0.0, custom_color=int(color))
+            body.create_shape(
+                b2d.shape_def(density=1.0, material=material, filter=shape_filter),
+                b2d.circle(radius=self.radius),
+            )
+            bodies.append(body)
+        self.particles = bodies
+        self.mass = float(bodies.mass[0])
         _, density, _ = sph_densities(positions, self.smoothing)
         self.rest_density = float(np.median(density))
         self.magnet = np.array(self.magnet_rest)
