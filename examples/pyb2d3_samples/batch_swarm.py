@@ -12,7 +12,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import create_circles, destroy_bodies, hsv_colors, perpendicular, unit_and_length
+from .examples_common.batch import create_circles, hsv_colors, perpendicular, unit_and_length
 
 
 @register_sample("Batch API", "Swarm")
@@ -57,7 +57,7 @@ class BatchSwarm(SampleBase):
         return b2d.aabb(lower_bound=(-self.hx, -self.hy), upper_bound=(self.hx, self.hy))
 
     def create_swarm(self):
-        destroy_bodies(self, self.bodies)
+        self.bodies.destroy()
         n = self.count
         margin = 2.0 * self.radius
         positions = self.rng.uniform(

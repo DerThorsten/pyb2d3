@@ -19,14 +19,6 @@ namespace pyb2d3
 {
     namespace nb = nanobind;
 
-    // Batch bindings can be compiled out (-DPYB2D3_BATCH_API=OFF in CMake) to
-    // compare / reduce binary size. When disabled, no batch template is instantiated.
-#ifdef PYB2D3_NO_BATCH_API
-    inline constexpr bool batch_api_enabled = false;
-#else
-    inline constexpr bool batch_api_enabled = true;
-#endif
-
     // -------------------------------------------------------------------------
     // method<F>: turn a box2d C function `R f(IdT, Args...)` into a "member function"
     // of any wrapper type that has an `id` member.
@@ -233,6 +225,10 @@ namespace pyb2d3
             {
                 return "int32";
             }
+            else if constexpr (std::is_same_v<S, uint32_t>)
+            {
+                return "uint32";
+            }
             else if constexpr (std::is_same_v<S, uint64_t>)
             {
                 return "uint64";
@@ -403,7 +399,7 @@ namespace pyb2d3
         using cls_type = std::conditional_t<std::is_void_v<Base>, nb::class_<T>, nb::class_<T, Base>>;
         using batch_cls_type = nb::class_<Batch<T>>;
 
-        static constexpr bool with_batch = WithBatch && batch_api_enabled;
+        static constexpr bool with_batch = WithBatch;
 
         explicit Binder(cls_type& cls)
             : m_cls(cls)
@@ -608,6 +604,25 @@ namespace pyb2d3
                     }
                 );
         }
+    }
+
+    // a member function of the wrapper type, also on its batch type: called for every id,
+    // e.g. def_for_each(batch_cls, "destroy", &Body::Destroy) -> Bodies.destroy()
+    template <class T, class... A, class... Extra>
+    void
+    def_for_each(nb::class_<Batch<T>>& batch_cls, const char* name, void (T::*method)(A...), const Extra&... extra)
+    {
+        batch_cls.def(
+            name,
+            [method](Batch<T>& self, A... args)
+            {
+                for (uint64_t id : self.ids)
+                {
+                    (T(id).*method)(args...);
+                }
+            },
+            extra...
+        );
     }
 
 }  // namespace pyb2d3

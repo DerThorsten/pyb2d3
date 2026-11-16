@@ -5,7 +5,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import Shaker, destroy_bodies, hsv_colors
+from .examples_common.batch import Shaker, hsv_colors
 
 
 @register_sample("Granular", "Earthquake City")
@@ -52,7 +52,7 @@ class BatchEarthquake(SampleBase):
         )
 
     def build(self):
-        destroy_bodies(self, self.blocks)
+        self.blocks.destroy()
         self.quaking = False
         self.shaker.amplitude = 0.0
         hx, hy = self.block

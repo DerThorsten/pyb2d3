@@ -7,7 +7,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import destroy_bodies, hsv_colors
+from .examples_common.batch import hsv_colors
 
 # shape type -> how a body of this type is built (half size ~0.4)
 SHAPE_TYPES = ["mixed", "circles", "boxes", "rounded boxes", "polygons", "capsules"]
@@ -69,7 +69,7 @@ class BatchManyShapes(SampleBase):
 
     def build(self):
         """the box (static segments: lines) and the bodies on a grid"""
-        destroy_bodies(self, self.bodies)
+        self.bodies.destroy()
         if self.walls is not None:
             self.walls.destroy()
         w = self.half_width()

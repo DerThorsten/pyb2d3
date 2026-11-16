@@ -18,6 +18,22 @@ namespace pyb2d3::bind
             return b2Rot_GetAngle(b2Body_GetRotation(id));
         }
 
+        // setting one part of the transform keeps the other (Body / Bodies)
+        void set_position(b2BodyId id, b2Vec2 position)
+        {
+            b2Body_SetTransform(id, position, b2Body_GetRotation(id));
+        }
+
+        void set_rotation(b2BodyId id, b2Rot rotation)
+        {
+            b2Body_SetTransform(id, b2Body_GetPosition(id), rotation);
+        }
+
+        void set_angle(b2BodyId id, float angle)
+        {
+            set_rotation(id, b2MakeRot(angle));
+        }
+
         float get_speed(b2BodyId id)
         {
             return b2Length(b2Body_GetLinearVelocity(id));
@@ -52,8 +68,61 @@ namespace pyb2d3::bind
             ids.resize(Fill(self.id, ids.data(), static_cast<int>(ids.size())));
             return ids;
         }
-    }  // namespace
 
+        // Bodies.create_<geometry>_shape: one shape on every body, from one shape def; the
+        // geometry is one for all bodies or a sequence with one per body
+        template <class G, b2ShapeId (*Create)(b2BodyId, const b2ShapeDef*, const G*)>
+        Batch<Shape> create_shape_on_each(const Batch<Body>& bodies, const b2ShapeDef& def, nb::handle geometry)
+        {
+            Batch<Shape> shapes;
+            shapes.ids.reserve(bodies.size());
+            if (nb::isinstance<G>(geometry))
+            {
+                const G& one = nb::cast<const G&>(geometry);
+                for (std::size_t i = 0; i < bodies.size(); ++i)
+                {
+                    shapes.ids.push_back(Shape::id_to_int(Create(bodies.id(i), &def, &one)));
+                }
+                return shapes;
+            }
+            const nb::sequence each = nb::cast<nb::sequence>(geometry);
+            if (nb::len(each) != bodies.size())
+            {
+                throw nb::value_error("one geometry for all bodies or one per body");
+            }
+            for (std::size_t i = 0; i < bodies.size(); ++i)
+            {
+                const G& g = nb::cast<const G&>(each[i]);
+                shapes.ids.push_back(Shape::id_to_int(Create(bodies.id(i), &def, &g)));
+            }
+            return shapes;
+        }
+
+        template <class G, b2ShapeId (*Create)(b2BodyId, const b2ShapeDef*, const G*)>
+        void
+        def_create_shape_on_each(nb::class_<Batch<Body>>& batch_cls, const char* name, const char* geometry)
+        {
+            batch_cls.def(
+                name,
+                &create_shape_on_each<G, Create>,
+                nb::arg("shape_def"),
+                nb::arg(geometry),
+                "Create one shape on every body (Shapes): one shape def, the geometry is one for "
+                "all bodies or a sequence with one per body."
+            );
+        }
+    }  // namespace
+}  // namespace pyb2d3::bind
+
+// docstrings of the extras above (box2d has none for them); a property uses its getter's
+namespace pyb2d3::docs
+{
+    template <>
+    inline constexpr const char* doc<&bind::get_angle> = "The body angle in radians (set: keeps the position).";
+}  // namespace pyb2d3::docs
+
+namespace pyb2d3::bind
+{
     void export_body(nb::module_& m)
     {
         nb::enum_<b2BodyType>(m, "BodyType")
@@ -70,9 +139,10 @@ namespace pyb2d3::bind
             .rw<b2Body_GetName, b2Body_SetName>("name")
 
             // pose
-            .ro<b2Body_GetPosition>("position")
-            .ro<b2Body_GetRotation>("rotation")
-            .ro<&get_angle>("angle")
+            // (set: keeps the other part of the transform; both: set_transform)
+            .rw<b2Body_GetPosition, &set_position>("position")
+            .rw<b2Body_GetRotation, &set_rotation>("rotation")
+            .rw<&get_angle, &set_angle>("angle")
             .ro<b2Body_GetTransform>("transform")
             .def<b2Body_SetTransform>("set_transform", nb::arg("position"), nb::arg("rotation"))
             .def<b2Body_SetTargetTransform>(
@@ -165,6 +235,18 @@ namespace pyb2d3::bind
             .def<b2CreateCapsuleShape>("create_capsule_shape", nb::arg("shape_def"), nb::arg("capsule"))
             .def<b2CreatePolygonShape>("create_polygon_shape", nb::arg("shape_def"), nb::arg("polygon"));
 
+        // batch shape creation, the same names as the single ones above
+        def_create_shape_on_each<b2Circle, b2CreateCircleShape>(batch_cls, "create_circle_shape", "circle");
+        def_create_shape_on_each<b2Segment, b2CreateSegmentShape>(batch_cls, "create_segment_shape", "segment");
+        def_create_shape_on_each<b2ChainSegment, b2CreateChainSegmentShape>(
+            batch_cls,
+            "create_chain_segment_shape",
+            "chain_segment"
+        );
+        def_create_shape_on_each<b2Capsule, b2CreateCapsuleShape>(batch_cls, "create_capsule_shape", "capsule");
+        def_create_shape_on_each<b2Polygon, b2CreatePolygonShape>(batch_cls, "create_polygon_shape", "polygon");
+
+        def_for_each(batch_cls, "destroy", &Body::Destroy, "Destroy every body (with its shapes and joints).");
         cls.def("destroy", &Body::Destroy)
             .def_prop_ro(
                 "world",

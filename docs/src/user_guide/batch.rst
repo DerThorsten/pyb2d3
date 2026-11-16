@@ -111,10 +111,3 @@ differs per body, plain properties are just as good and easier to read.
 
 The *Batch API* samples in the sandbox (``pixi run sandbox``) show it in action: swarms, an
 n-body simulation, a particle fountain and a live loop vs. batch comparison.
-
-Binary size
------------
-
-The batch API is generated at compile time and adds about 50 KB to the extension module. Build
-with ``-DPYB2D3_BATCH_API=OFF`` to leave it out; ``b2d.WITH_BATCH_API`` tells whether a build
-has it.

@@ -5,9 +5,8 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import (
+from .examples_common.batch import (
     create_circles,
-    destroy_bodies,
     hsv_colors,
     neighbor_pairs,
     pair_sum,
@@ -62,7 +61,7 @@ class BatchBoids(SampleBase):
 
     def create_boids(self):
         """random positions + headings, colored by starting heading"""
-        destroy_bodies(self, self.bodies)
+        self.bodies.destroy()
         n = self.count
         m = 1.0
         positions = self.rng.uniform(

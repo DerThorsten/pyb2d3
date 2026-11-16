@@ -8,7 +8,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import create_circles, destroy_bodies, hsv_colors
+from .examples_common.batch import create_circles, hsv_colors
 
 
 def wrap(angle):
@@ -90,7 +90,7 @@ class BatchHourglass(SampleBase):
         ]
 
     def build(self):
-        destroy_bodies(self, self.grains)
+        self.grains.destroy()
         if self.glass is not None:
             self.glass.destroy()  # destroys the pivot joint too
         self.target_angle = None

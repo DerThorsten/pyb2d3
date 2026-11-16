@@ -33,10 +33,4 @@ NB_MODULE(_pyb2d3, m)
     bind::export_threadpool(m);
     m.attr("WITH_THREADING") = true;
 #endif
-
-#ifdef PYB2D3_NO_BATCH_API
-    m.attr("WITH_BATCH_API") = false;
-#else
-    m.attr("WITH_BATCH_API") = true;
-#endif
 }

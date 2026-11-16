@@ -7,7 +7,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import ParticlePool, draw_histogram
+from .examples_common.batch import ParticlePool, draw_histogram
 
 
 @register_sample("Granular", "Galton Board")
@@ -83,7 +83,7 @@ class BatchGalton(SampleBase):
 
     def reset(self):
         if self.pool is not None:
-            self.pool.destroy(self)
+            self.pool.destroy()
         self.pool = ParticlePool(
             self.world,
             self.total,

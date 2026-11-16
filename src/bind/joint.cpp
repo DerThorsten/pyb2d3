@@ -105,6 +105,7 @@ namespace pyb2d3::bind
             .rw<b2Joint_GetForceThreshold, b2Joint_SetForceThreshold>("force_threshold")
             .rw<b2Joint_GetTorqueThreshold, b2Joint_SetTorqueThreshold>("torque_threshold");
 
+        def_for_each(batch_cls, "destroy", &Joint::Destroy, "Destroy every joint.");
         cls.def("destroy", &Joint::Destroy)
             .def(
                 "cast",

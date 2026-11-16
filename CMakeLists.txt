@@ -10,7 +10,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 OPTION(PYB2D3_NO_THREADING "Disable threading support" OFF)
-OPTION(PYB2D3_BATCH_API "Build the numpy batch API (Bodies, Shapes, ...)" ON)
 
 
 # this is only relevant if we are building box2d
@@ -116,9 +115,6 @@ target_include_directories(_pyb2d3
 
 if(PYB2D3_NO_THREADING)
     target_compile_definitions(_pyb2d3 PRIVATE PYB2D3_NO_THREADING)
-endif()
-if(NOT PYB2D3_BATCH_API)
-    target_compile_definitions(_pyb2d3 PRIVATE PYB2D3_NO_BATCH_API)
 endif()
 
 # link box2d

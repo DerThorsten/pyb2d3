@@ -8,7 +8,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import Ema, destroy_bodies, hsv_colors, neighbor_pairs, pair_sum
+from .examples_common.batch import Ema, hsv_colors, neighbor_pairs, pair_sum
 
 # the particles never collide with each other (negative group): the SPH forces
 # keep them apart, box2d only does the walls and the obstacle
@@ -83,7 +83,7 @@ class BatchDamBreak(SampleBase):
 
     def reset(self):
         """a fresh column of water at the left wall"""
-        destroy_bodies(self, self.particles)
+        self.particles.destroy()
         spacing = 0.5 * self.smoothing
         columns = 26
         rows = int(np.ceil(self.count / columns))
@@ -93,17 +93,15 @@ class BatchDamBreak(SampleBase):
         ]
         positions += self.rng.uniform(-0.01, 0.01, positions.shape)
         colors = hsv_colors(0.55 + 0.05 * positions[:, 1] / positions[:, 1].max(), 0.7, 0.95)
-        bodies = b2d.Bodies()
-        fluid_filter = b2d.make_filter(group_index=FLUID_GROUP)
-        for (x, y), color in zip(positions, colors):
-            body = self.world.create_dynamic_body(position=(float(x), float(y)))
-            material = b2d.surface_material(friction=0.0, custom_color=int(color))
-            body.create_shape(
-                b2d.shape_def(density=1.0, material=material, filter=fluid_filter),
-                b2d.circle(radius=self.radius),
-            )
-            bodies.append(body)
-        self.particles = bodies
+        self.particles = self.world.create_dynamic_bodies(len(positions))
+        self.particles.position = positions
+        shape_def = b2d.shape_def(
+            density=1.0,
+            material=b2d.surface_material(friction=0.0),
+            filter=b2d.make_filter(group_index=FLUID_GROUP),
+        )
+        shapes = self.particles.create_shape(shape_def, b2d.circle(radius=self.radius))
+        shapes.custom_color = colors
         # rest density: the density inside the initial packing
         _, density, _ = sph_densities(positions, self.smoothing)
         self.rest_density = float(np.median(density))

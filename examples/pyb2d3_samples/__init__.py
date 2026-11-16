@@ -22,21 +22,17 @@ from . import bridge_builder
 from . import raycast, cast_ray_callback, mirror
 
 # Batch API
-from . import batch_swarm, batch_nbody, batch_fountain, batch_vs_loop, batch_maxwell_demon
-from . import batch_many_shapes
+from . import batch_swarm, batch_nbody, batch_fountain, batch_vs_loop
+from . import batch_creation, batch_many_shapes
 
 # Agents
-from . import batch_boids, batch_predator_prey, batch_epidemic
+from . import batch_boids
 
 # Granular
-from . import batch_hourglass, batch_galton, batch_brazil_nut, batch_earthquake
+from . import batch_hourglass, batch_galton, batch_earthquake
 
 # Fluids & Matter
-from . import batch_dam_break, batch_dam_break_balls, batch_phase, batch_ferrofluid
-from . import batch_snow_globe, batch_rain
-
-# Fields & Space
-from . import batch_galaxies, batch_black_hole, batch_portals, batch_fireworks
+from . import batch_dam_break, batch_dam_break_balls, batch_ferrofluid
 
 # Playground: the starting point for your own sample (edit it in the browser sandbox)
 from . import my_sample
