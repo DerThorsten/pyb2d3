@@ -6,7 +6,7 @@ import time
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import Ema, destroy_bodies, hsv_colors, neighbor_pairs, pair_sum
 
@@ -26,16 +26,12 @@ def sph_densities(positions, smoothing):
     return (i, j, delta, distance, q), density, near
 
 
+@register_sample("Fluids & Matter", "Dam Break")
 class BatchDamBreak(SampleBase):
-    """A column of water collapses, splashes over an obstacle and settles.
-
-    The particles do not collide with each other: one neighbor search over all
-    particles gives the densities, pressure pushes from dense to thin, viscosity
-    evens out the velocities, one batch call applies the forces.
-    Sliders: stiffness (incompressibility), viscosity, particle count.
-    Mouse: drag the obstacle (or the camera).
-    Hint: low stiffness = squashy foam, high viscosity = honey; very stiff water
-    "boils" (the forces are explicit, once per 60 Hz step).
+    """A water column (SPH particles) collapses over an obstacle: neighbor densities
+    give the pressure, all with numpy and one batch call.
+    Sliders: stiffness, viscosity, count.
+    Mouse: drag the obstacle.
     """
 
     radius = 0.1  # particle radius (drawing + walls)

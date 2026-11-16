@@ -9,7 +9,7 @@ import math
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .examples_common.joints import pinned
 
@@ -224,6 +224,7 @@ class Tank:
         )
 
 
+@register_sample("Games", "Tank")
 class TankSample(SampleBase):
     """A tank with chain tracks on suspended road wheels and an explosive gun.
 

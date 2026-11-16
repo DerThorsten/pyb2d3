@@ -45,3 +45,10 @@ class RadioButtons:
         self.options = options
         self.value = value
         self.callback = callback
+
+
+class Separator:
+    """A line between groups of widgets, with an optional heading for the next group."""
+
+    def __init__(self, label=""):
+        self.label = label

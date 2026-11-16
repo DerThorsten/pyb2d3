@@ -65,6 +65,18 @@ SAMPLE_KEYS = {"PageUp": -1, "PageDown": 1}
 # starts with it, the frontend keeps it up to date (reload / share a link)
 SAMPLE_QUERY_PARAMETER = "sample"
 
+# the icons of the control buttons (︎: text style, not a colored emoji); the single
+# step is an arrow to a bar (one step, then stop): skip icons mean "next sample" here
+_TEXT = "︎"
+ICONS = {
+    "previous": "⏮" + _TEXT,  # ⏮
+    "play": "▶" + _TEXT,  # ▶
+    "pause": "⏸" + _TEXT,  # ⏸
+    "step": "⇥",  # ⇥
+    "reset": "↺",  # ↺
+    "next": "⏭" + _TEXT,  # ⏭
+}
+
 DEBUG_DRAW_OPTIONS = [
     ("draw_shapes", "Shapes"),
     ("draw_joints", "Joints"),
@@ -619,44 +631,59 @@ class WebglFrontend(FrontendBase):
     # -- the panel ------------------------------------------------------------
 
     def _build_panel(self):
-        """sample list, controls, debug draw options, the sample's own widgets"""
+        """sample list + play / step / reset, the sample's own widgets, simulation
+        settings, debug draw options"""
         dom = self._dom
         panel = self.panel
         panel.textContent = ""
 
-        # sample choice: a category, then one of its samples (one list of all ~160
-        # samples is far too long, especially on phones)
+        # sample choice: a tree like the native frontend's, a collapsible group per
+        # category (one list of all ~160 samples is far too long); the section itself is
+        # collapsible too, open at the start
         if len(self.registry):
-            section = dom.el("section", panel, cls="pyb2d3-section pyb2d3-sample-section")
-            dom.el("h3", section, "Sample")
+            section = dom.el("details", panel, cls="pyb2d3-section pyb2d3-sample-section", open="")
+            dom.el("summary", section, "Sample")
             self._sample_classes = [entry.cls for entry in self.registry]
-            row = dom.el("div", section, cls="pyb2d3-row pyb2d3-sample-choice")
-            self._category_select = dom.el("select", row, cls="pyb2d3-category-select")
+            self._sample_tree = dom.el("div", section, cls="pyb2d3-sample-tree")
+            self._tree_groups, self._tree_items = {}, []  # items: in registry order
             for category in self.registry.categories():
-                dom.el("option", self._category_select, category, value=category)
-            self._sample_select = dom.el("select", row, cls="pyb2d3-sample-select")
-            self._shown_category = None
-            entry = self.sample_entry
-            self._show_category(entry.category if entry else self.registry.categories()[0])
-            dom.on(self._category_select, "change", lambda e: self._on_select_category())
-            dom.on(self._sample_select, "change", lambda e: self._on_select_sample())
-            row = dom.el("div", section, cls="pyb2d3-row")
-            previous = dom.el("button", row, "◀ Previous", title="previous sample (PageUp)")
-            dom.on(previous, "click", lambda e: self.next_sample(-1))
-            following = dom.el("button", row, "Next ▶", title="next sample (PageDown)")
-            dom.on(following, "click", lambda e: self.next_sample(1))
+                group = dom.el("details", self._sample_tree)
+                dom.el("summary", group, category)
+                self._tree_groups[category] = group
+                for entry in self.registry.samples(category):
+                    item = dom.el("div", group, entry.name, cls="pyb2d3-tree-item")
+                    index = len(self._tree_items)
+                    dom.on(
+                        item, "click", lambda e, k=index: self.set_sample(self._sample_classes[k])
+                    )
+                    self._tree_items.append(item)
+            self._show_in_tree()
 
-        # controls
-        section = dom.el("section", panel, cls="pyb2d3-section")
-        dom.el("h3", section, "Controls")
-        row = dom.el("div", section, cls="pyb2d3-row")
-        self._play_button = dom.el("button", row, "Pause")
-        dom.on(self._play_button, "click", lambda e: self._toggle_pause())
-        self._step_button = dom.el("button", row, "Step", disabled="")
-        dom.on(self._step_button, "click", lambda e: self._request_single_step())
-        reset = dom.el("button", row, "Reset")
-        dom.on(reset, "click", lambda e: self.stop())
+        # one row of icon buttons, on top (always in view): previous sample, play /
+        # pause, single step, restart, next sample
+        # (a collapsible section of its own, open at the start)
+        section = dom.el("details", panel, cls="pyb2d3-section", open="")
+        dom.el("summary", section, "Controls")
+        row = dom.el("div", section, cls="pyb2d3-row pyb2d3-icons")
 
+        def icon_button(icon, title, on_click, **attrs):
+            button = dom.el("button", row, icon, title=title, aria_label=title, **attrs)
+            dom.on(button, "click", lambda e: on_click())
+            return button
+
+        if len(self.registry):
+            icon_button(ICONS["previous"], "previous sample (PageUp)", lambda: self.next_sample(-1))
+        self._play_button = icon_button(ICONS["pause"], "pause", self._toggle_pause)
+        self._step_button = icon_button(
+            ICONS["step"], "single step (while paused)", self._request_single_step, disabled=""
+        )
+        icon_button(ICONS["reset"], "restart the sample", self.stop)
+        if len(self.registry):
+            icon_button(ICONS["next"], "next sample (PageDown)", lambda: self.next_sample(1))
+
+        # simulation settings: collapsed (click the heading to open)
+        section = dom.el("details", panel, cls="pyb2d3-section")
+        dom.el("summary", section, "Simulation")
         self._slider(
             dom,
             section,
@@ -691,9 +718,9 @@ class WebglFrontend(FrontendBase):
             fmt_value=lambda v: f"{speed_from_slider(v):.2f}x",
         )
 
-        # debug draw options
-        section = dom.el("section", panel, cls="pyb2d3-section")
-        dom.el("h3", section, "Debug draw")
+        # debug draw options: collapsed (click the heading to open)
+        section = dom.el("details", panel, cls="pyb2d3-section")
+        dom.el("summary", section, "Debug draw")
         for name, label in DEBUG_DRAW_OPTIONS:
             self._checkbox(
                 dom,
@@ -703,10 +730,13 @@ class WebglFrontend(FrontendBase):
                 lambda v, name=name: setattr(self.debug_draw, name, v),
             )
 
-        # the sample: title, help text, its widgets (filled by add_widget)
-        section = dom.el("section", panel, cls="pyb2d3-section")
-        self._sample_title = dom.el("h3", section, "")
-        self._sample_help = dom.el("p", section, "", cls="pyb2d3-help")
+        # the sample: collapsible, open at the start, its title the heading; its widgets
+        # (filled by add_widget), help text (a box of fixed height: switching samples
+        # moves nothing)
+        section = dom.el("details", panel, cls="pyb2d3-section", open="")
+        self._sample_title = dom.el("summary", section, "")
+        self._sample_widgets = dom.el("div", section)
+        self._sample_help = dom.el("p", section, "", cls="pyb2d3-help pyb2d3-sample-help")
         dom.el(
             "p",
             section,
@@ -714,7 +744,6 @@ class WebglFrontend(FrontendBase):
             "touch: drag bodies, one finger on empty space pans, two fingers zoom",
             cls="pyb2d3-help",
         )
-        self._sample_widgets = dom.el("div", section)
 
     def _slider(
         self, dom, parent, label, lo, hi, step, value, callback, fmt="{:.2f}", fmt_value=None
@@ -743,32 +772,24 @@ class WebglFrontend(FrontendBase):
         dom.on(box, "change", lambda e: callback(bool(box.checked)))
         return box
 
-    def _show_category(self, category):
-        """the category list shows `category`, the sample list its samples (values:
-        indices into _sample_classes); the running sample is selected if it is one"""
-        self._category_select.value = category
-        if category != self._shown_category:
-            self._shown_category = category
-            self._sample_select.textContent = ""
-            for entry in self.registry.samples(category):
-                self._dom.el(
-                    "option",
-                    self._sample_select,
-                    entry.name,
-                    value=self._sample_classes.index(entry.cls),
-                )
-        if self.sample_class in self._sample_classes:
-            self._sample_select.value = str(self._sample_classes.index(self.sample_class))
-
-    def _on_select_category(self):
-        """another category: show its samples and start the first one"""
-        category = str(self._category_select.value)
-        self._show_category(category)
-        self.set_sample(self.registry.samples(category)[0].cls)
-
-    def _on_select_sample(self):
-        """a sample of the shown category chosen"""
-        self.set_sample(self._sample_classes[int(self._sample_select.value)])
+    def _show_in_tree(self):
+        """highlight the running sample in the tree, open its category (the others stay
+        as the user left them) and scroll it into the tree's view"""
+        current = (
+            self._sample_classes.index(self.sample_class)
+            if self.sample_class in self._sample_classes
+            else -1
+        )
+        for k, item in enumerate(self._tree_items):
+            item.classList.toggle("active", k == current)
+        entry = self.sample_entry
+        if current < 0 or entry is None:
+            return
+        self._tree_groups[entry.category].open = True
+        item, tree = self._tree_items[current], self._sample_tree
+        top = item.offsetTop  # (the tree is the items' offset parent)
+        if top < tree.scrollTop or top > tree.scrollTop + tree.clientHeight - item.offsetHeight:
+            tree.scrollTop = top - tree.clientHeight / 3
 
     def _toggle_pause(self):
         """play / pause"""
@@ -780,7 +801,10 @@ class WebglFrontend(FrontendBase):
             self.set_paused()
         else:
             self.set_running()
-        self._play_button.textContent = "Play" if paused else "Pause"
+        title = "play" if paused else "pause"
+        self._play_button.textContent = ICONS[title]
+        self._play_button.title = title
+        self._play_button.setAttribute("aria-label", title)
         self._step_button.disabled = not paused
 
     def _request_single_step(self):
@@ -801,9 +825,8 @@ class WebglFrontend(FrontendBase):
         sample list, put it into the URL"""
         self._sample_title.textContent = self.sample_title
         self._sample_help.textContent = sample_class.help_text()
-        entry = self.sample_entry
-        if entry is not None and getattr(self, "_category_select", None) is not None:
-            self._show_category(entry.category)  # (previous / next may change it)
+        if getattr(self, "_tree_items", None):
+            self._show_in_tree()
         self._update_url()
         self._announce_sample(sample_class)
 
@@ -845,6 +868,10 @@ class WebglFrontend(FrontendBase):
                 element.callback(v)
 
             self._checkbox(dom, parent, element.label, bool(element.value), on_check)
+        elif isinstance(element, widgets.Separator):
+            dom.el("hr", parent)
+            if element.label:
+                dom.el("b", parent, element.label)
         elif isinstance(element, widgets.Button):
             button = dom.el("button", parent, element.label, cls="pyb2d3-wide")
             dom.on(button, "click", lambda e, element=element: element.callback())

@@ -2,7 +2,7 @@
 import math
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 
 
 def grid_iterate(shape):
@@ -12,6 +12,7 @@ def grid_iterate(shape):
             yield row, col
 
 
+@register_sample("Demos", "Joints")
 class Joints(SampleBase):
     """Four basic joints side by side: revolute, prismatic (45 degree axis), weld and spring distance joint.
 

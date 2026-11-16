@@ -6,7 +6,7 @@ import math
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .examples_common.joints import pinned
 
@@ -23,13 +23,12 @@ class Stage:
         self.time = None  # world time it happened
 
 
+@register_sample("Demos", "Rube Goldberg")
 class RubeGoldberg(SampleBase):
-    """A Rube Goldberg machine: ball -> dominoes -> Newton's cradle -> ramp ->
-    see-saw -> bucket of balls -> water wheel -> bell.
-
-    Keys: space starts the machine, r rebuilds it.
-    Hint: it starts by itself after a second; watch the stage counter on top, and
-    try nudging parts with the mouse to break (or fix) the chain.
+    """A Rube Goldberg machine: ball, dominoes, Newton's cradle, see-saw, water
+    wheel, bell. It starts by itself after a second.
+    Keys: space starts it, r rebuilds it.
+    Mouse: nudge parts to break (or fix) the chain.
     """
 
     substeps = 8

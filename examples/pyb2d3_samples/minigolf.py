@@ -2,7 +2,7 @@
 import pyb2d3 as b2d
 import numpy as np
 from enum import Enum
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 from .examples_common.math import truncated_vector_diff, interpolate_color
 
 
@@ -13,12 +13,11 @@ class GolfState(Enum):
     BALL_IS_IN_HOLE = 3  # the ball is in the hole, we can reset the level
 
 
+@register_sample("Games", "Minigolf")
 class Minigolf(SampleBase):
     """A minigolf lane seen from above; a distance joint pulls the ball into the hole.
-
-    Mouse: press on the ball, drag back (away from the shot direction) and release to putt.
-    The line turns from yellow to red with the strength of the shot.
-    The level restarts once the ball is in the hole.
+    Mouse: press on the ball, drag back and release to putt (yellow to red: the
+    strength). The level restarts once the ball is in.
     """
 
     def __init__(self, frontend, settings):

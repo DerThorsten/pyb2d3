@@ -11,11 +11,12 @@ import time
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import Ema, create_circles, destroy_bodies, hsv_colors
 
 
+@register_sample("Batch API", "N-Body Gravity")
 class BatchNBody(SampleBase):
     """A protoplanetary disc: n^2 gravitational forces per step with numpy.
 

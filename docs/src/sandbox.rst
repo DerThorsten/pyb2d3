@@ -36,8 +36,8 @@ created by the base class) and returns the visible region from ``aabb()``. Optio
   e.g. ``substeps = 8`` for long chains of joints
 
 Dragging bodies with the mouse is built in (see :class:`pyb2d3.MouseDrag`), clicking on empty
-space drags the camera. ``self.frontend.add_widget(...)`` adds sliders, checkboxes, buttons and
-radio buttons (``pyb2d3_sandbox.widgets``) to frontends that support them.
+space drags the camera. ``self.frontend.add_widget(...)`` adds sliders, checkboxes, buttons,
+radio buttons and separators (``pyb2d3_sandbox.widgets``) to frontends that support them.
 
 Categories
 ----------

@@ -3,21 +3,17 @@
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import create_circles, destroy_bodies, draw_histogram, hsv_colors
 
 
+@register_sample("Batch API", "Maxwell's Demon")
 class BatchMaxwellDemon(SampleBase):
-    """Maxwell's demon: an ideal gas in two chambers with a gate between them.
-    The demon lets only fast molecules pass from left to right and only slow
-    ones from right to left: the right chamber heats up, the left one cools
-    down, without any work (that is the paradox).
-
-    Sliders: the demon's speed threshold.
-    Checkbox: demon on / off (off: an open gate, the temperatures even out).
-    Hint: molecules are colored by speed; the histograms show the speeds of each
-    chamber. The gate decision is one numpy mask over all molecules per step.
+    """Maxwell's demon lets only fast molecules pass to the right and only slow ones
+    to the left: the right chamber heats up, the left cools down.
+    Slider: the speed threshold. Checkbox: demon on / off.
+    Colors and histograms: the speeds.
     """
 
     hx, hy = 24.0, 14.0  # box half size; the wall is at x = 0

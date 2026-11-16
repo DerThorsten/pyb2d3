@@ -6,21 +6,18 @@ import time
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import Ema, destroy_bodies, hsv_colors
 from .batch_common import create_points  # non-colliding circles
 
 
+@register_sample("Fields & Space", "Black Hole")
 class BatchBlackHole(SampleBase):
-    """An accretion disc around a black hole: gravity + viscosity with numpy, one
-    batch call; swallowed particles are recycled to the outer edge with masks.
-
-    Mouse: hold to move the black hole (the disc follows, or gets torn apart).
-    Sliders: hole mass, viscosity (how fast the disc drains), particles.
-    Hint: viscosity lets the gas lose angular momentum and spiral in (inner orbits
-    are faster: watch the spiral wind up); at 0 the disc almost just orbits. The
-    text shows the accretion rate.
+    """An accretion disc: viscosity lets the gas spiral into the black hole;
+    swallowed particles are recycled.
+    Mouse: hold to move the black hole.
+    Sliders: mass, viscosity, particles.
     """
 
     # the force is computed once per step: held constant over several substeps it pumps

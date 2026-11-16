@@ -1,7 +1,7 @@
 # +
 import pyb2d3 as b2d
 import numpy as np
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 import pyb2d3_sandbox.widgets as widgets
 
 from dataclasses import dataclass
@@ -341,7 +341,7 @@ class RedGoo(Goo):
     color_rgb = (255, 0, 0)  # red
     color_hex = b2d.hex_color(*color_rgb)
     text_color = (255, 255, 255)  # white text color
-    name = "Ballon Goo"
+    name = "Balloon Goo"
 
     def __init__(self, sample):
         super().__init__(sample)
@@ -547,13 +547,12 @@ class GooGame(SampleBase):
             goo.draw()
 
 
+@register_sample("Games", "Goo Game")
 class Level1(GooGame):
-    """Build structures from goo balls connected by spring joints (like World of Goo).
-
-    Mouse: press and move to preview, release to place a goo; it links to nearby goos.
-    Release near the middle of two unlinked goos to add only an edge between them.
-    Pressing where no goo fits drags the camera.
-    Widget "Goo Type": Plain, Ballon (floats up, one link), Drip (light, chains), Heavy.
+    """Build structures from goo balls linked by spring joints.
+    Mouse: press, move to preview, release to place a goo (it links to goos nearby);
+    release between two goos to link just them.
+    Goo Type: plain, balloon (floats up), drip (chains), heavy.
     """
 
     @dataclass

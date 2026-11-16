@@ -1,12 +1,13 @@
 # +
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 
 
 import random
 import math
 
 
+@register_sample("Queries", "Mirror")
 class Mirror(SampleBase):
     """A laser beam reflected up to three times, from repeated cast_ray_closest calls
     and the surface normals of the hits.

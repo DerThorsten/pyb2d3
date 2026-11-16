@@ -67,12 +67,19 @@ def ui_button(*args, enabled=True, same_line=False, **kwargs):
         return r
 
 
+# the control buttons, as in the browser frontend: the single step is an arrow to a bar
+# (one step, then stop), the "step" icons mean previous / next sample
+ICON_PREVIOUS = icons_fontawesome_6.ICON_FA_BACKWARD_STEP
 ICON_PLAY = icons_fontawesome_6.ICON_FA_PLAY
 ICON_PAUSE = icons_fontawesome_6.ICON_FA_PAUSE
-ICON_STOP = icons_fontawesome_6.ICON_FA_STOP
-ICON_FORWARD_STEP = icons_fontawesome_6.ICON_FA_FORWARD_STEP
-ICON_CHEVRON_LEFT = icons_fontawesome_6.ICON_FA_CHEVRON_LEFT
-ICON_CHEVRON_RIGHT = icons_fontawesome_6.ICON_FA_CHEVRON_RIGHT
+ICON_STEP = icons_fontawesome_6.ICON_FA_ARROW_RIGHT_TO_BRACKET
+ICON_RESET = icons_fontawesome_6.ICON_FA_ROTATE_LEFT
+ICON_NEXT = icons_fontawesome_6.ICON_FA_FORWARD_STEP
+
+# heights in lines of text: the sample tree and the sample's help text (fixed: opening a
+# category or switching samples moves nothing below)
+TREE_LINES = 12
+HELP_LINES = 8
 
 
 KEY_MAP = {
@@ -162,6 +169,9 @@ class OpenglFrontend(FrontendBase):
             hello_imgui.DefaultImGuiWindowType.provide_full_screen_dock_space
         )
         runner_params.app_window_params.window_geometry.size = self.settings.canvas_shape
+        # the icon font matching the icons (icons_fontawesome_6; hello_imgui's default is
+        # Font Awesome 4, which lacks newer ones, e.g. the restart icon)
+        runner_params.callbacks.default_icon_font = hello_imgui.DefaultIconFont.font_awesome6
         # Initialize simulation and debug draw in post_init
         runner_params.callbacks.post_init = lambda: weak.post_gl_init()
 
@@ -293,38 +303,89 @@ class OpenglFrontend(FrontendBase):
         window.imgui_window_flags = imgui.WindowFlags_.no_background
         return window
 
+    # one panel on the left, like the browser frontend's, top to bottom: the sample tree,
+    # the control buttons, the simulation and debug draw settings (collapsed), the
+    # sample's title, widgets and help
     def create_left_panel_split(self):
         split = hello_imgui.DockingSplit()
         split.initial_dock = "MainDockSpace"
         split.new_dock = "LeftPanel"
         split.direction = imgui.Dir_.left
-        split.ratio = 0.18
+        split.ratio = 0.22
         return split
 
-    def create_samples_browser_window(self):
+    def create_panel_window(self):
         weak = weakref.proxy(self)
         window = hello_imgui.DockableWindow()
         window.label = "Samples"
         window.dock_space_name = "LeftPanel"
-        window.gui_function = lambda: weak.samples_browser_gui_function()
+        window.gui_function = lambda: weak.panel_gui_function()
         return window
 
-    def samples_browser_gui_function(self):
-        # previous / next sample: buttons + PageUp / PageDown (anywhere, also
-        # while paused), like the pygame and the browser frontend
-        if imgui.button(f"{ICON_CHEVRON_LEFT} Previous"):
+    def panel_gui_function(self):
+        line = imgui.get_text_line_height_with_spacing()
+        # the sample tree: a collapsible section too, open at the start; the buttons stay
+        # in view when it is collapsed
+        if len(self.registry) and imgui.collapsing_header(
+            "Sample", imgui.TreeNodeFlags_.default_open
+        ):
+            imgui.begin_child("sample tree", (0, TREE_LINES * line), imgui.ChildFlags_.borders)
+            self.sample_tree_gui()
+            imgui.end_child()
+        if imgui.collapsing_header("Controls", imgui.TreeNodeFlags_.default_open):
+            self.control_buttons_gui()
+        # previous / next sample: PageUp / PageDown, anywhere (also with the sections closed)
+        if len(self.registry) and imgui.is_key_pressed(imgui.Key.page_up, repeat=False):
             self.next_sample(-1)
-        imgui.set_item_tooltip("previous sample (PageUp)")
-        imgui.same_line()
-        if imgui.button(f"Next {ICON_CHEVRON_RIGHT}"):
+        if len(self.registry) and imgui.is_key_pressed(imgui.Key.page_down, repeat=False):
             self.next_sample(1)
-        imgui.set_item_tooltip("next sample (PageDown)")
-        if imgui.is_key_pressed(imgui.Key.page_up, repeat=False):
-            self.next_sample(-1)
-        if imgui.is_key_pressed(imgui.Key.page_down, repeat=False):
-            self.next_sample(1)
-        imgui.separator()
+        if imgui.collapsing_header("Simulation"):
+            self.simulation_settings_gui()
+        if imgui.collapsing_header("Debug draw"):
+            for option_name, option_label in self.debug_draw_option_names:
+                changed, value = imgui.checkbox(option_label, getattr(self.debug_draw, option_name))
+                if changed:
+                    setattr(self.debug_draw, option_name, value)
+        # the sample's own section, open at the start (the id after ### is fixed: its
+        # open state stays when the title changes with the sample)
+        if self.sample_class is not None and imgui.collapsing_header(
+            f"{self.sample_title}###sample", imgui.TreeNodeFlags_.default_open
+        ):
+            self.sample_widgets_gui()
+            imgui.begin_child("sample help", (0, HELP_LINES * line))
+            imgui.text_wrapped(self.sample_class.help_text())
+            imgui.end_child()
+            imgui.begin_disabled()  # dimmed, wrapped at the panel's edge
+            imgui.text_wrapped("mouse: drag bodies, drag the background to pan, wheel zooms")
+            imgui.end_disabled()
 
+    def control_buttons_gui(self):
+        """one row of equally wide icon buttons with tooltips: previous sample, play /
+        pause, single step, restart, next sample"""
+        has_samples = len(self.registry) > 0
+        paused = self.is_paused()
+        buttons = [
+            (ICON_PREVIOUS, "previous sample (PageUp)", True, lambda: self.next_sample(-1)),
+            (ICON_PLAY if paused else ICON_PAUSE, "play" if paused else "pause", True, None),
+            (ICON_STEP, "single step (while paused)", paused, None),
+            (ICON_RESET, "restart the sample", True, self.stop),
+            (ICON_NEXT, "next sample (PageDown)", True, lambda: self.next_sample(1)),
+        ]
+        if not has_samples:
+            buttons = buttons[1:4]
+        spacing = imgui.get_style().item_spacing.x
+        width = (imgui.get_content_region_avail().x - spacing * (len(buttons) - 1)) / len(buttons)
+        for k, (icon, tooltip, enabled, action) in enumerate(buttons):
+            if ui_button(f"{icon}##{tooltip}", enabled=enabled, same_line=k > 0, size=(width, 0)):
+                if icon == ICON_STEP:
+                    self._just_a_single_frame = True
+                elif action is None:  # play / pause
+                    self.set_running() if paused else self.set_paused()
+                else:
+                    action()
+            imgui.set_item_tooltip(tooltip)
+
+    def sample_tree_gui(self):
         # one tree node per category, like box2d's sample browser
         current = self.sample_class
         # the sample changed (also by the buttons / keys): open its category, scroll to it
@@ -347,53 +408,7 @@ class OpenglFrontend(FrontendBase):
                         self.set_sample(entry.cls)
                 imgui.tree_pop()
 
-    def create_right_panel_split(self):
-        split = hello_imgui.DockingSplit()
-        split.initial_dock = "MainDockSpace"
-        split.new_dock = "RightPanel"
-        split.direction = imgui.Dir_.right
-        split.ratio = 0.2
-        return split
-
-    def create_right_panel_split1(self):
-        split_right1 = hello_imgui.DockingSplit()
-        split_right1.initial_dock = "RightPanel"
-        split_right1.new_dock = "RightPanel1"
-        split_right1.direction = imgui.Dir_.down
-        split_right1.ratio = 0.73
-        return split_right1
-
-    def create_right_panel_split2(self):
-        split_right2 = hello_imgui.DockingSplit()
-        split_right2.initial_dock = "RightPanel1"
-        split_right2.new_dock = "RightPanel2"
-        split_right2.direction = imgui.Dir_.down
-        split_right2.ratio = 0.5
-        return split_right2
-
-    def create_right_panel_split3(self):
-        split_right3 = hello_imgui.DockingSplit()
-        split_right3.initial_dock = "RightPanel2"
-        split_right3.new_dock = "RightPanel3"
-        split_right3.direction = imgui.Dir_.down
-        split_right3.ratio = 0.4
-        return split_right3
-
-    def create_samples_ui_window(self):
-        weak = weakref.proxy(self)
-        window = hello_imgui.DockableWindow()
-        window.label = "Sample UI"
-        window.dock_space_name = "RightPanel3"
-        window.gui_function = lambda: weak.samples_ui_gui_function()
-        return window
-
-    def samples_ui_gui_function(self):
-        # the sample's help text (controls + hints), collapsible
-        if self.sample_class is not None:
-            if imgui.collapsing_header("Help", imgui.TreeNodeFlags_.default_open):
-                imgui.text_wrapped(self.sample_class.help_text())
-                imgui.text_disabled("mouse: drag bodies, drag the background to pan, wheel zooms")
-            imgui.separator()
+    def sample_widgets_gui(self):
         for element in self._per_sample_widgets:
             if isinstance(element, widgets.FloatSlider):
                 # draw a float slider
@@ -431,7 +446,8 @@ class OpenglFrontend(FrontendBase):
                     element.callback()
             elif isinstance(element, widgets.RadioButtons):
                 current_value = element.value
-
+                imgui.text(element.label)
+                imgui.push_id(element.label)  # the same option in two groups: distinct ids
                 for option in element.options:
                     selected = current_value == option
                     changed = imgui.radio_button(option, selected)
@@ -439,6 +455,12 @@ class OpenglFrontend(FrontendBase):
                         element.value = option
                         element.callback(option)
                         break
+                imgui.pop_id()
+            elif isinstance(element, widgets.Separator):
+                if element.label:
+                    imgui.separator_text(element.label)
+                else:
+                    imgui.separator()
 
     def add_widget(self, element):
         """Add a UI element to the sample's UI."""
@@ -450,36 +472,7 @@ class OpenglFrontend(FrontendBase):
     def show_stats(self):
         imgui.text("current (avg) [max] ms")
 
-    def create_controls_window(self):
-        weak = weakref.proxy(self)
-        window = hello_imgui.DockableWindow()
-        window.label = "Controls"
-        window.dock_space_name = "RightPanel"
-        window.gui_function = lambda: weak.controls_gui_function()
-        return window
-
-    def controls_gui_function(self):
-        # play/pause toggle-button
-        # stop-button
-        # single-step button
-        is_paused = self.is_paused()
-
-        imgui.text("Controls")
-        imgui.separator()
-
-        play_or_pause_icon = ICON_PLAY if is_paused else ICON_PAUSE
-
-        if ui_button(play_or_pause_icon, same_line=False):
-            if self.is_paused():
-                self.set_running()
-            else:
-                self.set_paused()
-        if ui_button(ICON_FORWARD_STEP, enabled=is_paused, same_line=True):
-            self._just_a_single_frame = True
-        if ui_button(ICON_STOP, same_line=True):
-            self.stop()
-        imgui.separator()
-
+    def simulation_settings_gui(self):
         # slider for hertz
         changed, hertz = imgui.slider_float("Hertz", self.settings.hertz, 1.0, 120.0, "%.1f Hz")
         if changed:
@@ -513,39 +506,11 @@ class OpenglFrontend(FrontendBase):
             self.speed_ui_val = val
             self.settings.speed = mapping(val)
 
-    def create_debug_draw_settings_window(self):
-        weak = weakref.proxy(self)
-        window = hello_imgui.DockableWindow()
-        window.label = "Debug Draw Settings"
-        window.dock_space_name = "RightPanel2"
-        window.gui_function = lambda: weak.debug_draw_gui_function()
-        return window
-
-    def debug_draw_gui_function(self):
-        imgui.text("Debug Draw Settings")
-        for option_name, option_label in self.debug_draw_option_names:
-            changes, value = imgui.checkbox(option_label, getattr(self.debug_draw, option_name))
-            if changes:
-                setattr(self.debug_draw, option_name, value)
-
     def create_layout(self):
         # note: build the lists first and assign them once. The docking_params
         # attributes return *copies* of the C++ vectors, so appending to them is lost.
-        splits = [
-            self.create_right_panel_split(),
-            self.create_right_panel_split1(),
-            self.create_right_panel_split2(),
-            self.create_right_panel_split3(),
-        ]
-        windows = [
-            self.create_simulation_window(),
-            self.create_samples_ui_window(),
-            self.create_controls_window(),
-            self.create_debug_draw_settings_window(),
-        ]
-        if len(self.registry):
-            splits.append(self.create_left_panel_split())
-            windows.append(self.create_samples_browser_window())
+        splits = [self.create_left_panel_split()]
+        windows = [self.create_simulation_window(), self.create_panel_window()]
 
         docking_params = hello_imgui.DockingParams()
         docking_params.docking_splits = splits

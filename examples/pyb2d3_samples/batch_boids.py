@@ -3,7 +3,7 @@
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import (
     create_circles,
@@ -15,15 +15,13 @@ from .batch_common import (
 )
 
 
+@register_sample("Agents", "Boids Flocking")
 class BatchBoids(SampleBase):
-    """Boids: every bird steers by its neighbors only (separation, alignment,
-    cohesion), yet flocks form and swirl around.
-
-    Mouse: hold the button: a hawk at the cursor, the boids scatter.
-    Sliders: the weights of the three rules, number of boids.
-    Hint: all three at 0: the boids fly straight past each other; separation 0:
-    the flocks squeeze into dense clumps. The neighbor pairs come from a numpy
-    grid search, all forces from one call.
+    """Boids steer by their neighbors only (separation, alignment, cohesion), yet
+    flocks form and swirl around.
+    Mouse: hold for a hawk, the boids scatter.
+    Sliders: the three rule weights, count.
+    Hint: separation 0: dense clumps.
     """
 
     hx, hy = 40.0, 25.0  # arena half size

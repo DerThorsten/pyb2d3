@@ -3,7 +3,7 @@
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import create_circles, destroy_bodies, draw_plot, neighbor_pairs, unit_and_length
 
@@ -16,16 +16,12 @@ STATE_COLORS = [
 STATE_NAMES = ["susceptible", "infected", "recovered"]
 
 
+@register_sample("Agents", "Epidemic (SIR)")
 class BatchEpidemic(SampleBase):
-    """An epidemic: infected agents (red) infect susceptible ones (blue) nearby,
-    recover after a while (gray) and are immune. The curves show the classic
-    rise and fall of the SIR model.
-
-    Sliders: infection radius and probability (per second of contact), the share
-    of agents that stay at home (do not move).
-    Hint: more agents at home, a smaller radius or a lower rate flatten the red
-    curve (a lower peak, spread over a longer time). Contacts: one numpy
-    neighbor search per step.
+    """Infected agents (red) infect susceptible ones (blue) nearby, recover (gray)
+    and stay immune: the SIR curves rise and fall.
+    Sliders: infection radius and rate, share at home.
+    Hint: more at home flattens the red curve.
     """
 
     hx, hy = 40.0, 25.0  # arena half size

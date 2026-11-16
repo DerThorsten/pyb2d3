@@ -254,12 +254,9 @@ class CircleStackRestitution(ReboundSample):
 
 @register_sample("Restitution", "Restitution Propagation")
 class RestitutionPropagation(Box2dSample):
-    """A bouncy ball landing on a resting body.
-
-    Three balls fall together from the same height onto bare ground, one crate and two crates. Without
-    restitution propagation the restitution stage only visits the ball's own contact, so the rebound is
-    shared with the crate, which is driven into the ground and pushed back the next step. With propagation
-    the ground contact under the crate can react in the restitution solver.
+    """Three bouncy balls land on bare ground, one crate and two crates. With
+    restitution propagation the contacts under the crates take part in the bounce,
+    so the balls rebound as from the ground.
     """
 
     camera_center = (0.0, 4.0)

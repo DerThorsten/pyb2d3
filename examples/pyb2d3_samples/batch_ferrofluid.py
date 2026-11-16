@@ -7,23 +7,19 @@ import time
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import Ema, destroy_bodies, hsv_colors, pair_sum
 from .batch_dam_break import FLUID_GROUP, sph_densities
 
 
+@register_sample("Fluids & Matter", "Ferrofluid")
 class BatchFerrofluid(SampleBase):
-    """A puddle of ferrofluid over a magnet: the particles become little magnets
-    along the field, attract head to tail and repel side by side, so the liquid
-    stands up in spikes.
-
-    Mouse: drag the magnet (it follows the pointer while pressed).
-    Keys: space switches the magnet on / off.
-    Sliders: magnet strength, viscosity of the liquid.
-    Hint: below a critical strength (~0.6) the liquid only bulges; above it the
-    spikes pop up (field concentration at bumps lifts them further). Move the
-    magnet slowly under the floor and the spikes follow it.
+    """Ferrofluid over a magnet: the particles align with the field and, above a
+    critical strength (~0.6), the liquid stands up in spikes.
+    Mouse: drag the magnet.
+    Keys: space: magnet on / off.
+    Sliders: strength, viscosity.
     """
 
     radius = 0.08  # particle radius (drawing + walls)

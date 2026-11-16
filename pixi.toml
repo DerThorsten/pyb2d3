@@ -121,3 +121,17 @@ depends-on = ["build"]
 [tasks.emscripten]
 description = "Build the emscripten-forge package (emscripten-forge/6x channel)"
 cmd = "bash scripts/build_emscripten_forge_pkg.sh"
+
+# the browser sandbox page in headless chromium (playwright; its browser lives in .pixi)
+[feature.web-test.dependencies]
+playwright-python = "*"
+
+[feature.web-test.activation.env]
+PLAYWRIGHT_BROWSERS_PATH = "$PIXI_PROJECT_ROOT/.pixi/ms-playwright"
+
+[feature.web-test.tasks.web-test]
+description = "Build the browser sandbox page, load it in headless chromium (cold + cached), fail on errors"
+cmd = "playwright install chromium && python examples/web/build_page.py --out build/web_sandbox && python examples/web/test_page.py build/web_sandbox"
+
+[environments]
+web-test = ["web-test"]

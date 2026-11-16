@@ -6,22 +6,18 @@ import time
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import Ema, destroy_bodies, draw_plot, hsv_colors, neighbor_pairs, pair_sum
 
 
+@register_sample("Fluids & Matter", "Phase Transitions")
 class BatchPhaseTransitions(SampleBase):
-    """Lennard-Jones particles in a box with a thermostat: hot = gas, warm =
-    droplets that merge, cold = hexagonal crystals.
-
-    Every step: one neighbor search (cutoff 2.5 sigma), the LJ force of every pair
-    and the thermostat force, one batch call; box2d's contacts are the hard core.
-    Sliders: temperature (in units of the well depth), thermostat strength, gravity.
-    Hint: above ~0.3 it is a gas; set 0.15 and droplets nucleate and merge, at
-    0.03 they freeze into hexagonal patches (colors: number of close neighbors).
-    The plot: measured temperature (orange) and target (white); condensing
-    releases heat, the thermostat takes it away.
+    """Lennard-Jones particles with a thermostat: hot = gas, warm = droplets, cold =
+    hexagonal crystals.
+    Sliders: temperature, thermostat, gravity.
+    Hint: 0.15: droplets merge, 0.03: they freeze. Plot: temperature (orange),
+    target (white).
     """
 
     count = 450  # dilute: the gas fills the box, the liquid makes droplets

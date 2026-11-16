@@ -1,9 +1,10 @@
 # +
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 from .examples_common import create_boxes_from_text
 
 
+@register_sample("Demos", "Text")
 class Text(SampleBase):
     """The text "notebook link" rendered to pixels, one small dynamic box per pixel.
 

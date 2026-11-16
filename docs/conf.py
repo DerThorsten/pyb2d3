@@ -34,54 +34,19 @@ def _paths(name):
 
 
 # the sandbox in the browser (pyjs + WebGL frontend) at <html root>/sandbox/,
-# opened from the sample gallery (_static/sandbox_links.js). pyb2d3 is the
-# local emscripten build of this commit (`pixi run emscripten` first, the docs
-# workflow does), pyjs comes from jsDelivr, the other conda packages from
-# emscripten-forge. Overrides:
-#   PYB2D3_SANDBOX_PYJS        a local pyjs npm package dir (dist/ + assets/)
-#   PYB2D3_SANDBOX_LOCAL_PKGS  local conda packages (.tar.bz2), packed into the page
-#                              (replaces the default: the local pyb2d3 build)
-#   PYB2D3_SANDBOX_CHANNELS    local conda channels, copied into the page
+# opened from the sample gallery (_static/sandbox_links.js): the local emscripten
+# build of this commit (`pixi run emscripten` first, the docs workflow does), packed
+# with numpy, openblas and PyOpenGL, pyjs in the page (see examples/web/build_page.py);
+# PYB2D3_SANDBOX_PYJS: a local pyjs npm package dir (dist/ + assets/) instead
 sys.path.insert(0, str(docs_dir.parent / "examples" / "web"))
 import build_page  # noqa: E402
 
-
-def _local_pyb2d3_build():
-    """the newest emscripten build of this version of pyb2d3 (`pixi run emscripten`,
-    emscripten_forge/output), or None: the sandbox runs the code of this commit"""
-    import tomllib
-
-    pyproject = tomllib.loads((docs_dir.parent / "pyproject.toml").read_text())
-    version = pyproject["project"]["version"]
-    output = docs_dir.parent / "emscripten_forge" / "output" / "emscripten-wasm32"
-    builds = sorted(output.glob(f"pyb2d3-{version}-*.tar.bz2"), key=lambda p: p.stat().st_mtime)
-    if not builds:
-        print(
-            f"sandbox: WARNING no local emscripten build of pyb2d3 {version} in {output} "
-            "(pixi run emscripten): the page installs the published pyb2d3"
-        )
-    return builds[-1] if builds else None
-
-
 sandbox_extra = docs_dir / "_build" / "sandbox_extra"
 _sandbox_pyjs = next(iter(_paths("PYB2D3_SANDBOX_PYJS")), None)
-if "PYB2D3_SANDBOX_LOCAL_PKGS" in os.environ:
-    _sandbox_local_pkgs = _paths("PYB2D3_SANDBOX_LOCAL_PKGS")
-else:
-    _sandbox_local_pkgs = [p for p in [_local_pyb2d3_build()] if p is not None]
-build_page.build(
-    sandbox_extra / "sandbox",
-    pyjs_dir=_sandbox_pyjs,
-    pyjs_url=build_page.DEFAULT_PYJS_URL,
-    channels=_paths("PYB2D3_SANDBOX_CHANNELS"),
-    packages=build_page.CONDA_PACKAGES,
-    local_pkgs=_sandbox_local_pkgs,
-)
+_sandbox_pyb2d3 = build_page.build(sandbox_extra / "sandbox", pyjs_dir=_sandbox_pyjs)
 # which builds the page uses (a forgotten environment variable is easy to miss)
-print(f"sandbox: pyjs from {_sandbox_pyjs or build_page.DEFAULT_PYJS_URL}")
-print(
-    f"sandbox: local packages: {[p.name for p in _sandbox_local_pkgs] or 'none (all from the channels)'}"
-)
+_pyjs_source = _sandbox_pyjs or f"npm {build_page.PYJS_VERSION}"
+print(f"sandbox: pyjs from {_pyjs_source}, {_sandbox_pyb2d3.name}")
 html_extra_path = [str(sandbox_extra)]
 
 

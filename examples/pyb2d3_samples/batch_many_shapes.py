@@ -5,7 +5,7 @@ import math
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import destroy_bodies, hsv_colors
 
@@ -28,15 +28,12 @@ def make_shape(kind):
     return b2d.capsule((-0.3, 0.0), (0.3, 0.0), 0.2)
 
 
+@register_sample("Batch API", "Many Shapes")
 class BatchManyShapes(SampleBase):
-    """Thousands of bodies of every drawn shape type (circles, boxes, rounded boxes,
-    polygons, capsules) in a box: a stress test for drawing.
-
-    Sliders: body count. Dropdown: one shape type or all mixed.
-    Checkboxes: joints (each body linked to its right neighbor: joints draw lines
-    and points too), freeze (no physics steps, the bodies are still drawn: the
-    frame time is drawing only).
-    Hint: the fps overlay (browser) splits a frame into physics and draw.
+    """Thousands of bodies of every shape type in a box: a stress test for drawing.
+    Slider: body count. Dropdown: shape type.
+    Checkboxes: joints (draw lines too), freeze (no physics: the frame time is
+    drawing only).
     """
 
     spacing = 1.0
