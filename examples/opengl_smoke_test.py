@@ -66,8 +66,8 @@ def make_driver(frames_per_sample, entries, errors, visited):
         def once_per_frame(self):
             self._guard("draw", super().once_per_frame)
 
-        def samples_ui_gui_function(self):
-            self._guard("widgets", super().samples_ui_gui_function)
+        def panel_gui_function(self):
+            self._guard("panel", super().panel_gui_function)
 
     return DriverFrontend
 

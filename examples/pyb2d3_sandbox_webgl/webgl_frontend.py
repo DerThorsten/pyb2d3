@@ -638,10 +638,11 @@ class WebglFrontend(FrontendBase):
         panel.textContent = ""
 
         # sample choice: a tree like the native frontend's, a collapsible group per
-        # category (one list of all ~160 samples is far too long)
+        # category (one list of all ~160 samples is far too long); the section itself is
+        # collapsible too, open at the start
         if len(self.registry):
-            section = dom.el("section", panel, cls="pyb2d3-section pyb2d3-sample-section")
-            dom.el("h3", section, "Sample")
+            section = dom.el("details", panel, cls="pyb2d3-section pyb2d3-sample-section", open="")
+            dom.el("summary", section, "Sample")
             self._sample_classes = [entry.cls for entry in self.registry]
             self._sample_tree = dom.el("div", section, cls="pyb2d3-sample-tree")
             self._tree_groups, self._tree_items = {}, []  # items: in registry order
@@ -660,7 +661,10 @@ class WebglFrontend(FrontendBase):
 
         # one row of icon buttons, on top (always in view): previous sample, play /
         # pause, single step, restart, next sample
-        row = dom.el("div", section if len(self.registry) else panel, cls="pyb2d3-row pyb2d3-icons")
+        # (a collapsible section of its own, open at the start)
+        section = dom.el("details", panel, cls="pyb2d3-section", open="")
+        dom.el("summary", section, "Controls")
+        row = dom.el("div", section, cls="pyb2d3-row pyb2d3-icons")
 
         def icon_button(icon, title, on_click, **attrs):
             button = dom.el("button", row, icon, title=title, aria_label=title, **attrs)
@@ -726,10 +730,11 @@ class WebglFrontend(FrontendBase):
                 lambda v, name=name: setattr(self.debug_draw, name, v),
             )
 
-        # the sample: title, its widgets (filled by add_widget), help text (a box of
-        # fixed height: switching samples moves nothing)
-        section = dom.el("section", panel, cls="pyb2d3-section")
-        self._sample_title = dom.el("h3", section, "")
+        # the sample: collapsible, open at the start, its title the heading; its widgets
+        # (filled by add_widget), help text (a box of fixed height: switching samples
+        # moves nothing)
+        section = dom.el("details", panel, cls="pyb2d3-section", open="")
+        self._sample_title = dom.el("summary", section, "")
         self._sample_widgets = dom.el("div", section)
         self._sample_help = dom.el("p", section, "", cls="pyb2d3-help pyb2d3-sample-help")
         dom.el(
