@@ -1,6 +1,6 @@
 # +
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 import math
 
 
@@ -11,6 +11,7 @@ def grid_iterate(shape):
             yield row, col
 
 
+@register_sample("Demos", "Soft Bodies")
 class SoftBodies(SampleBase):
     """A soft body: a 4 x 4 grid of balls connected by spring distance joints.
 

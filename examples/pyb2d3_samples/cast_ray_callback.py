@@ -1,12 +1,13 @@
 # +
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 
 
 import random
 import math
 
 
+@register_sample("Queries", "Cast Ray Callback")
 class CastRayCallback(SampleBase):
     """world.cast_ray with a Python callback and a query filter: the yellow laser's ray
     passes through green boxes and is clipped to 20% at blue boxes (callback return values).

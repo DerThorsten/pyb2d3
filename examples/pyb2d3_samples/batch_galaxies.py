@@ -6,7 +6,7 @@ import time
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import (
     Ema,
@@ -16,6 +16,7 @@ from .batch_common import (
 )  # create_points: stars and cores only feel gravity
 
 
+@register_sample("Fields & Space", "Galaxy Collision")
 class BatchGalaxyCollision(SampleBase):
     """Two disc galaxies on a close flyby: the stars feel both
     galaxy cores, the cores feel each other; one batch force call per step.

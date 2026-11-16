@@ -3,11 +3,12 @@
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import Shaker, create_circles, destroy_bodies, draw_plot
 
 
+@register_sample("Granular", "Brazil Nut Shaker")
 class BatchBrazilNut(SampleBase):
     """A shaken box of small grains with a few big "nuts" at the bottom: shaking
     makes the big ones rise to the top (the Brazil nut effect).

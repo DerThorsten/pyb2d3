@@ -6,7 +6,7 @@ import time
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import Ema, destroy_bodies, hsv_colors, neighbor_pairs, pair_sum
 
@@ -26,6 +26,7 @@ def sph_densities(positions, smoothing):
     return (i, j, delta, distance, q), density, near
 
 
+@register_sample("Fluids & Matter", "Dam Break")
 class BatchDamBreak(SampleBase):
     """A column of water collapses, splashes over an obstacle and settles.
 

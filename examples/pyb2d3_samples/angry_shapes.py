@@ -1,9 +1,10 @@
 # +
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 from .examples_common import stacked_blocks
 
 
+@register_sample("Games", "Angry Shapes")
 class AngryShapes(SampleBase):
     """A slingshot game: shoot a ball at a pyramid of blocks, it explodes on impact.
 

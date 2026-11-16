@@ -3,11 +3,12 @@
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import Shaker, destroy_bodies, hsv_colors
 
 
+@register_sample("Granular", "Earthquake City")
 class BatchEarthquake(SampleBase):
     """A city of block towers on a ground plate that shakes like an earthquake.
 

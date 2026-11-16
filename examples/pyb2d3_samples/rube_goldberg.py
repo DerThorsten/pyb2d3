@@ -6,7 +6,7 @@ import math
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .examples_common.joints import pinned
 
@@ -23,6 +23,7 @@ class Stage:
         self.time = None  # world time it happened
 
 
+@register_sample("Demos", "Rube Goldberg")
 class RubeGoldberg(SampleBase):
     """A Rube Goldberg machine: ball -> dominoes -> Newton's cradle -> ramp ->
     see-saw -> bucket of balls -> water wheel -> bell.

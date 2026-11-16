@@ -3,7 +3,7 @@
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import ParticlePool, draw_plot, unit_and_length
 
@@ -17,6 +17,7 @@ def nearest_per_group(group, other, dist):
     return members, other[first], dist[first]
 
 
+@register_sample("Agents", "Predator & Prey")
 class BatchPredatorPrey(SampleBase):
     """Predators (red) hunt prey (green). Prey breed when there is room, predators
     breed when well fed and starve when they catch nothing: the populations rise

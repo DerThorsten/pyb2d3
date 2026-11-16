@@ -1,6 +1,6 @@
 # +
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 
 import numpy as np
 import math
@@ -28,6 +28,7 @@ class GameState(enum.Enum):
     WAITING_FOR_BALLS_TO_REST = enum.auto()
 
 
+@register_sample("Games", "Billiard")
 class Billiard(SampleBase):
     """A pool table without gravity, built from a chain with arcs for the six pockets.
 

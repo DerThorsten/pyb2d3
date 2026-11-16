@@ -3,7 +3,7 @@
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import create_circles, destroy_bodies, draw_plot, neighbor_pairs, unit_and_length
 
@@ -16,6 +16,7 @@ STATE_COLORS = [
 STATE_NAMES = ["susceptible", "infected", "recovered"]
 
 
+@register_sample("Agents", "Epidemic (SIR)")
 class BatchEpidemic(SampleBase):
     """An epidemic: infected agents (red) infect susceptible ones (blue) nearby,
     recover after a while (gray) and are immune. The curves show the classic

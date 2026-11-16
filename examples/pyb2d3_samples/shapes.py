@@ -1,6 +1,6 @@
 # +
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 
 import random
 import numpy as np
@@ -16,6 +16,7 @@ def approx_circle(radius, n_segments):
     )
 
 
+@register_sample("Demos", "Shapes")
 class Shapes(SampleBase):
     """All shape types in a box: circles, capsules, (rounded) boxes, convex polygons and
     compound bodies made of several shapes, plus 400 small balls.

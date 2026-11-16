@@ -5,7 +5,7 @@ import math
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import ParticlePool, hsv_colors
 from .batch_common import create_points  # non-colliding circles
@@ -27,6 +27,7 @@ class SparkPool(ParticlePool):
         self._shapes = None
 
 
+@register_sample("Fields & Space", "Fireworks")
 class BatchFireworks(SampleBase):
     """Fireworks: rockets fly up and burst into sparks; every spark is a body of
     one recycled pool, emitted / parked with numpy masks, air drag is one batch call.

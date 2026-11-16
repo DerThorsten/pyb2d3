@@ -1,6 +1,6 @@
 # +
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 
 
 import random
@@ -14,6 +14,7 @@ def grid_iterate(shape):
             yield row, col
 
 
+@register_sample("Games", "Jump")
 class Jump(SampleBase):
     """A stream of balls (up to 3000) shot down a slope over a ski jump into a pit.
 

@@ -6,12 +6,13 @@ import time
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import Ema, destroy_bodies, hsv_colors
 from .batch_common import create_points  # non-colliding circles
 
 
+@register_sample("Fields & Space", "Black Hole")
 class BatchBlackHole(SampleBase):
     """An accretion disc around a black hole: gravity + viscosity with numpy, one
     batch call; swallowed particles are recycled to the outer edge with masks.

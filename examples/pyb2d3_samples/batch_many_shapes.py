@@ -5,7 +5,7 @@ import math
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import destroy_bodies, hsv_colors
 
@@ -28,6 +28,7 @@ def make_shape(kind):
     return b2d.capsule((-0.3, 0.0), (0.3, 0.0), 0.2)
 
 
+@register_sample("Batch API", "Many Shapes")
 class BatchManyShapes(SampleBase):
     """Thousands of bodies of every drawn shape type (circles, boxes, rounded boxes,
     polygons, capsules) in a box: a stress test for drawing.

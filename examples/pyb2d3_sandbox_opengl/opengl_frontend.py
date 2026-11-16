@@ -355,12 +355,14 @@ class OpenglFrontend(FrontendBase):
         split.ratio = 0.2
         return split
 
+    # the right column, top to bottom: the sample's UI (RightPanel, on top so its controls
+    # stay visible in small windows), the controls (RightPanel1), debug draw (RightPanel2)
     def create_right_panel_split1(self):
         split_right1 = hello_imgui.DockingSplit()
         split_right1.initial_dock = "RightPanel"
         split_right1.new_dock = "RightPanel1"
         split_right1.direction = imgui.Dir_.down
-        split_right1.ratio = 0.73
+        split_right1.ratio = 0.55
         return split_right1
 
     def create_right_panel_split2(self):
@@ -368,32 +370,27 @@ class OpenglFrontend(FrontendBase):
         split_right2.initial_dock = "RightPanel1"
         split_right2.new_dock = "RightPanel2"
         split_right2.direction = imgui.Dir_.down
-        split_right2.ratio = 0.5
+        split_right2.ratio = 0.45
         return split_right2
-
-    def create_right_panel_split3(self):
-        split_right3 = hello_imgui.DockingSplit()
-        split_right3.initial_dock = "RightPanel2"
-        split_right3.new_dock = "RightPanel3"
-        split_right3.direction = imgui.Dir_.down
-        split_right3.ratio = 0.4
-        return split_right3
 
     def create_samples_ui_window(self):
         weak = weakref.proxy(self)
         window = hello_imgui.DockableWindow()
         window.label = "Sample UI"
-        window.dock_space_name = "RightPanel3"
+        window.dock_space_name = "RightPanel"
         window.gui_function = lambda: weak.samples_ui_gui_function()
         return window
 
     def samples_ui_gui_function(self):
-        # the sample's help text (controls + hints), collapsible
+        # the sample's widgets first (always in view), its help text below
+        self.sample_widgets_gui()
         if self.sample_class is not None:
+            imgui.separator()
             if imgui.collapsing_header("Help", imgui.TreeNodeFlags_.default_open):
                 imgui.text_wrapped(self.sample_class.help_text())
                 imgui.text_disabled("mouse: drag bodies, drag the background to pan, wheel zooms")
-            imgui.separator()
+
+    def sample_widgets_gui(self):
         for element in self._per_sample_widgets:
             if isinstance(element, widgets.FloatSlider):
                 # draw a float slider
@@ -431,7 +428,8 @@ class OpenglFrontend(FrontendBase):
                     element.callback()
             elif isinstance(element, widgets.RadioButtons):
                 current_value = element.value
-
+                imgui.text(element.label)
+                imgui.push_id(element.label)  # the same option in two groups: distinct ids
                 for option in element.options:
                     selected = current_value == option
                     changed = imgui.radio_button(option, selected)
@@ -439,6 +437,12 @@ class OpenglFrontend(FrontendBase):
                         element.value = option
                         element.callback(option)
                         break
+                imgui.pop_id()
+            elif isinstance(element, widgets.Separator):
+                if element.label:
+                    imgui.separator_text(element.label)
+                else:
+                    imgui.separator()
 
     def add_widget(self, element):
         """Add a UI element to the sample's UI."""
@@ -454,7 +458,7 @@ class OpenglFrontend(FrontendBase):
         weak = weakref.proxy(self)
         window = hello_imgui.DockableWindow()
         window.label = "Controls"
-        window.dock_space_name = "RightPanel"
+        window.dock_space_name = "RightPanel1"
         window.gui_function = lambda: weak.controls_gui_function()
         return window
 
@@ -535,7 +539,6 @@ class OpenglFrontend(FrontendBase):
             self.create_right_panel_split(),
             self.create_right_panel_split1(),
             self.create_right_panel_split2(),
-            self.create_right_panel_split3(),
         ]
         windows = [
             self.create_simulation_window(),

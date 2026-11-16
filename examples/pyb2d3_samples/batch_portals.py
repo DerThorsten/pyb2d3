@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import create_circles, destroy_bodies, hsv_colors
 
@@ -32,6 +32,7 @@ def rotation_between(a, b):
     return np.array([[c, -s], [s, c]])
 
 
+@register_sample("Fields & Space", "Portals")
 class BatchPortals(SampleBase):
     """Balls bounce around a room with two pairs of portals: whatever touches a
     portal is teleported to its partner, the velocity rotated like the portal.

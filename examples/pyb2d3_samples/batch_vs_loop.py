@@ -10,13 +10,14 @@ import time
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import Ema, create_circles, destroy_bodies, hsv_colors
 
 BATCH, LOOP = "batch API", "python loop"
 
 
+@register_sample("Batch API", "Loop vs Batch")
 class BatchVsLoop(SampleBase):
     """A vortex on many bodies: a python loop vs. one batch call, timed live.
 

@@ -24,8 +24,13 @@
                    right: max(8px, env(safe-area-inset-right)); display: flex; flex-direction: column; gap: 4px; }
     .pyb2d3-zoom button { min-width: 36px; }
     /* category + sample: two lists next to each other */
-    .pyb2d3-sample-choice select { flex: 1; min-width: 0; }
-    .pyb2d3-sample-choice .pyb2d3-category-select { flex: 0.8; }
+    /* the sample tree (a collapsible group per category) */
+    .pyb2d3-sample-tree { position: relative; max-height: 40vh; overflow-y: auto; margin-bottom: 8px;
+                          border: 1px solid var(--line); border-radius: 4px; padding: 4px 0; }
+    .pyb2d3-sample-tree summary { cursor: pointer; padding: 2px 8px; }
+    .pyb2d3-tree-item { cursor: pointer; padding: 2px 8px 2px 24px; }
+    .pyb2d3-tree-item:hover { background: #2e3239; }
+    .pyb2d3-tree-item.active { color: var(--accent); background: #2e3239; }
     /* the WebGL drawing buffer follows the CSS size (frontend: _resize) */
     #canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
     #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
@@ -49,6 +54,8 @@
     input[type=range] { width: 100%; accent-color: var(--accent); }
     #status { position: absolute; left: 12px; bottom: 8px; color: var(--muted); white-space: pre-wrap; }
     #status.error { color: #ff7b72; }
+    #progress { position: absolute; left: 12px; bottom: 30px; width: min(320px, 60%); height: 6px;
+                accent-color: var(--accent); }
     /* the code pane (editor.js) */
     #code-toggle.active, #panel-toggle.active { border-color: var(--accent); }
     #code { position: relative; width: 46%; min-width: 280px; flex: none; display: flex; flex-direction: column;
@@ -102,6 +109,7 @@
       /* the overlays above the collapsed sheet */
       .pyb2d3-fps { bottom: calc(var(--peek) + 6px) !important; }
       #status { bottom: calc(var(--peek) + 8px); }
+      #progress { bottom: calc(var(--peek) + 30px); }
     }
     /* landscape: a drawer from the left, closed by default */
     @media (max-width: 800px) and (orientation: landscape), (max-height: 520px) and (orientation: landscape) {
@@ -123,6 +131,7 @@
       <!-- tabindex: keyboard events reach the canvas after a click -->
       <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
       <div id="labels"></div>
+      <progress id="progress" max="1" value="0"></progress>
       <div id="status">loading…</div>
       <div id="tools">
         <button id="panel-toggle" type="button" title="controls">&#9776;</button>

@@ -1,6 +1,6 @@
 # +
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 
 
 import numpy as np
@@ -72,6 +72,7 @@ class GolfState(Enum):
     BALL_IS_IN_HOLE = 3  # the ball is in the hole, we can proceed to the next level
 
 
+@register_sample("Games", "Coupled Minigolf")
 class CoupledMinigolf(SampleBase):
     """Minigolf with two balls tied together by a spring (a soft distance joint).
 

@@ -3,7 +3,7 @@
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import (
     create_circles,
@@ -15,6 +15,7 @@ from .batch_common import (
 )
 
 
+@register_sample("Agents", "Boids Flocking")
 class BatchBoids(SampleBase):
     """Boids: every bird steers by its neighbors only (separation, alignment,
     cohesion), yet flocks form and swirl around.

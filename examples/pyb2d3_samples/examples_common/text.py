@@ -1,9 +1,11 @@
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
 import pyb2d3 as b2d
 
 
 def create_boxes_from_text(world, text, position, height, font_size=20):
+    # imported here: pillow is optional (not installed in the web sandbox)
+    from PIL import Image, ImageDraw, ImageFont
+
     # Create a  big blank white image
     W, H = 1000, 1000
     image = Image.new("L", (W, H), color=255)  # "L" = grayscale, 255 = white

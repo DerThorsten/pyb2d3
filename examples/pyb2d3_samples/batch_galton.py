@@ -5,11 +5,12 @@ import math
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import ParticlePool, draw_histogram
 
 
+@register_sample("Granular", "Galton Board")
 class BatchGalton(SampleBase):
     """A Galton board: balls fall through a triangle of pegs into bins; the bins
     fill up like the binomial distribution (white curve: the theory).

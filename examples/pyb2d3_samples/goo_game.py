@@ -1,7 +1,7 @@
 # +
 import pyb2d3 as b2d
 import numpy as np
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 import pyb2d3_sandbox.widgets as widgets
 
 from dataclasses import dataclass
@@ -547,6 +547,7 @@ class GooGame(SampleBase):
             goo.draw()
 
 
+@register_sample("Games", "Goo Game")
 class Level1(GooGame):
     """Build structures from goo balls connected by spring joints (like World of Goo).
 

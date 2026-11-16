@@ -10,7 +10,7 @@ recolored by speed: only those whose speed band changed get a new material.
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import create_circles, destroy_bodies, hsv_colors
 
@@ -22,6 +22,7 @@ BAND_COLORS = [
 ]
 
 
+@register_sample("Batch API", "Fountain")
 class BatchFountain(SampleBase):
     """A fountain of recycled particles: a fixed pool of bodies, emitted and parked with numpy masks.
 

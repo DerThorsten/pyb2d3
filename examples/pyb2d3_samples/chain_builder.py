@@ -1,8 +1,9 @@
 # +
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 
 
+@register_sample("Demos", "Chain Builder")
 class ChainBuilder(SampleBase):
     """Static chain shapes drawn with b2d.PathBuilder: lines plus arcs (clockwise or not,
     minor or major arc), and a billiard table outline with pockets.

@@ -4,11 +4,12 @@ tank with an obstacle; only box2d's contacts, no fluid forces."""
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import create_circles, destroy_bodies, hsv_colors
 
 
+@register_sample("Fluids & Matter", "Dam Break (Balls)")
 class BatchDamBreakBalls(SampleBase):
     """A dam break with ordinary bodies: every water "particle" is a rigid ball, the
     gate opens after a second and the column floods the tank over an obstacle.

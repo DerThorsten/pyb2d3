@@ -6,11 +6,12 @@ import time
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import Ema, destroy_bodies, draw_plot, hsv_colors, neighbor_pairs, pair_sum
 
 
+@register_sample("Fluids & Matter", "Phase Transitions")
 class BatchPhaseTransitions(SampleBase):
     """Lennard-Jones particles in a box with a thermostat: hot = gas, warm =
     droplets that merge, cold = hexagonal crystals.

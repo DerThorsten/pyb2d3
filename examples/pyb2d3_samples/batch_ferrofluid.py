@@ -7,12 +7,13 @@ import time
 import numpy as np
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets
+from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .batch_common import Ema, destroy_bodies, hsv_colors, pair_sum
 from .batch_dam_break import FLUID_GROUP, sph_densities
 
 
+@register_sample("Fluids & Matter", "Ferrofluid")
 class BatchFerrofluid(SampleBase):
     """A puddle of ferrofluid over a magnet: the particles become little magnets
     along the field, attract head to tail and repel side by side, so the liquid

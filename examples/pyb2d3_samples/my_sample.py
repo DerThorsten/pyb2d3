@@ -5,9 +5,10 @@ Run (Ctrl/Cmd+Enter). The edits live in the page only (a reload restores this fi
 """
 
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase, widgets  # noqa: F401  (widgets: see below)
+from pyb2d3_sandbox import SampleBase, register_sample, widgets  # noqa: F401  (widgets: see below)
 
 
+@register_sample("Playground", "My Sample")
 class MySample(SampleBase):
     """Your own sample: a ground and a few bodies to start from.
 

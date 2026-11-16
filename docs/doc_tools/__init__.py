@@ -17,12 +17,15 @@ sys.path.insert(0, str(examples_dir))
 
 from pyb2d3_sandbox_pygame import PygameFrontendSettings, PygameHeadlessSettings  # noqa: E402
 from pyb2d3_sandbox_pygame.sample_to_video import sample_to_video  # noqa: E402
-import pyb2d3_samples  # noqa: E402
+import pyb2d3_samples  # noqa: E402, F401  (registers the samples)
 from pyb2d3_sandbox import registry  # noqa: E402
 
 
 github_url = "https://github.com/DerThorsten/pyb2d3"
 github_main_url = f"{github_url}/blob/main"
+
+# not in the docs: the "Text" sample needs pillow, which the web sandbox does not have
+doc_samples = [entry.cls for entry in registry if entry.key != "Demos/Text"]
 
 
 def create_sample_videos():
@@ -36,7 +39,7 @@ def create_sample_videos():
         headless_settings=headless_settings,
     )
 
-    for sample_class in pyb2d3_samples.all_examples:
+    for sample_class in doc_samples:
         lower_name = sample_class.__name__.lower()
 
         print(f"Creating video for sample: {sample_class.__name__} ({lower_name})")
@@ -95,7 +98,7 @@ def create_sample_videos():
     """
     # note: anonymous links (`text <url>`__): named links with the same text ("Source") on
     # every sample clash as duplicate targets and break
-    for sample_class in pyb2d3_samples.all_examples:
+    for sample_class in doc_samples:
         lower_name = sample_class.__name__.lower()
 
         filename = sys.modules[sample_class.__module__].__file__

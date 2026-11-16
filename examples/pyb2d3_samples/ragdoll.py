@@ -1,11 +1,12 @@
 # +
 import pyb2d3 as b2d
-from pyb2d3_sandbox import SampleBase
+from pyb2d3_sandbox import SampleBase, register_sample
 import random
 
 from .examples_common import Ragdoll as RagdollComposit
 
 
+@register_sample("Demos", "Ragdoll")
 class Ragdoll(SampleBase):
     """Fifteen colorful jointed ragdolls in a box.
 
