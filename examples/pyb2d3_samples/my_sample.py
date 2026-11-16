@@ -11,10 +11,8 @@ from pyb2d3_sandbox import SampleBase, register_sample, widgets  # noqa: F401  (
 @register_sample("Playground", "My Sample")
 class MySample(SampleBase):
     """Your own sample: a ground and a few bodies to start from.
-
-    Edit: open the code pane (</> Code) and change my_sample.py, Run restarts it.
-    Hint: the hooks below (pre_update, post_debug_draw, on_key_down, ...) are
-    commented out examples; uncomment and change them.
+    Edit: open the code pane (</> Code), change my_sample.py, Run restarts it; the
+    commented hooks below are examples to start from.
     """
 
     def __init__(self, frontend, settings):

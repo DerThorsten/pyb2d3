@@ -18,15 +18,10 @@ from .batch_common import (
 
 @register_sample("Fields & Space", "Galaxy Collision")
 class BatchGalaxyCollision(SampleBase):
-    """Two disc galaxies on a close flyby: the stars feel both
-    galaxy cores, the cores feel each other; one batch force call per step.
-
-    Mouse: drag a galaxy by its core (the disc moves along, the tails stay);
-    let go while moving to throw it at the other one.
-    Sliders: closest approach of the cores, stars per galaxy.
-    Hint: discs rotating along the flyby (prograde) throw out long tidal tails and a
-    bridge, a retrograde disc loses far fewer stars; the cores stay bound and pass
-    again (each pass shreds more, "reset" starts over).
+    """Two disc galaxies fly past each other and throw out tidal tails; one batch
+    force call per step.
+    Mouse: drag a galaxy by its core, let go while moving to throw it.
+    Sliders: closest approach, stars.
     """
 
     gravity = 1.0  # G

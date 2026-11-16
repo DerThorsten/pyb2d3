@@ -18,14 +18,11 @@ def wrap(angle):
 
 @register_sample("Granular", "Hourglass")
 class BatchHourglass(SampleBase):
-    """An hourglass full of grains on a pivot: they pile up, arch over the neck and
-    trickle through. The glass is a dynamic body on a revolute joint, turned by the
-    joint's motor.
-
+    """An hourglass on a pivot: grains pile up, arch over the neck and trickle
+    through.
     Keys: space flips the glass.
-    Mouse: grab the glass anywhere and turn it around the pivot.
-    Hint: a narrow neck jams (arching); the numbers on top are counted with one
-    numpy mask over all grain positions per frame.
+    Mouse: grab the glass and turn it.
+    Hint: a narrow neck jams (arching).
     """
 
     half_height = 8.0

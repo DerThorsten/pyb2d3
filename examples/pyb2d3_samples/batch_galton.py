@@ -12,12 +12,9 @@ from .batch_common import ParticlePool, draw_histogram
 
 @register_sample("Granular", "Galton Board")
 class BatchGalton(SampleBase):
-    """A Galton board: balls fall through a triangle of pegs into bins; the bins
-    fill up like the binomial distribution (white curve: the theory).
-
-    Sliders: rate of new balls, number of balls.
-    Hint: the histogram is counted from all ball positions with one numpy call;
-    "reset" empties the bins.
+    """A Galton board: balls fall through pegs into bins, which fill like the
+    binomial distribution (white curve).
+    Sliders: rate, number of balls; "reset" empties the bins.
     """
 
     rows = 12

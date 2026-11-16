@@ -13,15 +13,11 @@ from .batch_common import create_circles, hsv_colors
 
 @register_sample("Fluids & Matter", "Snow Globe")
 class BatchSnowGlobe(SampleBase):
-    """A snow globe on a springy stand. The flakes sink slowly through the liquid and
-    settle on the village; shake the globe and they swirl up again.
-
-    Keys: space gives the globe a shake.
-    Mouse: grab the globe and shake it (it springs back to its stand).
-    Sliders: flutter (little eddies), turbulence (how much a shake stirs the liquid).
-    Hint: the liquid moves with the globe: every flake is dragged towards the
-    velocity of the glass around it, a shake (the globe's acceleration) stirs up
-    random eddies. All of it is numpy + one batch force call for all flakes.
+    """A snow globe on a springy stand: the flakes sink slowly and settle on the
+    village.
+    Mouse: grab the globe and shake it.
+    Keys: space gives it a shake.
+    Sliders: flutter, turbulence of a shake.
     """
 
     center = (0.0, 6.0)

@@ -42,18 +42,10 @@ def span(p, q):
 
 @register_sample("Games", "Bridge Builder")
 class BridgeBuilder(SampleBase):
-    """Build a bridge, then test it: a car, a truck and a tank drive over it one after
-    another, each heavier than the one before. While building the world stands still.
-
-    Mouse (build): drag from a dot to draw a road, beam (both reach at most 4 m in x and
-    in y) or rope.
-    Double click a beam to erase it. Red dots are fixed to the cliffs. Only the road
-    carries the vehicles.
-    Mouse (test): drag the vehicles or the bridge around.
-    Levels: the first starts with an example bridge, the others with an empty gap.
-    Slider: vehicle weight, for a harder test.
-    Hint: beams are bodies pinned to the nodes with revolute joints, ropes are distance
-    joints that only pull. Joints break when overloaded, colors show the load.
+    """Build a bridge; a car, a truck and a tank test it. Building pauses the world.
+    Build: drag from a dot: road (carries the vehicles), beam or rope; double click
+    erases. Red dots: anchors.
+    Test: colors show the load, joints break.
     """
 
     def __init__(self, frontend, settings):

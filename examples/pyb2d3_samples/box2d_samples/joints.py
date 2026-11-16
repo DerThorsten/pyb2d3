@@ -606,11 +606,9 @@ class WheelJoint(JointSample):
 
 @register_sample("Joints", "Bridge")
 class Bridge(JointSample):
-    """A suspension bridge of 160 planks linked by revolute joints, with a few loads on it.
-
-    Widgets: joint friction (motor torque), joint spring hertz / damping, and the
-    constraint hertz / damping (the solver's softness of the joints).
-    Try a low constraint hertz to see the bridge sag and stretch.
+    """A suspension bridge of 160 planks on revolute joints, with loads.
+    Widgets: joint friction, spring hertz / damping, constraint hertz / damping
+    (low: the bridge sags and stretches).
     """
 
     camera_center = (0.0, 20.0)
@@ -1594,11 +1592,9 @@ class GearLift(JointSample):
 
 @register_sample("Joints", "Door")
 class Door(JointSample):
-    """A top down door: a heavy box on a revolute joint with a spring and angle limits.
-
-    Widgets: "impulse" hits the door end with the impulse set by "magnitude";
-    "hertz" / "damping" tune the joint constraint, "limit" toggles the angle limits.
-    Try a big impulse with a low hertz to see the joint stretch.
+    """A top down door: a heavy box on a revolute joint with a spring and limits.
+    Widgets: "impulse" hits the door ("magnitude"); hertz / damping soften the
+    joint, "limit" toggles the limits.
     """
 
     camera_center = (0.0, 0.0)

@@ -19,14 +19,10 @@ def nearest_per_group(group, other, dist):
 
 @register_sample("Agents", "Predator & Prey")
 class BatchPredatorPrey(SampleBase):
-    """Predators (red) hunt prey (green). Prey breed when there is room, predators
-    breed when well fed and starve when they catch nothing: the populations rise
-    and fall in turns (plot on the right).
-
-    Mouse: hold the button: a safe zone, predators keep out of it.
+    """Predators (red) hunt prey (green); prey breed, predators breed when fed and
+    starve otherwise: the populations rise and fall in turns (plot).
+    Mouse: hold for a safe zone.
     Sliders: prey birth rate, predator hunger.
-    Hint: all predator-prey distances are one numpy array per step; births and
-    deaths only enable / disable pooled bodies.
     """
 
     hx, hy = 40.0, 25.0  # arena half size

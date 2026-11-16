@@ -24,10 +24,10 @@ BAND_COLORS = [
 
 @register_sample("Batch API", "Fountain")
 class BatchFountain(SampleBase):
-    """A fountain of recycled particles: a fixed pool of bodies, emitted and parked with numpy masks.
-
-    Sliders: emission rate, jet speed and spread, wind.
-    Hint: a large rate with a small pool shows the recycling of the oldest particles.
+    """A fountain from a fixed pool of recycled bodies, emitted and parked with numpy
+    masks.
+    Sliders: rate, jet speed, spread, wind.
+    Hint: a high rate recycles the oldest particles.
     """
 
     nozzle = np.array([0.0, 4.0])

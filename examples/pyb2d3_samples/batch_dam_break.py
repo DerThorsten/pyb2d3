@@ -28,15 +28,10 @@ def sph_densities(positions, smoothing):
 
 @register_sample("Fluids & Matter", "Dam Break")
 class BatchDamBreak(SampleBase):
-    """A column of water collapses, splashes over an obstacle and settles.
-
-    The particles do not collide with each other: one neighbor search over all
-    particles gives the densities, pressure pushes from dense to thin, viscosity
-    evens out the velocities, one batch call applies the forces.
-    Sliders: stiffness (incompressibility), viscosity, particle count.
-    Mouse: drag the obstacle (or the camera).
-    Hint: low stiffness = squashy foam, high viscosity = honey; very stiff water
-    "boils" (the forces are explicit, once per 60 Hz step).
+    """A water column (SPH particles) collapses over an obstacle: neighbor densities
+    give the pressure, all with numpy and one batch call.
+    Sliders: stiffness, viscosity, count.
+    Mouse: drag the obstacle.
     """
 
     radius = 0.1  # particle radius (drawing + walls)

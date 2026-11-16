@@ -25,10 +25,12 @@
     .pyb2d3-zoom button { min-width: 36px; }
     /* category + sample: two lists next to each other */
     /* the sample tree (a collapsible group per category) */
-    .pyb2d3-sample-tree { position: relative; max-height: 40vh; overflow-y: auto; margin-bottom: 8px;
-                          border: 1px solid var(--line); border-radius: 4px; padding: 4px 0; }
-    .pyb2d3-sample-tree summary { cursor: pointer; padding: 2px 8px; }
-    .pyb2d3-tree-item { cursor: pointer; padding: 2px 8px 2px 24px; }
+    /* a fixed height: opening a category scrolls in the box, nothing below jumps */
+    .pyb2d3-sample-tree { position: relative; height: min(220px, 28vh); overflow-y: auto;
+                          margin-bottom: 6px; border: 1px solid var(--line); border-radius: 4px;
+                          padding: 2px 0; line-height: 1.25; }
+    .pyb2d3-sample-tree summary { cursor: pointer; padding: 1px 8px; }
+    .pyb2d3-tree-item { cursor: pointer; padding: 1px 8px 1px 24px; }
     .pyb2d3-tree-item:hover { background: #2e3239; }
     .pyb2d3-tree-item.active { color: var(--accent); background: #2e3239; }
     /* the WebGL drawing buffer follows the CSS size (frontend: _resize) */
@@ -36,9 +38,14 @@
     #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
     .pyb2d3-label { position: absolute; white-space: pre; font: 12px monospace; }
     .pyb2d3-section { border-bottom: 1px solid var(--line); padding: 6px 0 10px; }
-    .pyb2d3-section h3 { margin: 4px 0 8px; font-size: 12px; text-transform: uppercase;
-                         letter-spacing: .05em; color: var(--muted); }
+    .pyb2d3-section h3, .pyb2d3-section > summary { margin: 4px 0 8px; font-size: 12px;
+                         text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    /* collapsible sections (<details>): the heading opens / closes them */
+    .pyb2d3-section > summary { cursor: pointer; }
+    details.pyb2d3-section:not([open]) > summary { margin-bottom: 4px; }
     .pyb2d3-row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+    /* the control buttons: icons only (their meaning in the tooltip), equally wide */
+    .pyb2d3-icons button { flex: 1; font-size: 16px; line-height: 1; padding: 6px 0; }
     .pyb2d3-slider { display: grid; grid-template-columns: 80px 1fr 52px; gap: 6px;
                      align-items: center; margin: 4px 0; }
     .pyb2d3-value { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -46,6 +53,9 @@
     .pyb2d3-wide { width: 100%; margin: 3px 0; }
     /* the sample's help text (docstring): keep its line breaks */
     .pyb2d3-help { white-space: pre-line; color: var(--muted); margin: 0 0 8px; }
+    /* the sample's help: 8 lines of fixed height (switching samples moves nothing),
+       scrolls if longer */
+    .pyb2d3-sample-help { line-height: 1.35; height: calc(8 * 1.35em); overflow-y: auto; }
     select, button { background: #2e3239; color: var(--text); border: 1px solid var(--line);
                      border-radius: 4px; padding: 4px 8px; font: inherit; }
     select { width: 100%; }
@@ -110,6 +120,7 @@
       .pyb2d3-fps { bottom: calc(var(--peek) + 6px) !important; }
       #status { bottom: calc(var(--peek) + 8px); }
       #progress { bottom: calc(var(--peek) + 30px); }
+      .pyb2d3-sample-tree { height: 20vh; }
     }
     /* landscape: a drawer from the left, closed by default */
     @media (max-width: 800px) and (orientation: landscape), (max-height: 520px) and (orientation: landscape) {

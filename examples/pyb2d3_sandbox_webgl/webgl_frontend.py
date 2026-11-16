@@ -65,6 +65,18 @@ SAMPLE_KEYS = {"PageUp": -1, "PageDown": 1}
 # starts with it, the frontend keeps it up to date (reload / share a link)
 SAMPLE_QUERY_PARAMETER = "sample"
 
+# the icons of the control buttons (︎: text style, not a colored emoji); the single
+# step is an arrow to a bar (one step, then stop): skip icons mean "next sample" here
+_TEXT = "︎"
+ICONS = {
+    "previous": "⏮" + _TEXT,  # ⏮
+    "play": "▶" + _TEXT,  # ▶
+    "pause": "⏸" + _TEXT,  # ⏸
+    "step": "⇥",  # ⇥
+    "reset": "↺",  # ↺
+    "next": "⏭" + _TEXT,  # ⏭
+}
+
 DEBUG_DRAW_OPTIONS = [
     ("draw_shapes", "Shapes"),
     ("draw_joints", "Joints"),
@@ -619,7 +631,8 @@ class WebglFrontend(FrontendBase):
     # -- the panel ------------------------------------------------------------
 
     def _build_panel(self):
-        """sample list, the sample's own widgets, controls, debug draw options"""
+        """sample list + play / step / reset, the sample's own widgets, simulation
+        settings, debug draw options"""
         dom = self._dom
         panel = self.panel
         panel.textContent = ""
@@ -644,37 +657,29 @@ class WebglFrontend(FrontendBase):
                     )
                     self._tree_items.append(item)
             self._show_in_tree()
-            row = dom.el("div", section, cls="pyb2d3-row")
-            previous = dom.el("button", row, "◀ Previous", title="previous sample (PageUp)")
-            dom.on(previous, "click", lambda e: self.next_sample(-1))
-            following = dom.el("button", row, "Next ▶", title="next sample (PageDown)")
-            dom.on(following, "click", lambda e: self.next_sample(1))
 
-        # the sample: title, its widgets (filled by add_widget), help text; right below
-        # the sample choice, so its widgets are in view in small windows
-        section = dom.el("section", panel, cls="pyb2d3-section")
-        self._sample_title = dom.el("h3", section, "")
-        self._sample_widgets = dom.el("div", section)
-        self._sample_help = dom.el("p", section, "", cls="pyb2d3-help")
-        dom.el(
-            "p",
-            section,
-            "mouse: drag bodies, drag the background to pan, wheel zooms\n"
-            "touch: drag bodies, one finger on empty space pans, two fingers zoom",
-            cls="pyb2d3-help",
+        # one row of icon buttons, on top (always in view): previous sample, play /
+        # pause, single step, restart, next sample
+        row = dom.el("div", section if len(self.registry) else panel, cls="pyb2d3-row pyb2d3-icons")
+
+        def icon_button(icon, title, on_click, **attrs):
+            button = dom.el("button", row, icon, title=title, aria_label=title, **attrs)
+            dom.on(button, "click", lambda e: on_click())
+            return button
+
+        if len(self.registry):
+            icon_button(ICONS["previous"], "previous sample (PageUp)", lambda: self.next_sample(-1))
+        self._play_button = icon_button(ICONS["pause"], "pause", self._toggle_pause)
+        self._step_button = icon_button(
+            ICONS["step"], "single step (while paused)", self._request_single_step, disabled=""
         )
+        icon_button(ICONS["reset"], "restart the sample", self.stop)
+        if len(self.registry):
+            icon_button(ICONS["next"], "next sample (PageDown)", lambda: self.next_sample(1))
 
-        # controls
-        section = dom.el("section", panel, cls="pyb2d3-section")
-        dom.el("h3", section, "Controls")
-        row = dom.el("div", section, cls="pyb2d3-row")
-        self._play_button = dom.el("button", row, "Pause")
-        dom.on(self._play_button, "click", lambda e: self._toggle_pause())
-        self._step_button = dom.el("button", row, "Step", disabled="")
-        dom.on(self._step_button, "click", lambda e: self._request_single_step())
-        reset = dom.el("button", row, "Reset")
-        dom.on(reset, "click", lambda e: self.stop())
-
+        # simulation settings: collapsed (click the heading to open)
+        section = dom.el("details", panel, cls="pyb2d3-section")
+        dom.el("summary", section, "Simulation")
         self._slider(
             dom,
             section,
@@ -709,9 +714,9 @@ class WebglFrontend(FrontendBase):
             fmt_value=lambda v: f"{speed_from_slider(v):.2f}x",
         )
 
-        # debug draw options
-        section = dom.el("section", panel, cls="pyb2d3-section")
-        dom.el("h3", section, "Debug draw")
+        # debug draw options: collapsed (click the heading to open)
+        section = dom.el("details", panel, cls="pyb2d3-section")
+        dom.el("summary", section, "Debug draw")
         for name, label in DEBUG_DRAW_OPTIONS:
             self._checkbox(
                 dom,
@@ -720,6 +725,20 @@ class WebglFrontend(FrontendBase):
                 bool(getattr(self.debug_draw, name)),
                 lambda v, name=name: setattr(self.debug_draw, name, v),
             )
+
+        # the sample: title, its widgets (filled by add_widget), help text (a box of
+        # fixed height: switching samples moves nothing)
+        section = dom.el("section", panel, cls="pyb2d3-section")
+        self._sample_title = dom.el("h3", section, "")
+        self._sample_widgets = dom.el("div", section)
+        self._sample_help = dom.el("p", section, "", cls="pyb2d3-help pyb2d3-sample-help")
+        dom.el(
+            "p",
+            section,
+            "mouse: drag bodies, drag the background to pan, wheel zooms\n"
+            "touch: drag bodies, one finger on empty space pans, two fingers zoom",
+            cls="pyb2d3-help",
+        )
 
     def _slider(
         self, dom, parent, label, lo, hi, step, value, callback, fmt="{:.2f}", fmt_value=None
@@ -777,7 +796,10 @@ class WebglFrontend(FrontendBase):
             self.set_paused()
         else:
             self.set_running()
-        self._play_button.textContent = "Play" if paused else "Pause"
+        title = "play" if paused else "pause"
+        self._play_button.textContent = ICONS[title]
+        self._play_button.title = title
+        self._play_button.setAttribute("aria-label", title)
         self._step_button.disabled = not paused
 
     def _request_single_step(self):

@@ -1,3 +1,5 @@
+import textwrap
+
 import pytest
 
 # examples/ is put on sys.path by tests/__init__.py
@@ -23,6 +25,9 @@ def test_sample_has_help(entry):
     """every sample explains itself (shown by the frontends): `help`, class or module docstring"""
     text = entry.cls.help_text()
     assert len(text.split()) >= 5, f"{entry.key}: no help text (set `help` or a docstring)"
+    # it fits the web panel's help box: 8 lines of ~40 characters
+    lines = sum(max(1, len(textwrap.wrap(line, 40))) for line in text.split("\n"))
+    assert lines <= 8, f"{entry.key}: help text of {lines} lines, at most 8 fit"
 
 
 # every registered sample, grouped by category in the test ids ("Games/Billiard", ...)

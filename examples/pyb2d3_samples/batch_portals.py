@@ -34,14 +34,11 @@ def rotation_between(a, b):
 
 @register_sample("Fields & Space", "Portals")
 class BatchPortals(SampleBase):
-    """Balls bounce around a room with two pairs of portals: whatever touches a
-    portal is teleported to its partner, the velocity rotated like the portal.
-    Per portal one mask finds the balls and one batch call moves them.
-
-    Sliders: number of balls, exit speed cap.
-    Hint: the floor portal leads to the ceiling right above it: balls fall forever
-    and get faster every loop (portals do not conserve energy, the cap keeps it sane).
-    Balls rolling down the left slope pop out of the right wall.
+    """Balls bounce through two pairs of portals, leaving with the velocity rotated
+    like the portal.
+    Sliders: balls, exit speed cap.
+    Hint: the floor portal leads to the ceiling: balls fall forever, faster each
+    loop.
     """
 
     half_width = 14.0

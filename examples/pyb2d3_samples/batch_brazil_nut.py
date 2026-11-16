@@ -10,12 +10,10 @@ from .batch_common import Shaker, create_circles, destroy_bodies, draw_plot
 
 @register_sample("Granular", "Brazil Nut Shaker")
 class BatchBrazilNut(SampleBase):
-    """A shaken box of small grains with a few big "nuts" at the bottom: shaking
-    makes the big ones rise to the top (the Brazil nut effect).
-
-    Sliders: shaking amplitude and frequency, number of nuts.
-    Hint: too weak shaking does nothing, too strong turns the box into a gas;
-    the plot shows the mean nut height (orange) over time.
+    """Shaking a box of small grains makes the big "nuts" rise to the top: the
+    Brazil nut effect.
+    Sliders: amplitude, frequency, nuts.
+    Plot: the mean nut height.
     """
 
     half_width = 5.0

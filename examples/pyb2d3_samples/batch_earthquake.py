@@ -10,13 +10,10 @@ from .batch_common import Shaker, destroy_bodies, hsv_colors
 
 @register_sample("Granular", "Earthquake City")
 class BatchEarthquake(SampleBase):
-    """A city of block towers on a ground plate that shakes like an earthquake.
-
+    """A city of block towers on a shaking ground plate.
     Keys: space starts / stops the quake.
-    Sliders: magnitude (amplitude) and frequency of the quake; "rebuild" puts the
-    city back up.
-    Hint: tall slim towers resonate at low frequencies, short wide ones at high;
-    a block counts as fallen when it dropped more than half its height.
+    Sliders: magnitude, frequency; "rebuild".
+    Hint: tall slim towers fall at low frequencies, short wide ones at high.
     """
 
     block = (0.4, 0.2)  # half extents

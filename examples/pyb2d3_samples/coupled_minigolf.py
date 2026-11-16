@@ -74,11 +74,9 @@ class GolfState(Enum):
 
 @register_sample("Games", "Coupled Minigolf")
 class CoupledMinigolf(SampleBase):
-    """Minigolf with two balls tied together by a spring (a soft distance joint).
-
-    Mouse: press on either ball, drag away from the shot direction and release.
-    Getting one ball into the hole loads the next of three levels.
-    Hint: the other ball follows with a delay, use it to swing around corners.
+    """Minigolf with two balls tied by a spring (a soft distance joint), three levels.
+    Mouse: press on a ball, drag back and release.
+    Hint: the other ball follows with a delay: swing it around corners.
     """
 
     @dataclass

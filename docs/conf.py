@@ -36,8 +36,8 @@ def _paths(name):
 # the sandbox in the browser (pyjs + WebGL frontend) at <html root>/sandbox/,
 # opened from the sample gallery (_static/sandbox_links.js): the local emscripten
 # build of this commit (`pixi run emscripten` first, the docs workflow does), packed
-# with numpy, openblas and PyOpenGL (see examples/web/build_page.py); pyjs comes
-# from jsDelivr, PYB2D3_SANDBOX_PYJS: a local pyjs npm package dir (dist/ + assets/)
+# with numpy, openblas and PyOpenGL, pyjs in the page (see examples/web/build_page.py);
+# PYB2D3_SANDBOX_PYJS: a local pyjs npm package dir (dist/ + assets/) instead
 sys.path.insert(0, str(docs_dir.parent / "examples" / "web"))
 import build_page  # noqa: E402
 
@@ -45,7 +45,8 @@ sandbox_extra = docs_dir / "_build" / "sandbox_extra"
 _sandbox_pyjs = next(iter(_paths("PYB2D3_SANDBOX_PYJS")), None)
 _sandbox_pyb2d3 = build_page.build(sandbox_extra / "sandbox", pyjs_dir=_sandbox_pyjs)
 # which builds the page uses (a forgotten environment variable is easy to miss)
-print(f"sandbox: pyjs from {_sandbox_pyjs or build_page.DEFAULT_PYJS_URL}, {_sandbox_pyb2d3.name}")
+_pyjs_source = _sandbox_pyjs or f"npm {build_page.PYJS_VERSION}"
+print(f"sandbox: pyjs from {_pyjs_source}, {_sandbox_pyb2d3.name}")
 html_extra_path = [str(sandbox_extra)]
 
 

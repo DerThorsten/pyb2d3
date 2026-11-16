@@ -1,22 +1,21 @@
 """Build a static page running the pyb2d3 sandbox (WebGL frontend) in the browser.
 
-The page uses the pyjs npm package (it brings python). Everything else comes in two
-archives the page unpacks (and caches in IndexedDB): the sandbox sources (examples/,
-mounted at /examples) and the packages: the local pyb2d3 build (`pixi run emscripten`)
-with numpy (+ openblas) and PyOpenGL, downloaded from emscripten-forge at build time,
-without tests, headers, docs, ...: no package install (mamba) in the browser.
+The page brings everything it needs to start: pyjs (python; the pinned npm package,
+or a local pyjs dir with --pyjs) and two archives it unpacks (and caches in
+IndexedDB): the sandbox sources (examples/, mounted at /examples) and the packages:
+the local pyb2d3 build (`pixi run emscripten`) with numpy (+ openblas) and PyOpenGL,
+downloaded from emscripten-forge at build time, without tests, headers, docs, ...:
+no package install (mamba) in the browser, no CDN needed to start.
 
     pixi run emscripten
     python examples/web/build_page.py --out build/web_sandbox
     python -m http.server -d build/web_sandbox 8000   # open http://localhost:8000
-
-Without --pyjs the page loads the pyjs npm package from jsDelivr (--pyjs-url).
+    pixi run -e web-test web-test                     # the page in headless chromium
 
 The page is plain ES modules (index.html, main.js, editor.js), copied as they are:
-no package.json, no bundler. Its dependencies come from CDNs at runtime (pyjs from
-jsDelivr, Monaco from cdnjs), the logic lives in python (pyb2d3_sandbox_webgl).
-A package.json + bundler would only pay off with TypeScript, npm dependencies that
-are not on a CDN, or unit tests of the JS.
+no package.json, no bundler. Only the code editor (Monaco) comes from a CDN (cdnjs),
+the logic lives in python (pyb2d3_sandbox_webgl). A package.json + bundler would only
+pay off with TypeScript, npm dependencies that are not on a CDN, or unit tests of the JS.
 """
 
 import argparse
@@ -50,12 +49,12 @@ PACKAGE_CACHE = REPO / "build" / "conda-packages"
 # not needed to run anything: tests, headers, docs, metadata, Windows DLLs, ...
 DROP_DIRS = {"tests", "testing", "f2py", "distutils", "include", "__pycache__", "DLLS", "doc"}
 DROP_SUFFIXES = (".pyi", ".pxd", ".h", ".a", ".pc", ".cmake", ".pyc", ".c", ".cpp")
-# pyjs, pinned: an exact version is cached for good (jsDelivr caches a moving "latest"
-# for days), and a new one may bring another python. Update both together: the
-# packed packages are built for PYTHON_VERSION (npm package.json: "pyjs": {"python"})
+# pyjs, pinned (a new one may bring another python), copied into the page from its
+# npm package. Update both together: the packed packages are built for PYTHON_VERSION
+# (the npm package.json says which python a pyjs has: "pyjs": {"python": ...})
 PYJS_VERSION = "4.4.1"
 PYTHON_VERSION = "3.14"
-DEFAULT_PYJS_URL = f"https://cdn.jsdelivr.net/npm/@derthorsten/pyjs@{PYJS_VERSION}/dist/index.js"
+PYJS_TARBALL = f"https://registry.npmjs.org/@derthorsten/pyjs/-/pyjs-{PYJS_VERSION}.tgz"
 
 
 def local_pyb2d3_build():
@@ -158,7 +157,29 @@ def pack_packages(out, conda_pkgs):
     return shared_libs
 
 
-def build(out, pyjs_dir=None, pyjs_url=DEFAULT_PYJS_URL, pyb2d3=None):
+def copy_pyjs(out, pyjs_dir=None):
+    """pyjs into the page: a local pyjs npm package dir (dist/ + assets/), else the
+    pinned npm package (downloaded once): its dist/ and wasm32 assets. Returns the
+    entry module's url (the version in the dir name: no stale browser cache)"""
+    if pyjs_dir is not None:
+        shutil.copytree(pyjs_dir, out / "pyjs-dev", ignore=shutil.ignore_patterns("node_modules"))
+        return "./pyjs-dev/dist/index.js"
+    tarball = PACKAGE_CACHE / f"pyjs-{PYJS_VERSION}.tgz"
+    if not tarball.exists():
+        print(f"downloading {PYJS_TARBALL}")
+        PACKAGE_CACHE.mkdir(parents=True, exist_ok=True)
+        tarball.write_bytes(_download(PYJS_TARBALL))
+    target = out / f"pyjs-{PYJS_VERSION}"
+    with tarfile.open(tarball, "r:gz") as tar:
+        for member in tar.getmembers():
+            name = member.name.removeprefix("package/")
+            if member.isfile() and name.startswith(("dist/", "assets/")) and "wasm64" not in name:
+                (target / name).parent.mkdir(parents=True, exist_ok=True)
+                (target / name).write_bytes(tar.extractfile(member).read())
+    return f"./pyjs-{PYJS_VERSION}/dist/index.js"
+
+
+def build(out, pyjs_dir=None, pyb2d3=None):
     """create the page dir `out` (pyb2d3: a conda package, default: the local build)"""
     if out.exists():
         shutil.rmtree(out)
@@ -167,10 +188,7 @@ def build(out, pyjs_dir=None, pyjs_url=DEFAULT_PYJS_URL, pyb2d3=None):
     pack_examples(out)
     pyb2d3 = pyb2d3 or local_pyb2d3_build()
     shared_libs = pack_packages(out, [pyb2d3, *fetch_packages(PACKAGES)])
-
-    if pyjs_dir is not None:
-        shutil.copytree(pyjs_dir, out / "pyjs", ignore=shutil.ignore_patterns("node_modules"))
-        pyjs_url = "./pyjs/dist/index.js"
+    pyjs_url = copy_pyjs(out, pyjs_dir)
 
     # the archives the page unpacks: the content hash in the file name (a new build is
     # a new url: no stale browser cache), the page caches the unpacked files in
@@ -214,9 +232,10 @@ def main():
     """command line"""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", type=Path, required=True, help="page directory (recreated)")
-    parser.add_argument("--pyjs", type=Path, help="local pyjs npm package dir (dist/ + assets/)")
     parser.add_argument(
-        "--pyjs-url", default=DEFAULT_PYJS_URL, help="pyjs entry module without --pyjs"
+        "--pyjs",
+        type=Path,
+        help=f"a local pyjs npm package dir (dist/ + assets/), default: pyjs {PYJS_VERSION} from npm",
     )
     parser.add_argument(
         "--pyb2d3",
@@ -225,7 +244,7 @@ def main():
         "this version, emscripten_forge/output)",
     )
     args = parser.parse_args()
-    build(args.out.resolve(), args.pyjs, args.pyjs_url, args.pyb2d3)
+    build(args.out.resolve(), args.pyjs, args.pyb2d3)
     print(
         f"page written to {args.out}, serve it e.g. with: python -m http.server -d {args.out} 8000"
     )

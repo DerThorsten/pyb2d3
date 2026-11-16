@@ -13,11 +13,9 @@ def grid_iterate(shape):
 
 @register_sample("Demos", "Soft Bodies")
 class SoftBodies(SampleBase):
-    """A soft body: a 4 x 4 grid of balls connected by spring distance joints.
-
-    Widgets: "Hertz" sets the spring stiffness, "Damping" the damping ratio.
-    Mouse: drag a ball, double click for an explosion, triple click to pull bodies in.
-    Try a low hertz to see a very wobbly body.
+    """A soft body: a 4 x 4 grid of balls linked by spring distance joints.
+    Sliders: spring hertz (low: very wobbly) and damping.
+    Mouse: drag a ball; double click explodes, triple click pulls in.
     """
 
     def __init__(self, frontend, settings):

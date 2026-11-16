@@ -13,13 +13,10 @@ from .batch_common import ParticlePool
 
 @register_sample("Fluids & Matter", "Rain")
 class BatchRain(SampleBase):
-    """A shower of drops falls on umbrellas walking to and fro; the drops splash on
-    the ground and are recycled.
-
-    Mouse: grab an umbrella and hold it where you like (it walks on when let go).
-    Sliders: rain rate and wind.
-    Hint: all drops move with one batch call per step; they come from a fixed pool,
-    parked drops are recycled for new ones.
+    """Rain on umbrellas walking to and fro; the drops splash and are recycled from a
+    fixed pool.
+    Mouse: grab an umbrella and hold it.
+    Sliders: rain rate, wind.
     """
 
     ground = 0.0

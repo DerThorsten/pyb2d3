@@ -30,10 +30,8 @@ class GameState(enum.Enum):
 
 @register_sample("Games", "Billiard")
 class Billiard(SampleBase):
-    """A pool table without gravity, built from a chain with arcs for the six pockets.
-
-    Mouse: press on the white ball, drag back (away from the shot direction) and release.
-    The longer the line, the harder the shot. Shoot again once all balls are at rest.
+    """A pool table without gravity: a chain with arcs for the six pockets.
+    Mouse: press on the white ball, drag back and release; a longer line shoots harder.
     Pocketing the white or the black ball restarts the game.
     """
 
