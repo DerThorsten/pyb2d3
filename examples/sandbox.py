@@ -4,6 +4,7 @@
     python examples/sandbox.py "Joints/Ragdoll"         # start at a sample
     python examples/sandbox.py --frontend pygame
     python examples/sandbox.py --list                   # all samples
+    python examples/sandbox.py "Demos/Text" -o text="hi there"   # extra options for samples
 
 Uses the in-place build (``cmake --build build``) if there is one, else the installed pyb2d3.
 """
@@ -28,18 +29,27 @@ def main():
         "--frontend", choices=["opengl", "pygame"], help="default: opengl if available"
     )
     parser.add_argument("--list", action="store_true", help="list the samples and exit")
+    parser.add_argument(
+        "-o",
+        "--option",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help="an extra option for the samples, e.g. -o text='hello there' (repeatable)",
+    )
     args = parser.parse_args()
 
     if args.frontend:
         os.environ["PYB2D3_SANDBOX_DEFAULT_FRONTEND"] = args.frontend
 
     import pyb2d3_samples  # noqa: F401  (registers the samples)
-    from pyb2d3_sandbox import registry, run_sample_browser
+    from pyb2d3_sandbox import registry, run_sample_browser, set_extra_options
 
     if args.list:
         for entry in registry:
             print(entry.key)
         return
+    set_extra_options(dict(option.partition("=")[::2] for option in args.option))
     run_sample_browser(start=args.sample or None)
 
 

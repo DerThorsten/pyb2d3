@@ -28,7 +28,7 @@ def create_circles(
     """One dynamic circle body per row of `positions`, returned as a `b2d.Bodies` batch.
 
     `radius` and `colors` are a single value or one value per body. Creating bodies is
-    the one thing the batch API cannot do: it is a python loop, but only once.
+    a python loop, but only once (frequent emission: `ParticlePool`).
     """
     n = len(positions)
     radii = np.broadcast_to(np.asarray(radius, dtype=np.float64), (n,))
@@ -44,32 +44,6 @@ def create_circles(
         )
         bodies.append(body)
     return bodies
-
-
-# a filter that collides with nothing (points that only feel the forces of the sample)
-NO_COLLISIONS = b2d.make_filter(category_bits=0x0002, mask_bits=0x0000)
-
-
-def create_points(world, positions, radius, colors, density):
-    """non-colliding circle bodies, one per row of `positions` (a b2d.Bodies batch):
-    stars, sparks, gas particles that only feel the sample's forces"""
-    bodies = b2d.Bodies()
-    for (x, y), color in zip(positions, colors):
-        body = world.create_dynamic_body(position=(float(x), float(y)), enable_sleep=False)
-        material = b2d.surface_material(custom_color=int(color))
-        body.create_shape(
-            b2d.shape_def(density=density, material=material, filter=NO_COLLISIONS),
-            b2d.circle(radius=radius),
-        )
-        bodies.append(body)
-    return bodies
-
-
-def destroy_bodies(sample, bodies):
-    """Destroy every body of a batch (there is no batch version of destroy)."""
-    sample.destroy_mouse_joint()
-    for body in bodies:
-        body.destroy()
 
 
 def unit_and_length(vectors, eps=1e-6):
@@ -235,8 +209,8 @@ class ParticlePool:
             self.bodies[mask].enabled = False
             self.active &= ~mask
 
-    def destroy(self, sample):
-        destroy_bodies(sample, self.bodies)
+    def destroy(self):
+        self.bodies.destroy()
         self.bodies = b2d.Bodies()
 
 
@@ -274,23 +248,6 @@ def draw_curve(debug_draw, points, color):
     points = np.asarray(points, dtype=np.float64)
     for p, q in zip(points[:-1], points[1:]):
         debug_draw.draw_segment(tuple(p), tuple(q), color)
-
-
-def draw_plot(debug_draw, origin, size, series, colors, y_max=None):
-    """line plot of several value sequences into the box `origin` (lower left) +
-    `size` (world units), with a frame; y from 0 to y_max (default: max value)"""
-    ox, oy = origin
-    w, h = size
-    frame = [(ox, oy), (ox + w, oy), (ox + w, oy + h), (ox, oy + h), (ox, oy)]
-    draw_curve(debug_draw, frame, b2d.HexColor.DimGray)
-    values = [np.asarray(s, dtype=np.float64) for s in series if len(s) > 1]
-    if not values:
-        return
-    top = y_max if y_max is not None else max(float(v.max()) for v in values) or 1.0
-    for v, color in zip(values, colors):
-        x = ox + w * np.arange(len(v)) / (len(v) - 1)
-        y = oy + h * np.clip(v / top, 0.0, 1.0)
-        draw_curve(debug_draw, np.stack([x, y], axis=1), color)
 
 
 def draw_histogram(debug_draw, origin, size, counts, color, reference=None, reference_color=None):

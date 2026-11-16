@@ -56,6 +56,20 @@ with::
     pixi run sandbox "Games/Billiard"       # a specific one
     python examples/sandbox.py --list       # all sample keys
 
+Extra options
+-------------
+
+Samples can read options passed in from outside with ``get_extra_options()`` (a dict of
+strings; the sample converts them)::
+
+    text = get_extra_options().get("text", "pyb2d3")
+
+They come from ``-o name=value`` natively (``python examples/sandbox.py "Demos/Text" -o
+text="hi there"``) and from the URL query parameters in the browser
+(``sandbox/?sample=Demos/Text&text=hi+there``). A value ``b64:<base64url>`` is decoded, so a
+link need not show its text right away: ``python examples/web/message_link.py "Happy
+birthday!"`` prints such a link.
+
 Testing samples
 ---------------
 

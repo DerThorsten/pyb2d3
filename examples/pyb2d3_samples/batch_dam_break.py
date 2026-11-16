@@ -8,7 +8,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import Ema, destroy_bodies, hsv_colors, neighbor_pairs, pair_sum
+from .examples_common.batch import Ema, hsv_colors, neighbor_pairs, pair_sum
 
 # the particles never collide with each other (negative group): the SPH forces
 # keep them apart, box2d only does the walls and the obstacle
@@ -83,7 +83,7 @@ class BatchDamBreak(SampleBase):
 
     def reset(self):
         """a fresh column of water at the left wall"""
-        destroy_bodies(self, self.particles)
+        self.particles.destroy()
         spacing = 0.5 * self.smoothing
         columns = 26
         rows = int(np.ceil(self.count / columns))

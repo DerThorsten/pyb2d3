@@ -100,7 +100,7 @@ async function unpackArchive(pyjs, db, archive, onProgress) {
 }
 
 /** the python code starting the sandbox (the sources are mounted at /examples) */
-function startScript(sample, maxPixelRatio) {
+function startScript(sample, maxPixelRatio, options) {
   const settings = maxPixelRatio > 0 ? `WebglFrontend.Settings(max_pixel_ratio=${maxPixelRatio})` : "None";
   return `
 import sys
@@ -110,8 +110,11 @@ sys.path.insert(0, "/examples")
 sys.dont_write_bytecode = True
 
 import pyb2d3_samples  # registers the samples
-from pyb2d3_sandbox import run_sample_browser
+from pyb2d3_sandbox import run_sample_browser, set_extra_options
 from pyb2d3_sandbox_webgl import WebglFrontend
+
+# the other URL query parameters, for the samples (get_extra_options)
+set_extra_options(${JSON.stringify(options)})
 
 # returns right away (frames come from requestAnimationFrame); keep the
 # frontend alive in a global
@@ -220,7 +223,8 @@ async function main() {
   status("starting the sandbox…");
   const params = new URLSearchParams(location.search);
   const dpr = parseFloat(params.get("dpr")); // NaN without the parameter
-  await pyjs.async_exec_eval(startScript(params.get("sample"), dpr));
+  const options = Object.fromEntries([...params].filter(([name]) => name !== "sample" && name !== "dpr"));
+  await pyjs.async_exec_eval(startScript(params.get("sample"), dpr, options));
   lap("sandbox running");
   progress(null);
   status("");

@@ -13,7 +13,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import Ema, create_circles, destroy_bodies, hsv_colors
+from .examples_common.batch import Ema, create_circles, hsv_colors
 
 
 @register_sample("Batch API", "N-Body Gravity")
@@ -57,7 +57,7 @@ class BatchNBody(SampleBase):
         self.gravity = value
 
     def create_disc(self):
-        destroy_bodies(self, self.bodies)
+        self.bodies.destroy()
         n = self.count - 1  # plus the sun
         # planetesimals in a disc, area-uniform, with mixed sizes
         r = np.sqrt(self.rng.uniform(self.disc[0] ** 2, self.disc[1] ** 2, n))

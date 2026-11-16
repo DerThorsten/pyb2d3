@@ -12,7 +12,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import create_circles, destroy_bodies, hsv_colors
+from .examples_common.batch import create_circles, hsv_colors
 
 # speed bands -> colors (slow: deep blue ... fast: white-ish cyan)
 SPEED_BANDS = np.array([3.0, 6.0, 10.0, 15.0])
@@ -85,7 +85,7 @@ class BatchFountain(SampleBase):
         # drains between basin and rim: particles that fall through are recycled
 
     def create_pool(self):
-        destroy_bodies(self, self.bodies)
+        self.bodies.destroy()
         n = self.pool_size
         positions = np.tile(self.parking, (n, 1))
         self.bodies = create_circles(

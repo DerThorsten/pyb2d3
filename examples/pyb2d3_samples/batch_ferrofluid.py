@@ -9,7 +9,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import Ema, destroy_bodies, hsv_colors, pair_sum
+from .examples_common.batch import Ema, hsv_colors, pair_sum
 from .batch_dam_break import FLUID_GROUP, sph_densities
 
 
@@ -78,7 +78,7 @@ class BatchFerrofluid(SampleBase):
 
     def reset(self):
         """a fresh puddle in the middle of the tank, magnet back under the floor"""
-        destroy_bodies(self, self.particles)
+        self.particles.destroy()
         step = 0.5 * self.smoothing
         columns = 45
         rows = int(np.ceil(self.count / columns))

@@ -18,6 +18,22 @@ namespace pyb2d3::bind
             return b2Rot_GetAngle(b2Body_GetRotation(id));
         }
 
+        // setting one part of the transform keeps the other (Body / Bodies)
+        void set_position(b2BodyId id, b2Vec2 position)
+        {
+            b2Body_SetTransform(id, position, b2Body_GetRotation(id));
+        }
+
+        void set_rotation(b2BodyId id, b2Rot rotation)
+        {
+            b2Body_SetTransform(id, b2Body_GetPosition(id), rotation);
+        }
+
+        void set_angle(b2BodyId id, float angle)
+        {
+            set_rotation(id, b2MakeRot(angle));
+        }
+
         float get_speed(b2BodyId id)
         {
             return b2Length(b2Body_GetLinearVelocity(id));
@@ -53,7 +69,17 @@ namespace pyb2d3::bind
             return ids;
         }
     }  // namespace
+}  // namespace pyb2d3::bind
 
+// docstrings of the extras above (box2d has none for them); a property uses its getter's
+namespace pyb2d3::docs
+{
+    template <>
+    inline constexpr const char* doc<&bind::get_angle> = "The body angle in radians (set: keeps the position).";
+}  // namespace pyb2d3::docs
+
+namespace pyb2d3::bind
+{
     void export_body(nb::module_& m)
     {
         nb::enum_<b2BodyType>(m, "BodyType")
@@ -70,9 +96,10 @@ namespace pyb2d3::bind
             .rw<b2Body_GetName, b2Body_SetName>("name")
 
             // pose
-            .ro<b2Body_GetPosition>("position")
-            .ro<b2Body_GetRotation>("rotation")
-            .ro<&get_angle>("angle")
+            // (set: keeps the other part of the transform; both: set_transform)
+            .rw<b2Body_GetPosition, &set_position>("position")
+            .rw<b2Body_GetRotation, &set_rotation>("rotation")
+            .rw<&get_angle, &set_angle>("angle")
             .ro<b2Body_GetTransform>("transform")
             .def<b2Body_SetTransform>("set_transform", nb::arg("position"), nb::arg("rotation"))
             .def<b2Body_SetTargetTransform>(
@@ -165,6 +192,8 @@ namespace pyb2d3::bind
             .def<b2CreateCapsuleShape>("create_capsule_shape", nb::arg("shape_def"), nb::arg("capsule"))
             .def<b2CreatePolygonShape>("create_polygon_shape", nb::arg("shape_def"), nb::arg("polygon"));
 
+
+        def_for_each(batch_cls, "destroy", &Body::Destroy, "Destroy every body (with its shapes and joints).");
         cls.def("destroy", &Body::Destroy)
             .def_prop_ro(
                 "world",

@@ -28,8 +28,33 @@ namespace pyb2d3::bind
             data.resize(Fill(self.id, data.data(), static_cast<int>(data.size())));
             return data;
         }
-    }  // namespace
 
+        // the surface material's custom color alone: an array-friendly value (Shapes)
+        uint32_t get_custom_color(b2ShapeId id)
+        {
+            return b2Shape_GetSurfaceMaterial(id).customColor;
+        }
+
+        void set_custom_color(b2ShapeId id, uint32_t color)
+        {
+            b2SurfaceMaterial material = b2Shape_GetSurfaceMaterial(id);
+            material.customColor = color;
+            b2Shape_SetSurfaceMaterial(id, &material);
+        }
+    }  // namespace
+}  // namespace pyb2d3::bind
+
+// docstrings of the extras above (box2d has none for them); a property uses its getter's
+namespace pyb2d3::docs
+{
+    template <>
+    inline constexpr const char*
+        doc<&bind::get_custom_color> = "The custom debug draw color of the shape (0xRRGGBB, 0: the default color), "
+                                       "the ``custom_color`` of its surface material.";
+}  // namespace pyb2d3::docs
+
+namespace pyb2d3::bind
+{
     void export_shape(nb::module_& m)
     {
         nb::enum_<b2ShapeType>(m, "ShapeType")
@@ -57,6 +82,7 @@ namespace pyb2d3::bind
             .rw<b2Shape_GetRestitution, b2Shape_SetRestitution>("restitution")
             .rw<b2Shape_GetUserMaterial, b2Shape_SetUserMaterial>("user_material")
             .rw<b2Shape_GetSurfaceMaterial, b2Shape_SetSurfaceMaterial>("surface_material")
+            .rw<&get_custom_color, &set_custom_color>("custom_color")
             .rw<b2Shape_GetFilter, b2Shape_SetFilter>("filter")
 
             // events
@@ -83,6 +109,7 @@ namespace pyb2d3::bind
             .ro<b2Shape_GetContactCapacity>("contact_capacity")
             .ro<b2Shape_GetSensorCapacity>("sensor_capacity");
 
+        def_for_each(batch_cls, "destroy", &Shape::Destroy, nb::arg("update_body_mass") = true, "Destroy every shape.");
         cls.def("destroy", &Shape::Destroy, nb::arg("update_body_mass") = true)
             .def(
                 "cast",

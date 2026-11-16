@@ -12,7 +12,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import Ema, create_circles, destroy_bodies, hsv_colors
+from .examples_common.batch import Ema, create_circles, hsv_colors
 
 BATCH, LOOP = "batch API", "python loop"
 
@@ -54,7 +54,7 @@ class BatchVsLoop(SampleBase):
         return b2d.aabb(lower_bound=(-self.half, -self.half), upper_bound=(self.half, self.half))
 
     def create_bodies(self):
-        destroy_bodies(self, self.bodies)
+        self.bodies.destroy()
         n = self.count
         positions = self.rng.uniform(-self.half + 1.0, self.half - 1.0, (n, 2))
         colors = hsv_colors(np.linalg.norm(positions, axis=1) / (1.5 * self.half))

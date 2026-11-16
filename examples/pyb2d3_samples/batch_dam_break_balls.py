@@ -6,7 +6,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .batch_common import create_circles, destroy_bodies, hsv_colors
+from .examples_common.batch import create_circles, hsv_colors
 
 
 @register_sample("Fluids & Matter", "Dam Break (Balls)")
@@ -87,7 +87,7 @@ class BatchDamBreakBalls(SampleBase):
 
     def reset(self):
         """a fresh column of balls behind a closed gate"""
-        destroy_bodies(self, self.balls)
+        self.balls.destroy()
         # a slightly jittered square grid, filled from the bottom; as many columns as
         # needed to stay below max_column_height (the gate follows the column)
         spacing = 2.05 * self.radius

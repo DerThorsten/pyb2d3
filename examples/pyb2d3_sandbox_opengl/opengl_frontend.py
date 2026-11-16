@@ -324,16 +324,15 @@ class OpenglFrontend(FrontendBase):
 
     def panel_gui_function(self):
         line = imgui.get_text_line_height_with_spacing()
-        # the sample tree: a collapsible section too, open at the start; the buttons stay
-        # in view when it is collapsed
+        # the controls on top, then the sample tree: collapsible sections, open at the start
+        if imgui.collapsing_header("Controls", imgui.TreeNodeFlags_.default_open):
+            self.control_buttons_gui()
         if len(self.registry) and imgui.collapsing_header(
             "Sample", imgui.TreeNodeFlags_.default_open
         ):
             imgui.begin_child("sample tree", (0, TREE_LINES * line), imgui.ChildFlags_.borders)
             self.sample_tree_gui()
             imgui.end_child()
-        if imgui.collapsing_header("Controls", imgui.TreeNodeFlags_.default_open):
-            self.control_buttons_gui()
         # previous / next sample: PageUp / PageDown, anywhere (also with the sections closed)
         if len(self.registry) and imgui.is_key_pressed(imgui.Key.page_up, repeat=False):
             self.next_sample(-1)
@@ -441,6 +440,15 @@ class OpenglFrontend(FrontendBase):
                 if changed:
                     element.value = options[index]
                     element.callback(element.value)
+            elif isinstance(element, widgets.TextInput):
+                imgui.text(element.label)
+                size = imgui.ImVec2(-1, 3 * imgui.get_text_line_height_with_spacing())
+                changed, value = imgui.input_text_multiline(
+                    f"##{element.label}", element.value, size
+                )
+                if changed:
+                    element.value = value
+                    element.callback(value)
             elif isinstance(element, widgets.Button):
                 if ui_button(element.label):
                     element.callback()

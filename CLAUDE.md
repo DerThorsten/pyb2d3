@@ -19,7 +19,12 @@ where id ist an opaque handle to a joint.
   `Binder(cls).rw<b2Body_GetMass, ...>("name")`, `.ro<...>`, `.def<b2Body_ApplyForce>(...)`.
   Do NOT write one-line forwarding member functions. With a batch class
   (`Binder(cls, batch_cls)`) the numpy batch versions (`Bodies`, `Shapes`, `Joints`) are
-  generated automatically for array-friendly value types. `-DPYB2D3_BATCH_API=OFF` compiles them out.
+  generated automatically for array-friendly value types (always built). Batch-only
+  functions without a single-object counterpart: `def_for_each` (a wrapper member function
+  for every id, e.g. `Bodies.destroy`) or a direct `batch_cls.def`.
+  Docstrings of non-box2d functions are written in the C++ binding sources:
+  `docs::doc<&wrapper>` specializations for wrappers bound through `Binder`, the binding's
+  doc argument otherwise.
 - `src/bind/<domain>.cpp`: one binding file per domain (world, body, shape, chain, joint,
   joint_defs, defs, events, collision, math, vec2, dynamic_tree, recording, debug_draw, base),
   declared in `src/bind/bind.hpp`, registered in `src/bind/module.cpp`.

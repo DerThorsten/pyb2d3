@@ -637,6 +637,27 @@ class WebglFrontend(FrontendBase):
         panel = self.panel
         panel.textContent = ""
 
+        # the controls, on top (a collapsible section, open at the start): one row of icon
+        # buttons: previous sample, play / pause, single step, restart, next sample
+        section = dom.el("details", panel, cls="pyb2d3-section", open="")
+        dom.el("summary", section, "Controls")
+        row = dom.el("div", section, cls="pyb2d3-row pyb2d3-icons")
+
+        def icon_button(icon, title, on_click, **attrs):
+            button = dom.el("button", row, icon, title=title, aria_label=title, **attrs)
+            dom.on(button, "click", lambda e: on_click())
+            return button
+
+        if len(self.registry):
+            icon_button(ICONS["previous"], "previous sample (PageUp)", lambda: self.next_sample(-1))
+        self._play_button = icon_button(ICONS["pause"], "pause", self._toggle_pause)
+        self._step_button = icon_button(
+            ICONS["step"], "single step (while paused)", self._request_single_step, disabled=""
+        )
+        icon_button(ICONS["reset"], "restart the sample", self.stop)
+        if len(self.registry):
+            icon_button(ICONS["next"], "next sample (PageDown)", lambda: self.next_sample(1))
+
         # sample choice: a tree like the native frontend's, a collapsible group per
         # category (one list of all ~160 samples is far too long); the section itself is
         # collapsible too, open at the start
@@ -658,28 +679,6 @@ class WebglFrontend(FrontendBase):
                     )
                     self._tree_items.append(item)
             self._show_in_tree()
-
-        # one row of icon buttons, on top (always in view): previous sample, play /
-        # pause, single step, restart, next sample
-        # (a collapsible section of its own, open at the start)
-        section = dom.el("details", panel, cls="pyb2d3-section", open="")
-        dom.el("summary", section, "Controls")
-        row = dom.el("div", section, cls="pyb2d3-row pyb2d3-icons")
-
-        def icon_button(icon, title, on_click, **attrs):
-            button = dom.el("button", row, icon, title=title, aria_label=title, **attrs)
-            dom.on(button, "click", lambda e: on_click())
-            return button
-
-        if len(self.registry):
-            icon_button(ICONS["previous"], "previous sample (PageUp)", lambda: self.next_sample(-1))
-        self._play_button = icon_button(ICONS["pause"], "pause", self._toggle_pause)
-        self._step_button = icon_button(
-            ICONS["step"], "single step (while paused)", self._request_single_step, disabled=""
-        )
-        icon_button(ICONS["reset"], "restart the sample", self.stop)
-        if len(self.registry):
-            icon_button(ICONS["next"], "next sample (PageDown)", lambda: self.next_sample(1))
 
         # simulation settings: collapsed (click the heading to open)
         section = dom.el("details", panel, cls="pyb2d3-section")
@@ -872,6 +871,15 @@ class WebglFrontend(FrontendBase):
             dom.el("hr", parent)
             if element.label:
                 dom.el("b", parent, element.label)
+        elif isinstance(element, widgets.TextInput):
+            dom.el("span", parent, element.label)
+            area = dom.el("textarea", parent, element.value, cls="pyb2d3-wide", rows=3)
+
+            def on_text(e, element=element, area=area):
+                element.value = str(area.value)
+                element.callback(element.value)
+
+            dom.on(area, "input", on_text)
         elif isinstance(element, widgets.Button):
             button = dom.el("button", parent, element.label, cls="pyb2d3-wide")
             dom.on(button, "click", lambda e, element=element: element.callback())

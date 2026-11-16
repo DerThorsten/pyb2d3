@@ -28,7 +28,6 @@ CMake options:
 
 =========================  ======================================================================
 ``FETCH_BOX2D``            download and build box2d (``ON``) or use an installed one (``OFF``)
-``PYB2D3_BATCH_API``       build the numpy batch API (default ``ON``, about 50 KB)
 ``PYB2D3_NO_THREADING``    disable the thread pool (e.g. for emscripten)
 =========================  ======================================================================
 
