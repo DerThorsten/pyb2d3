@@ -134,6 +134,26 @@ def test_contacts_and_sensors(world, ground):
     assert len(shape.contact_data) >= 1
 
 
+def test_batched_ground_contact_with_foot_sensors(world, ground):
+    """'Is this foot on the ground', batched: a sensor shape per foot whose mask selects the
+    ground's category; Shapes.sensor_capacity is the overlap count of the last step."""
+    GROUND, FOOT = 0x2, 0x4
+    ground.shapes[0].filter = b2d.make_filter(category_bits=GROUND, mask_bits=0xFFFF)
+    ground.shapes[0].sensor_events_enabled = True  # sensors only see shapes with sensor events
+
+    feet = []
+    for i, height in enumerate([0.5, 0.5, 6.0]):  # two on the ground, one in the air
+        body = world.create_dynamic_body(position=(3 * i, height), gravity_scale=0.0)
+        body.create_polygon_shape(b2d.shape_def(), b2d.box(0.5, 0.5))
+        sensor_def = b2d.shape_def(is_sensor=True, enable_sensor_events=True)
+        sensor_def.filter = b2d.make_filter(category_bits=FOOT, mask_bits=GROUND)
+        feet.append(body.create_polygon_shape(sensor_def, b2d.box(0.4, 0.2, center=(0, -0.5), rotation=0)))
+    step(world, 3)
+
+    touching = b2d.Shapes(feet).sensor_capacity > 0
+    assert touching.tolist() == [True, True, False]
+
+
 def test_destroy_updates_mass(world):
     body = make_box_body(world)
     extra = body.create_circle_shape(b2d.shape_def(density=1), b2d.circle(radius=1))

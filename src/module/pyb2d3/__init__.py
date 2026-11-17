@@ -149,6 +149,12 @@ del _extend_def_classes
 
 
 class World(WorldView):
+    """A box2d world (``World(gravity=(0, -10), ...)``: the attributes of ``WorldDef``).
+
+    box2d supports at most 128 worlds at a time; creating more raises a RuntimeError.
+    A world is destroyed by ``destroy()`` or when it is garbage collected.
+    """
+
     # only the constructor (and __del__) is allowed to be added to this class.
     # All other methods are added to the WorldView class
     def __init__(self, /, thread_pool=None, _world_id=None, **kwargs):
@@ -167,7 +173,8 @@ class World(WorldView):
         return cls(_world_id=create_world_id_from_snapshot(image, worker_count))
 
     def __del__(self):
-        self.destroy()
+        if hasattr(self, "_threadpool"):  # not when the constructor raised
+            self.destroy()
 
 
 _shape_def_f = shape_def
@@ -287,6 +294,13 @@ def _extend_world():
     WorldView.body_factory = body_factory
 
     def dynamic_body_at_point(self, point, query_filter=None):
+        """The dynamic body with a shape at `point`, or None.
+
+        box2d checks the filter both ways: a shape is only found if its ``mask_bits`` include
+        the query's ``category_bits`` (default 1) and the query's ``mask_bits`` include the
+        shape's ``category_bits``. A shape whose mask excludes category 1 needs a
+        ``make_query_filter(category_bits=..., mask_bits=...)`` here.
+        """
         if query_filter is None:
             query_filter = QueryFilter()
         return self.body_at_point(point, query_filter, dynamic_only=True)
@@ -404,7 +418,12 @@ def _extend_batch_api():
             return lambda i: cls(int(i)).cast()
         return lambda i: cls(int(i))
 
-    for batch_cls, single_cls in [(Bodies, Body), (Shapes, Shape), (Joints, Joint)]:
+    pairs = [(Bodies, Body), (Shapes, Shape), (Joints, Joint)]
+    # typed joint batches: RevoluteJoints, PrismaticJoints, ... (the joint type's own api)
+    for joint_type in JointType.__members__:
+        name = joint_type.title() + "Joint"
+        pairs.append((globals()[name + "s"], globals()[name]))
+    for batch_cls, single_cls in pairs:
 
         def __iter__(self, _make=typed(single_cls)):
             return map(_make, self.ids)
@@ -445,15 +464,25 @@ class MouseDrag(object):
         drag.update(point)         # on mouse move
         drag.step(time_step)       # once per world step, before world.step(...)
         drag.end()                 # on mouse up
+
+    `query_filter`: how bodies are found under the mouse (see
+    ``WorldView.dynamic_body_at_point``), e.g. to grab shapes whose mask excludes category 1.
     """
 
     # force_scale: max pulling force as a multiple of the weight of the grabbed
     # body + everything jointed to it (box2d's samples use 100 x the grabbed
     # body alone: strong enough to yank whole contraptions around)
     def __init__(
-        self, world, hertz=7.5, damping_ratio=1.0, force_scale=10.0, angular_friction=0.25
+        self,
+        world,
+        hertz=7.5,
+        damping_ratio=1.0,
+        force_scale=10.0,
+        angular_friction=0.25,
+        query_filter=None,
     ):
         self.world = world
+        self.query_filter = query_filter
         self.hertz = hertz
         self.damping_ratio = damping_ratio
         self.force_scale = force_scale
@@ -471,7 +500,7 @@ class MouseDrag(object):
     def begin(self, point, body=None):
         self.end()
         if body is None:
-            body = self.world.dynamic_body_at_point(point)
+            body = self.world.dynamic_body_at_point(point, self.query_filter)
         if body is None:
             return None
 

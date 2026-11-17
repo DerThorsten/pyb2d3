@@ -56,7 +56,16 @@ namespace pyb2d3::bind
         // buffers are float32 arrays in the GPU instance layouts documented in
         // include/pyb2d3/batch_debug_draw.hpp
         using B = BatchDebugDraw;
-        nb::class_<B, b2DebugDraw>(m, "BatchDebugDraw")
+        nb::class_<B, b2DebugDraw>(
+            m,
+            "BatchDebugDraw",
+            "Debug draw that collects ``world.draw(batch)`` in C++: one float32 array per primitive\n"
+            "(circles, solid_circles, capsules, polygons, points, lines; layouts in\n"
+            "include/pyb2d3/batch_debug_draw.hpp). Draws append, ``clear()`` empties the buffers.\n\n"
+            "Each buffer property returns a new array that owns its copy of the data: it stays valid\n"
+            "after ``clear()`` and later draws (e.g. several worlds into one frame), and every access\n"
+            "copies (read each property once per frame)."
+        )
             .def(nb::init<nb::object>(), nb::arg("on_string") = nb::none())
             .def("clear", &B::clear)
             .def("copy_options", &B::copy_options, nb::arg("other"))

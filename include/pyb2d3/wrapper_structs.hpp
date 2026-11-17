@@ -58,50 +58,69 @@ struct Joint : pyb2d3::Handle<b2JointId>
     }
 };
 
-// one subclass per joint type (only used for typed dispatch / python classes)
-struct DistanceJoint : Joint
+// base of the joint subclasses: `Type` is the box2d joint type the subclass' functions
+// require. box2d only asserts it, a wrong type is undefined behaviour in release builds,
+// so typed batches (RevoluteJoints, ...) check their ids with `check_id`.
+template <b2JointType Type>
+struct TypedJoint : Joint
 {
     using Joint::Joint;
+    static constexpr b2JointType joint_type = Type;
+
+    static void check_id(uint64_t int_id)
+    {
+        const b2JointId id = b2LoadJointId(int_id);
+        if (!b2Joint_IsValid(id) || b2Joint_GetType(id) != Type)
+        {
+            throw nb::type_error("not a valid joint of this batch's joint type");
+        }
+    }
 };
 
-struct FilterJoint : Joint
+// one subclass per joint type (typed dispatch / python classes)
+struct DistanceJoint : TypedJoint<b2_distanceJoint>
 {
-    using Joint::Joint;
+    using TypedJoint::TypedJoint;
 };
 
-struct MotorJoint : Joint
+struct FilterJoint : TypedJoint<b2_filterJoint>
 {
-    using Joint::Joint;
+    using TypedJoint::TypedJoint;
 };
 
-struct MoverJoint : Joint
+struct MotorJoint : TypedJoint<b2_motorJoint>
 {
-    using Joint::Joint;
+    using TypedJoint::TypedJoint;
 };
 
-struct PogoJoint : Joint
+struct MoverJoint : TypedJoint<b2_moverJoint>
 {
-    using Joint::Joint;
+    using TypedJoint::TypedJoint;
 };
 
-struct PrismaticJoint : Joint
+struct PogoJoint : TypedJoint<b2_pogoJoint>
 {
-    using Joint::Joint;
+    using TypedJoint::TypedJoint;
 };
 
-struct RevoluteJoint : Joint
+struct PrismaticJoint : TypedJoint<b2_prismaticJoint>
 {
-    using Joint::Joint;
+    using TypedJoint::TypedJoint;
 };
 
-struct WeldJoint : Joint
+struct RevoluteJoint : TypedJoint<b2_revoluteJoint>
 {
-    using Joint::Joint;
+    using TypedJoint::TypedJoint;
 };
 
-struct WheelJoint : Joint
+struct WeldJoint : TypedJoint<b2_weldJoint>
 {
-    using Joint::Joint;
+    using TypedJoint::TypedJoint;
+};
+
+struct WheelJoint : TypedJoint<b2_wheelJoint>
+{
+    using TypedJoint::TypedJoint;
 };
 
 struct Shape : pyb2d3::Handle<b2ShapeId>
