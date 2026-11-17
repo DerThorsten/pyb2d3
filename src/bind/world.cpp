@@ -1,6 +1,8 @@
 #include <array>
 #include <cmath>
 #include <optional>
+#include <stdexcept>
+#include <string>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
@@ -539,7 +541,9 @@ namespace pyb2d3::bind
                     std::vector<uint8_t> image(size);
                     b2World_GetSnapshot(self.id, image.data(), size);
                     return nb::bytes(image.data(), image.size());
-                }
+                },
+                "An image (bytes) of the world's simulation state, for ``restore_from_snapshot`` or\n"
+                "``World.from_snapshot`` (experimental in box2d: the format may change). Not while stepping."
             )
             .def(
                 "restore_from_snapshot",
@@ -551,7 +555,13 @@ namespace pyb2d3::bind
                         static_cast<int>(image.size())
                     );
                 },
-                nb::arg("image")
+                nb::arg("image"),
+                "Restore the world's simulation state from an image of ``get_snapshot`` (experimental in\n"
+                "box2d: the image format may change between box2d versions). Returns True on success.\n\n"
+                "Handles of bodies / shapes / joints that existed at the snapshot stay valid and get their\n"
+                "snapshot state back (pose, velocities, enabled, ...); objects created after the snapshot\n"
+                "are gone (their handles become invalid). Callbacks and threading are kept. Note: the\n"
+                "``user_data`` of bodies, shapes and joints is reset to 0."
             )
             .def(
                 "start_recording",
@@ -574,7 +584,17 @@ namespace pyb2d3::bind
             "create_world_id",
             [](const b2WorldDef& def)
             {
-                return b2StoreWorldId(b2CreateWorld(&def));
+                b2WorldId id = b2CreateWorld(&def);
+                if (!b2World_IsValid(id))
+                {
+                    // box2d returns a null id instead of failing loudly; using it corrupts memory
+                    throw std::runtime_error(
+                        "could not create a world: box2d supports at most " + std::to_string(B2_MAX_WORLDS)
+                        + " worlds at a time (destroy unused ones with World.destroy()), or the world def is "
+                          "invalid"
+                    );
+                }
+                return b2StoreWorldId(id);
             },
             nb::arg("def")
         );

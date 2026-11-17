@@ -119,6 +119,20 @@ def test_shape_and_body_at_point(world, row):
     assert world.dynamic_body_at_point((4, 0)) is None
 
 
+def test_mouse_drag_with_query_filter(world):
+    # a shape whose mask excludes category 1 is invisible to the default query filter
+    # (box2d checks the filter both ways)
+    body = world.create_dynamic_body(position=(0, 0))
+    shape_def = b2d.shape_def()
+    shape_def.filter = b2d.make_filter(category_bits=0x2, mask_bits=0x2)
+    body.create_polygon_shape(shape_def, b2d.box(1, 1))
+
+    assert b2d.MouseDrag(world).begin((0, 0)) is None
+    drag = b2d.MouseDrag(world, query_filter=b2d.make_query_filter(category_bits=0x2, mask_bits=0x2))
+    assert drag.begin((0, 0)) == body
+    drag.end()
+
+
 def test_query_with_chains(world):
     ground = world.create_static_body()
     ground.create_chain(b2d.chain_def(points=np.array([(-100, 1.0), (100, 0.0), (-100, 0.0), (-100, 0.1)]), is_loop=True))

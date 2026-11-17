@@ -32,6 +32,17 @@ Contacts
 carry a :class:`~pyb2d3.Contact` handle; ``contact.data`` returns the same information while
 the contact exists. Sensors list their overlaps in ``shape.sensor_overlaps``.
 
+``shape.sensor_capacity`` is the number of overlaps a sensor found in the last step, and it is
+batched: ``Shapes(sensors).sensor_capacity`` checks many sensors in one call. That answers
+"which feet touch the ground" for many agents: give each foot a sensor shape whose filter
+``mask_bits`` select the ground's category, and enable sensor events on the ground shapes
+(``sensor_events_enabled``, off by default)::
+
+    touching = b2d.Shapes(foot_sensors).sensor_capacity > 0   # bool per foot
+
+(``contact_capacity`` is no substitute: it counts every contact whose bounding boxes overlap,
+touching or not.)
+
 Rendering many bodies
 ---------------------
 

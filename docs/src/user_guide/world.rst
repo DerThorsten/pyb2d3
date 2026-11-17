@@ -18,6 +18,9 @@ The world is destroyed when the Python object is garbage collected, or explicitl
 ``world.destroy()``. :class:`~pyb2d3.WorldView` is a non-owning view of a world, e.g. the
 one returned by ``body.world``.
 
+Box2D supports at most 128 worlds at a time; creating one more raises a ``RuntimeError``.
+Destroy worlds you no longer need (many independent environments can also share one world).
+
 Stepping
 --------
 

@@ -97,6 +97,33 @@ Single items come back as their concrete type (``CapsuleShape``, ``RevoluteJoint
 .. literalinclude:: ../../snippets/batch_shapes_joints.py
    :language: python
 
+Each joint type has its own batch class for its own api: :class:`~pyb2d3.RevoluteJoints`,
+:class:`~pyb2d3.PrismaticJoints`, :class:`~pyb2d3.WheelJoints`, :class:`~pyb2d3.DistanceJoints`,
+... (the joint class name plus ``s``). They check that every id is a joint of that type::
+
+    hips = b2d.RevoluteJoints(hip_joints)
+    hips.target_motor_speed = actions          # one speed per joint
+    angles, speeds = hips.current_angle, hips.current_speed
+    b2d.Joints(hips.ids).constraint_force      # the api every joint type has
+
+Resetting some bodies
+---------------------
+
+``world.restore_from_snapshot`` resets the whole world. To put only some bodies back (e.g. the
+agents whose episode ended), store their start state and write it back with the batch api::
+
+    start_pos, start_rot = bodies.position, bodies.rotation   # once, at the start
+    ...
+    done = bodies[mask]
+    done.set_transform(start_pos[mask], start_rot[mask])
+    done.linear_velocity = (0, 0)
+    done.angular_velocity = 0.0
+    done.awake = True
+
+This is a teleport, not a restore: joint motor targets and other settings you changed stay
+as they are, the solver's warm starting values of their joints and contacts carry over into
+the first step, and the bodies must not be put inside other bodies.
+
 When is it worth it?
 --------------------
 

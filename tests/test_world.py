@@ -157,3 +157,36 @@ def test_snapshot_roundtrip(world, ground):
 
     clone = b2d.World.from_snapshot(image)
     assert clone.counters.body_count == world.counters.body_count
+
+
+def test_snapshot_restore_drops_later_bodies(world, ground):
+    """What apps (e.g. episode resets) rely on: restoring removes bodies created after the
+    snapshot, earlier bodies come back with their snapshot state (pose, enabled)."""
+    body = make_box_body(world, position=(0, 5))
+    image = world.get_snapshot()
+    saved = tuple(body.position)
+
+    thrown = make_box_body(world, position=(3, 5))
+    body.enabled = False
+    body.set_transform((7, 7), b2d.make_rot(1.0))
+    step(world, 10)
+
+    assert world.restore_from_snapshot(image)
+    assert not thrown.is_valid
+    assert body.is_valid and body.enabled
+    assert tuple(body.position) == approx(saved)
+    step(world, 10)  # the restored world steps fine
+
+
+def test_world_limit_raises():
+    # box2d supports a fixed number of worlds (128); beyond, b2CreateWorld returns a null id
+    worlds = []
+    try:
+        with pytest.raises(RuntimeError, match="at most"):
+            for _ in range(1000):
+                worlds.append(b2d.World())
+        assert worlds  # some worlds were created before the limit
+    finally:
+        for w in worlds:
+            w.destroy()
+    b2d.World().destroy()  # free slots are reused

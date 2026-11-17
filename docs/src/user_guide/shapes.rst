@@ -52,6 +52,11 @@ Shapes collide when ``(a.category_bits & b.mask_bits) != 0`` and
 collide, the same positive ``group_index`` always collide. For anything more complicated use a
 custom filter callback (see :doc:`world`).
 
+Queries check the filter both ways too: the default query filter has category 1, so a shape
+whose ``mask_bits`` exclude category 1 is invisible to it, also to ``dynamic_body_at_point``
+and :class:`~pyb2d3.MouseDrag`. Pass a ``query_filter`` (:func:`pyb2d3.make_query_filter`) to
+find such shapes, e.g. ``MouseDrag(world, query_filter=...)``.
+
 Chains
 ------
 

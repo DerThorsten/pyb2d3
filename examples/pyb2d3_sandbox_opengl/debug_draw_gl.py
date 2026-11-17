@@ -145,10 +145,13 @@ ensure_hex = b2d.ensure_hex_color
 
 
 def draw_text_imgui(screen_pos, text, rgb):
-    """Draw a debug string with imgui (into the current imgui window)."""
+    """Draw a debug string with imgui (into the current imgui window, the simulation
+    view). `screen_pos` is relative to that window, like the GL viewport (the window may
+    not start at the screen's left edge, e.g. next to the panel)."""
     from imgui_bundle import imgui
 
-    imgui.set_cursor_screen_pos((screen_pos.x, screen_pos.y))
+    origin = imgui.get_window_pos()
+    imgui.set_cursor_screen_pos((origin.x + screen_pos.x, origin.y + screen_pos.y))
     imgui.push_style_color(imgui.Col_.text, (*rgb, 1.0))
     imgui.text(text)
     imgui.pop_style_color()

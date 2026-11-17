@@ -18,7 +18,7 @@ from . import raycast, cast_ray_callback, mirror
 
 # Batch API
 from . import batch_swarm, batch_nbody, batch_fountain, batch_vs_loop
-from . import batch_many_shapes
+from . import batch_many_shapes, batch_joints
 
 # Agents
 from . import batch_boids

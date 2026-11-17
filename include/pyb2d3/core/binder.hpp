@@ -469,6 +469,9 @@ namespace pyb2d3
     template <class T>
     Binder(nb::class_<T>&, nb::class_<Batch<T>>&) -> Binder<T, void, true>;
 
+    template <class T, class Base>
+    Binder(nb::class_<T, Base>&, nb::class_<Batch<T>>&) -> Binder<T, Base, true>;
+
     // -------------------------------------------------------------------------
     // common bindings shared by every id-handle type (id, validity, equality,
     // hashing, user data) and by every batch type.
@@ -539,71 +542,98 @@ namespace pyb2d3
         detail::bind_handle_common(cls, b);
     }
 
+    namespace detail
+    {
+        // ids entering a batch of T are checked with `T::check_id(uint64_t)` if T has one
+        // (e.g. typed joints: box2d does not check the joint type of its typed functions)
+        template <class T, class = void>
+        struct has_check_id : std::false_type
+        {
+        };
+
+        template <class T>
+        struct has_check_id<T, std::void_t<decltype(T::check_id(uint64_t{}))>> : std::true_type
+        {
+        };
+
+        template <class T>
+        uint64_t checked_id(uint64_t id)
+        {
+            if constexpr (has_check_id<T>::value)
+            {
+                T::check_id(id);
+            }
+            return id;
+        }
+    }  // namespace detail
+
+    // the batch class of T: construction from ids / handles, append, len, ids
+    template <class T>
+    void bind_batch(nb::class_<Batch<T>>& batch_cls)
+    {
+        batch_cls
+            .def(nb::init<>())
+            // fast path: an array of ids
+            .def(
+                "__init__",
+                [](Batch<T>* self, nb::ndarray<const uint64_t, nb::ndim<1>, nb::device::cpu> ids)
+                {
+                    new (self) Batch<T>();
+                    self->ids.resize(ids.shape(0));
+                    auto view = ids.view();
+                    for (std::size_t i = 0; i < ids.shape(0); ++i)
+                    {
+                        self->ids[i] = detail::checked_id<T>(view(i));
+                    }
+                },
+                nb::arg("ids")
+            )
+            // any iterable of handles or (numpy) integer ids
+            .def(
+                "__init__",
+                [](Batch<T>* self, nb::iterable items)
+                {
+                    new (self) Batch<T>();
+                    for (nb::handle item : items)
+                    {
+                        // a handle (of this or a base type, e.g. a Joint for RevoluteJoints:
+                        // its id is checked) or an integer id
+                        const uint64_t id = nb::isinstance<T>(item)   ? nb::cast<const T&>(item).int_id()
+                                            : nb::hasattr(item, "id") ? nb::cast<uint64_t>(item.attr("id"))
+                                                                      : nb::cast<uint64_t>(nb::int_(item));
+                        self->ids.push_back(detail::checked_id<T>(id));
+                    }
+                },
+                nb::arg("items")
+            )
+            .def(
+                "append",
+                [](Batch<T>& self, const T& item)
+                {
+                    self.ids.push_back(detail::checked_id<T>(item.int_id()));
+                },
+                nb::arg("item")
+            )
+            .def("__len__", &Batch<T>::size)
+            .def_prop_ro(
+                "ids",
+                [](const Batch<T>& self)
+                {
+                    uint64_t* data = nullptr;
+                    nb::object arr = detail::make_array<uint64_t>(self.size(), 1, data);
+                    std::copy(self.ids.begin(), self.ids.end(), data);
+                    return arr;
+                }
+            );
+    }
+
     // same, plus the batch class (construction from ids / handles, len, ids)
     template <class T>
     void bind_handle(nb::class_<T>& cls, nb::class_<Batch<T>>& batch_cls)
     {
         Binder<T, void, true> b(cls, batch_cls);
         detail::bind_handle_common(cls, b);
-
-        {
-            batch_cls
-                .def(nb::init<>())
-                // fast path: an array of ids
-                .def(
-                    "__init__",
-                    [](Batch<T>* self, nb::ndarray<const uint64_t, nb::ndim<1>, nb::device::cpu> ids)
-                    {
-                        new (self) Batch<T>();
-                        self->ids.resize(ids.shape(0));
-                        auto view = ids.view();
-                        for (std::size_t i = 0; i < ids.shape(0); ++i)
-                        {
-                            self->ids[i] = view(i);
-                        }
-                    },
-                    nb::arg("ids")
-                )
-                // any iterable of handles or (numpy) integer ids
-                .def(
-                    "__init__",
-                    [](Batch<T>* self, nb::iterable items)
-                    {
-                        new (self) Batch<T>();
-                        for (nb::handle item : items)
-                        {
-                            if (nb::isinstance<T>(item))
-                            {
-                                self->ids.push_back(nb::cast<const T&>(item).int_id());
-                            }
-                            else
-                            {
-                                self->ids.push_back(nb::cast<uint64_t>(nb::int_(item)));
-                            }
-                        }
-                    },
-                    nb::arg("items")
-                )
-                .def(
-                    "append",
-                    [](Batch<T>& self, const T& item)
-                    {
-                        self.ids.push_back(item.int_id());
-                    },
-                    nb::arg("item")
-                )
-                .def("__len__", &Batch<T>::size)
-                .def_prop_ro(
-                    "ids",
-                    [](const Batch<T>& self)
-                    {
-                        uint64_t* data = nullptr;
-                        nb::object arr = detail::make_array<uint64_t>(self.size(), 1, data);
-                        std::copy(self.ids.begin(), self.ids.end(), data);
-                        return arr;
-                    }
-                );
-        }
+        bind_batch<T>(batch_cls);
     }
 
     // a member function of the wrapper type, also on its batch type: called for every id,

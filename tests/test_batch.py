@@ -152,3 +152,59 @@ def test_destroy(world, body_list, bodies):
     assert not joints[3].is_valid  # joint 3 links bodies 3 and 4
     bodies.destroy()  # destroyed ids are skipped
     assert not bodies.is_valid.any()
+
+
+def test_typed_joint_batches(world, body_list):
+    revolute = [world.create_revolute_joint(body_list[i], body_list[i + 1]) for i in range(N - 1)]
+    joints = b2d.RevoluteJoints(revolute)
+    assert len(joints) == N - 1
+    assert isinstance(joints[0], b2d.RevoluteJoint)
+    assert isinstance(joints[1:3], b2d.RevoluteJoints)
+
+    # the revolute api, batched: properties, setters (per joint or broadcast), methods
+    joints.motor_enabled = True
+    speeds = np.linspace(-1, 1, N - 1).astype(np.float32)
+    joints.target_motor_speed = speeds
+    joints.max_motor_torque = 5.0
+    joints.set_limits(-0.5, 0.5)
+    assert joints.target_motor_speed == approx(speeds)
+    assert joints.max_motor_torque == approx(np.full(N - 1, 5.0))
+    assert joints.upper_limit == approx(np.full(N - 1, 0.5))
+    assert joints.current_angle.shape == (N - 1,)
+    for j, speed in zip(revolute, speeds):
+        assert j.target_motor_speed == approx(speed)
+        assert j.motor_enabled
+
+    # generic joint api: a Joints batch of the same ids
+    assert b2d.Joints(joints.ids).type.tolist() == [b2d.JointType.REVOLUTE.value] * (N - 1)
+
+    # ids of another joint type are rejected (box2d would not check it)
+    distance = world.create_distance_joint(body_list[0], body_list[2], length=2.0)
+    for bad in ([distance], np.array([distance.id], dtype=np.uint64), [distance.id]):
+        with pytest.raises(TypeError):
+            b2d.RevoluteJoints(bad)
+    with pytest.raises(TypeError):
+        joints.append(b2d.RevoluteJoint(distance.id))
+    assert len(b2d.DistanceJoints([b2d.Joint(distance.id)])) == 1  # a base handle is fine
+
+
+def test_reset_a_subset_of_bodies():
+    """Per-agent reset without a snapshot: put a subset back to its start state with the
+    batch API; it then follows the same trajectory as an agent that was never touched."""
+    world = b2d.World(gravity=(0, -10))
+    bodies = b2d.Bodies([make_box_body(world, position=(3 * i, 10)) for i in range(4)])
+    start_pos, start_rot = bodies.position, bodies.rotation
+
+    trajectory = []
+    for _ in range(30):
+        world.step(1 / 60, 4)
+        trajectory.append(bodies.position[1].copy())  # an untouched agent
+
+    reset = bodies[[0, 2]]
+    reset.set_transform(start_pos[[0, 2]], start_rot[[0, 2]])
+    reset.linear_velocity = (0, 0)
+    reset.angular_velocity = 0.0
+    reset.awake = True
+    for k in range(10):
+        world.step(1 / 60, 4)
+        assert reset.position[0] - (start_pos[0] - start_pos[1]) == approx(trajectory[k], abs=1e-4)

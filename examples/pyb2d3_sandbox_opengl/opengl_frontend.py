@@ -121,6 +121,7 @@ class OpenglFrontend(FrontendBase):
         super().__init__(settings)
 
         self.camera = Camera()
+        self._centered_size = None  # view size of the last center_sample (None: user moved)
         self.debug_draw = None
         # self._self_ref = weakref.ref(self)
         self.runner_params = hello_imgui.RunnerParams()
@@ -287,6 +288,10 @@ class OpenglFrontend(FrontendBase):
         gl.glViewport(int(pos.x), int(gl_y), int(size.x), int(size.y))
         self.handle_events(pos, io)
         self.debug_draw.camera.set_size(size.x, size.y)
+        # the view got its (new) size, e.g. once the panel is docked after the first sample
+        # was centered: center again, unless the user has panned / zoomed since
+        if self._centered_size is not None and self._centered_size != (size.x, size.y):
+            self.center_sample(margin_px=10)
 
         # draw the world
         self.draw_physics()
@@ -545,10 +550,10 @@ class OpenglFrontend(FrontendBase):
 
     def post_gl_init(self):
         self.debug_draw = GLDebugDraw(self.camera)
+        # the defaults before the first sample is created: its own choices win
+        self.debug_draw.draw_shapes = True
+        self.debug_draw.draw_joints = True
         self.ui_is_ready()
-        # self.debug_draw.camera.zoom = 100
-        self.debug_draw.draw_shapes = True  # self.settings.debug_draw.draw_shapes
-        self.debug_draw.draw_joints = True  # self.settings.debug_draw.draw_joints
 
     def center_sample(self, margin_px):
         assert self.sample is not None, "Sample must be set before centering."
@@ -581,13 +586,16 @@ class OpenglFrontend(FrontendBase):
         self.camera.center = center
         self.camera.zoom = zoom
         self.camera._matrix = None
+        self._centered_size = (w, h)  # recentered when the view size changes (once_per_frame)
 
     def drag_camera(self, delta):
         screen_delta = (delta[0], delta[1])
         self.camera.center -= screen_delta
         self.camera._matrix = None
+        self._centered_size = None  # the user moved the camera: keep it
 
     def change_zoom(self, delta):
+        self._centered_size = None
         self.camera.zoom += delta
         if self.camera.zoom < 1:
             self.camera.zoom = 1
