@@ -91,7 +91,7 @@ The ``wheels`` workflow (``.github/workflows/publish.yaml``) builds and tests th
 CPython 3.12+) and the sdist on every pull request and on ``main``. To publish:
 
 1. bump ``version`` in ``pyproject.toml`` and merge,
-2. push a matching tag: ``git tag v0.12.0 && git push origin v0.12.0``.
+2. push a matching tag: ``git tag v1.0.0 && git push origin v1.0.0``.
 
 The upload job checks that the tag matches the version and publishes to PyPI via trusted
 publishing (GitHub environment ``pypi``).
