@@ -1,5 +1,5 @@
 """Load the built sandbox page in headless chromium: a cold load, then a reload (the
-archives from the IndexedDB cache). Prints the loading times, fails on errors.
+archives from pyjs' cache, pyjs >= 5.1). Prints the loading times, fails on errors.
 
     pixi run -e web-test web-test      # builds the page, installs chromium, runs this
     python examples/web/test_page.py build/web_sandbox [--sample "Games/Bridge Builder"]
@@ -43,7 +43,14 @@ def load(page, url, timeout):
 
     page.on("console", on_console)
     page.on("pageerror", lambda error: problems.append(f"page error: {error}"))
-    page.on("requestfailed", lambda r: problems.append(f"request failed: {r.url} {r.failure}"))
+
+    def on_request_failed(request):
+        # ERR_ABORTED: cancelled by the next navigation / closing the browser (e.g. the
+        # code editor's background preload), not a failure of the page
+        if "ERR_ABORTED" not in (request.failure or ""):
+            problems.append(f"request failed: {request.url} {request.failure}")
+
+    page.on("requestfailed", on_request_failed)
     start = time.perf_counter()
     page.goto(url)
     status = ""

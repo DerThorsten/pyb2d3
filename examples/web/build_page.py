@@ -1,11 +1,12 @@
 """Build a static page running the pyb2d3 sandbox (WebGL frontend) in the browser.
 
 The page brings everything it needs to start: pyjs (python; the pinned npm package,
-or a local pyjs dir with --pyjs) and two archives it unpacks (and caches in
-IndexedDB): the sandbox sources (examples/, mounted at /examples) and the packages:
-the local pyb2d3 build (`pixi run emscripten`) with numpy (+ openblas) and PyOpenGL,
-downloaded from emscripten-forge at build time, without tests, headers, docs, ...:
-no package install (mamba) in the browser, no CDN needed to start.
+or a local pyjs dir with --pyjs) and two content-hashed archives that pyjs unpacks
+before python starts (and caches; it also preloads their shared libraries): the
+sandbox sources (examples/, mounted at /examples) and the packages: the local pyb2d3
+build (`pixi run emscripten`) with numpy (+ openblas) and PyOpenGL, downloaded from
+emscripten-forge at build time, without tests, headers, docs, ...: no package install
+(mamba) in the browser, no CDN needed to start.
 
     pixi run emscripten
     python examples/web/build_page.py --out build/web_sandbox
@@ -52,7 +53,7 @@ DROP_SUFFIXES = (".pyi", ".pxd", ".h", ".a", ".pc", ".cmake", ".pyc", ".c", ".cp
 # pyjs, pinned (a new one may bring another python), copied into the page from its
 # npm package. Update both together: the packed packages are built for PYTHON_VERSION
 # (the npm package.json says which python a pyjs has: "pyjs": {"python": ...})
-PYJS_VERSION = "4.4.1"
+PYJS_VERSION = "5.2.0"
 PYTHON_VERSION = "3.14"
 PYJS_TARBALL = f"https://registry.npmjs.org/@derthorsten/pyjs/-/pyjs-{PYJS_VERSION}.tgz"
 
@@ -140,10 +141,9 @@ def _keep(name):
 
 def pack_packages(out, conda_pkgs):
     """packages.tar.gz: the runtime files of the conda packages (.tar.bz2), paths
-    relative to the environment prefix (unpacked at /). Returns the shared libraries
-    in it (the page preloads them: compiled ahead of time, not synchronously on
-    import, which browsers refuse for large ones)"""
-    shared_libs, size = [], 0
+    relative to the environment prefix (unpacked at /; pyjs preloads its shared
+    libraries)"""
+    size = 0
     with tar_gz(out / "packages.tar.gz") as dst:
         for conda_pkg in conda_pkgs:
             with tarfile.open(conda_pkg, "r:bz2") as src:
@@ -151,10 +151,7 @@ def pack_packages(out, conda_pkgs):
                     if member.isfile() and _keep(member.name):
                         dst.addfile(_normalized(member), src.extractfile(member))
                         size += member.size
-                        if member.name.endswith(".so"):
-                            shared_libs.append(f"/{member.name}")
     print(f"packed {', '.join(p.name for p in conda_pkgs)}: {size / 1e6:.1f} MB unpacked")
-    return shared_libs
 
 
 def copy_pyjs(out, pyjs_dir=None):
@@ -187,21 +184,20 @@ def build(out, pyjs_dir=None, pyb2d3=None):
     copy_page(out)
     pack_examples(out)
     pyb2d3 = pyb2d3 or local_pyb2d3_build()
-    shared_libs = pack_packages(out, [pyb2d3, *fetch_packages(PACKAGES)])
+    pack_packages(out, [pyb2d3, *fetch_packages(PACKAGES)])
     pyjs_url = copy_pyjs(out, pyjs_dir)
 
-    # the archives the page unpacks: the content hash in the file name (a new build is
-    # a new url: no stale browser cache), the page caches the unpacked files in
-    # IndexedDB under the archive's name and hash; the size is for the progress bar
+    # the archives pyjs unpacks: the content hash in the file name (a new build is a new
+    # url, the url is the cache key of the browser and of pyjs); the size is for the
+    # progress bar
     archives = []
     for name, path in (("examples", "/examples"), ("packages", "/")):
         data = (out / f"{name}.tar.gz").read_bytes()
-        digest = content_hash(data)
-        (out / f"{name}.tar.gz").rename(out / f"{name}-{digest}.tar.gz")
-        url = f"{name}-{digest}.tar.gz"
-        archives.append({"name": name, "url": url, "path": path, "hash": digest, "size": len(data)})
+        url = f"{name}-{content_hash(data)}.tar.gz"
+        (out / f"{name}.tar.gz").rename(out / url)
+        archives.append({"url": url, "path": path, "size": len(data)})
 
-    config = {"pyjs": pyjs_url, "archives": archives, "shared_libs": shared_libs}
+    config = {"pyjs": pyjs_url, "archives": archives}
     (out / "config.json").write_text(json.dumps(config, indent=2))
     return pyb2d3
 

@@ -13,6 +13,7 @@ panel, and a label layer positioned over the canvas.
 
 import ctypes
 import importlib
+import importlib.util
 import inspect
 import json
 import math
@@ -437,6 +438,13 @@ class WebglFrontend(FrontendBase):
         own = sys.modules.get(target.__module__)
         last = [own] if own is not None else []
         paths = {os.path.abspath(p) for p in paths}
+        # their old bytecode must not win: a .pyc is only checked against the source's
+        # mtime (1 s resolution) and size, an edit within the same second could keep it
+        for path in paths:
+            try:
+                os.remove(importlib.util.cache_from_source(path))
+            except OSError:
+                pass
         modules = [
             m
             for m in list(sys.modules.values())
