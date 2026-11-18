@@ -79,7 +79,6 @@ namespace pyb2d3::bind
 
     void export_collision(nb::module_& m)
     {
-        // ---- geometry ---------------------------------------------------------------------
         nb::class_<b2Circle>(m, "Circle")
             .def(
                 "__init__",
@@ -299,7 +298,6 @@ namespace pyb2d3::bind
             docs::doc<&b2PointInPolygon>
         );
 
-        // ---- ray / shape casts --------------------------------------------------------------
         nb::class_<b2RayCastInput>(m, "RayCastInput")
             .def(
                 "__init__",
@@ -419,7 +417,6 @@ namespace pyb2d3::bind
             .def_rw("can_encroach", &b2ShapeCastPairInput::canEncroach);
         m.def("cast_shape", &b2CastShape, nb::arg("input"), docs::doc<&b2CastShape>);
 
-        // ---- distance -------------------------------------------------------------------------
         nb::class_<b2SegmentDistanceResult>(m, "SegmentDistanceResult")
             .def_ro("closest1", &b2SegmentDistanceResult::closest1)
             .def_ro("closest2", &b2SegmentDistanceResult::closest2)
@@ -496,7 +493,6 @@ namespace pyb2d3::bind
             "Returns (DistanceOutput, [Simplex]). Pass a SimplexCache to warm start repeated queries."
         );
 
-        // ---- time of impact ---------------------------------------------------------------------
         nb::class_<b2Sweep>(m, "Sweep")
             .def(nb::init<>())
             .def_rw("local_center", &b2Sweep::localCenter)
@@ -534,7 +530,6 @@ namespace pyb2d3::bind
             .def_ro("fraction", &b2TOIOutput::fraction);
         m.def("compute_time_of_impact", &b2ComputeTimeOfImpact, nb::arg("input"), docs::doc<&b2ComputeTimeOfImpact>);
 
-        // ---- manifolds --------------------------------------------------------------------------
         nb::class_<b2ManifoldPoint>(m, "ManifoldPoint")
             .def_ro("anchor_a", &b2ManifoldPoint::anchorA)
             .def_ro("anchor_b", &b2ManifoldPoint::anchorB)
@@ -671,7 +666,6 @@ namespace pyb2d3::bind
             nb::arg("cache").none() = nb::none()
         );
 
-        // ---- trees / movers ---------------------------------------------------------------------
         nb::class_<b2TreeStats>(m, "TreeStats")
             .def(nb::init<>())
             .def_ro("node_visits", &b2TreeStats::nodeVisits)

@@ -12,9 +12,21 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .examples_common.batch import Ema, create_circles, hsv_colors
+from .examples_common.batch import hsv_colors
 
 BATCH, LOOP = "batch API", "python loop"
+HALF = 25.0  # arena half size
+RADIUS = 0.25
+# the vortex: acceleration = (PULL towards the center + SPIN around it) / (r + 1)^2
+#                            - DRAG * velocity
+PULL = 30.0
+SPIN = 60.0
+DRAG = 1.5
+
+
+def smooth(old, new_ms):
+    """a running average of a time in ms: steady numbers on screen"""
+    return 0.9 * old + 0.1 * new_ms
 
 
 @register_sample("Batch API", "Loop vs Batch")
@@ -25,25 +37,15 @@ class BatchVsLoop(SampleBase):
     Hint: switch "mode" and compare the measured force times next to box2d's step time.
     """
 
-    half = 25.0
-    radius = 0.25
-    pull = 30.0
-    spin = 60.0
-    drag = 1.5
-
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
         self.count = 1000
         self.mode = BATCH
         self.rng = np.random.default_rng(5)
-        self.timings = {BATCH: Ema(), LOOP: Ema()}
-        self.step_time = Ema()
-        self.center = np.zeros(2)
-        self.anchor_body.create_chain(b2d.chain_box(center=(0, 0), hx=self.half, hy=self.half))
+        self.center = (0.0, 0.0)
+        self.anchor_body.create_chain(b2d.chain_box(center=(0, 0), hx=HALF, hy=HALF))
         self.bodies = b2d.Bodies()
-        self.body_list = []
         self.create_bodies()
-
         for widget in (
             widgets.RadioButtons("mode", [BATCH, LOOP], self.mode, self.set_mode),
             widgets.IntSlider("bodies", 200, 5000, 100, self.count, self.set_count),
@@ -51,19 +53,22 @@ class BatchVsLoop(SampleBase):
             self.frontend.add_widget(widget)
 
     def aabb(self):
-        return b2d.aabb(lower_bound=(-self.half, -self.half), upper_bound=(self.half, self.half))
+        return b2d.aabb(lower_bound=(-HALF, -HALF), upper_bound=(HALF, HALF))
 
     def create_bodies(self):
         self.bodies.destroy()
-        n = self.count
-        positions = self.rng.uniform(-self.half + 1.0, self.half - 1.0, (n, 2))
-        colors = hsv_colors(np.linalg.norm(positions, axis=1) / (1.5 * self.half))
-        self.bodies = create_circles(
-            self.world, positions, self.radius, colors=colors, friction=0.1
+        positions = self.rng.uniform(-HALF + 1.0, HALF - 1.0, (self.count, 2))
+        colors = hsv_colors(np.linalg.norm(positions, axis=1) / (1.5 * HALF))
+        # the same bodies twice: a batch for the batch api and a list for the python loop
+        material = b2d.surface_material(friction=0.1)
+        self.bodies, shapes = self.world.create_bodies(
+            positions, b2d.shape_def(material=material), b2d.circle(radius=RADIUS)
         )
+        shapes.custom_color = colors
         self.body_list = list(self.bodies)
-        for ema in self.timings.values():
-            ema.value = None
+        # smoothed times in ms: the force computation of both modes, box2d's step
+        self.force_ms = {BATCH: 0.0, LOOP: 0.0}
+        self.step_ms = 0.0
 
     def set_count(self, value):
         self.count = int(value)
@@ -72,18 +77,14 @@ class BatchVsLoop(SampleBase):
     def set_mode(self, value):
         self.mode = value
 
-    # ---- the same field, twice ------------------------------------------------------------
-    # force = m * (pull towards the center + spin around it - drag * velocity), softened by 1 / (r + 1)
-
+    # the same field, twice
     def field_batch(self):
         bodies = self.bodies
         delta = self.center - bodies.position
-        distance = np.linalg.norm(delta, axis=1)
-        falloff = 1.0 / (distance + 1.0)
+        falloff = 1.0 / (np.linalg.norm(delta, axis=1) + 1.0)
         tangent = np.stack([-delta[:, 1], delta[:, 0]], axis=1)
-        accel = (self.pull * delta + self.spin * tangent) * falloff[
-            :, None
-        ] ** 2 - self.drag * bodies.linear_velocity
+        accel = (PULL * delta + SPIN * tangent) * (falloff**2)[:, None]
+        accel -= DRAG * bodies.linear_velocity
         bodies.apply_force_to_center(bodies.mass[:, None] * accel)
 
     def field_loop(self):
@@ -93,39 +94,36 @@ class BatchVsLoop(SampleBase):
             v = body.linear_velocity
             dx, dy = cx - p.x, cy - p.y
             falloff = 1.0 / (math.hypot(dx, dy) + 1.0)
-            f2 = falloff * falloff
-            m = body.mass
-            ax = (self.pull * dx - self.spin * dy) * f2 - self.drag * v.x
-            ay = (self.pull * dy + self.spin * dx) * f2 - self.drag * v.y
-            body.apply_force_to_center((m * ax, m * ay))
+            ax = (PULL * dx - SPIN * dy) * falloff**2 - DRAG * v.x
+            ay = (PULL * dy + SPIN * dx) * falloff**2 - DRAG * v.y
+            body.apply_force_to_center((body.mass * ax, body.mass * ay))
 
     def pre_update(self, dt):
         if self.mouse_pos is not None:
-            self.center = np.array(self.mouse_pos, dtype=np.float64)
+            self.center = tuple(self.mouse_pos)
         t0 = time.perf_counter()
         if self.mode == BATCH:
             self.field_batch()
         else:
             self.field_loop()
-        self.timings[self.mode](1000.0 * (time.perf_counter() - t0))
+        ms = 1000.0 * (time.perf_counter() - t0)
+        self.force_ms[self.mode] = smooth(self.force_ms[self.mode], ms)
 
     def update(self, dt):
         t0 = time.perf_counter()
         super().update(dt)
-        self.step_time(1000.0 * (time.perf_counter() - t0))
-
-    # ---- drawing --------------------------------------------------------------------------
+        self.step_ms = smooth(self.step_ms, 1000.0 * (time.perf_counter() - t0))
 
     def post_debug_draw(self):
         dd = self.debug_draw
-        dd.draw_point(tuple(self.center), 10.0, b2d.HexColor.Gold)
-        lines = [f"{len(self.bodies)} bodies, box2d step: {self.step_time.value or 0.0:.2f} ms"]
-        for mode, ema in self.timings.items():
-            value = "-" if ema.value is None else f"{ema.value:.3f} ms"
+        dd.draw_point(self.center, 10.0, b2d.HexColor.Gold)
+        lines = [f"{len(self.bodies)} bodies, box2d step: {self.step_ms:.2f} ms"]
+        for mode, ms in self.force_ms.items():
+            value = f"{ms:.3f} ms" if ms > 0 else "-"
             marker = ">" if mode == self.mode else " "
             lines.append(f"{marker} {mode}: {value}")
-        batch, loop = self.timings[BATCH].value, self.timings[LOOP].value
-        if batch and loop:
+        batch, loop = self.force_ms[BATCH], self.force_ms[LOOP]
+        if batch > 0 and loop > 0:
             lines.append(f"batch is {loop / batch:.0f}x faster")
         for i, line in enumerate(lines):
-            dd.draw_string((0.0, self.half - 1.5 - 1.5 * i), line, b2d.HexColor.White)
+            dd.draw_string((0.0, HALF - 1.5 - 1.5 * i), line, b2d.HexColor.White)

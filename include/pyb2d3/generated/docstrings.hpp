@@ -1217,6 +1217,9 @@ Args:
     inline constexpr const char* doc<&b2MulTransforms> = R"pyb2d3doc(Multiply two transforms. If the result is applied to a point p local to frame B, the transform would first convert p to a point local to frame A, then into a point in the world frame. v2 = A.q.Rot(B.q.Rot(v1) + B.p) + A.p = (A.q * B.q).Rot(v1) + A.q.Rot(B.p) + A.p)pyb2d3doc";
 
     template <>
+    inline constexpr const char* doc<&b2MulWorldTransforms> = R"pyb2d3doc(Convert a local transform B into world space using world transform A.)pyb2d3doc";
+
+    template <>
     inline constexpr const char* doc<&b2NLerp> = R"pyb2d3doc(Normalized linear interpolation https://fgiesen.wordpress.com/2012/08/15/linear-interpolation-past-present-and-future/ https://web.archive.org/web/20170825184056/http://number-none.com/product/Understanding%20Slerp,%20Then%20Not%20Using%20It/)pyb2d3doc";
 
     template <>

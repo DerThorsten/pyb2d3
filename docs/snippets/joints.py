@@ -8,7 +8,7 @@ ground = world.create_static_body(position=(0, 0))
 wheel = world.create_dynamic_body(position=(0, 0))
 wheel.create_shape(b2d.shape_def(density=1), b2d.circle(radius=0.5))
 
-# --- creating joints ---------------------------------------------------------------
+# creating joints
 # create_<type>_joint(body_a, body_b, **def_fields)
 motor = world.create_revolute_joint(
     ground, wheel, enable_motor=True, motor_speed=2.0, max_motor_torque=100
@@ -25,7 +25,7 @@ hinge_def.lower_angle = -0.25 * math.pi
 hinge_def.upper_angle = 0.25 * math.pi
 hinge = world.create_joint(hinge_def)
 
-# --- local frames (box2d >= 3.2) ----------------------------------------------------
+# local frames (box2d >= 3.2)
 # a joint connects frame A on body A with frame B on body B. The frame origin is the
 # anchor; its rotation replaces the old reference angle and joint axis.
 slider = world.create_dynamic_body(position=(-3, 0))
@@ -39,7 +39,7 @@ prismatic = world.create_prismatic_joint(
     upper_translation=1,
 )
 
-# --- runtime properties ----------------------------------------------------------------
+# runtime properties
 for _ in range(60):
     world.step(1 / 60, 4)
 
@@ -52,7 +52,7 @@ print(motor.constraint_force, motor.constraint_torque)
 # every joint is typed; the generic base class can be cast
 assert isinstance(b2d.Joint(hinge.id).cast(), b2d.RevoluteJoint)
 
-# --- dragging bodies with the mouse ----------------------------------------------------
+# dragging bodies with the mouse
 # box2d >= 3.2 has no mouse joint: MouseDrag uses a kinematic body + motor joint
 drag = b2d.MouseDrag(world)
 if drag.begin(slider.position):  # mouse down

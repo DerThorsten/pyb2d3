@@ -5,13 +5,15 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .examples_common.batch import (
-    create_circles,
-    hsv_colors,
-    neighbor_pairs,
-    pair_sum,
-    unit_and_length,
-)
+from .examples_common.batch import hsv_colors, pair_sum
+
+HX, HY = 40.0, 25.0  # arena half size
+RADIUS = 0.2
+SPEED = 6.0  # cruising speed
+VIEW = 2.5  # boids see their neighbors up to this distance
+SEPARATION_RADIUS = 0.9
+WALL_MARGIN = 4.0  # boids turn back this far from the walls
+HAWK_RADIUS = 10.0
 
 
 @register_sample("Agents", "Boids Flocking", video=True)
@@ -23,177 +25,144 @@ class BatchBoids(SampleBase):
     Hint: separation 0: dense clumps.
     """
 
-    hx, hy = 40.0, 25.0  # arena half size
-    radius = 0.2
-    view = 2.5  # neighbor radius
-    separation_radius = 0.9
-
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
         self.count = 800
         self.separation = 1.5
         self.alignment = 1.0
         self.cohesion = 1.0
-        self.speed = 6.0
         self.rng = np.random.default_rng(5)
-        self.hawk = None
-        self.anchor_body.create_chain(b2d.chain_box(center=(0, 0), hx=self.hx, hy=self.hy))
+        self.anchor_body.create_chain(b2d.chain_box(center=(0, 0), hx=HX, hy=HY))
         self.bodies = b2d.Bodies()
         self.create_boids()
         for widget in (
             widgets.IntSlider("boids", 100, 2500, 100, self.count, self.set_count),
-            widgets.FloatSlider(
-                "separation", 0.0, 4.0, 0.1, self.separation, self.setter("separation")
-            ),
-            widgets.FloatSlider(
-                "alignment", 0.0, 4.0, 0.1, self.alignment, self.setter("alignment")
-            ),
-            widgets.FloatSlider("cohesion", 0.0, 4.0, 0.1, self.cohesion, self.setter("cohesion")),
+            widgets.FloatSlider("separation", 0.0, 4.0, 0.1, self.separation, self.set_separation),
+            widgets.FloatSlider("alignment", 0.0, 4.0, 0.1, self.alignment, self.set_alignment),
+            widgets.FloatSlider("cohesion", 0.0, 4.0, 0.1, self.cohesion, self.set_cohesion),
         ):
             self.frontend.add_widget(widget)
 
-    def setter(self, name):
-        """a widget callback setting attribute `name`"""
-        return lambda value: setattr(self, name, value)
-
     def aabb(self):
-        return b2d.aabb(lower_bound=(-self.hx, -self.hy), upper_bound=(self.hx, self.hy))
+        return b2d.aabb(lower_bound=(-HX, -HY), upper_bound=(HX, HY))
 
     def create_boids(self):
-        """random positions + headings, colored by starting heading"""
+        """random positions and headings, colored by the starting heading"""
         self.bodies.destroy()
-        n = self.count
-        m = 1.0
-        positions = self.rng.uniform(
-            (-self.hx + m, -self.hy + m), (self.hx - m, self.hy - m), (n, 2)
+        positions = self.rng.uniform((-HX + 1, -HY + 1), (HX - 1, HY - 1), (self.count, 2))
+        angle = self.rng.uniform(0, 2 * np.pi, self.count)
+        colors = hsv_colors(angle / (2 * np.pi), 0.6)
+        material = b2d.surface_material(friction=0.0, restitution=0.5)
+        self.bodies, shapes = self.world.create_bodies(
+            positions, b2d.shape_def(material=material), b2d.circle(radius=RADIUS)
         )
-        angle = self.rng.uniform(0, 2 * np.pi, n)
-        self.bodies = create_circles(
-            self.world,
-            positions,
-            self.radius,
-            colors=hsv_colors(angle / (2 * np.pi), 0.6),
-            friction=0.0,
-            restitution=0.5,
-            linear_damping=0.0,
-        )
-        self.bodies.linear_velocity = self.speed * np.stack([np.cos(angle), np.sin(angle)], axis=1)
+        # per-body colors and all velocities at once with the batch api
+        shapes.custom_color = colors
+        self.bodies.linear_velocity = SPEED * np.stack([np.cos(angle), np.sin(angle)], axis=1)
         self.flock_count = 0
-        self.pairs = (np.zeros(0, dtype=np.int64), np.zeros(0, dtype=np.int64))
+        self.pairs = ([], [])
 
     def set_count(self, value):
-        """slider: recreate the boids"""
         self.count = int(value)
         self.create_boids()
 
-    # ---- the three rules (+ walls, hawk) --------------------------------------------------------
+    def set_separation(self, value):
+        self.separation = value
+
+    def set_alignment(self, value):
+        self.alignment = value
+
+    def set_cohesion(self, value):
+        self.cohesion = value
+
+    def on_mouse_down(self, event):
+        # no super(): the button summons the hawk instead of dragging bodies / the camera
+        self.is_mouse_down = True
+        self.mouse_pos = event.world_position
+
+    def hawk(self):
+        """the hawk is at the mouse while the button is held"""
+        return np.array(self.mouse_pos) if self.is_mouse_down else None
 
     def pre_update(self, dt):
-        """desired velocity from the rules -> one steering force call"""
-        bodies = self.bodies
-        p = bodies.position
-        v = bodies.linear_velocity
+        """a steering acceleration per boid from the rules, applied in one batch call"""
+        p = self.bodies.position
+        v = self.bodies.linear_velocity
         n = len(p)
-        i, j, delta, dist = neighbor_pairs(p, self.view)
+        i, j, delta, distance = self.bodies.neighbor_pairs(VIEW)  # (C++, b2d.extensions)
         self.pairs = (i, j)
+        neighbors = np.bincount(i, minlength=n) + np.bincount(j, minlength=n)
+        mean = 1.0 / np.maximum(neighbors, 1)[:, None]  # (0 for a boid without neighbors)
 
-        count = np.bincount(i, minlength=n) + np.bincount(j, minlength=n)
-        has = np.maximum(count, 1)[:, None]
-        # pair_sum(x): +x on body i, -x on body j; with x = p_j - p_i both get
-        # "the other one minus me"
+        # pair_sum(x) adds +x to boid i and -x to boid j: with x = (something of j) -
+        # (something of i) both get "the other one minus me"
         # cohesion: towards the mean position of the neighbors
-        cohesion = pair_sum(n, i, j, delta) / has
+        cohesion = pair_sum(n, i, j, delta) * mean
         # alignment: towards the mean velocity of the neighbors
-        alignment = pair_sum(n, i, j, v[j] - v[i]) / has
+        alignment = pair_sum(n, i, j, v[j] - v[i]) * mean
         # separation: away from close neighbors, stronger when closer
-        close = dist < self.separation_radius
-        push = (
-            delta[close]
-            * ((self.separation_radius - dist[close]) / np.maximum(dist[close], 1e-3) ** 2)[:, None]
-        )
+        close = distance < SEPARATION_RADIUS
+        d = distance[close]
+        push = delta[close] * ((SEPARATION_RADIUS - d) / np.maximum(d, 1e-3) ** 2)[:, None]
         separation = -pair_sum(n, i[close], j[close], push)
-        alone = count == 0
-        cohesion[alone] = 0.0
-        alignment[alone] = 0.0
 
         steer = (
-            self.separation * 4.0 * separation
-            + self.alignment * 0.8 * alignment
-            + self.cohesion * 0.6 * cohesion
+            4.0 * self.separation * separation
+            + 0.8 * self.alignment * alignment
+            + 0.6 * self.cohesion * cohesion
         )
-        # soft walls: turn back before the edge
-        margin = 4.0
-        steer[:, 0] += np.clip(-self.hx + margin - p[:, 0], 0, None) - np.clip(
-            p[:, 0] - self.hx + margin, 0, None
-        )
-        steer[:, 1] += np.clip(-self.hy + margin - p[:, 1], 0, None) - np.clip(
-            p[:, 1] - self.hy + margin, 0, None
-        )
-        # the hawk: flee
-        if self.hawk is not None:
-            away, d = unit_and_length(p - self.hawk)
-            steer += (40.0 * np.clip(1.0 - d / 10.0, 0.0, 1.0))[:, None] * away
+        steer += self.wall_avoidance(p)
+        hawk = self.hawk()
+        if hawk is not None:
+            away = p - hawk
+            d = np.linalg.norm(away, axis=1)
+            flee = 40.0 * np.clip(1.0 - d / HAWK_RADIUS, 0.0, 1.0) / np.maximum(d, 1e-6)
+            steer += flee[:, None] * away
+        # keep the cruising speed: speed up / slow down along the heading
+        speed = np.linalg.norm(v, axis=1)
+        heading = v / np.maximum(speed, 1e-6)[:, None]
+        steer += (SPEED - speed)[:, None] * heading
 
-        # keep the cruising speed: steer the speed towards `self.speed` along the heading
-        heading, speed = unit_and_length(v)
-        steer += (self.speed - speed)[:, None] * heading
-        bodies.apply_force_to_center(bodies.mass[:, None] * steer * 2.0)
+        self.bodies.apply_force_to_center(2.0 * self.bodies.mass[:, None] * steer)
+
+    def wall_avoidance(self, p):
+        """soft walls: push back, the deeper into the margin the stronger"""
+        lower = np.array([-HX, -HY]) + WALL_MARGIN
+        upper = np.array([HX, HY]) - WALL_MARGIN
+        return np.clip(lower - p, 0, None) - np.clip(p - upper, 0, None)
 
     def post_update(self, dt):
-        """number of flocks: connected groups of the neighbor graph (union-find on the pairs)"""
+        """count the flocks: groups of >= 5 boids connected by neighbor pairs"""
         if self.world_iteration % 15:
             return
         i, j = self.pairs
-        parent = np.arange(len(self.bodies))
-        for _ in range(30):  # label propagation: min label over neighbors, until stable
-            low = np.minimum(parent[i], parent[j])
-            new = parent.copy()
+        # every boid starts with its own label, then takes the smallest label of its
+        # neighbors until nothing changes: connected boids end with the same label
+        label = np.arange(len(self.bodies))
+        for _ in range(30):
+            low = np.minimum(label[i], label[j])
+            new = label.copy()
             np.minimum.at(new, i, low)
             np.minimum.at(new, j, low)
-            new = new[new]
-            if np.array_equal(new, parent):
+            new = new[new]  # jump ahead: take the label of the label
+            if np.array_equal(new, label):
                 break
-            parent = new
-        sizes = np.bincount(parent)
-        self.flock_count = int(np.count_nonzero(sizes >= 5))
-
-    # ---- mouse: the hawk ---------------------------------------------------------------------
-
-    def on_mouse_down(self, event):
-        """hawk at the cursor while the button is held (no dragging)"""
-        self.mouse_pos = event.world_position
-        self.hawk = np.array(self.mouse_pos, dtype=np.float64)
-
-    def on_mouse_move(self, event):
-        """move the hawk"""
-        self.mouse_pos = event.world_position
-        if self.hawk is not None:
-            self.hawk = np.array(self.mouse_pos, dtype=np.float64)
-
-    def on_mouse_up(self, event):
-        """hawk gone"""
-        super().on_mouse_up(event)
-        self.hawk = None
-
-    def on_mouse_leave(self, event):
-        """hawk gone"""
-        super().on_mouse_leave(event)
-        self.hawk = None
-
-    # ---- drawing -----------------------------------------------------------------------------
+            label = new
+        self.flock_count = np.count_nonzero(np.bincount(label) >= 5)
 
     def post_debug_draw(self):
-        """hawk + flock statistics"""
         dd = self.debug_draw
-        if self.hawk is not None:
-            dd.draw_circle(tuple(self.hawk), 10.0, b2d.HexColor.OrangeRed)
-            dd.draw_point(tuple(self.hawk), 10.0, b2d.HexColor.OrangeRed)
-        heading, _ = unit_and_length(self.bodies.linear_velocity)
-        i, j = self.pairs
+        hawk = self.hawk()
+        if hawk is not None:
+            dd.draw_circle(tuple(hawk), HAWK_RADIUS, b2d.HexColor.OrangeRed)
+            dd.draw_point(tuple(hawk), 10.0, b2d.HexColor.OrangeRed)
         # local alignment: mean cos of the angle between neighbors (1: a flock flies as one)
-        aligned = float(np.einsum("ij,ij->i", heading[i], heading[j]).mean()) if len(i) else 0.0
+        v = self.bodies.linear_velocity
+        heading = v / np.maximum(np.linalg.norm(v, axis=1), 1e-6)[:, None]
+        i, j = self.pairs
+        aligned = np.sum(heading[i] * heading[j], axis=1).mean() if len(i) else 0.0
         text = (
             f"{len(self.bodies)} boids  {self.flock_count} flocks  {len(i)} neighbor pairs  "
             f"neighbor alignment {aligned:.2f}"
         )
-        dd.draw_string((-self.hx, self.hy + 1.0), text, b2d.HexColor.White)
+        dd.draw_string((-HX, HY + 1.0), text, b2d.HexColor.White)

@@ -122,9 +122,7 @@ def test_draw_without_begin_end(world, box_body):
     assert dd.began == 0 and dd.calls
 
 
-# ---- BatchDebugDraw: the same primitives as the python callbacks, in flat arrays ----
-
-
+# BatchDebugDraw: the same primitives as the python callbacks, in flat arrays
 def rgba8(color):
     """0xRRGGBB -> the packed RGBA8 of BatchDebugDraw (r in the lowest byte, alpha 255)"""
     r, g, b = (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF

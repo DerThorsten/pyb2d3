@@ -3,7 +3,7 @@
     cells, letters = text_blocks("Hello", font="5x7")   # block positions in grid units
     bodies = create_blocks(world, cells, origin=(-10, 0), size=0.4, shape="square")
     bodies = create_letters(world, cells, letters, origin=(-10, 0), size=0.4)       # rigid
-    bodies = create_soft_letters(world, cells, letters, origin=(-10, 0), size=0.4)  # springs
+    bodies, springs = create_soft_letters(world, cells, letters, origin=(-10, 0), size=0.4)
 
     cells, letters = text_blocks(wrap_text(long_text, 20), "3x5", subdivision=2)   # 2x2 per pixel
 
@@ -12,6 +12,7 @@ Multiline text: '\\n' starts a new line (going down from the first one); wrap_te
 A glyph is a tuple of row bitmasks, top row first; bit `width - 1` is the leftmost column.
 """
 
+import math
 import textwrap
 from dataclasses import dataclass
 
@@ -197,30 +198,32 @@ FONTS = {"5x7": FONT_5X7, "3x5": FONT_3X5}
 
 
 def text_blocks(text, font="5x7", subdivision=1):
-    """The blocks of `text`: (cells, letters). `cells` an (n, 2) int array of block positions
+    """The blocks of `text`: (cells, letters). `cells` an (n, 2) array of block positions
     in grid units (x right, y up; the origin is the lower left corner of the first line),
     `letters` the index in `text` of the character each block belongs to. Characters
     advance by the font width + 1, a new line ('\\n') by the font height + 2.
     `subdivision` n: every font pixel made of n x n blocks (cells in units of 1 / n pixel)."""
     f = FONTS[font] if isinstance(font, str) else font
+    n = subdivision
     cells, letters = [], []
-    column = line = 0
+    column = line = 0  # of the character in the text
     for index, char in enumerate(text):
         if char == "\n":
             column, line = 0, line + 1
             continue
         for row, bits in enumerate(f.glyph(char)):
-            for x in range(f.width):
-                if bits & (1 << (f.width - 1 - x)):
-                    cells.append(
-                        (column * (f.width + 1) + x, f.height - 1 - row - line * (f.height + 2))
-                    )
-                    letters.append(index)
+            for col in range(f.width):
+                if not bits & (1 << (f.width - 1 - col)):  # bit width - 1: leftmost column
+                    continue
+                # the font pixel, in font pixels
+                x = column * (f.width + 1) + col
+                y = f.height - 1 - row - line * (f.height + 2)
+                for dx in range(n):
+                    for dy in range(n):
+                        cells.append((x * n + dx, y * n + dy))
+                        letters.append(index)
         column += 1
-    cells = np.array(cells, dtype=np.int64).reshape(-1, 2)
-    n = subdivision
-    sub = np.stack(np.meshgrid(np.arange(n), np.arange(n)), axis=-1).reshape(-1, 2)
-    return (cells[:, None] * n + sub).reshape(-1, 2), np.repeat(np.array(letters, np.int64), n * n)
+    return np.array(cells, dtype=float).reshape(-1, 2), np.array(letters, dtype=int)
 
 
 def wrap_text(text, columns=20):
@@ -236,13 +239,26 @@ def text_size(text, font="5x7"):
     return max(len(line) for line in lines) * (f.width + 1) - 1, len(lines) * (f.height + 2) - 2
 
 
-def _colors(colors, n):
-    return np.broadcast_to(np.asarray(0 if colors is None else colors, dtype=np.uint32), (n,))
+def _block_centers(cells, origin, size):
+    """the world positions of the block centers"""
+    return [(origin[0] + (x + 0.5) * size, origin[1] + (y + 0.5) * size) for x, y in cells]
 
 
-def _block_shape(shape, size):
-    """a ball or a square of a block (a small gap: neighbors are not connected)"""
-    return b2d.circle(radius=0.45 * size) if shape == "ball" else b2d.box(0.45 * size, 0.45 * size)
+def _color(colors, k):
+    """the color of block `k`: `colors` is None, one color, or one color per block"""
+    if colors is None:
+        return 0
+    if np.ndim(colors) == 0:
+        return int(colors)
+    return int(colors[k])
+
+
+def _blocks_of_letters(letters):
+    """{letter index: the indices of its blocks}"""
+    blocks = {}
+    for k, letter in enumerate(letters):
+        blocks.setdefault(int(letter), []).append(k)
+    return blocks
 
 
 def create_blocks(world, cells, origin, size, shape="ball", colors=None, shape_def=None):
@@ -250,13 +266,15 @@ def create_blocks(world, cells, origin, size, shape="ball", colors=None, shape_d
     text_blocks, `size`: the block pitch (m), `colors`: one, or one per block (e.g. by
     letter: `palette[letters]`)"""
     shape_def = shape_def or b2d.shape_def()
-    geometry = _block_shape(shape, size)
+    # a bit smaller than the pitch: neighbors do not touch
+    if shape == "ball":
+        geometry = b2d.circle(radius=0.45 * size)
+    else:
+        geometry = b2d.box(0.45 * size, 0.45 * size)
     bodies = b2d.Bodies()
-    for (x, y), color in zip(
-        np.asarray(origin) + (cells + 0.5) * size, _colors(colors, len(cells))
-    ):
-        body = world.create_dynamic_body(position=(float(x), float(y)))
-        shape_def.material = b2d.surface_material(custom_color=int(color))
+    for k, position in enumerate(_block_centers(cells, origin, size)):
+        body = world.create_dynamic_body(position=position)
+        shape_def.material = b2d.surface_material(custom_color=_color(colors, k))
         body.create_shape(shape_def, geometry)
         bodies.append(body)
     return bodies
@@ -279,23 +297,25 @@ def create_soft_letters(
     many blocks apart; None: all pairs, n^2 / 2 joints per letter): (b2d.Bodies, the joints:
     e.g. set their `spring_hertz` to change the stiffness)"""
     bodies = create_blocks(world, cells, origin, size, shape, **kwargs)
-    grid = np.rint(cells)  # cells may be jittered: the springs' rest lengths are on the grid
     joints = []
-    for letter in np.unique(letters):
-        mine = np.flatnonzero(letters == letter)
-        a, b = np.triu_indices(len(mine), k=1)
-        lengths = np.hypot(*(grid[mine[a]] - grid[mine[b]]).T)
-        keep = lengths <= (np.inf if reach is None else reach)
-        for i, j, length in zip(mine[a[keep]], mine[b[keep]], lengths[keep]):
-            joint = world.create_distance_joint(
-                body_a=bodies[int(i)],
-                body_b=bodies[int(j)],
-                length=size * float(length),
-                enable_spring=True,
-                hertz=hertz,
-                damping_ratio=damping_ratio,
-            )
-            joints.append(joint)
+    for blocks in _blocks_of_letters(letters).values():
+        for n, i in enumerate(blocks):
+            for j in blocks[n + 1 :]:
+                # cells may be jittered: the springs' rest lengths are on the grid
+                dx = round(cells[j][0]) - round(cells[i][0])
+                dy = round(cells[j][1]) - round(cells[i][1])
+                length = math.hypot(dx, dy)
+                if reach is not None and length > reach:
+                    continue
+                joint = world.create_distance_joint(
+                    body_a=bodies[i],
+                    body_b=bodies[j],
+                    length=size * length,
+                    enable_spring=True,
+                    hertz=hertz,
+                    damping_ratio=damping_ratio,
+                )
+                joints.append(joint)
     return bodies, joints
 
 
@@ -303,17 +323,16 @@ def create_letters(world, cells, letters, origin, size, colors=None, shape_def=N
     """One dynamic body per letter, a square per block (b2d.Bodies, rigid letters); `cells`,
     `letters` from text_blocks, `size`: the block pitch (m), `colors`: one, or one per block"""
     shape_def = shape_def or b2d.shape_def()
-    centers = np.asarray(origin) + (cells + 0.5) * size
-    colors = _colors(colors, len(cells))
+    centers = _block_centers(cells, origin, size)
     bodies = b2d.Bodies()
-    for letter in np.unique(letters):
-        mine = np.flatnonzero(letters == letter)
-        anchor = centers[mine].mean(axis=0)
-        body = world.create_dynamic_body(position=tuple(anchor))
-        for k in mine:
-            shape_def.material = b2d.surface_material(custom_color=int(colors[k]))
-            body.create_shape(
-                shape_def, b2d.box(0.5 * size, 0.5 * size, center=tuple(centers[k] - anchor))
-            )
+    for blocks in _blocks_of_letters(letters).values():
+        # the body origin at the mean of the letter's blocks
+        cx = sum(centers[k][0] for k in blocks) / len(blocks)
+        cy = sum(centers[k][1] for k in blocks) / len(blocks)
+        body = world.create_dynamic_body(position=(cx, cy))
+        for k in blocks:
+            shape_def.material = b2d.surface_material(custom_color=_color(colors, k))
+            x, y = centers[k]
+            body.create_shape(shape_def, b2d.box(0.5 * size, 0.5 * size, center=(x - cx, y - cy)))
         bodies.append(body)
     return bodies

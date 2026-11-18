@@ -1,16 +1,22 @@
-# +
-import pyb2d3 as b2d
-import numpy as np
+"""A minigolf lane seen from above; once the ball drops in, a stiff distance joint pulls it
+spinning into the hole."""
+
 from enum import Enum
+
+import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample
-from .examples_common.math import truncated_vector_diff, interpolate_color
+
+BALL_RADIUS = 0.1
+HOLE_RADIUS = 0.2
+MAX_DRAG = 1.0  # the longest drag (the strongest putt)
+PUTT_STRENGTH = 15.0
 
 
-class GolfState(Enum):
-    WAITING_FOR_BALL_CLICK = 0  # we are waiting for the user to click on a ball
-    SET_DRAG_FORCE = 1  # user is setting the force via mouse drag/move
-    WAITING_FOR_REST = 2  # we are waiting for the ball to come to rest
-    BALL_IS_IN_HOLE = 3  # the ball is in the hole, we can reset the level
+class State(Enum):
+    AIMING = 0  # waiting for a click on the ball
+    DRAGGING = 1  # the mouse drag sets the strength of the putt
+    ROLLING = 2  # waiting for the ball to come to rest
+    IN_HOLE = 3  # the level restarts once the ball rests in the hole
 
 
 @register_sample("Games", "Minigolf")
@@ -22,8 +28,12 @@ class Minigolf(SampleBase):
 
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
+        self.create_course()
+        self.create_ball()
+        self.state = State.AIMING
+        self.drag_position = None
 
-        # create the minigolf course
+    def create_course(self):
         builder = b2d.PathBuilder((0, 0))
         builder.line_to(right=4)
         self.hole_position = builder.arc_to(
@@ -32,96 +42,73 @@ class Minigolf(SampleBase):
         builder.line_to(left=4)
         builder.line_to(down=2)
         self.anchor_body.create_chain(builder.chain_def(is_loop=True, reverse=True))
-        points = np.array(builder.points)
-        self.bounds = (points.min(axis=0), points.max(axis=0))
+        xs = [p[0] for p in builder.points]
+        ys = [p[1] for p in builder.points]
+        self.view = b2d.aabb(
+            lower_bound=(min(xs) - 3, min(ys) - 1), upper_bound=(max(xs) + 3, max(ys) + 1)
+        )
 
-        # create a ball
-        self.ball_radius = 0.1
+    def create_ball(self):
         self.ball = self.world.create_dynamic_body(
             position=(0.5, 1), linear_damping=0.5, fixed_rotation=True
         )
         self.ball.create_shape(
             b2d.shape_def(density=1, material=b2d.surface_material(restitution=1.0, friction=0.5)),
-            b2d.circle(radius=self.ball_radius),
+            b2d.circle(radius=BALL_RADIUS),
         )
 
-        self.hole_radius = 0.2
-        self.drag_pos = None
-        self.hole_anchor_body = self.world.create_static_body(position=self.hole_position)
-        self.game_state = GolfState.WAITING_FOR_BALL_CLICK
-        self.drag_start_pos = None
+    def aabb(self):
+        return self.view
 
     def on_mouse_down(self, event):
-        if self.game_state == GolfState.WAITING_FOR_BALL_CLICK and self.ball.shapes[0].test_point(
-            event.world_position
-        ):
-            self.game_state = GolfState.SET_DRAG_FORCE
-            self.drag_start_pos = b2d.Vec2(event.world_position)
+        if self.state == State.AIMING and self.ball.shapes[0].test_point(event.world_position):
+            self.state = State.DRAGGING
+            self.drag_position = self.ball.position
 
     def on_mouse_move(self, event):
-        if self.game_state == GolfState.SET_DRAG_FORCE:
-            raw_drag_pos = event.world_position
-            drag_vector = truncated_vector_diff(self.ball.position, raw_drag_pos, max_length=1.0)
-            self.drag_pos = np.array(self.ball.position) + drag_vector
+        if self.state == State.DRAGGING:
+            drag = (b2d.Vec2(event.world_position) - self.ball.position).clamped(MAX_DRAG)
+            self.drag_position = self.ball.position + drag
 
     def on_mouse_up(self, event):
-        if self.game_state == GolfState.SET_DRAG_FORCE:
-            # we are setting the force, so we apply it now
-            force_vector = np.array(self.drag_pos) - np.array(self.ball.position)
-            force_vector *= -15
-            self.ball.apply_force_to_center(force_vector, True)
-            self.game_state = GolfState.WAITING_FOR_REST
-            self.drag_pos = None
+        if self.state == State.DRAGGING:
+            # the ball moves opposite to the drag
+            force = (self.drag_position - self.ball.position) * -PUTT_STRENGTH
+            self.ball.apply_force_to_center(force, True)
+            self.state = State.ROLLING
+            self.drag_position = None
 
     def post_update(self, dt):
-        if self.game_state == GolfState.WAITING_FOR_REST:
-            dist_to_hole = np.linalg.norm(
-                np.array(self.ball.position) - np.array(self.hole_position)
-            )
-            if dist_to_hole < (self.hole_radius - self.ball_radius):
-                self.game_state = GolfState.BALL_IS_IN_HOLE
-
-                # connect ball to hole with a distance joint.
-                # this gives a very nice effect of the ball rotating into the hole
+        if self.state == State.ROLLING:
+            distance_to_hole = (self.ball.position - self.hole_position).length()
+            if distance_to_hole < HOLE_RADIUS - BALL_RADIUS:
+                self.state = State.IN_HOLE
+                # a stiff spring towards the hole center: the ball spins into the hole
                 self.world.create_distance_joint(
                     body_a=self.ball,
-                    body_b=self.hole_anchor_body,
-                    length=self.hole_radius / 3.0,  # make sure ball is inside hole
+                    body_b=self.world.create_static_body(position=self.hole_position),
+                    length=HOLE_RADIUS / 3.0,
                     enable_spring=True,
                     hertz=100,
                     damping_ratio=1.0,
                 )
                 return
 
-        if (
-            self.game_state == GolfState.BALL_IS_IN_HOLE
-            or self.game_state == GolfState.WAITING_FOR_REST
-        ):
-            speed = np.linalg.norm(self.ball.linear_velocity)
-            if speed < 0.01:
-                if self.game_state == GolfState.BALL_IS_IN_HOLE:
-                    self.frontend.set_sample(self.__class__, self.settings)
-                else:
-                    self.game_state = GolfState.WAITING_FOR_BALL_CLICK
-
-    def aabb(self):
-        lower_bound = (self.bounds[0][0] - 3, self.bounds[0][1] - 1)
-        upper_bound = (self.bounds[1][0] + 3, self.bounds[1][1] + 1)
-
-        return b2d.aabb(lower_bound=lower_bound, upper_bound=upper_bound)
+        if self.ball.speed < 0.01:
+            if self.state == State.IN_HOLE:
+                self.frontend.set_sample(self.__class__, self.settings)
+            elif self.state == State.ROLLING:
+                self.state = State.AIMING
 
     def pre_debug_draw(self):
+        # drawn before the bodies: the hole is under the ball
         self.debug_draw.draw_solid_circle(
             transform=b2d.transform(self.hole_position),
-            radius=self.hole_radius,
+            radius=HOLE_RADIUS,
             color=b2d.hex_color(0, 0, 0),
         )
-
-        if self.game_state == GolfState.SET_DRAG_FORCE and self.drag_pos is not None:
-            drag_vector_length = np.linalg.norm(self.drag_pos - self.ball.position)
-            color = interpolate_color((255, 255, 0), (255, 0, 0), drag_vector_length)
-            self.debug_draw.draw_segment(
-                self.ball.position,
-                self.drag_pos,
-                color=b2d.hex_color(*color),
-            )
+        if self.state == State.DRAGGING:
+            # from yellow (weak) to red (strong)
+            strength = (self.drag_position - self.ball.position).length() / MAX_DRAG
+            color = b2d.hex_color(255, int(255 * (1 - strength)), 0)
+            self.debug_draw.draw_segment(self.ball.position, self.drag_position, color=color)

@@ -16,9 +16,9 @@ class QuietFrontend(HeadlessTestFrontend):
         for _ in range(int(self.seconds * self.settings.hertz)):
             self.update_frontend_logic()
             self.update_physics_single_step()
-            if self.sample.stages_done == len(self.sample.stages):
+            if len(self.sample.stage_times) == len(self.sample.stages):
                 break
-        self.result = [(stage.name, stage.time) for stage in self.sample.stages]
+        self.result = [(name, self.sample.stage_times.get(name)) for name, _ in self.sample.stages]
         self.sample.post_run()
 
 

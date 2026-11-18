@@ -1,10 +1,21 @@
-# +
+"""world.cast_ray with a Python callback: a laser ray passes green boxes, blue boxes shorten it."""
+
+import math
+import random
+
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample
 
+ROOM = 10  # half size of the room (m)
+N_BOXES = 20
+RAY_LENGTH = 2 * math.sqrt(2) * ROOM  # the diagonal of the room: long enough to hit a wall
 
-import random
-import math
+# collision categories (one bit each); the ray only looks for green and blue boxes
+LASER = 0x0002
+GREEN = 0x0004
+BLUE = 0x0008
+GREEN_COLOR = (40, 240, 40)
+BLUE_COLOR = (40, 40, 240)
 
 
 @register_sample("Queries", "Cast Ray Callback")
@@ -17,135 +28,76 @@ class CastRayCallback(SampleBase):
 
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
-        self.box_radius = 10
+        self.create_room()
+        self.create_laser()
+        self.create_boxes()
+        # a stiff mouse joint: the dragged bodies follow the mouse closely
+        self.mouse_joint_hertz = 10000
+        self.mouse_joint_force_multiplier = 10000.0
 
-        # we create shapes of 4 categories:
-        # wall
-        # laser
-        # box
+    def create_room(self):
+        self.anchor_body.create_chain(b2d.chain_box(center=(0, 0), hx=ROOM, hy=ROOM))
 
-        wall_category_bits = 0 | (1 << 0)  # 0x00000001
-        laser_category_bits = 0 | (1 << 1)  # 0x00000002
-        box_green_category_bits = 0 | (1 << 2)  # 0x00000004
-        box_blue_category_bits = 0 | (1 << 3)  # 0x00000008
-
-        self.laser_category_bits = laser_category_bits
-        self.box_green_category_bits = box_green_category_bits
-        self.box_blue_category_bits = box_blue_category_bits
-        self.wall_category_bits = wall_category_bits
-
-        # set 0 bits for the wall
-
-        # attach the chain shape to a static body
-        self.box_body = self.world.create_static_body(position=(0, 0))
-        chain_def = b2d.chain_box(center=(0, 0), hx=self.box_radius, hy=self.box_radius)
-        chain_def.filter = b2d.make_filter(category_bits=wall_category_bits)
-        self.box_body.create_chain(
-            b2d.chain_box(center=(0, 0), hx=self.box_radius, hy=self.box_radius)
+    def create_laser(self):
+        """a yellow box, the ray leaves it at its top end"""
+        self.laser = self.world.create_dynamic_body(
+            linear_damping=10, angular_damping=10, rotation=math.pi / 2.1
         )
-
-        # creating a box serving as "laser"
-        self.laser_body = self.world.create_dynamic_body(
-            position=(0, 0),
-            linear_damping=10,
-            angular_damping=10.0,
-            rotation=math.pi / 2.1,  # some funky angle
+        material = b2d.surface_material(
+            restitution=0.5, custom_color=b2d.rgb_to_hex_color(255, 240, 40)
         )
-        self.laser_body.create_shape(
+        self.laser.create_shape(
             b2d.shape_def(
-                density=1,
-                material=b2d.surface_material(
-                    restitution=0.5, custom_color=b2d.rgb_to_hex_color(255, 240, 40)
-                ),
-                filter=b2d.make_filter(category_bits=laser_category_bits),
+                density=1, material=material, filter=b2d.make_filter(category_bits=LASER)
             ),
             b2d.box(hx=0.4, hy=1.0),
         )
 
-        # some random boxes
-        for i in range(20):
-            x = random.uniform(-self.box_radius, self.box_radius)
-            y = random.uniform(-self.box_radius, self.box_radius)
-            random_angle = random.uniform(0, 2 * math.pi)
-            box_body = self.world.create_dynamic_body(
-                position=(x, y),
-                linear_damping=10.0,
-                angular_damping=10.0,
-                rotation=random_angle,
+    def create_boxes(self):
+        """green and blue boxes at random positions and angles"""
+        for i in range(N_BOXES):
+            category, color = (GREEN, GREEN_COLOR) if i % 2 == 0 else (BLUE, BLUE_COLOR)
+            box = self.world.create_dynamic_body(
+                position=(random.uniform(-ROOM, ROOM), random.uniform(-ROOM, ROOM)),
+                rotation=random.uniform(0, 2 * math.pi),
+                linear_damping=10,
+                angular_damping=10,
             )
-            if i % 2 == 0:
-                category_bits = self.box_green_category_bits
-                color = b2d.rgb_to_hex_color(40, 240, 40)
-            else:
-                category_bits = self.box_blue_category_bits
-                color = b2d.rgb_to_hex_color(40, 40, 240)
-
-            box_body.create_shape(
+            material = b2d.surface_material(
+                restitution=0.5, custom_color=b2d.rgb_to_hex_color(*color)
+            )
+            box.create_shape(
                 b2d.shape_def(
-                    density=1,
-                    material=b2d.surface_material(restitution=0.5, custom_color=color),
-                    filter=b2d.make_filter(category_bits=category_bits),
+                    density=1, material=material, filter=b2d.make_filter(category_bits=category)
                 ),
                 b2d.box(hx=0.5, hy=1.0),
             )
 
-        # we make the mouse joint(created in the base class) more stiff
-        self.mouse_joint_hertz = 10000
-        self.mouse_joint_force_multiplier = 10000.0
-
-    def aabb(self):
-        return b2d.aabb(
-            lower_bound=(-self.box_radius, -self.box_radius),
-            upper_bound=(self.box_radius, self.box_radius),
-        )
+    def pre_update(self, dt):
+        if self.frontend.settings.headless:
+            # no mouse when rendering the docs video: turn the laser to get some movement
+            self.laser.apply_torque(2, wake=True)
 
     def post_debug_draw(self):
-        if self.frontend.settings.headless:
-            # to have some movement when running headless (ie for rendering a video of the sample)
-            torque = 2
-            self.laser_body.apply_torque(torque, wake=True)
-
-        ray_length = self.box_radius * 2 * math.sqrt(2)
-        ray_length = max(ray_length, 1)
-
-        eps = 1e-5
-        pos = self.laser_body.world_point((0, 1 - eps))
-        body_angle = self.laser_body.angle + math.pi / 2  # laser points upwards
-        # cast the first ray from the laser body
-        translation = b2d.Vec2(
-            math.cos(body_angle) * ray_length,
-            math.sin(body_angle) * ray_length,
-        )
-
-        # query filter st. hits with the laser shape are ignored
-        query_filter = b2d.query_filter(
-            mask_bits=self.box_green_category_bits | self.box_blue_category_bits
-        )
+        start = self.laser.world_point((0, 1 - 1e-5))  # just inside the top end of the laser
+        angle = self.laser.angle + math.pi / 2  # along the laser's y axis
+        translation = b2d.Vec2(math.cos(angle), math.sin(angle)) * RAY_LENGTH
 
         def callback(shape, point, normal, fraction):
-            # shape: the shape that was hit by the ray
-            # point: the point of intersection
-            # normal: the normal vector at the point of intersection
-            # fraction: the fraction along the ray at which the intersection occurred
-            #
-            # the return value is a float that determines whether (and where) to continue the ray cast:
-            #    -1 to filter,
-            #    0 to terminate,
-            #    fraction to clip the ray (for closest hit)
-            #    1 to continue
+            """called for every hit (in no particular order); the return value controls
+            the rest of the cast: -1 ignore this hit, 0 stop, 1 continue, a fraction:
+            continue, but only up to that fraction of the ray"""
+            if shape.filter.category_bits == GREEN:
+                self.debug_draw.draw_segment(start, point, color=GREEN_COLOR)
+                return 1
+            # blue: often one returns `fraction` here (closest hit), but we keep going
+            # with a ray "weakened" to 20% of its length
+            self.debug_draw.draw_segment(start, point, color=BLUE_COLOR)
+            return 0.2
 
-            # blue or green box?
-            if shape.filter.category_bits == self.box_green_category_bits:
-                ret = 1  # continue the ray cast
-                self.debug_draw.draw_segment(pos, point, color=(40, 240, 40))
-                return 1  # continue the ray cast
-            elif shape.filter.category_bits == self.box_blue_category_bits:
-                self.debug_draw.draw_segment(pos, point, color=(40, 40, 240))
-                #  clip the ray at a fraction of 0.2 (often one would just return "fraction" to
-                #  clip the ray at the point of intersection, yet here
-                #  we want to continue the ray cast but with a "weakended" ray
-                return 0.2
+        # the mask skips the walls and the laser itself
+        query_filter = b2d.query_filter(mask_bits=GREEN | BLUE)
+        self.world.cast_ray(start, translation, query_filter=query_filter, callback=callback)
 
-            return ret
-
-        self.world.cast_ray(pos, translation, query_filter=query_filter, callback=callback)
+    def aabb(self):
+        return b2d.aabb(lower_bound=(-ROOM, -ROOM), upper_bound=(ROOM, ROOM))

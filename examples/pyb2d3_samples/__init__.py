@@ -17,7 +17,7 @@ from . import bridge_builder
 from . import raycast, cast_ray_callback, mirror
 
 # Batch API
-from . import batch_swarm, batch_nbody, batch_fountain, batch_vs_loop
+from . import batch_swarm, batch_nbody, batch_vs_loop
 from . import batch_many_shapes, batch_joints
 
 # Agents
@@ -28,6 +28,9 @@ from . import batch_hourglass, batch_galton, batch_earthquake
 
 # Fluids & Matter
 from . import batch_dam_break, batch_dam_break_balls, batch_ferrofluid
+
+# Emitters: particle emitters of b2d.extensions (pyb2d3's own, not part of Box2D)
+from . import emitters
 
 # Playground: the starting point for your own sample (edit it in the browser sandbox)
 from . import my_sample

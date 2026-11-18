@@ -1,7 +1,13 @@
-# +
+"""A slingshot game: a ball shot at a pyramid of blocks explodes on impact."""
+
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample
-from .examples_common import stacked_blocks
+
+BALL_RADIUS = 1.0
+SLINGSHOT = b2d.Vec2(-30, 2)  # where the ball waits
+SLINGSHOT_STRENGTH = 50.0
+BALL_COLOR = b2d.hex_color(200, 50, 50)
+BOUNCY = b2d.surface_material(restitution=0.5)
 
 
 @register_sample("Games", "Angry Shapes", video=True)
@@ -14,102 +20,73 @@ class AngryShapes(SampleBase):
 
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, -10)))
+        self.anchor_body.create_shape(b2d.shape_def(material=BOUNCY), b2d.segment((-1, 0), (28, 0)))
+        self.create_pyramid(levels=10, thickness=0.5, length=3.0)
+        self.ball = None  # the flying ball
+        self.ball_position = SLINGSHOT  # the waiting ball (drawn, not simulated yet)
+        self.dragging = False
 
-        self.floor_size = 27.5
-
-        self.anchor_body.create_shape(
-            b2d.shape_def(material=b2d.surface_material(restitution=0.5)),
-            b2d.segment(
-                (-1, 0),
-                (28, 0),
-            ),
-        )
-
-        stacked_blocks(self.world, num_blocks_base=10, box_shape=[0.5, 3.0], start=(0, 0))
-
-        self.projectile_radius = 1.0
-        self.projectile_anchor_pos = b2d.Vec2(-30, 2)
-        self.projectile_pos = b2d.Vec2(self.projectile_anchor_pos)
-        self.projectile_body = None
-        self.projectile_state = "wait_for_movement"
-
-    def on_mouse_down(self, event):
-        print("state:", self.projectile_state)
-        if self.projectile_state == "wait_for_movement":
-            # inside projectile ?
-            d = b2d.distance(event.world_position, self.projectile_pos)
-            if d <= self.projectile_radius:
-                self.projectile_state = "dragging"
-
-    def on_mouse_move(self, event):
-        if self.projectile_state == "dragging":
-            # move projectile position to mouse position
-            self.projectile_pos = b2d.Vec2(event.world_position)
-
-    def on_mouse_up(self, event):
-        if self.projectile_state == "dragging":
-            # launch projectile by a force proportional to the distance from anchor
-            dir_vec = self.projectile_anchor_pos - event.world_position
-            force = dir_vec * 50
-
-            # create projectile body
-            self.projectile_body = self.world.create_dynamic_body(position=self.projectile_pos)
-
-            shape = self.projectile_body.create_shape(
-                b2d.shape_def(density=1, material=b2d.surface_material(restitution=0.5)),
-                b2d.circle(radius=self.projectile_radius),
-            )
-            shape.contact_events_enabled = True
-            shape.user_data = 1
-
-            self.projectile_body.apply_linear_impulse_to_center(force)
-            self.projectile_state = "launched"
-
-    def post_debug_draw(self):
-        if self.projectile_state == "dragging":
-            # draw a line from anchor to projectile position
-            self.debug_draw.draw_segment(
-                p1=self.projectile_anchor_pos,
-                p2=self.projectile_pos,
-                color=b2d.hex_color(200, 50, 50),
-            )
-        # draw the projectile (either as a circle at the position or the body if launched)
-        if self.projectile_body is None:
-            # draw circle at position
-            self.debug_draw.draw_solid_circle(
-                transform=b2d.transform(p=self.projectile_pos),
-                radius=self.projectile_radius,
-                color=b2d.hex_color(200, 50, 50),
-            )
-
-    def pre_update(self, dt):
-        events = self.world.get_contact_events()
-        for begin_event in events.begin_events():
-            last_projectile_pos = self.projectile_body.position
-            self.projectile_body.destroy()
-            self.projectile_body = None
-            self.projectile_pos = b2d.Vec2(self.projectile_anchor_pos)
-            self.projectile_state = "wait_for_movement"
-            # create an explosion
-            self.world.explode(position=last_projectile_pos, radius=5, impulse_per_length=5)
-            break
-
-        if self.projectile_body is not None:
-            # check if projectile is out of bounds
-            if (
-                self.projectile_body.position.y < -50
-                or self.projectile_body.position.x > self.floor_size + 100
-            ):
-                self.projectile_body.destroy()
-                self.projectile_body = None
-                self.projectile_pos = b2d.Vec2(self.projectile_anchor_pos)
-                self.projectile_state = "wait_for_movement"
-
-    def post_update(self, dt):
-        pass
+    def create_pyramid(self, levels, thickness, length):
+        """Upright blocks, each pair bridged by a lying block, fewer per level."""
+        shape_def = b2d.shape_def(density=1, material=BOUNCY)
+        upright = b2d.box(hx=thickness / 2, hy=length / 2)
+        lying = b2d.box(hx=length / 2, hy=thickness / 2)
+        for level in range(levels):
+            y = level * (length + thickness)
+            for i in range(levels - level):
+                x = (i + level / 2) * length
+                body = self.world.create_dynamic_body(position=(x, y + length / 2))
+                body.create_shape(shape_def, upright)
+                if i + 1 < levels - level:
+                    body = self.world.create_dynamic_body(
+                        position=(x + length / 2, y + length + thickness / 2)
+                    )
+                    body.create_shape(shape_def, lying)
 
     def aabb(self):
-        return b2d.aabb(
-            lower_bound=(-50, -10),
-            upper_bound=(35, 60),
+        return b2d.aabb(lower_bound=(-50, -10), upper_bound=(35, 60))
+
+    def on_mouse_down(self, event):
+        if self.ball is None and b2d.distance(event.world_position, SLINGSHOT) <= BALL_RADIUS:
+            self.dragging = True
+
+    def on_mouse_move(self, event):
+        if self.dragging:
+            self.ball_position = b2d.Vec2(event.world_position)
+
+    def on_mouse_up(self, event):
+        if not self.dragging:
+            return
+        self.dragging = False
+        self.ball = self.world.create_dynamic_body(position=self.ball_position)
+        self.ball.create_shape(
+            b2d.shape_def(density=1, material=BOUNCY, enable_contact_events=True),
+            b2d.circle(radius=BALL_RADIUS),
         )
+        # the further from the slingshot, the stronger the shot
+        self.ball.apply_linear_impulse_to_center(
+            (SLINGSHOT - event.world_position) * SLINGSHOT_STRENGTH
+        )
+
+    def pre_update(self, dt):
+        if self.ball is None:
+            return
+        # only the ball has contact events enabled: any begin event is a hit
+        if self.world.get_contact_events().begin_count > 0:
+            self.world.explode(position=self.ball.position, radius=5, impulse_per_length=5)
+            self.reload()
+        elif self.ball.position.y < -50 or self.ball.position.x > 130:
+            self.reload()
+
+    def reload(self):
+        self.ball.destroy()
+        self.ball = None
+        self.ball_position = SLINGSHOT
+
+    def post_debug_draw(self):
+        if self.dragging:
+            self.debug_draw.draw_segment(p1=SLINGSHOT, p2=self.ball_position, color=BALL_COLOR)
+        if self.ball is None:
+            self.debug_draw.draw_solid_circle(
+                transform=b2d.transform(p=self.ball_position), radius=BALL_RADIUS, color=BALL_COLOR
+            )

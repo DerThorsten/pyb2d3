@@ -10,17 +10,14 @@ from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
 from .examples_common.joints import pinned
 
-STEEL = b2d.HexColor.LightSteelBlue
 WOOD = b2d.HexColor.Peru
+AUTO_START = 1.0  # seconds
+BELL_CENTER = b2d.Vec2(37.2, 4.25)
+HAMMER_HEAD = (2.75, 0.22)  # on the lever
 
 
-class Stage:
-    """one step of the chain reaction: `done()` becomes true once it happened"""
-
-    def __init__(self, name, done):
-        self.name = name
-        self.done = done
-        self.time = None  # world time it happened
+GROUND = b2d.shape_def(material=b2d.surface_material(custom_color=b2d.HexColor.DarkGray))
+GOLD = b2d.shape_def(material=b2d.surface_material(custom_color=b2d.HexColor.Gold))
 
 
 @register_sample("Demos", "Rube Goldberg", video=True)
@@ -32,273 +29,235 @@ class RubeGoldberg(SampleBase):
     """
 
     substeps = 8
-    auto_start = 1.0  # seconds
-    bucket_balls = 100  # 10 rows of 10: they fit inside the bucket
 
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
-        self.build()
-        for widget in (
-            widgets.Button("start (space)", self.start),
-            widgets.Button("rebuild (r)", self.rebuild),
-        ):
-            self.frontend.add_widget(widget)
+        self.started = False
+        # all static shapes go on the ground body; the joints attach the moving parts to the
+        # (shapeless) anchor body: a joint disables the collisions between its two bodies
+        self.ground = self.world.create_static_body()
+        self.create_start()
+        self.create_dominoes()
+        self.create_cradle()
+        self.create_seesaw()
+        self.create_bucket()
+        self.create_water_wheel()
+        self.create_lever_and_bell()
+        self.create_stages()
+        self.frontend.add_widget(widgets.Button("start (space)", self.start))
+        self.frontend.add_widget(widgets.Button("rebuild (r)", self.rebuild))
 
     def aabb(self):
         return b2d.aabb(lower_bound=(-21.0, 1.0), upper_bound=(34.0, 21.0))
 
-    # ---- helpers --------------------------------------------------------------------------
-
-    def static_shapes(self, shapes, color=b2d.HexColor.DarkGray, friction=0.6):
-        """one static body with the given (segment / polygon) geometries"""
-        body = self.world.create_static_body()
-        shape_def = b2d.shape_def(
-            material=b2d.surface_material(friction=friction, custom_color=color)
+    # the machine, in the order of the chain reaction
+    def create_start(self):
+        # the start ball on a slightly sloped ledge, held by a peg, then a ramp down to the dominoes
+        for a, b in [((-20.0, 18.3), (-17.0, 18.0)), ((-17.0, 18.0), (-9.0, 14.0))]:
+            self.ground.create_shape(GROUND, b2d.segment(a, b))
+        self.start_ball = self.world.create_dynamic_body(position=(-17.6, 18.47))
+        self.start_ball.create_shape(
+            b2d.shape_def(
+                density=3.0,
+                material=b2d.surface_material(friction=0.4, custom_color=b2d.HexColor.Crimson),
+            ),
+            b2d.circle(radius=0.4),
         )
-        for geometry in shapes:
-            body.create_shape(shape_def, geometry)
-        self.parts.append(body)
-        return body
+        # the peg is its own body: start() destroys it
+        self.peg = self.world.create_static_body()
+        self.peg.create_shape(GOLD, b2d.segment((-17.05, 18.0), (-17.05, 18.35)))
 
-    def dynamic(
-        self,
-        position,
-        geometry,
-        density=1.0,
-        color=STEEL,
-        friction=0.4,
-        restitution=0.0,
-        rotation=0.0,
-        **kwargs,
-    ):
-        body = self.world.create_dynamic_body(
-            position=position, rotation=b2d.make_rot(rotation), **kwargs
-        )
-        material = b2d.surface_material(
-            friction=friction, restitution=restitution, custom_color=color
-        )
-        body.create_shape(b2d.shape_def(density=density, material=material), geometry)
-        self.parts.append(body)
-        return body
+    def create_dominoes(self):
+        self.ground.create_shape(GROUND, b2d.segment((-9.0, 14.0), (1.0, 14.0)))
+        domino_def = b2d.shape_def(density=1.0, material=b2d.surface_material(custom_color=WOOD))
+        self.dominoes = []
+        for i in range(12):
+            domino = self.world.create_dynamic_body(position=(-7.5 + 0.7 * i, 14.55))
+            domino.create_shape(domino_def, b2d.box(0.08, 0.55))
+            self.dominoes.append(domino)
 
-    # ---- the machine ----------------------------------------------------------------------
-
-    def build(self):
-        self.parts = []
-        self.started = False
-
-        # 1: the start ball on a slightly sloped ledge, held by a peg, then a ramp down to the domino shelf
-        self.static_shapes(
-            [
-                b2d.segment((-20.0, 18.3), (-17.0, 18.0)),
-                b2d.segment((-17.0, 18.0), (-9.0, 14.0)),
-                b2d.segment((-9.0, 14.0), (1.0, 14.0)),  # domino shelf
-            ]
-        )
-        self.start_ball = self.dynamic(
-            (-17.6, 18.47), b2d.circle(radius=0.4), density=3.0, color=b2d.HexColor.Crimson
-        )
-        self.peg = self.static_shapes(
-            [b2d.segment((-17.05, 18.0), (-17.05, 18.35))], color=b2d.HexColor.Gold
-        )
-
-        # 2: dominoes
-        self.dominoes = [
-            self.dynamic(
-                (-7.5 + 0.7 * i, 14.55), b2d.box(0.08, 0.55), density=1.0, color=WOOD, friction=0.6
-            )
-            for i in range(12)
-        ]
-
-        # 3: Newton's cradle: five balls hanging from a beam, the first one next to the last domino
+    def create_cradle(self):
+        # five balls hanging from a beam, the first one next to the last domino
         beam_y, rope = 18.5, 4.2
-        anchor = self.static_shapes(
-            [b2d.segment((1.2, beam_y), (4.4, beam_y))], color=b2d.HexColor.DimGray
+        self.ground.create_shape(
+            b2d.shape_def(material=b2d.surface_material(custom_color=b2d.HexColor.DimGray)),
+            b2d.segment((1.2, beam_y), (4.4, beam_y)),
         )
-        self.cradle = []
+        # no friction, fully elastic: the impulse travels through the balls
+        ball_def = b2d.shape_def(
+            density=4.0,
+            material=b2d.surface_material(
+                friction=0.0, restitution=1.0, custom_color=b2d.HexColor.LightSteelBlue
+            ),
+        )
         for i in range(5):
             x = 1.6 + 0.6 * i
-            ball = self.dynamic(
-                (x, beam_y - rope),
-                b2d.circle(radius=0.3),
-                density=4.0,
-                restitution=1.0,
-                friction=0.0,
-            )
+            ball = self.world.create_dynamic_body(position=(x, beam_y - rope))
+            ball.create_shape(ball_def, b2d.circle(radius=0.3))
             # a rigid rod: the pivot is the beam point for both bodies
-            self.world.create_revolute_joint(**pinned(anchor, ball, (x, beam_y)))
-            self.cradle.append(ball)
-        # the heavy ball waiting on a ledge after the cradle, then the second ramp
-        # (a short ledge: one push from the cradle rolls it onto the ramp)
-        self.static_shapes(
-            [
-                b2d.segment((4.3, 14.0), (4.85, 14.0)),
-                b2d.segment((4.85, 14.0), (14.0, 9.5)),
-            ]
-        )
-        self.heavy_ball = self.dynamic(
-            (4.62, 14.31), b2d.circle(radius=0.3), density=4.0, color=b2d.HexColor.Black
+            self.world.create_revolute_joint(**pinned(self.anchor_body, ball, (x, beam_y)))
+
+        # the heavy ball waits on a short ledge after the cradle: one push rolls it onto the ramp
+        for a, b in [((4.3, 14.0), (4.85, 14.0)), ((4.85, 14.0), (14.0, 9.5))]:
+            self.ground.create_shape(GROUND, b2d.segment(a, b))
+        self.heavy_ball = self.world.create_dynamic_body(position=(4.62, 14.31))
+        self.heavy_ball.create_shape(
+            b2d.shape_def(
+                density=4.0,
+                material=b2d.surface_material(friction=0.4, custom_color=b2d.HexColor.Black),
+            ),
+            b2d.circle(radius=0.3),
         )
 
-        # 4: see-saw: its left arm catches the heavy ball, its right arm kicks the bucket
-        # it rests with its right end down (a weight there, the lower angle limit); the heavy
-        # ball landing on the raised left end swings the right end up into the bucket
+    def create_seesaw(self):
+        # it rests with its right end down (a counterweight there, the lower angle limit); the
+        # heavy ball landing in the cup on the raised left end swings the right end up into the bucket
         pivot = b2d.Vec2(18.0, 7.6)
-        self.static_shapes([b2d.polygon([(17.6, 6.0), (18.4, 6.0), (18.0, 7.4)])])
-        rest = -0.4
+        self.seesaw_rest = -0.4
+        self.ground.create_shape(GROUND, b2d.polygon([(17.6, 6.0), (18.4, 6.0), (18.0, 7.4)]))
+        self.seesaw = self.world.create_dynamic_body(
+            position=pivot, rotation=b2d.make_rot(self.seesaw_rest)
+        )
         # the plank reaches further left (-3.8) than right (3.0): the cup sits where the ball lands
-        self.seesaw = self.dynamic(
-            pivot, b2d.box(3.4, 0.1, center=(-0.4, 0.0)), density=2.0, color=WOOD, rotation=rest
+        self.seesaw.create_shape(
+            b2d.shape_def(
+                density=2.0, material=b2d.surface_material(friction=0.4, custom_color=WOOD)
+            ),
+            b2d.box(3.4, 0.1, center=(-0.4, 0.0)),
         )
-        # the counterweight keeps it at rest (it outweighs the longer left arm, not the ball)
-        weight_def = b2d.shape_def(
-            density=4.0, material=b2d.surface_material(custom_color=b2d.HexColor.DimGray)
+        # the counterweight
+        self.seesaw.create_shape(
+            b2d.shape_def(
+                density=4.0, material=b2d.surface_material(custom_color=b2d.HexColor.DimGray)
+            ),
+            b2d.box(0.25, 0.18, center=(2.6, 0.28)),
         )
-        self.seesaw.create_shape(weight_def, b2d.box(0.25, 0.18, center=(2.6, 0.28)))
-        # a cup on the left arm catches the ball: it stays there (and tips the see-saw)
-        # instead of rolling along the plank
-        cup_wall_def = b2d.shape_def(density=0.5, material=b2d.surface_material(custom_color=WOOD))
-        self.seesaw.create_shape(cup_wall_def, b2d.box(0.06, 0.4, center=(-3.74, 0.45)))
-        self.seesaw.create_shape(cup_wall_def, b2d.box(0.06, 0.45, center=(-2.4, 0.5)))
+        cup_def = b2d.shape_def(density=0.5, material=b2d.surface_material(custom_color=WOOD))
+        self.seesaw.create_shape(cup_def, b2d.box(0.06, 0.4, center=(-3.74, 0.45)))
+        self.seesaw.create_shape(cup_def, b2d.box(0.06, 0.45, center=(-2.4, 0.5)))
         self.world.create_revolute_joint(
             # q_b = -rest: the joint angle is 0 in the rest pose, the limits are relative to it
-            **pinned(self.static_shapes([]), self.seesaw, pivot, q_b=-rest),
+            **pinned(self.anchor_body, self.seesaw, pivot, q_b=-self.seesaw_rest),
             enable_limit=True,
             lower_angle=0.0,
             upper_angle=0.95,
         )
 
-        # 5: a bucket full of balls on a pivot, leaning left against a stop
-        bucket_pivot = b2d.Vec2(22.0, 9.0)
-        self.bucket = self.world.create_dynamic_body(
-            position=bucket_pivot, rotation=b2d.make_rot(0.06)
-        )
+    def create_bucket(self):
+        # a bucket full of balls on a pivot, leaning a little to the left against a stop
+        # (easy to tip over)
+        pivot = b2d.Vec2(22.0, 9.0)
+        self.bucket = self.world.create_dynamic_body(position=pivot, rotation=b2d.make_rot(0.06))
+        self.bucket_angle0 = self.bucket.angle
         bucket_def = b2d.shape_def(
             density=3.0,
             material=b2d.surface_material(friction=0.3, custom_color=b2d.HexColor.SteelBlue),
         )
-        for geometry in (
-            b2d.box(1.3, 0.08, center=(0.0, 0.0)),
-            b2d.box(0.08, 1.2, center=(-1.3, 1.2)),
-            b2d.box(0.08, 1.2, center=(1.3, 1.2)),
-        ):
-            self.bucket.create_shape(bucket_def, geometry)
-        self.parts.append(self.bucket)
-        self.world.create_revolute_joint(
-            **pinned(self.static_shapes([]), self.bucket, bucket_pivot)
-        )
-        # the stop: the bucket leans only a little (easy to tip over)
-        self.static_shapes([b2d.segment((20.53, 9.6), (20.53, 10.6))], color=b2d.HexColor.Gold)
-        rng = np.random.default_rng(2)
-        self.bucket_bodies = []
-        for k in range(self.bucket_balls):
-            row, column = divmod(k, 10)
-            p = bucket_pivot + (
-                -1.0 + 0.222 * column + rng.uniform(-0.005, 0.005),
-                0.2 + 0.23 * row,
-            )
-            color = int(b2d.HexColor.DodgerBlue.value if k % 2 else b2d.HexColor.DeepSkyBlue.value)
-            self.bucket_bodies.append(
-                self.dynamic(p, b2d.circle(radius=0.11), density=1.0, color=color, friction=0.1)
-            )
+        self.bucket.create_shape(bucket_def, b2d.box(1.3, 0.08))
+        self.bucket.create_shape(bucket_def, b2d.box(0.08, 1.2, center=(-1.3, 1.2)))
+        self.bucket.create_shape(bucket_def, b2d.box(0.08, 1.2, center=(1.3, 1.2)))
+        self.world.create_revolute_joint(**pinned(self.anchor_body, self.bucket, pivot))
+        self.ground.create_shape(GOLD, b2d.segment((20.53, 9.6), (20.53, 10.6)))
 
-        # 6: a ramp under the bucket catching the poured balls, leading onto a (balanced)
-        # water wheel; it starts right of the see-saw's swing
-        self.static_shapes([b2d.segment((21.2, 7.9), (27.5, 6.1))])
+        # 10 rows of 10 balls, slightly jittered so that they do not stack perfectly
+        rng = np.random.default_rng(2)
+        for row in range(10):
+            for column in range(10):
+                x = -1.0 + 0.222 * column + rng.uniform(-0.005, 0.005)
+                ball = self.world.create_dynamic_body(position=pivot + (x, 0.2 + 0.23 * row))
+                color = b2d.HexColor.DodgerBlue if column % 2 else b2d.HexColor.DeepSkyBlue
+                ball.create_shape(
+                    b2d.shape_def(
+                        density=1.0, material=b2d.surface_material(friction=0.1, custom_color=color)
+                    ),
+                    b2d.circle(radius=0.11),
+                )
+
+    def create_water_wheel(self):
+        # a ramp under the bucket (right of the see-saw's swing) leads the balls onto a wheel
+        self.ground.create_shape(GROUND, b2d.segment((21.2, 7.9), (27.5, 6.1)))
         hub = b2d.Vec2(29.5, 6.2)
         self.wheel = self.world.create_dynamic_body(position=hub)
-        wheel_def = b2d.shape_def(
+        paddle_def = b2d.shape_def(
             density=0.5, material=b2d.surface_material(friction=0.4, custom_color=WOOD)
         )
         for i in range(8):
             angle = i * math.pi / 4.0
-            c, s = math.cos(angle), math.sin(angle)
-            self.wheel.create_shape(
-                wheel_def, b2d.box(0.75, 0.06, center=(1.0 * c, 1.0 * s), rotation=angle)
-            )
-        self.parts.append(self.wheel)
-        self.world.create_revolute_joint(**pinned(self.static_shapes([]), self.wheel, hub))
+            center = (math.cos(angle), math.sin(angle))
+            self.wheel.create_shape(paddle_def, b2d.box(0.75, 0.06, center=center, rotation=angle))
+        self.world.create_revolute_joint(**pinned(self.anchor_body, self.wheel, hub))
 
-        # 7: a funnel under the wheel into the cup of a lever; with enough balls in the cup
+    def create_lever_and_bell(self):
+        # a funnel under the wheel into the cup of a lever; with enough balls in the cup
         # the lever's other end (the hammer) swings up into the bell
-        self.static_shapes(
-            [
-                b2d.segment((10.0, 1.0), (41.0, 1.0)),
-                b2d.segment((41.0, 1.0), (41.0, 6.0)),  # floor
-                # funnel into the cup: below the paddles of the wheel (down to y=4.45), above the
-                # cup walls (up to y=3.8)
-                b2d.segment((27.2, 4.35), (31.6, 4.0)),
-                b2d.segment((34.6, 4.8), (33.4, 4.0)),
-                b2d.segment((37.0, 1.0), (37.0, 1.45)),
-                b2d.segment((37.7, 1.0), (37.7, 1.45)),  # hammer rest
-            ]
+        for a, b in [
+            ((10.0, 1.0), (41.0, 1.0)),  # the floor
+            ((41.0, 1.0), (41.0, 6.0)),
+            ((27.2, 4.35), (31.6, 4.0)),  # the funnel: below the paddles, above the cup walls
+            ((34.6, 4.8), (33.4, 4.0)),
+            ((37.0, 1.0), (37.0, 1.45)),  # the hammer rest
+            ((37.7, 1.0), (37.7, 1.45)),
+        ]:
+            self.ground.create_shape(GROUND, b2d.segment(a, b))
+        self.ground.create_shape(GROUND, b2d.polygon([(34.2, 1.0), (34.8, 1.0), (34.5, 2.2)]))
+
+        pivot = b2d.Vec2(34.5, 2.3)
+        self.lever_rest = -0.25
+        self.lever = self.world.create_dynamic_body(
+            position=pivot, rotation=b2d.make_rot(self.lever_rest)
         )
-        lever_pivot = b2d.Vec2(34.5, 2.3)
-        self.static_shapes([b2d.polygon([(34.2, 1.0), (34.8, 1.0), (34.5, 2.2)])])
-        lever_rest = -0.25
-        self.lever = self.dynamic(
-            lever_pivot, b2d.box(3.0, 0.07), density=0.3, color=WOOD, rotation=lever_rest
+        self.lever.create_shape(
+            b2d.shape_def(
+                density=0.3, material=b2d.surface_material(friction=0.4, custom_color=WOOD)
+            ),
+            b2d.box(3.0, 0.07),
         )
         cup_def = b2d.shape_def(
             density=0.5, material=b2d.surface_material(friction=0.3, custom_color=WOOD)
         )
         self.lever.create_shape(cup_def, b2d.box(0.05, 0.35, center=(-2.85, 0.42)))
         self.lever.create_shape(cup_def, b2d.box(0.05, 0.35, center=(-1.35, 0.42)))
-        head_def = b2d.shape_def(
-            density=2.0, material=b2d.surface_material(custom_color=b2d.HexColor.Silver)
+        self.lever.create_shape(
+            b2d.shape_def(
+                density=2.0, material=b2d.surface_material(custom_color=b2d.HexColor.Silver)
+            ),
+            b2d.box(0.25, 0.15, center=HAMMER_HEAD),
         )
-        self.lever.create_shape(head_def, b2d.box(0.25, 0.15, center=(2.75, 0.22)))
         self.world.create_revolute_joint(
-            **pinned(self.static_shapes([]), self.lever, lever_pivot, q_b=-lever_rest),
+            **pinned(self.anchor_body, self.lever, pivot, q_b=-self.lever_rest),
             enable_limit=True,
             lower_angle=0.0,
             upper_angle=0.65,  # relative to the rest pose
         )
-        self.lever_rest = lever_rest
+        self.ground.create_shape(GOLD, b2d.circle(center=tuple(BELL_CENTER), radius=0.45))
 
-        # 8: the bell above the hammer
-        self.bell_center = b2d.Vec2(37.2, 4.25)
-        self.static_shapes(
-            [b2d.circle(center=tuple(self.bell_center), radius=0.45)], color=b2d.HexColor.Gold
-        )
-
-        domino0, domino_last = self.dominoes[0], self.dominoes[-1]
-        seesaw_angle0 = self.seesaw.angle
-        bucket_angle0 = self.bucket.angle
+    def create_stages(self):
+        """The steps of the chain reaction, each with a test whether it happened."""
         self.stages = [
-            Stage("start", lambda: self.start_ball.position.x > -16.5),
-            Stage("dominoes", lambda: abs(domino0.angle) > 0.3),
-            Stage("last domino", lambda: abs(domino_last.angle) > 0.6),
-            Stage("Newton's cradle", lambda: self.heavy_ball.position.x > 5.4),
-            Stage("see-saw", lambda: self.seesaw.angle - seesaw_angle0 > 0.5),
-            Stage("bucket", lambda: self.bucket.angle - bucket_angle0 < -0.6),
-            Stage("water wheel", lambda: abs(self.wheel.angle) > 0.5),
-            Stage("lever", lambda: self.lever.angle - lever_rest > 0.3),
-            Stage("bell", self.hammer_hits_bell),
+            ("start", lambda: self.start_ball.position.x > -16.5),
+            ("dominoes", lambda: abs(self.dominoes[0].angle) > 0.3),
+            ("last domino", lambda: abs(self.dominoes[-1].angle) > 0.6),
+            ("Newton's cradle", lambda: self.heavy_ball.position.x > 5.4),
+            ("see-saw", lambda: self.seesaw.angle - self.seesaw_rest > 0.5),
+            ("bucket", lambda: self.bucket.angle - self.bucket_angle0 < -0.6),
+            ("water wheel", lambda: abs(self.wheel.angle) > 0.5),
+            ("lever", lambda: self.lever.angle - self.lever_rest > 0.3),
+            ("bell", self.hammer_hits_bell),
         ]
+        self.stage_times = {}  # name -> world time when it happened
 
     def hammer_hits_bell(self):
-        head = self.lever.world_point((2.75, 0.22))
-        return (head - self.bell_center).length() < 0.45 + 0.35
-
-    def destroy(self):
-        self.destroy_mouse_joint()
-        for body in self.parts:
-            if body.is_valid:
-                body.destroy()
-        self.parts = []
-
-    # ---- controls -------------------------------------------------------------------------
+        head = self.lever.world_point(HAMMER_HEAD)
+        return (head - BELL_CENTER).length() < 0.45 + 0.35
 
     def start(self):
-        if not self.started and self.peg.is_valid:
+        if not self.started:
             self.peg.destroy()
             self.start_ball.awake = True
             self.started = True
 
     def rebuild(self):
-        self.destroy()
-        self.build()
+        self.frontend.set_sample(type(self), self.settings)
 
     def on_key_down(self, event):
         if event.key == "space":
@@ -306,25 +265,21 @@ class RubeGoldberg(SampleBase):
         elif event.key == "r":
             self.rebuild()
 
-    # ---- simulation -----------------------------------------------------------------------
-
     def post_update(self, dt):
-        if not self.started and self.world_time > self.auto_start:
+        if not self.started and self.world_time > AUTO_START:
             self.start()
-        for stage in self.stages:
-            if stage.time is None and stage.done():
-                stage.time = self.world_time
-
-    @property
-    def stages_done(self):
-        return sum(stage.time is not None for stage in self.stages)
+        for name, happened in self.stages:
+            if name not in self.stage_times and happened():
+                self.stage_times[name] = self.world_time
 
     def post_debug_draw(self):
-        dd = self.debug_draw
-        n = self.stages_done
-        current = self.stages[n].name if n < len(self.stages) else "done!"
-        dd.draw_string(
-            (-20.0, 20.5), f"stage {n}/{len(self.stages)}: next: {current}", b2d.HexColor.White
+        n = len(self.stage_times)
+        upcoming = [name for name, _ in self.stages if name not in self.stage_times]
+        status = f"next: {upcoming[0]}" if upcoming else "done!"
+        self.debug_draw.draw_string(
+            (-20.0, 20.5), f"stage {n}/{len(self.stages)}: {status}", b2d.HexColor.White
         )
-        if n == len(self.stages):
-            dd.draw_string(tuple(self.bell_center + (-0.6, 1.2)), "DING!", b2d.HexColor.Gold)
+        if not upcoming:
+            self.debug_draw.draw_string(
+                tuple(BELL_CENTER + (-0.6, 1.2)), "DING!", b2d.HexColor.Gold
+            )

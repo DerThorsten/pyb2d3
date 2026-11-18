@@ -54,11 +54,7 @@ STOP_QUERY = False
 CONTINUE_QUERY = True
 
 
-##############################################################################
-# def factories:  xxx_def(**kwargs) -> XxxDef with the given attributes set
-##############################################################################
-
-
+# def factories: xxx_def(**kwargs) -> XxxDef with the given attributes set
 def _set_attributes(obj, kwargs):
     for k, v in kwargs.items():
         setattr(obj, k, v)
@@ -141,11 +137,6 @@ def _extend_def_classes():
 
 _extend_def_classes()
 del _extend_def_classes
-
-
-##############################################################################
-# World
-##############################################################################
 
 
 class World(WorldView):
@@ -268,6 +259,30 @@ def _extend_world():
     WorldView.create_static_body = partialmethod(WorldView.create_body, type=BodyType.STATIC)
     WorldView.create_kinematic_body = partialmethod(WorldView.create_body, type=BodyType.KINEMATIC)
 
+    def create_bodies(self, positions, shape_def, geometry, body_def=None, **kwargs):
+        """Create one body per row of `positions` ((n, 2)), each with one shape
+        (`shape_def`, `geometry`: circle / capsule / polygon / segment).
+
+        The bodies are dynamic unless `type=` says otherwise; other keywords (or `body_def`)
+        are body settings shared by all. Returns `(bodies, shapes)`: a `Bodies` and a `Shapes`
+        batch in the same order, for per-body values via the batch api, e.g.
+        `shapes.custom_color = colors` or `bodies.linear_velocity = velocities`.
+        """
+        if body_def is None:
+            kwargs.setdefault("type", BodyType.DYNAMIC)
+            body_def = _body_def_func(**kwargs)
+        else:
+            _set_attributes(body_def, kwargs)
+        bodies, shapes = Bodies(), Shapes()
+        for x, y in np.asarray(positions, dtype=np.float64).reshape(-1, 2):
+            body_def.position = (x, y)
+            body = self.create_body_from_def(body_def)
+            bodies.append(body)
+            shapes.append(body.create_shape(shape_def, geometry))
+        return bodies, shapes
+
+    WorldView.create_bodies = create_bodies
+
     def draw(self, debug_draw, call_begin_end=True):
         if call_begin_end:
             debug_draw.begin_draw()
@@ -378,39 +393,14 @@ _extend_body()
 del _extend_body
 
 
-def _extend_ray_result():
-    def reflect_vector(D, P1, P2):
-        L = P2 - P1
-        L_unit = L / np.linalg.norm(L)
-        proj = np.dot(D, L_unit) * L_unit
-        R = 2 * proj - D
-        R_length = np.linalg.norm(R)
-        if R_length > 0:
-            R = R / R_length
-        return -R
-
-    def compute_normal(self, ray_direction):
-        shape = self.shape
-        if not isinstance(shape, ChainSegmentShape):
-            return self.normal
-        body = shape.body
-        segment = shape.segment
-        p0_world = body.world_point(segment.point1)
-        p1_world = body.world_point(segment.point2)
-        return reflect_vector(ray_direction, np.array(p0_world), np.array(p1_world))
-
-    RayResult.compute_normal = compute_normal
+def reflect(direction, normal):
+    """`direction` mirrored at a surface with the unit `normal` (e.g. a ray hit's `normal`):
+    `d - 2 (d . n) n`, like a light ray or a ball bouncing off a wall."""
+    d, n = Vec2(direction), Vec2(normal)
+    return d - n * (2.0 * dot(d, n))
 
 
-_extend_ray_result()
-del _extend_ray_result
-
-
-##############################################################################
-# batch api:  Bodies / Shapes / Joints are arrays of ids
-##############################################################################
-
-
+# batch api: Bodies / Shapes / Joints are arrays of ids
 def _extend_batch_api():
     def typed(cls):
         # shapes / joints come back as their concrete type (CircleShape, RevoluteJoint, ...)
@@ -446,11 +436,7 @@ _extend_batch_api()
 del _extend_batch_api
 
 
-##############################################################################
 # mouse dragging (box2d >= 3.2 has no mouse joint: kinematic body + motor joint)
-##############################################################################
-
-
 class MouseDrag(object):
     """Drag a body with the mouse, the way box2d's own samples do it.
 
@@ -571,11 +557,6 @@ class MouseDrag(object):
         self._mouse_body = None
 
 
-##############################################################################
-# geometry helpers
-##############################################################################
-
-
 def transform(p=None, q=None):
     t = Transform()
     if p is not None:
@@ -671,11 +652,6 @@ def aabb_arround_point(point, radius):
 
 def ray_cast_input(origin=(0, 0), translation=(0, 0), max_fraction=1.0):
     return RayCastInput(origin, translation, max_fraction)
-
-
-##############################################################################
-# colors
-##############################################################################
 
 
 def ensure_hex_color(color):
@@ -876,11 +852,6 @@ class HexColor(IntEnum):
     Box2DYellow = 0xFFEE8C
 
 
-##############################################################################
-# path builder for chains
-##############################################################################
-
-
 class PathBuilder(object):
     def __init__(self, start):
         self.points = [start]
@@ -972,11 +943,6 @@ class PathBuilder(object):
         return center
 
 
-##############################################################################
-# debug draw
-##############################################################################
-
-
 class DebugDraw(DebugDrawBase):
     """Base class for python debug draws. All coordinates are world coordinates."""
 
@@ -1037,3 +1003,8 @@ def _apply_box2d_docs():
 
 _apply_box2d_docs()
 del _apply_box2d_docs
+
+# pyb2d3's own extensions (not part of Box2D): b2d.extensions, the python module (it replaces
+# the C++ submodule of the same name that `from ._pyb2d3 import *` brought in; a plain
+# `from . import extensions` would just return that attribute)
+extensions = importlib.import_module(".extensions", __name__)

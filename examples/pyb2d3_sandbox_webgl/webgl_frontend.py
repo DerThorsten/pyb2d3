@@ -105,12 +105,8 @@ def speed_from_slider(val):
     return 1.0 / abs(val - 1)
 
 
-# ---------------------------------------------------------------------------
 # WebGL2 context (emscripten's html5 API via ctypes: the GL functions PyOpenGL
 # calls use emscripten's current context)
-# ---------------------------------------------------------------------------
-
-
 class _WebGLContextAttributes(ctypes.Structure):
     """`EmscriptenWebGLContextAttributes` (emscripten/html5_webgl.h)"""
 
@@ -159,10 +155,6 @@ def create_webgl2_context(canvas, antialias=True):
         raise RuntimeError("cannot make the WebGL2 context current")
     return ctx
 
-
-# ---------------------------------------------------------------------------
-# DOM helpers
-# ---------------------------------------------------------------------------
 
 # one listener per element + event; forwards the event to python. Pointer /
 # key events are reduced to plain values in JS (fewer JS <-> python calls).
@@ -275,11 +267,6 @@ class _Labels:
         self.used = 0
 
 
-# ---------------------------------------------------------------------------
-# the frontend
-# ---------------------------------------------------------------------------
-
-
 class WebglFrontend(FrontendBase):
     @dataclass
     class Settings(FrontendBase.Settings):
@@ -307,8 +294,6 @@ class WebglFrontend(FrontendBase):
         self._gestures = PointerGestures(self)  # pointers -> mouse events, pinch zoom
         self._fit_zoom = None  # the zoom of the fitted view (center_sample)
         self._landscape = None  # canvas orientation: re-fit when it flips
-
-    # -- setup -------------------------------------------------------------
 
     def main_loop(self):
         """create the WebGL2 context, the UI, the sample; start the frame loop
@@ -347,8 +332,6 @@ class WebglFrontend(FrontendBase):
         if self._loop is not None:
             self._loop.cancel()
             self._loop = None
-
-    # -- frames --------------------------------------------------------------
 
     def _pixel_ratio(self):
         """drawing buffer pixels per CSS pixel: devicePixelRatio, capped at
@@ -403,8 +386,7 @@ class WebglFrontend(FrontendBase):
         self._count_fps()
         return True
 
-    # -- the page: events for the code editor (examples/web) -------------------
-
+    # the page: events for the code editor (examples/web)
     def _dispatch(self, name, detail):
         """a CustomEvent `name` with the JSON-able `detail` on window"""
         init = pyjs.js.JSON.parse(json.dumps({"detail": detail}))
@@ -517,8 +499,6 @@ class WebglFrontend(FrontendBase):
             dom.on(button, "click", action)
         return group
 
-    # -- input ---------------------------------------------------------------
-
     def _connect_canvas_events(self):
         """forward the DOM events of the canvas to `_on_canvas_event`"""
         install = pyjs.js.Function("canvas", "cb", _CANVAS_EVENTS_JS)
@@ -528,8 +508,7 @@ class WebglFrontend(FrontendBase):
         """CSS px of the canvas -> world position"""
         return self.camera.convert_screen_to_world(Vec2(float(x), float(y)))
 
-    # -- the host interface of PointerGestures (gestures.py) -----------------------------
-
+    # the host interface of PointerGestures (gestures.py)
     def screen_to_world(self, x, y):
         """canvas CSS px -> world position"""
         return self._world(x, y)
@@ -593,8 +572,6 @@ class WebglFrontend(FrontendBase):
             else:
                 self._on_key_up(KeyUpEvent(key=name))
 
-    # -- camera (FrontendBase) ------------------------------------------------
-
     # zoom range relative to the sample's fitted view (center_sample)
     MAX_ZOOM_IN = 50.0
     MAX_ZOOM_OUT = 20.0
@@ -635,8 +612,6 @@ class WebglFrontend(FrontendBase):
         """zoom by wheel ticks about the mouse position (SampleBase.on_mouse_wheel)"""
         screen = self.camera.convert_world_to_screen(Vec2(world_position[0], world_position[1]))
         self.zoom_at(screen.x, screen.y, 1.1 ** (-delta))
-
-    # -- the panel ------------------------------------------------------------
 
     def _build_panel(self):
         """sample list + play / step / reset, the sample's own widgets, simulation
@@ -818,8 +793,7 @@ class WebglFrontend(FrontendBase):
         """one physics step in the next frame (while paused)"""
         self._single_step = True
 
-    # -- the sample's widgets (FrontendBase) ----------------------------------
-
+    # the sample's widgets (FrontendBase)
     def pre_new_sample(self, sample_class, sample_settings):
         """remove the widgets of the previous sample, forget its pointers"""
         if getattr(self, "_sample_widgets", None) is not None:

@@ -5,7 +5,7 @@ import pyb2d3 as b2d
 world = b2d.World()
 body = world.create_dynamic_body(position=(0, 0))
 
-# --- geometry ------------------------------------------------------------------
+# geometry
 circle = b2d.circle(center=(0, 0), radius=0.5)
 capsule = b2d.capsule((-0.5, 0), (0.5, 0), radius=0.25)
 segment = b2d.segment((-1, 0), (1, 0))
@@ -16,7 +16,7 @@ hexagon = b2d.polygon(
     points=[(np.cos(a), np.sin(a)) for a in np.linspace(0, 2 * np.pi, 6, endpoint=False)]
 )
 
-# --- shape definitions -----------------------------------------------------------
+# shape definitions
 material = b2d.surface_material(friction=0.4, restitution=0.2, rolling_resistance=0.05)
 shape_def = b2d.shape_def(density=2.0, material=material, enable_contact_events=True)
 
@@ -25,7 +25,7 @@ shape = body.create_shape(shape_def, box)
 assert isinstance(shape, b2d.PolygonShape)
 shapes = body.create_shapes(shape_def, [circle, capsule])
 
-# --- shape properties ----------------------------------------------------------------
+# shape properties
 shape.friction = 0.8
 shape.filter = b2d.make_filter(category_bits=0x2, mask_bits=0xFFFF)
 shape.set_density(3.0)  # updates the body mass
@@ -36,12 +36,12 @@ assert shape.test_point(body.world_point((0.5, 0)))
 poly = shape.polygon
 print(poly.vertices)  # (n, 2) numpy array
 
-# --- sensors ----------------------------------------------------------------------------
+# sensors
 sensor = body.create_shape(
     b2d.shape_def(is_sensor=True, enable_sensor_events=True), b2d.circle(radius=3)
 )
 
-# --- chains: one-sided polylines, ideal for terrain -----------------------------------------
+# chains: one-sided polylines, ideal for terrain
 ground = world.create_static_body()
 points = np.array([(-10, 0), (-5, 1), (0, 0), (5, 1), (10, 0)])
 chain = ground.create_chain(

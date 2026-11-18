@@ -12,7 +12,7 @@ def build(world):
         body.create_shape(b2d.shape_def(), b2d.box(0.4, 0.4))
 
 
-# --- snapshots: save / restore the full simulation state ------------------------------
+# snapshots: save / restore the full simulation state
 world = b2d.World()
 build(world)
 image = world.get_snapshot()  # bytes
@@ -21,7 +21,7 @@ for _ in range(60):
 world.restore_from_snapshot(image)  # back to the saved state (user data is cleared)
 clone = b2d.World.from_snapshot(image)  # an independent copy
 
-# --- recording: log every api call for exact replay ---------------------------------------
+# recording: log every api call for exact replay
 recording = b2d.Recording()
 world = b2d.World()
 world.start_recording(recording)
@@ -33,7 +33,7 @@ world.stop_recording()
 path = os.path.join(tempfile.mkdtemp(), "session.b2rec")
 recording.save_to_file(path)
 
-# --- replay -------------------------------------------------------------------------------
+# replay
 replay = b2d.Replay(b2d.Recording.from_file(path).data)
 print(replay.info.frame_count, "frames")
 while not replay.is_at_end:

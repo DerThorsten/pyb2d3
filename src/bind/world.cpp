@@ -23,11 +23,9 @@ namespace pyb2d3::bind
 {
     namespace
     {
-        // ---------------------------------------------------------------------------
         // Python callbacks invoked by box2d *during* a step. Step releases the GIL,
         // so these reacquire it. Exceptions cannot cross box2d's C frames: they are
         // reported as "unraisable" and a neutral default is returned.
-        // ---------------------------------------------------------------------------
         template <class R, class F>
         R call_python(R fallback, const char* where, F&& f) noexcept
         {
@@ -121,7 +119,6 @@ namespace pyb2d3::bind
             );
         }
 
-        // ---------------------------------------------------------------------------
         // Friction / restitution mixing callbacks.
         //
         // box2d stores them per world, but calls them without any context (not even the
@@ -130,7 +127,6 @@ namespace pyb2d3::bind
         // at most B2_MAX_WORLDS) gets its own compiled trampoline: mixing_trampoline<K, I>
         // calls the python callback stored for world I. The trampolines only forward their
         // index, the work is done once in call_mixing.
-        // ---------------------------------------------------------------------------
         enum class Mixing
         {
             friction,
@@ -224,10 +220,7 @@ namespace pyb2d3::bind
             mixing_callbacks()[world_index(world)] = MixingCallbacks{};
         }
 
-        // ---------------------------------------------------------------------------
         // Query callbacks (see query_context.hpp)
-        // ---------------------------------------------------------------------------
-
         // overlap callbacks: return False to stop, anything else (incl. None) continues
         bool overlap_trampoline(b2ShapeId shape, void* ctx)
         {
@@ -362,7 +355,6 @@ namespace pyb2d3::bind
             )
             .def_prop_ro("contact_tuning", &get_contact_tuning)
 
-            // ---- queries with python callbacks ----------------------------------------------
             .def(
                 "overlap_aabb",
                 [](WorldView& self, b2AABB aabb, nb::object callback, b2QueryFilter filter, b2Vec2 origin_)
@@ -472,7 +464,6 @@ namespace pyb2d3::bind
                 nb::arg("dynamic_only") = false
             )
 
-            // ---- step callbacks ---------------------------------------------------------------
             .def(
                 "set_custom_filter_callback",
                 [](WorldView& self, nb::object fn)
@@ -528,7 +519,6 @@ namespace pyb2d3::bind
                 "box2d's default rule (``max(restitution_a, restitution_b)``). Called during ``step``."
             )
 
-            // ---- snapshots / recording ---------------------------------------------------------
             .def(
                 "get_snapshot",
                 [](WorldView& self)

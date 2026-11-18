@@ -8,7 +8,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .examples_common.batch import create_circles, hsv_colors
+from .examples_common.batch import hsv_colors
 
 
 def wrap(angle):
@@ -28,10 +28,6 @@ class BatchHourglass(SampleBase):
     half_height = 8.0
     half_width = 4.5
     grain_radius = 0.075
-    # glass and grains are both dynamic: their contacts are softer than contacts with a
-    # kinematic body and there is no continuous collision between them. Thick capsule
-    # walls and a motor with a speed limit (the glass ends move max_spin * 8.6 m/s) keep
-    # the grains in (2 rad/s lets some out)
     wall_radius = 0.2
     max_spin = 1.0  # rad / s
     friction_torque = 3000.0  # the pivot holds the glass when nobody turns it
@@ -58,8 +54,6 @@ class BatchHourglass(SampleBase):
     def aabb(self):
         r = self.half_height + 1.0
         return b2d.aabb(lower_bound=(-r, -r), upper_bound=(r, r))
-
-    # ---- the glass ------------------------------------------------------------------------
 
     def outline(self):
         """the right half of the glass outline from the top down (local coordinates)"""
@@ -125,9 +119,13 @@ class BatchHourglass(SampleBase):
         colors = hsv_colors(
             0.08 + 0.06 * (local[:, 1] / self.half_height), saturation=0.55, value=0.95
         )
-        self.grains = create_circles(
-            self.world, local, self.grain_radius, colors=colors, friction=0.4, density=2.0
+        material = b2d.surface_material(friction=0.4)
+        self.grains, shapes = self.world.create_bodies(
+            local,
+            b2d.shape_def(density=2.0, material=material),
+            b2d.circle(radius=self.grain_radius),
         )
+        shapes.custom_color = colors
         self.previous_top = len(self.grains)
 
     def set_count(self, value):
@@ -137,8 +135,6 @@ class BatchHourglass(SampleBase):
     def set_neck(self, value):
         self.neck = value
         self.build()
-
-    # ---- turning --------------------------------------------------------------------------
 
     def angle(self):
         return self.pivot.current_angle  # in [-pi, pi)
@@ -182,8 +178,6 @@ class BatchHourglass(SampleBase):
     def on_mouse_leave(self, event):
         self.release()
         super().on_mouse_leave(event)
-
-    # ---- simulation -----------------------------------------------------------------------
 
     def pre_update(self, dt):
         """the motor turns the glass to the target angle (speed limited), without a target

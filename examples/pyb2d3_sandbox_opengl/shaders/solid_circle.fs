@@ -6,6 +6,7 @@
 in vec2 f_position;
 in vec4 f_color;
 in float f_thickness;
+in float f_coarse;  // 0: normal, 1: tiny on screen, drawn solid (see solid_capsule.vs)
 
 out vec4 fragColor;
 
@@ -44,7 +45,8 @@ void main()
     float d = min(da, dc);
 
     vec4 borderColor = f_color;
-    vec4 fillColor = 0.6f * borderColor;
+    // an opaque, darker fill (see solid_capsule.fs)
+    vec4 fillColor = mix(vec4(0.6f * borderColor.rgb, borderColor.a), borderColor, f_coarse);
 
     // roll the fill alpha down at the border
     vec4 back = vec4(fillColor.rgb, fillColor.a * smoothstep(radius + f_thickness, radius, dw));

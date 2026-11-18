@@ -13,7 +13,6 @@ namespace pyb2d3::bind
 {
     void export_recording(nb::module_& m)
     {
-        // ---- recording ------------------------------------------------------------------
         nb::class_<PyRecording> rec(m, "Recording");
         rec.def(nb::init<int>(), nb::arg("byte_capacity") = 0)
             .def_static("from_file", &PyRecording::from_file, nb::arg("path"))
@@ -36,7 +35,6 @@ namespace pyb2d3::bind
             nb::arg("worker_count") = 0
         );
 
-        // ---- replay ---------------------------------------------------------------------
         nb::class_<b2ReplayInfo>(m, "ReplayInfo")
             .def_ro("frame_count", &b2ReplayInfo::frameCount)
             .def_ro("worker_count", &b2ReplayInfo::workerCount)

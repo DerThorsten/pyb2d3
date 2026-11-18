@@ -84,6 +84,7 @@ SET(PY_SOURCES
     src/bind/debug_draw.cpp
     src/bind/world_to_canvas.cpp
     src/bind/extras.cpp
+    src/bind/extensions.cpp
 )
 if(NOT PYB2D3_NO_THREADING)
     list(APPEND PY_SOURCES src/bind/threadpool.cpp)
@@ -139,8 +140,6 @@ else()
     message(STATUS "using SKBUILD" ${SKBUILD})
 endif()
 
-# INSTALL
-###################
 # if SKBUILD is defined, install to the python package directory
 if(DEFINED SKBUILD)
     message(STATUS "using SKBUILD" ${SKBUILD})

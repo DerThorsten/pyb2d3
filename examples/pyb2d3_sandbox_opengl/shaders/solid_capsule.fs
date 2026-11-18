@@ -7,6 +7,7 @@ in vec2 f_position;
 in vec4 f_color;
 in float f_length;
 in float f_thickness;
+in float f_coarse;  // 0: normal, 1: tiny on screen, drawn solid (see solid_capsule.vs)
 
 out vec4 color;
 
@@ -36,7 +37,9 @@ void main()
     float radius = 0.5 * (2.0 - f_length);
 
     vec4 borderColor = f_color;
-    vec4 fillColor = 0.6f * borderColor;
+    // an opaque, darker fill (a transparent one mixes with what is below: overlapping
+    // shapes change color with box2d's drawing order)
+    vec4 fillColor = mix(vec4(0.6f * borderColor.rgb, borderColor.a), borderColor, f_coarse);
 
     vec2 v1 = vec2(-0.5 * f_length, 0);
     vec2 v2 = vec2(0.5 * f_length, 0);
