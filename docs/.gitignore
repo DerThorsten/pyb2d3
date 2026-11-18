@@ -1,5 +1,6 @@
-# the dir _static/videos
+# the dir _static/videos, the sandbox tour (downloaded by the docs build)
 _static/videos
+_static/sandbox_tour.mp4
 
 
 # the auto generated file

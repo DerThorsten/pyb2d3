@@ -16,7 +16,7 @@ from pyb2d3_sandbox import SampleBase, register_sample, widgets
 from .examples_common.batch import Ema, create_circles, hsv_colors
 
 
-@register_sample("Batch API", "N-Body Gravity")
+@register_sample("Batch API", "N-Body Gravity", video=True)
 class BatchNBody(SampleBase):
     """A protoplanetary disc: n^2 gravitational forces per step with numpy.
 

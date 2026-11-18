@@ -6,7 +6,7 @@ import random
 from .examples_common import Ragdoll as RagdollComposit
 
 
-@register_sample("Demos", "Ragdoll")
+@register_sample("Demos", "Ragdoll", video=True)
 class Ragdoll(SampleBase):
     """Fifteen colorful jointed ragdolls in a box.
 

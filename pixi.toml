@@ -113,6 +113,11 @@ description = "Run every sample a few frames in the OpenGL frontend (needs a dis
 cmd = "python examples/opengl_smoke_test.py"
 depends-on = ["build"]
 
+[tasks.smoke-video]
+description = "Record the OpenGL smoke test's canvas into build/sandbox_tour.mp4 (needs a display; the docs' start page video, upload it to the release 'media')"
+cmd = "python examples/opengl_smoke_test.py --record build/sandbox_tour.mp4"
+depends-on = ["build"]
+
 [tasks.bench-draw]
 description = "Time the drawing of many bodies in the OpenGL frontend (same draw code as the browser; needs a display)"
 cmd = "python examples/bench_draw.py"

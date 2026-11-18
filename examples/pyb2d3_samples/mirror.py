@@ -7,7 +7,7 @@ import random
 import math
 
 
-@register_sample("Queries", "Mirror")
+@register_sample("Queries", "Mirror", video=True)
 class Mirror(SampleBase):
     """A laser beam reflected up to three times, from repeated cast_ray_closest calls
     and the surface normals of the hits.

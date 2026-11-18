@@ -19,7 +19,7 @@ def _destroy(*bodies):
             body.destroy()
 
 
-@register_sample("Continuous", "Bounce House")
+@register_sample("Continuous", "Bounce House", video=True)
 class BounceHouse(Box2dSample):
     """A fast bullet bouncing in a box without friction, showing hit events."""
 
@@ -648,7 +648,7 @@ class Drop(Box2dSample):
         self.frame_count += 1
 
 
-@register_sample("Continuous", "Pinball")
+@register_sample("Continuous", "Pinball", video=True)
 class Pinball(Box2dSample):
     """A fast bullet ball using continuous collision against static and dynamic bodies. Press A for the flippers."""
 

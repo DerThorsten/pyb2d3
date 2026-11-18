@@ -4,7 +4,7 @@ from pyb2d3_sandbox import SampleBase, register_sample
 import random
 
 
-@register_sample("Demos", "Tumbler")
+@register_sample("Demos", "Tumbler", video=True)
 class Tumbler(SampleBase):
     """A box turned slowly by a revolute joint motor, tumbling 2000 small capsules.
 

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- pyb2d3: a tiny sandbox scene (the colors of its debug draw) -->
+  <rect width="64" height="64" rx="12" fill="#1b1d21"/>
+  <rect x="6" y="46" width="52" height="9" rx="2" fill="#4a7a4f" stroke="#8fd694" stroke-width="2"/>
+  <rect x="31" y="23" width="20" height="20" rx="2" fill="#3c6fa8" stroke="#8cc4f2" stroke-width="2"
+        transform="rotate(-18 41 33)"/>
+  <circle cx="19" cy="35" r="10" fill="#f4b7c3" stroke="#ffe4ea" stroke-width="2"/>
+</svg>

@@ -604,7 +604,7 @@ class WheelJoint(JointSample):
         )
 
 
-@register_sample("Joints", "Bridge")
+@register_sample("Joints", "Bridge", video=True)
 class Bridge(JointSample):
     """A suspension bridge of 160 planks on revolute joints, with loads.
     Widgets: joint friction, spring hertz / damping, constraint hertz / damping
@@ -711,7 +711,7 @@ class Bridge(JointSample):
         self.update_constraint_tuning()
 
 
-@register_sample("Joints", "Ball & Chain")
+@register_sample("Joints", "Ball & Chain", video=True)
 class BallAndChain(JointSample):
     """A heavy ball hanging on a chain of capsules with joint friction."""
 
@@ -1116,7 +1116,7 @@ class UserConstraint(JointSample):
             self.debug_draw.draw_segment(self.anchor_a, anchor_b, color)
 
 
-@register_sample("Joints", "Driving")
+@register_sample("Joints", "Driving", video=True)
 class Driving(JointSample):
     """This is a fun demo that shows off the wheel joint. Keys: left = a, brake = s, right = d."""
 
@@ -1289,7 +1289,7 @@ class SoftBody(JointSample):
         self.donut = Donut(self.world, (0.0, 10.0), 2.0)
 
 
-@register_sample("Joints", "Doohickey")
+@register_sample("Joints", "Doohickey", video=True)
 class DoohickeyFarm(JointSample):
     """Wheels and bars connected by revolute and prismatic joints."""
 
@@ -1304,7 +1304,7 @@ class DoohickeyFarm(JointSample):
         self.doohickeys = [Doohickey(self.world, (0.0, 4.0 + 2.0 * i), 0.5) for i in range(4)]
 
 
-@register_sample("Joints", "Scissor Lift")
+@register_sample("Joints", "Scissor Lift", video=True)
 class ScissorLift(JointSample):
     """A scissor lift driven by a distance joint motor, carrying a car."""
 
@@ -1414,7 +1414,7 @@ GEAR_LIFT_PATH = (
 )
 
 
-@register_sample("Joints", "Gear Lift")
+@register_sample("Joints", "Gear Lift", video=True)
 class GearLift(JointSample):
     """A motorized gear pulls a door up with a chain. Keys: a / d change the motor speed."""
 
@@ -1687,7 +1687,7 @@ class ScaleRagdoll(RagdollBase):
         self.add_widgets(slider("Scale", 0.1, 10.0, self.scale, self.human.set_scale))
 
 
-@register_sample("Joints", "Theo Jansen")
+@register_sample("Joints", "Theo Jansen", video=True)
 class TheoJansen(JointSample):
     """Theo Jansen's walking machine, inspired by a contribution from roman_m.
     Keys: left = a, brake = s, right = d, toggle motor = f."""

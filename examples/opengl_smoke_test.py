@@ -5,9 +5,15 @@ window. Exceptions while stepping, drawing or showing a sample's widgets are rec
 sample and the run moves on to the next one; exits with 1 if any sample failed.
 
     python examples/opengl_smoke_test.py [--frames N] [--category Restitution]
+    python examples/opengl_smoke_test.py --record smoke.mp4   # a screencast of the canvas
+
+--record writes every frame of the simulation view (not the panel) into an mp4 (ffmpeg,
+h264, 60 fps, 720 px wide): the sandbox tour on the docs' start page (`pixi run smoke-video`,
+then `gh release upload media build/sandbox_tour.mp4 --clobber`; the docs download it).
 """
 
 import argparse
+import subprocess
 import sys
 import traceback
 from pathlib import Path
@@ -72,10 +78,78 @@ def make_driver(frames_per_sample, entries, errors, visited):
     return DriverFrontend
 
 
+class Recorder:
+    """The simulation view of every frame into an mp4: the area is taken while the view is
+    drawn (`canvas`), the pixels just before the window is shown (incl. the samples' text,
+    which imgui draws). Starts once the layout has settled (the panel docks first)."""
+
+    def __init__(self, path, width=720):
+        self.path, self.width = path, width
+        self.rect = None  # x, top, width, height of the view in window pixels
+        self.size, self.stable, self.encoder = None, 0, None
+
+    def canvas(self):
+        """call inside the simulation window: remember its area below the tab bar"""
+        from imgui_bundle import imgui
+
+        pos, size = imgui.get_window_pos(), imgui.get_window_size()
+        bar = int(imgui.get_frame_height())
+        self.rect = (int(pos.x), int(pos.y) + bar, int(size.x), int(size.y) - bar)
+
+    def capture(self):
+        """hello_imgui's before_swap callback: the view's pixels into ffmpeg"""
+        from OpenGL import GL as gl
+
+        if self.rect is None:
+            return
+        x, top, w, h = self.rect
+        w, h = w - w % 2, h - h % 2  # h264 wants even sizes
+        if self.encoder is None:
+            self.stable = self.stable + 1 if self.size == (w, h) else 0
+            self.size = (w, h)
+            if self.stable < 10:
+                return
+            self.encoder = subprocess.Popen(
+                ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24"]
+                + ["-s", f"{w}x{h}", "-r", "60", "-i", "-", "-vf", f"vflip,scale={self.width}:-2"]
+                + ["-c:v", "libx264", "-crf", "28", "-pix_fmt", "yuv420p", str(self.path)],
+                stdin=subprocess.PIPE,
+            )
+        if (w, h) != self.size:
+            return  # the window was resized: the video keeps its size
+        display_h = int(gl.glGetIntegerv(gl.GL_VIEWPORT)[3])
+        gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 1)
+        self.encoder.stdin.write(
+            gl.glReadPixels(x, display_h - (top + h), w, h, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
+        )
+
+    def close(self):
+        if self.encoder is not None:
+            self.encoder.stdin.close()
+            self.encoder.wait()
+            print(f"recorded {self.path}")
+
+
+def recording(driver, recorder):
+    """`driver` with every frame of its simulation view recorded"""
+
+    class RecordingFrontend(driver):
+        def main_loop(self):
+            self.runner_params.callbacks.before_swap = recorder.capture
+            super().main_loop()
+
+        def once_per_frame(self):
+            recorder.canvas()
+            super().once_per_frame()
+
+    return RecordingFrontend
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--frames", type=int, default=30, help="frames per sample (default 30)")
     parser.add_argument("--category", help="only the samples of this category, e.g. Restitution")
+    parser.add_argument("--record", type=Path, metavar="MP4", help="record the canvas into a video")
     args = parser.parse_args()
 
     # a category's samples are consecutive in the registry, so next_sample walks through them
@@ -84,11 +158,16 @@ def main():
         sys.exit(f"no samples in category {args.category!r}, categories: {registry.categories()}")
     errors, visited = {}, []
     driver = make_driver(args.frames, entries, errors, visited)
+    recorder = Recorder(args.record) if args.record else None
+    if recorder:
+        driver = recording(driver, recorder)
     run_sample_browser(
         start=entries[0].key,
         frontend_class=driver,
         frontend_settings=driver.Settings(canvas_shape=(1400, 900)),
     )
+    if recorder:
+        recorder.close()
 
     for key, text in errors.items():
         print(f"\n=== {key}\n{text}")

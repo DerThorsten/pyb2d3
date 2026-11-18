@@ -224,7 +224,7 @@ class Tank:
         )
 
 
-@register_sample("Games", "Tank")
+@register_sample("Games", "Tank", video=True)
 class TankSample(SampleBase):
     """A tank with chain tracks on suspended road wheels and an explosive gun.
 

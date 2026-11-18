@@ -207,8 +207,8 @@ def content_hash(data):
 
 
 def copy_page(out):
-    """index.html, main.js, editor.js: the modules' urls get their content hashes
-    (?v=...): a new build is a new url, no stale module from the browser cache.
+    """index.html, main.js, editor.js, favicon.svg: the modules' urls get their content
+    hashes (?v=...): a new build is a new url, no stale module from the browser cache.
     (index.html itself and config.json are revalidated: short-lived / no-cache)"""
 
     def versioned(text, name, data):
@@ -218,7 +218,10 @@ def copy_page(out):
 
     editor = (HERE / "editor.js").read_bytes()
     main = versioned((HERE / "main.js").read_text(), "editor.js", editor)
+    favicon = (HERE / "favicon.svg").read_bytes()
     index = versioned((HERE / "index.html").read_text(), "main.js", main.encode())
+    index = versioned(index, "favicon.svg", favicon)
+    (out / "favicon.svg").write_bytes(favicon)
     (out / "editor.js").write_bytes(editor)
     (out / "main.js").write_text(main)
     (out / "index.html").write_text(index)

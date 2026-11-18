@@ -28,7 +28,7 @@ def make_shape(kind):
     return b2d.capsule((-0.3, 0.0), (0.3, 0.0), 0.2)
 
 
-@register_sample("Batch API", "Many Shapes")
+@register_sample("Batch API", "Many Shapes", video=True)
 class BatchManyShapes(SampleBase):
     """Thousands of bodies of every shape type in a box: a stress test for drawing.
     Slider: body count. Dropdown: shape type.

@@ -38,7 +38,7 @@ class _SpawnTimer:
         return False
 
 
-@register_sample("Events", "Sensor Funnel")
+@register_sample("Events", "Sensor Funnel", video=True)
 class SensorFunnel(Box2dSample):
     """Donuts or humans fall through a funnel and are destroyed by a sensor at the bottom."""
 

@@ -13,7 +13,7 @@ from .examples_common.batch import Ema, hsv_colors, pair_sum
 from .batch_dam_break import FLUID_GROUP, sph_densities
 
 
-@register_sample("Fluids & Matter", "Ferrofluid")
+@register_sample("Fluids & Matter", "Ferrofluid", video=True)
 class BatchFerrofluid(SampleBase):
     """Ferrofluid over a magnet: the particles align with the field and, above a
     critical strength (~0.6), the liquid stands up in spikes.

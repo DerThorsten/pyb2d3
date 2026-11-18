@@ -3,7 +3,7 @@ import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample
 
 
-@register_sample("Demos", "Meteor")
+@register_sample("Demos", "Meteor", video=True)
 class Meteor(SampleBase):
     """A huge pyramid of blocks waiting for a heavy, fast falling meteor.
 

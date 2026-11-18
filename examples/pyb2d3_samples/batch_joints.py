@@ -22,7 +22,7 @@ SPACING = 1.6  # between the mechanisms of a tile
 VERTICAL = b2d.make_rot(0.5 * math.pi)  # a joint frame whose x axis points up
 
 
-@register_sample("Batch API", "Joint Batches")
+@register_sample("Batch API", "Joint Batches", video=True)
 class JointBatches(SampleBase):
     """Every joint type driven each frame, twice: one batch call per type (RevoluteJoints, ...)
     and a python loop over the joints. Both write the same values; the times of both are shown.

@@ -22,7 +22,7 @@ BAND_COLORS = [
 ]
 
 
-@register_sample("Batch API", "Fountain")
+@register_sample("Batch API", "Fountain", video=True)
 class BatchFountain(SampleBase):
     """A fountain from a fixed pool of recycled bodies, emitted and parked with numpy
     masks.

@@ -44,7 +44,9 @@ Categories
 
 ``@register_sample(category, name)`` adds a sample to the registry (the name defaults to the
 class name). The OpenGL frontend shows the registry as a tree in its "Samples" panel, pygame
-cycles through it with PageUp / PageDown.
+cycles through it with PageUp / PageDown. ``video=True`` puts the sample into the docs'
+gallery (a short video, rendered headless when the docs are built); keep it for samples that
+look good without any input.
 
 ``run_sample_browser(start=None)`` starts the browser, optionally with a ``"Category/Name"`` key
 or a sample class; ``MySample.run()`` starts a single sample (the other registered samples

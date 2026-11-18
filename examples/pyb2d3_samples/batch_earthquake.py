@@ -8,7 +8,7 @@ from pyb2d3_sandbox import SampleBase, register_sample, widgets
 from .examples_common.batch import Shaker, hsv_colors
 
 
-@register_sample("Granular", "Earthquake City")
+@register_sample("Granular", "Earthquake City", video=True)
 class BatchEarthquake(SampleBase):
     """A city of block towers on a shaking ground plate.
     Keys: space starts / stops the quake.

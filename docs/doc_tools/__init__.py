@@ -1,12 +1,13 @@
-# this file
+"""The docs' sample gallery: videos of the samples registered with ``video=True``
+(rendered headless with the pygame frontend), grouped by category."""
+
 import html
-from pathlib import Path
 import sys
+from pathlib import Path
+
 import pyb2d3  # noqa: F401
 
-
-this_file = Path(__file__).resolve()
-this_dir = this_file.parent
+this_dir = Path(__file__).resolve().parent
 docs_root = this_dir.parent
 html_static_path = docs_root / "_static"
 repo_root = docs_root.parent
@@ -20,101 +21,100 @@ from pyb2d3_sandbox_pygame.sample_to_video import sample_to_video  # noqa: E402
 import pyb2d3_samples  # noqa: E402, F401  (registers the samples)
 from pyb2d3_sandbox import registry  # noqa: E402
 
-
 github_url = "https://github.com/DerThorsten/pyb2d3"
 github_main_url = f"{github_url}/blob/main"
+videos_dir = html_static_path / "videos"
 
-doc_samples = [entry.cls for entry in registry]
+# the samples worth a video (@register_sample(..., video=True)), in registry order
+video_entries = [entry for entry in registry if entry.video]
+
+
+# the screencast of all samples (`pixi run smoke-video`, recorded locally, not in CI):
+# an asset of the GitHub release "media", downloaded into _static by every docs build
+SANDBOX_TOUR_URL = f"{github_url}/releases/download/media/sandbox_tour.mp4"
+
+
+def fetch_sandbox_tour():
+    """download the sandbox tour video into _static (the start page shows it)"""
+    import urllib.request
+
+    target = html_static_path / "sandbox_tour.mp4"
+    try:
+        with urllib.request.urlopen(SANDBOX_TOUR_URL, timeout=60) as response:
+            target.write_bytes(response.read())
+    except OSError as e:
+        print(f"WARNING: no sandbox tour video ({SANDBOX_TOUR_URL}: {e})")
+
+
+def video_name(entry):
+    return entry.cls.__name__.lower()
 
 
 def create_sample_videos():
-    out_dir = html_static_path / "videos"
-    out_dir.mkdir(parents=True, exist_ok=True)
+    """render the missing videos, delete those of samples no longer in the gallery
+    (sphinx copies all of _static), write src/samples/sample_videos.rst"""
+    videos_dir.mkdir(parents=True, exist_ok=True)
+    wanted = {video_name(entry) for entry in video_entries}
+    for path in videos_dir.iterdir():
+        if path.suffix in (".mp4", ".png", ".gif") and path.stem not in wanted:
+            path.unlink()
 
-    headless_settings = PygameHeadlessSettings(world_time_limit=5.0)
     frontend_settings = PygameFrontendSettings(
         canvas_shape=(500, 500),
-        headless=True,  # Use headless mode for video creation]
-        headless_settings=headless_settings,
+        headless=True,
+        headless_settings=PygameHeadlessSettings(world_time_limit=5.0),
     )
-
-    for sample_class in doc_samples:
-        lower_name = sample_class.__name__.lower()
-
-        print(f"Creating video for sample: {sample_class.__name__} ({lower_name})")
-
-        # if the file f"{lower_name}.mp4" already exists, skip it
-        video_output = out_dir / f"{lower_name}.mp4"
-        if video_output.exists():
-            print(f"Video {video_output} already exists, skipping.")
+    for entry in video_entries:
+        name = video_name(entry)
+        if (videos_dir / f"{name}.mp4").exists():
             continue
-
+        print(f"rendering the video of {entry.key}")
         sample_to_video(
-            sample_class=sample_class,
+            sample_class=entry.cls,
             sample_settings=None,
             frontend_settings=frontend_settings,
-            outdir=out_dir,
-            outname=lower_name,
+            outdir=videos_dir,
+            outname=name,
             world_time_limit=6.0,
-            create_gif=False,  # set to True to create a gif
+            create_gif=False,
         )
 
-    # create a sphinx gallery for the videos / gifs
-    # create an rst file
-    # .. video:: _static/video.mp4
-    #     :nocontrols:
-    #     :autoplay:
-    #     :playsinline:
-    #     :muted:
-    #     :loop:
-    #     :poster: _static/image.png
-    #     :width: 100%
+    write_gallery(docs_root / "src" / "samples" / "sample_videos.rst")
 
-    rst_content = [".. grid:: 2"]
-    template_str = """
+
+def gallery_item(entry):
+    """one grid item: the looping video, the source link, the sandbox link"""
+    name = video_name(entry)
+    source = Path(sys.modules[entry.cls.__module__].__file__).relative_to(examples_dir)
+    url = f"{github_main_url}/examples/{source.as_posix()}"
+    key = html.escape(entry.key, quote=True)
+    # anonymous links (`text <url>`__): the same text on every item would clash
+    return f"""\
     .. grid-item::
 
-        .. video:: /_static/videos/{video_name}.mp4
+        .. video:: /_static/videos/{name}.mp4
             :nocontrols:
             :autoplay:
             :playsinline:
             :muted:
             :loop:
-            :poster: ../../_static/videos/{video_name}.png
+            :poster: ../../_static/videos/{name}.png
             :width: 100%
 
-
-
-
-        :octicon:`mark-github` `{title} <{url}>`__
+        :octicon:`mark-github` `{entry.name} <{url}>`__
 
         .. raw:: html
 
-            <a class="pyb2d3-sandbox-link" data-sample="{sample_key}">&#9654; run in the browser</a>
+            <a class="pyb2d3-sandbox-link" data-sample="{key}">&#9654; run in the browser</a>
+"""
 
 
-
-    """
-    # note: anonymous links (`text <url>`__): named links with the same text ("Source") on
-    # every sample clash as duplicate targets and break
-    for sample_class in doc_samples:
-        lower_name = sample_class.__name__.lower()
-
-        filename = sys.modules[sample_class.__module__].__file__
-        # filename relative to examples_dir
-        filename = Path(filename).relative_to(examples_dir).as_posix()
-
-        url = f"{github_main_url}/examples/{filename}"
-        entry = registry.find(sample_class)
-        title = f"{entry.category} / {entry.name}" if entry else sample_class.__name__
-        # the sandbox page (docs root /sandbox/) starts with ?sample=<key>; the
-        # link + a click on the video get their href from _static/sandbox_links.js
-        sample_key = html.escape(entry.key if entry else "", quote=True)
-
-        rst_content.append(
-            template_str.format(video_name=lower_name, url=url, title=title, sample_key=sample_key)
-        )
-
-    rst_file = docs_root / "src" / "samples" / "sample_videos.rst"
-    with rst_file.open("w") as f:
-        f.write("\n".join(rst_content))
+def write_gallery(rst_file):
+    """the gallery page: a section per category, a two column grid of videos in each
+    (samples whose video is not rendered yet, e.g. in a quick build, are left out)"""
+    entries = [e for e in video_entries if (videos_dir / f"{video_name(e)}.mp4").exists()]
+    lines = []
+    for category in dict.fromkeys(entry.category for entry in entries):
+        lines += [category, "-" * len(category), "", ".. grid:: 2", ""]
+        lines += [gallery_item(entry) for entry in entries if entry.category == category]
+    rst_file.write_text("\n".join(lines))

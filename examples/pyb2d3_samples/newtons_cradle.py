@@ -3,7 +3,7 @@ import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample
 
 
-@register_sample("Demos", "Newton's Cradle")
+@register_sample("Demos", "Newton's Cradle", video=True)
 class NewtonsCradle(SampleBase):
     """Newton's cradle: ten elastic balls on rigid distance joints pass the momentum along.
 
