@@ -128,7 +128,13 @@ async function main() {
   const options = Object.fromEntries([...params].filter(([name]) => name !== "sample" && name !== "dpr"));
   await pyjs.async_exec_eval(startScript(params.get("sample"), dpr, options));
   lap("sandbox running");
-  pyjs.saveBytecode(); // the sandbox's imports, for the next visit (else saved every few s)
+  // the bytecode of the sandbox's imports, for the next visit: pyjs (>= 5.2) saves it
+  // only when asked (and best effort when the page gets hidden); awaited, so a quick
+  // reload (e.g. the headless test) does not cut the write off
+  await pyjs.saveBytecode();
+  // later imports (the code editor's Run, a sample importing more): save after every
+  // sample start (cheap when nothing is new)
+  window.addEventListener("pyb2d3-sample", () => pyjs.saveBytecode().catch(console.warn));
   progress(null);
   status("");
   console.info("pyb2d3 sandbox loading times (s since start; pyjs phases: s each):", times);
