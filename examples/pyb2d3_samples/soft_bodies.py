@@ -11,7 +11,7 @@ def grid_iterate(shape):
             yield row, col
 
 
-@register_sample("Demos", "Soft Bodies")
+@register_sample("Demos", "Soft Bodies", video=True)
 class SoftBodies(SampleBase):
     """A soft body: a 4 x 4 grid of balls linked by spring distance joints.
     Sliders: spring hertz (low: very wobbly) and damping.

@@ -10,7 +10,7 @@ from pyb2d3_sandbox import SampleBase, register_sample, widgets
 from .examples_common.batch import ParticlePool, draw_histogram
 
 
-@register_sample("Granular", "Galton Board")
+@register_sample("Granular", "Galton Board", video=True)
 class BatchGalton(SampleBase):
     """A Galton board: balls fall through pegs into bins, which fill like the
     binomial distribution (white curve).

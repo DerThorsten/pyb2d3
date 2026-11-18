@@ -14,7 +14,7 @@ from .examples_common.batch import (
 )
 
 
-@register_sample("Agents", "Boids Flocking")
+@register_sample("Agents", "Boids Flocking", video=True)
 class BatchBoids(SampleBase):
     """Boids steer by their neighbors only (separation, alignment, cohesion), yet
     flocks form and swirl around.

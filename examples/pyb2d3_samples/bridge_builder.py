@@ -40,7 +40,7 @@ def span(p, q):
     return max(abs(q[0] - p[0]), abs(q[1] - p[1]))
 
 
-@register_sample("Games", "Bridge Builder")
+@register_sample("Games", "Bridge Builder", video=True)
 class BridgeBuilder(SampleBase):
     """Build a bridge; a car, a truck and a tank test it. Building pauses the world.
     Build: drag from a dot: road (carries the vehicles), beam or rope; double click

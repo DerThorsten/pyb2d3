@@ -9,7 +9,7 @@ from pyb2d3_sandbox import SampleBase, register_sample, widgets
 from .examples_common.batch import create_circles, hsv_colors
 
 
-@register_sample("Fluids & Matter", "Dam Break (Balls)")
+@register_sample("Fluids & Matter", "Dam Break (Balls)", video=True)
 class BatchDamBreakBalls(SampleBase):
     """A dam break with rigid balls: the gate opens and the column floods the tank.
     Keys: space opens / closes the gate, r resets.

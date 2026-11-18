@@ -16,7 +16,7 @@ def wrap(angle):
     return (angle + math.pi) % (2.0 * math.pi) - math.pi
 
 
-@register_sample("Granular", "Hourglass")
+@register_sample("Granular", "Hourglass", video=True)
 class BatchHourglass(SampleBase):
     """An hourglass on a pivot: grains pile up, arch over the neck and trickle
     through.

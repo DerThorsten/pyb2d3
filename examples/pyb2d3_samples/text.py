@@ -15,7 +15,7 @@ from .examples_common.font import (
 STYLES = ["balls", "squares", "rigid letters", "soft letters"]
 
 
-@register_sample("Demos", "Text")
+@register_sample("Demos", "Text", video=True)
 class Text(SampleBase):
     """A message in a pixel font: loose balls / squares, rigid or soft letters
     (springs between the blocks); "blocks per pixel" refines each font pixel.

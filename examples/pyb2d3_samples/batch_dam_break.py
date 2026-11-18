@@ -26,7 +26,7 @@ def sph_densities(positions, smoothing):
     return (i, j, delta, distance, q), density, near
 
 
-@register_sample("Fluids & Matter", "Dam Break")
+@register_sample("Fluids & Matter", "Dam Break", video=True)
 class BatchDamBreak(SampleBase):
     """A water column (SPH particles) collapses over an obstacle: neighbor densities
     give the pressure, all with numpy and one batch call.

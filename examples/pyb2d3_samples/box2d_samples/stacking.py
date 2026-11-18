@@ -387,7 +387,7 @@ class Arch(Box2dSample):
             body.create_shape(shape_def, b2d.box(2.0, 0.5))
 
 
-@register_sample("Stacking", "Double Domino")
+@register_sample("Stacking", "Double Domino", video=True)
 class DoubleDomino(Box2dSample):
     """A row of dominoes knocked over by an impulse."""
 
@@ -440,7 +440,7 @@ class Confined(Box2dSample):
                 body.create_shape(shape_def, circle)
 
 
-@register_sample("Stacking", "Card House")
+@register_sample("Stacking", "Card House", video=True)
 class CardHouse(Box2dSample):
     """A house of cards (from PEEL)."""
 

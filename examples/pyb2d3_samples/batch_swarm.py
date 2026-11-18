@@ -15,7 +15,7 @@ from pyb2d3_sandbox import SampleBase, register_sample, widgets
 from .examples_common.batch import create_circles, hsv_colors, perpendicular, unit_and_length
 
 
-@register_sample("Batch API", "Swarm")
+@register_sample("Batch API", "Swarm", video=True)
 class BatchSwarm(SampleBase):
     """Thousands of bodies following the mouse, steered by vectorized numpy forces.
 

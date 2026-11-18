@@ -17,14 +17,14 @@ QUICK = os.environ.get("PYB2D3_DOCS_QUICK", "0") not in ("", "0")
 docs_dir = Path(__file__).resolve().parent
 sample_videos_rst = docs_dir / "src" / "samples" / "sample_videos.rst"
 
-if QUICK:
-    (docs_dir / "_static").mkdir(exist_ok=True)
-    if not sample_videos_rst.exists():
-        sample_videos_rst.write_text("(sample videos are not built in quick mode)\n")
-else:
-    import doc_tools
+import doc_tools  # noqa: E402
 
-    # create sample videos
+doc_tools.fetch_sandbox_tour()
+if QUICK:
+    # the gallery page without rendering videos (missing ones are not shown)
+    (docs_dir / "_static").mkdir(exist_ok=True)
+    doc_tools.write_gallery(sample_videos_rst)
+else:
     doc_tools.create_sample_videos()
 
 
@@ -81,5 +81,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "snippets"]
 
 html_theme = "alabaster"
 html_static_path = ["_static"]
+# the same icon as the browser sandbox (a tiny sandbox scene)
+html_favicon = "../examples/web/favicon.svg"
 html_js_files = ["sandbox_links.js"]
 html_css_files = ["sandbox_links.css"]

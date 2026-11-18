@@ -23,7 +23,7 @@ class Stage:
         self.time = None  # world time it happened
 
 
-@register_sample("Demos", "Rube Goldberg")
+@register_sample("Demos", "Rube Goldberg", video=True)
 class RubeGoldberg(SampleBase):
     """A Rube Goldberg machine: ball, dominoes, Newton's cradle, see-saw, water
     wheel, bell. It starts by itself after a second.

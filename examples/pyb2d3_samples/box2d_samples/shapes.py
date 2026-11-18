@@ -421,7 +421,7 @@ class RollingResistance(Box2dSample):
             )
 
 
-@register_sample("Shapes", "Conveyor Belt")
+@register_sample("Shapes", "Conveyor Belt", video=True)
 class ConveyorBelt(Box2dSample):
     """A conveyor belt made with the tangent speed of a surface material."""
 
@@ -726,7 +726,7 @@ class Offset(Box2dSample):
         self.debug_draw.draw_transform(b2d.transform())
 
 
-@register_sample("Shapes", "Explosion")
+@register_sample("Shapes", "Explosion", video=True)
 class Explosion(Box2dSample):
     """How to use explosions; demonstrates the projected perimeter."""
 
@@ -819,7 +819,7 @@ class RecreateStatic(Box2dSample):
         )
 
 
-@register_sample("Shapes", "Wind")
+@register_sample("Shapes", "Wind", video=True)
 class Wind(Box2dSample):
     """A chain of shapes blowing in a noisy wind (drag and lift)."""
 

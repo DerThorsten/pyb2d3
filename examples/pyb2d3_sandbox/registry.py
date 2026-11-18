@@ -24,6 +24,7 @@ class SampleEntry:
     category: str
     name: str
     cls: type
+    video: bool = False  # worth a video in the docs' sample gallery
 
     @property
     def key(self):
@@ -35,12 +36,12 @@ class SampleRegistry(object):
         # category -> name -> entry, both in registration order
         self._categories = {}
 
-    def register(self, cls, category, name=None):
+    def register(self, cls, category, name=None, video=False):
         name = name or cls.__name__
         entries = self._categories.setdefault(category, {})
         if name in entries and not _same_class(entries[name].cls, cls):
             raise ValueError(f"a different sample is already registered as '{category}/{name}'")
-        entries[name] = SampleEntry(category, name, cls)
+        entries[name] = SampleEntry(category, name, cls, video)
         cls.sample_category = category
         cls.sample_name = name
         return cls
@@ -88,7 +89,7 @@ class SampleRegistry(object):
                 new = getattr(module, entry.cls.__qualname__, None) if module else None
                 if isinstance(new, type) and new is not entry.cls:
                     replaced[entry.cls] = new
-                    entries[name] = SampleEntry(entry.category, entry.name, new)
+                    entries[name] = SampleEntry(entry.category, entry.name, new, entry.video)
                     new.sample_category, new.sample_name = entry.category, entry.name
         return replaced
 
@@ -105,10 +106,11 @@ class SampleRegistry(object):
 registry = SampleRegistry()
 
 
-def register_sample(category, name=None, registry=registry):
-    """Class decorator: register a sample under `category` / `name` (default: class name)."""
+def register_sample(category, name=None, video=False, registry=registry):
+    """Class decorator: register a sample under `category` / `name` (default: class name).
+    `video=True`: the docs show it in the sample gallery (a video rendered headless)."""
 
     def decorator(cls):
-        return registry.register(cls, category, name)
+        return registry.register(cls, category, name, video)
 
     return decorator
