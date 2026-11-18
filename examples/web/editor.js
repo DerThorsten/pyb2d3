@@ -9,6 +9,8 @@
 //   the frontend re-imports it and restarts the running sample
 //   (WebglFrontend.reload_code)
 // * errors of the sample ("pyb2d3-error": the traceback) show below the editor
+// * edits that were run survive page reloads (localStorage; written into the file
+//   system before the sandbox starts); Revert forgets them
 
 const MONACO = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2";
 // only the sample code is shown, not the sandbox / its frontends (the other
@@ -122,6 +124,21 @@ function monacoEditor(monaco, parent, onRun) {
 }
 
 const WIDTH_KEY = "pyb2d3-code-width"; // localStorage: the pane width the user dragged
+// localStorage: the edits that were run, {path: {original, text}}; `original` is the
+// file they were made on (a newer pyb2d3 with a changed sample drops the old edit)
+const EDITS_KEY = "pyb2d3-code-edits";
+
+function loadEdits() {
+  try {
+    return JSON.parse(localStorage.getItem(EDITS_KEY)) || {};
+  } catch (e) {
+    return {}; // no storage (private mode) or garbage: no edits
+  }
+}
+
+function saveEdits(edits) {
+  try { localStorage.setItem(EDITS_KEY, JSON.stringify(edits)); } catch (e) { /* not kept */ }
+}
 
 /** the handle on the code pane's left edge: drag (mouse or finger) to widen /
  * narrow the pane; the canvas keeps at least 120 px; the width is remembered */
@@ -170,6 +187,29 @@ export function setupEditor(pyjs) {
   let shownKey = null; // the sample whose file is shown
 
   const read = (path) => fs.readFile(path, { encoding: "utf8" });
+
+  // the edits of earlier visits, into the file system before the sandbox imports them
+  const edits = loadEdits();
+  for (const [path, edit] of Object.entries(edits)) {
+    let text = null;
+    try { text = read(path); } catch (e) { /* the file is gone */ }
+    if (text === null || text !== edit.original) {
+      delete edits[path]; // the sample changed since (or is gone): drop the old edit
+      continue;
+    }
+    original.set(path, text);
+    fs.writeFile(path, edit.text);
+    saved.set(path, edit.text);
+  }
+  saveEdits(edits);
+
+  /** remember the run text of `path` for the next visit (null or the original: forget) */
+  function keepEdit(path, text) {
+    const all = loadEdits();
+    if (text === null || text === original.get(path)) delete all[path];
+    else all[path] = { original: original.get(path), text };
+    saveEdits(all);
+  }
 
   /** show a python error (or hide the box with null) */
   function showError(text) {
@@ -220,14 +260,19 @@ export function setupEditor(pyjs) {
       fs.writeFile(currentFile, text);
       saved.set(currentFile, text);
       changed.push(currentFile);
+      keepEdit(currentFile, text);
     }
     showError(null);
     pyjs.exec(`_sandbox_frontend.reload_code(${JSON.stringify(changed)})`);
   }
 
-  /** back to the original of the current file (in the editor; Run applies it) */
+  /** back to the original of the current file (in the editor; Run applies it; the
+   * next visit starts with the original either way) */
   function revert() {
-    if (currentFile && editor) editor.set(currentFile, original.get(currentFile));
+    if (currentFile && editor) {
+      editor.set(currentFile, original.get(currentFile));
+      keepEdit(currentFile, null);
+    }
     updateLabel();
   }
 
