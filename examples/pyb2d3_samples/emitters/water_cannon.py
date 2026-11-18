@@ -8,13 +8,15 @@ WORLD, CART, WATER, CRATE = 0x1, 0x2, 0x4, 0x8  # collision categories
 BARREL = 1.2  # the jet starts at the end of the barrel
 AIM_SPEED = 0.8  # rad / s while w / s is held
 AIM_MIN, AIM_MAX = -0.2, 1.2  # radians above the horizon
+DRIVE_SPEED = 8.0  # rad / s of the wheels while a / d is held
+DRIVE_TORQUE = 60.0
 
 
 @register_sample("Emitters", "Water Cannon")
 class WaterCannon(SampleBase):
     """A water cannon on a cart shooting at a tower of crates; the recoil (the reaction
     step returns, applied to the cart) rolls the cart back.
-    Keys: w / s aim up / down, space toggles the cannon. Sliders: pressure, rate.
+    Keys: a / d drive, w / s aim, space toggles the cannon. Sliders: pressure, rate.
     """
 
     def __init__(self, frontend, settings):
@@ -55,10 +57,14 @@ class WaterCannon(SampleBase):
         )
         self.cart = self.world.create_dynamic_body(position=(-8.0, 1.0))
         self.cart.create_shape(shape_def, b2d.box(1.4, 0.4))
+        self.wheels = []  # the axles: motors drive the cart while a / d is held
         for x in (-1.0, 1.0):
             wheel = self.world.create_dynamic_body(position=(-8.0 + x, 0.45))
             wheel.create_shape(shape_def, b2d.circle(radius=0.45))
-            self.world.create_revolute_joint(self.cart, wheel, local_anchor_a=(x, -0.55))
+            axle = self.world.create_revolute_joint(
+                self.cart, wheel, local_anchor_a=(x, -0.55), max_motor_torque=DRIVE_TORQUE
+            )
+            self.wheels.append(axle)
 
     def create_tower(self, x, rows):
         shape_def = b2d.shape_def(
@@ -110,6 +116,11 @@ class WaterCannon(SampleBase):
         self.aim += AIM_SPEED * dt * (self.is_key_pressed("w") - self.is_key_pressed("s"))
         self.aim = min(max(self.aim, AIM_MIN), AIM_MAX)
         self.cannon.local_frame = b2d.transform((0.6, 0.5), b2d.make_rot(self.aim))
+        # a: left (counter-clockwise wheels), d: right; no key: the wheels roll freely
+        drive = self.is_key_pressed("a") - self.is_key_pressed("d")
+        for axle in self.wheels:
+            axle.motor_enabled = drive != 0
+            axle.target_motor_speed = DRIVE_SPEED * drive
         impulse, angular_impulse = self.cannon.step(dt)
         # the recoil
         self.cart.apply_linear_impulse_to_center(impulse)
