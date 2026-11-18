@@ -92,8 +92,6 @@ class BridgeBuilder(SampleBase):
             lower_bound=(self.left[0] - 8.0, -10.0), upper_bound=(self.right[0] + 8.0, top + 8.0)
         )
 
-    # ---- levels ---------------------------------------------------------------------------
-
     def set_level(self, name):
         """the cliffs, rocks and anchor points of a level, no bridge"""
         self.to_build_mode()
@@ -123,8 +121,6 @@ class BridgeBuilder(SampleBase):
     def select_level(self, name):
         self.set_level(name)
         self.frontend.center_sample(margin_px=10)
-
-    # ---- building -------------------------------------------------------------------------
 
     def set_material(self, value):
         self.material = value
@@ -202,8 +198,6 @@ class BridgeBuilder(SampleBase):
                 index = {old: new for new, old in enumerate(keep)}
                 self.nodes = [self.nodes[k] for k in keep]
                 self.beams = [(index[a], index[b], name) for a, b, name in self.beams]
-
-    # ---- testing --------------------------------------------------------------------------
 
     def toggle(self):
         if self.building:
@@ -331,8 +325,6 @@ class BridgeBuilder(SampleBase):
                     joint.destroy()
             else:
                 self.stress[k] = 1.0  # broken: shown red
-
-    # ---- drawing --------------------------------------------------------------------------
 
     def post_debug_draw(self):
         dd = self.debug_draw

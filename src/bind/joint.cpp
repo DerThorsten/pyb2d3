@@ -29,8 +29,7 @@ namespace pyb2d3::bind
             }
         };
 
-        // ---- features shared by several joint types --------------------------------
-
+        // features shared by several joint types
         // spring_enabled, spring_hertz, spring_damping_ratio
         template <auto IsEnabled, auto Enable, auto GetHertz, auto SetHertz, auto GetDamping, auto SetDamping, class B>
         void bind_spring(B& b)
@@ -69,8 +68,7 @@ namespace pyb2d3::bind
             return c;
         }
 
-        // ---- extras that are not a plain getter --------------------------------------
-
+        // extras that are not a plain getter
         std::tuple<float, float> get_constraint_tuning(const Joint& self)
         {
             float hertz = 0.0f, damping_ratio = 0.0f;
@@ -99,7 +97,6 @@ namespace pyb2d3::bind
             .value("WELD", b2_weldJoint)
             .value("WHEEL", b2_wheelJoint);
 
-        // ---- base class ----------------------------------------------------------------
         nb::class_<Joint> cls(m, "Joint");
         nb::class_<Batch<Joint>> batch_cls(m, "Joints");
         bind_handle(cls, batch_cls);
@@ -132,7 +129,6 @@ namespace pyb2d3::bind
             )
             .def_prop_ro("constraint_tuning", &get_constraint_tuning);
 
-        // ---- distance --------------------------------------------------------------------
         {
             auto c = joint_class<DistanceJoint>(m, "DistanceJoint", "DistanceJoints");
             JointBinder<DistanceJoint> b(c);
@@ -168,10 +164,9 @@ namespace pyb2d3::bind
             c.cls.def_prop_ro("spring_force_range", &get_spring_force_range);
         }
 
-        // ---- filter (no extra api) ---------------------------------------------------------
+        // filter (no extra api)
         joint_class<FilterJoint>(m, "FilterJoint", "FilterJoints");
 
-        // ---- motor -------------------------------------------------------------------------
         {
             auto c = joint_class<MotorJoint>(m, "MotorJoint", "MotorJoints");
             JointBinder<MotorJoint>(c)
@@ -189,7 +184,6 @@ namespace pyb2d3::bind
                 .rw<b2MotorJoint_GetMaxSpringTorque, b2MotorJoint_SetMaxSpringTorque>("max_spring_torque");
         }
 
-        // ---- mover -------------------------------------------------------------------------
         {
             auto c = joint_class<MoverJoint>(m, "MoverJoint", "MoverJoints");
             JointBinder<MoverJoint>(c)
@@ -197,7 +191,6 @@ namespace pyb2d3::bind
                 .rw<b2MoverJoint_GetMaxVelocityForce, b2MoverJoint_SetMaxVelocityForce>("max_velocity_force");
         }
 
-        // ---- pogo --------------------------------------------------------------------------
         {
             auto c = joint_class<PogoJoint>(m, "PogoJoint", "PogoJoints");
             JointBinder<PogoJoint>(c)
@@ -209,7 +202,6 @@ namespace pyb2d3::bind
                 .ro<b2PogoJoint_GetImpulse>("impulse");
         }
 
-        // ---- prismatic ---------------------------------------------------------------------
         {
             auto c = joint_class<PrismaticJoint>(m, "PrismaticJoint", "PrismaticJoints");
             JointBinder<PrismaticJoint> b(c);
@@ -239,7 +231,6 @@ namespace pyb2d3::bind
                 b2PrismaticJoint_GetCurrentMotorForce>(b, "max_motor_force", "current_motor_force");
         }
 
-        // ---- revolute ----------------------------------------------------------------------
         {
             auto c = joint_class<RevoluteJoint>(m, "RevoluteJoint", "RevoluteJoints");
             JointBinder<RevoluteJoint> b(c);
@@ -269,7 +260,6 @@ namespace pyb2d3::bind
                 b2RevoluteJoint_GetCurrentMotorTorque>(b, "max_motor_torque", "current_motor_torque");
         }
 
-        // ---- weld --------------------------------------------------------------------------
         {
             auto c = joint_class<WeldJoint>(m, "WeldJoint", "WeldJoints");
             JointBinder<WeldJoint>(c)
@@ -281,7 +271,6 @@ namespace pyb2d3::bind
                 );
         }
 
-        // ---- wheel -------------------------------------------------------------------------
         {
             auto c = joint_class<WheelJoint>(m, "WheelJoint", "WheelJoints");
             JointBinder<WheelJoint> b(c);

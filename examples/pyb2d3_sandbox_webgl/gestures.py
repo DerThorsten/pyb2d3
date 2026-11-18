@@ -50,8 +50,6 @@ class PointerGestures:
         self.pinch = None  # (id_a, id_b) while pinching
         self.ignored = set()  # pointers ignored until they lift
 
-    # ---- helpers ----------------------------------------------------------------------
-
     def _on_movable_body(self, x, y):
         """a dynamic / kinematic body under the canvas position?"""
         sample = self.host.sample
@@ -69,8 +67,6 @@ class PointerGestures:
         """(distance, midpoint) of the two pinching pointers"""
         (ax, ay), (bx, by) = (self.positions[i] for i in self.pinch)
         return math.hypot(bx - ax, by - ay), (0.5 * (ax + bx), 0.5 * (ay + by))
-
-    # ---- events -----------------------------------------------------------------------
 
     def down(self, pid, x, y, pointer_type="mouse"):
         """a pointer went down at canvas position (x, y)"""

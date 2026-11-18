@@ -26,6 +26,7 @@ namespace pyb2d3::bind
     void export_debug_draw(nb::module_& m);  // debug_draw.cpp
     void export_world_to_canvas(nb::module_& m);
     void export_extras(nb::module_& m);
+    void export_extensions(nb::module_& m);  // extensions.cpp: submodule extensions (emitters)
 #ifndef PYB2D3_NO_THREADING
     void export_threadpool(nb::module_& m);
 #endif

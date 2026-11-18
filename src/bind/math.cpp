@@ -14,7 +14,6 @@ namespace pyb2d3::bind
 {
     void export_math(nb::module_& m)
     {
-        // ---- types ------------------------------------------------------------------------
         nb::class_<b2Rot>(m, "Rot")
             .def(
                 "__init__",
@@ -101,7 +100,6 @@ namespace pyb2d3::bind
 
         nb::class_<b2CosSin>(m, "CosSin").def_ro("cosine", &b2CosSin::cosine).def_ro("sine", &b2CosSin::sine);
 
-        // ---- scalar --------------------------------------------------------------------------
         m.def("atan2", &b2Atan2, nb::arg("y"), nb::arg("x"), docs::doc<&b2Atan2>);
         m.def("compute_cos_sin", &b2ComputeCosSin, nb::arg("radians"), docs::doc<&b2ComputeCosSin>);
         m.def("unwind_angle", &b2UnwindAngle, nb::arg("radians"), docs::doc<&b2UnwindAngle>);
@@ -116,7 +114,6 @@ namespace pyb2d3::bind
             docs::doc<&b2SpringDamper>
         );
 
-        // ---- vectors -------------------------------------------------------------------------
         m.def("add", &b2Add, nb::arg("a"), nb::arg("b"), docs::doc<&b2Add>);
         m.def("sub", &b2Sub, nb::arg("a"), nb::arg("b"), docs::doc<&b2Sub>);
         m.def("neg", &b2Neg, nb::arg("a"), docs::doc<&b2Neg>);
@@ -161,7 +158,6 @@ namespace pyb2d3::bind
             nb::arg("b")
         );
 
-        // ---- rotations -----------------------------------------------------------------------
         m.def("make_rot", &b2MakeRot, nb::arg("radians"), docs::doc<&b2MakeRot>);
         m.def(
             "make_rot_from_unit_vector",
@@ -202,7 +198,6 @@ namespace pyb2d3::bind
         m.def("rotate_vector", &b2RotateVector, nb::arg("q"), nb::arg("v"), docs::doc<&b2RotateVector>);
         m.def("inv_rotate_vector", &b2InvRotateVector, nb::arg("q"), nb::arg("v"), docs::doc<&b2InvRotateVector>);
 
-        // ---- transforms / matrices -----------------------------------------------------------
         m.def("transform_point", &b2TransformPoint, nb::arg("t"), nb::arg("p"), docs::doc<&b2TransformPoint>);
         m.def(
             "inv_transform_point",
@@ -217,7 +212,6 @@ namespace pyb2d3::bind
         m.def("get_inverse22", &b2GetInverse22, nb::arg("a"), docs::doc<&b2GetInverse22>);
         m.def("solve22", &b2Solve22, nb::arg("a"), nb::arg("b"), docs::doc<&b2Solve22>);
 
-        // ---- bounds / planes -----------------------------------------------------------------
         m.def(
             "make_aabb",
             [](const Points& points, float radius)
@@ -239,7 +233,6 @@ namespace pyb2d3::bind
             docs::doc<&b2PlaneSeparation>
         );
 
-        // ---- validation ----------------------------------------------------------------------
         m.def("is_valid_float", &b2IsValidFloat, nb::arg("a"), docs::doc<&b2IsValidFloat>);
         m.def("is_valid_vec2", &b2IsValidVec2, nb::arg("v"), docs::doc<&b2IsValidVec2>);
         m.def("is_valid_rot", &b2IsValidRot, nb::arg("q"), docs::doc<&b2IsValidRot>);

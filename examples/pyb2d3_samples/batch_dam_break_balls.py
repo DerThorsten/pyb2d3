@@ -6,7 +6,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .examples_common.batch import create_circles, hsv_colors
+from .examples_common.batch import hsv_colors
 
 
 @register_sample("Fluids & Matter", "Dam Break (Balls)", video=True)
@@ -29,7 +29,6 @@ class BatchDamBreakBalls(SampleBase):
         self.friction = 0.05
         self.balls = b2d.Bodies()
         self.gate = None
-        self.column_width = 6.0  # set by reset: the water column behind the gate
         self.create_tank()
         self.reset()
         for widget in (
@@ -105,15 +104,11 @@ class BatchDamBreakBalls(SampleBase):
         colors = hsv_colors(
             0.55 + 0.06 * positions[:, 1] / max(positions[:, 1].max(), 1.0), 0.7, 0.95
         )
-        self.balls = create_circles(
-            self.world,
-            positions,
-            self.radius,
-            colors=colors,
-            density=1.0,
-            friction=self.friction,
-            restitution=0.0,
+        material = b2d.surface_material(friction=self.friction)
+        self.balls, self.ball_shapes = self.world.create_bodies(
+            positions, b2d.shape_def(material=material), b2d.circle(radius=self.radius)
         )
+        self.ball_shapes.custom_color = colors
 
     def set_count(self, value):
         """slider: number of balls (starts over)"""
@@ -123,9 +118,7 @@ class BatchDamBreakBalls(SampleBase):
     def set_friction(self, value):
         """slider: friction of the balls (also for the running ones)"""
         self.friction = value
-        for body in self.balls:
-            for shape in body.shapes:
-                shape.friction = value
+        self.ball_shapes.friction = value
 
     def on_key_down(self, event):
         """space: gate, r: reset"""
@@ -143,7 +136,7 @@ class BatchDamBreakBalls(SampleBase):
 
     def post_debug_draw(self):
         """the state: how far the water got (right-most ball)"""
-        front = float(self.balls.position[:, 0].max()) if len(self.balls) else 0.0
+        front = self.balls.position[:, 0].max()
         gate = "closed" if self.gate is not None else "open"
         text = f"{len(self.balls)} balls, gate {gate}, front at x = {front:.1f}"
         self.debug_draw.draw_string((0.0, self.tank[1] + 1.0), text, b2d.HexColor.White)

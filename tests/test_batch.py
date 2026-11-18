@@ -208,3 +208,22 @@ def test_reset_a_subset_of_bodies():
     for k in range(10):
         world.step(1 / 60, 4)
         assert reset.position[0] - (start_pos[0] - start_pos[1]) == approx(trajectory[k], abs=1e-4)
+
+
+def test_create_bodies():
+    world = b2d.World(gravity=(0, -10))
+    positions = np.array([(0.0, 1.0), (2.0, 3.0), (4.0, 5.0)])
+    bodies, shapes = world.create_bodies(
+        positions, b2d.shape_def(density=2.0), b2d.circle(radius=0.5), enable_sleep=False
+    )
+    assert len(bodies) == len(shapes) == 3
+    np.testing.assert_allclose(bodies.position, positions)
+    assert all(body.type == b2d.BodyType.DYNAMIC and not body.sleep_enabled for body in bodies)
+    assert [shape.body for shape in shapes] == list(bodies)  # same order
+    shapes.custom_color = np.array([0xFF0000, 0x00FF00, 0x0000FF])
+    assert shapes.custom_color.tolist() == [0xFF0000, 0x00FF00, 0x0000FF]
+
+    static, _ = world.create_bodies([(0.0, -1.0)], b2d.shape_def(), b2d.box(1.0, 0.1), type=b2d.BodyType.STATIC)
+    assert static[0].type == b2d.BodyType.STATIC
+    empty, no_shapes = world.create_bodies(np.zeros((0, 2)), b2d.shape_def(), b2d.circle(radius=1.0))
+    assert len(empty) == len(no_shapes) == 0

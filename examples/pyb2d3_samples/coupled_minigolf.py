@@ -1,75 +1,53 @@
-# +
+"""Minigolf with two balls tied together by a soft spring, on three levels seen from above."""
+
+from dataclasses import dataclass
+from enum import Enum
+
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample
 
-
-import numpy as np
-import time
-from enum import Enum
-
-from dataclasses import dataclass
-
-# some constants to not overcomplicate the example
 BALL_RADIUS = 0.1
+BALL_COLOR = b2d.hex_color(100, 100, 220)
 HOLE_RADIUS = 0.2
-MAX_FORCE_VECTOR_LENGTH = 2
-BALL_COLORS = [b2d.hex_color(100, 100, 220), b2d.hex_color(100, 100, 220)]
+MAX_DRAG = 2.0  # the longest drag (the strongest shot)
+SHOT_STRENGTH = 15.0
+WALL = 0.25  # distance of the inner island from the outer walls in level 3
 
 
 @dataclass
-class CourseLevelData:
-    # where are the 2 balls placed?
-    start_positions: list[tuple]
-
-    # where is the hole?
+class Level:
+    start_positions: list  # of the two balls
     hole_position: tuple
-
-    # the polygons of the course
-    course_polygons: list[list[tuple]]
+    walls: list  # closed polygons
 
 
-eps = 0.25
-Levels = [
-    CourseLevelData(
+LEVELS = [
+    Level(
         start_positions=[(1, 1), (1, 1.8)],
         hole_position=(5, 1),
-        course_polygons=[[(0, 0), (0, 2), (6, 2), (6, 0)]],
+        walls=[[(0, 0), (0, 2), (6, 2), (6, 0)]],
     ),
-    CourseLevelData(
+    Level(
         start_positions=[(1, 1), (1, 1.8)],
         hole_position=(5, -1),
-        course_polygons=[
-            [
-                (0, 0),
-                (0, 2),
-                (6, 2),
-                (6, -2),
-                (4, -2),
-                (4, 0),
-            ]
-        ],
+        walls=[[(0, 0), (0, 2), (6, 2), (6, -2), (4, -2), (4, 0)]],
     ),
-    CourseLevelData(
+    Level(
         start_positions=[(1, 1.75), (1, 2.8)],
         hole_position=(1, 5),
-        course_polygons=[
+        walls=[
             [(0, 0), (0, 2), (2.5, 2), (2.5, 4), (0, 4), (0, 6), (4, 6), (4, 0)],
-            [
-                (0 + eps, 2 + eps),
-                (0 + eps, 4 - eps),
-                (2 - eps, 4 - eps),
-                (2 - eps, 2 + eps),
-            ],
+            [(WALL, 2 + WALL), (WALL, 4 - WALL), (2 - WALL, 4 - WALL), (2 - WALL, 2 + WALL)],
         ],
     ),
 ]
 
 
-class GolfState(Enum):
-    WAITING_FOR_BALL_CLICK = 0  # we are waiting for the user to click on a ball
-    SET_DRAG_FORCE = 1  # user is setting the force via mouse drag/move
-    WAITING_FOR_REST = 2  # we are waiting for the ball to come to rest
-    BALL_IS_IN_HOLE = 3  # the ball is in the hole, we can proceed to the next level
+class State(Enum):
+    AIMING = 0  # waiting for a click on a ball
+    DRAGGING = 1  # the mouse drag sets the strength of the shot
+    ROLLING = 2  # waiting for the balls to come to rest
+    IN_HOLE = 3  # the next level starts once the balls rest
 
 
 @register_sample("Games", "Coupled Minigolf")
@@ -85,180 +63,121 @@ class CoupledMinigolf(SampleBase):
 
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
-        self.outer_box_radius = 100
-
-        # data for the current level
-        self.level = Levels[settings.current_level]
-
-        # create the chain shape for the course
-        chain_material = b2d.surface_material(restitution=0.75)
-        for polygon in self.level.course_polygons:
-            self.anchor_body.create_chain(
-                b2d.chain_def(polygon, is_loop=True, material=chain_material)
-            )
-
-        # create the balls
-        self.balls = []
-
-        for i, position in enumerate(self.level.start_positions):
-            body = self.world.create_dynamic_body(
-                position=position,
-                linear_damping=0.75,
-                fixed_rotation=True,
-            )
-            material = b2d.surface_material(restitution=0.75, custom_color=BALL_COLORS[i])
-            ball_shape_def = b2d.shape_def(density=1, material=material)
-            body.create_shape(ball_shape_def, b2d.circle(radius=BALL_RADIUS))
-            self.balls.append(body)
-        self.balls_shape = [ball.shapes[0] for ball in self.balls]
-
-        # create a distance joint between the two balls
-        self.world.create_distance_joint(
-            body_a=self.balls[0],
-            body_b=self.balls[1],
-            length=np.linalg.norm(
-                np.array(self.balls[0].position) - np.array(self.balls[1].position)
-            ),
-            collide_connected=True,
-            hertz=0.35,
-            enable_spring=True,
-            damping_ratio=0.25,
-        )
-
-        # state of the game
-        self.state = GolfState.WAITING_FOR_BALL_CLICK
-        self.dragged_ball_index = None
-        self.drag_pos = None
-        self.force_vector_length = 0
-        self.ball_in_hole_time = None
+        self.level = LEVELS[settings.current_level]
+        self.create_walls()
+        self.balls = self.create_balls()
+        self.state = State.AIMING
+        self.dragged_ball = None
+        self.drag_position = None
 
         if self.frontend.settings.headless:
+            # take a shot, there is no mouse
             self.balls[0].apply_linear_impulse_to_center((0.2, 0.01), wake=True)
-            self.state = GolfState.WAITING_FOR_REST
+            self.state = State.ROLLING
+
+    def create_walls(self):
+        material = b2d.surface_material(restitution=0.75)
+        for polygon in self.level.walls:
+            self.anchor_body.create_chain(b2d.chain_def(polygon, is_loop=True, material=material))
+
+    def create_balls(self):
+        material = b2d.surface_material(restitution=0.75, custom_color=BALL_COLOR)
+        balls = []
+        for position in self.level.start_positions:
+            ball = self.world.create_dynamic_body(
+                position=position, linear_damping=0.75, fixed_rotation=True
+            )
+            ball.create_shape(
+                b2d.shape_def(density=1, material=material), b2d.circle(radius=BALL_RADIUS)
+            )
+            balls.append(ball)
+
+        # the spring: a soft distance joint with the start distance as rest length
+        a, b = balls
+        self.world.create_distance_joint(
+            body_a=a,
+            body_b=b,
+            length=(a.position - b.position).length(),
+            collide_connected=True,
+            enable_spring=True,
+            hertz=0.35,
+            damping_ratio=0.25,
+        )
+        return balls
+
+    def aabb(self):
+        xs = [p[0] for polygon in self.level.walls for p in polygon]
+        ys = [p[1] for polygon in self.level.walls for p in polygon]
+        return b2d.aabb(
+            lower_bound=(min(xs) - 1, min(ys) - 1), upper_bound=(max(xs) + 1, max(ys) + 1)
+        )
 
     def on_mouse_down(self, event):
-        if self.state == GolfState.WAITING_FOR_BALL_CLICK:
-            # check if the user clicked on one of the balls
-            for i, ball in enumerate(self.balls):
-                if self.balls_shape[i].test_point(event.world_position):
-                    self.state = GolfState.SET_DRAG_FORCE
-                    self.dragged_ball_index = i
-                    self.drag_pos = event.world_position
-                    return
-
-    def on_mouse_up(self, event):
-        if self.state == GolfState.SET_DRAG_FORCE:
-            # we are setting the force, so we apply it now
-            dragged_ball = self.balls[self.dragged_ball_index]
-            force_vector = np.array(self.drag_pos) - np.array(dragged_ball.position)
-            force_vector *= -15
-            dragged_ball.apply_force_to_center(force_vector, True)
-            self.state = GolfState.WAITING_FOR_REST
+        if self.state != State.AIMING:
+            return
+        for ball in self.balls:
+            if ball.shapes[0].test_point(event.world_position):
+                self.state = State.DRAGGING
+                self.dragged_ball = ball
+                self.drag_position = b2d.Vec2(event.world_position)
 
     def on_mouse_move(self, event):
-        if self.state == GolfState.SET_DRAG_FORCE:
-            raw_drag_pos = event.world_position
+        if self.state == State.DRAGGING:
+            drag = (b2d.Vec2(event.world_position) - self.dragged_ball.position).clamped(MAX_DRAG)
+            self.drag_position = self.dragged_ball.position + drag
 
-            # limit the length of the force vector
-            force_vector = np.array(raw_drag_pos) - np.array(
-                self.balls[self.dragged_ball_index].position
-            )
-            force_vector_length = np.linalg.norm(force_vector)
-            self.force_vector_length = force_vector_length
-            if force_vector_length > MAX_FORCE_VECTOR_LENGTH:
-                self.force_vector_length = MAX_FORCE_VECTOR_LENGTH
-                force_vector = force_vector / force_vector_length * MAX_FORCE_VECTOR_LENGTH
-                self.drag_pos = (
-                    np.array(self.balls[self.dragged_ball_index].position) + force_vector
-                )
-            else:
-                self.drag_pos = raw_drag_pos
+    def on_mouse_up(self, event):
+        if self.state == State.DRAGGING:
+            # the ball moves opposite to the drag
+            ball = self.dragged_ball
+            ball.apply_force_to_center((self.drag_position - ball.position) * -SHOT_STRENGTH, True)
+            self.state = State.ROLLING
 
     def balls_rest(self):
-        mag = self.balls[0].speed + self.balls[1].speed
-        return mag < 0.0001
+        return self.balls[0].speed + self.balls[1].speed < 0.0001
 
     def post_update(self, dt):
-        # if the ball is already in the hole, check if all balls are at rest and
-        #
-        if self.state == GolfState.BALL_IS_IN_HOLE:
+        if self.state == State.IN_HOLE:
             if self.balls_rest():
-                # proceed to the next level (jump to first level if we are at the last one)
-                self.settings.current_level += 1
-                if self.settings.current_level >= len(Levels):
-                    self.settings.current_level = 0
-
+                # the next level (after the last one: the first one again)
+                self.settings.current_level = (self.settings.current_level + 1) % len(LEVELS)
                 self.frontend.set_sample(CoupledMinigolf, self.settings)
-
             return
 
-        # check if the center of the hole is inside the balls
-        for i, ball in enumerate(self.balls):
-            if self.balls_shape[i].test_point(self.level.hole_position):
-                self.state = GolfState.BALL_IS_IN_HOLE
-                self.ball_in_hole_time = time.time()
-
-                hole_body = self.world.create_static_body(position=self.level.hole_position)
-
-                # create a distance joint to capture the ball in the hole
+        for ball in self.balls:
+            if ball.shapes[0].test_point(self.level.hole_position):
+                self.state = State.IN_HOLE
+                # a stiff spring holds the ball in the hole
                 self.world.create_distance_joint(
                     body_a=ball,
-                    body_b=hole_body,
-                    length=0.01,  # very small length to keep the ball in place
+                    body_b=self.world.create_static_body(position=self.level.hole_position),
+                    length=0.01,
                     enable_spring=True,
                     hertz=100,
                     damping_ratio=1.0,
                 )
                 return
 
-        if self.state == GolfState.WAITING_FOR_REST:
-            # check if balls are at rest
-            if self.balls_rest():
-                self.state = GolfState.WAITING_FOR_BALL_CLICK
+        if self.state == State.ROLLING and self.balls_rest():
+            self.state = State.AIMING
 
-    # to ensure the hole is **under** the balls
-    # we use the pre_debug_draw method
     def pre_debug_draw(self):
+        # drawn before the bodies: the hole is under the balls
         self.debug_draw.draw_solid_circle(
             transform=b2d.transform(self.level.hole_position),
             radius=HOLE_RADIUS,
             color=b2d.hex_color(0, 0, 0),
         )
 
-    # draw above the debgug draw
     def post_debug_draw(self):
-        if self.state == GolfState.SET_DRAG_FORCE:
-            # liner interolate force vector color from yellow to red
-            color_yellow = np.array([255, 255, 0])
-            color_red = np.array([255, 0, 0])
-            color = color_yellow + (color_red - color_yellow) * (
-                self.force_vector_length / MAX_FORCE_VECTOR_LENGTH
+        if self.state != State.DRAGGING:
+            return
+        # from yellow (weak) to red (strong)
+        ball = self.dragged_ball
+        strength = (self.drag_position - ball.position).length() / MAX_DRAG
+        color = b2d.hex_color(255, round(255 * (1 - strength)), 0)
+        self.debug_draw.draw_segment(ball.position, self.drag_position, color=color)
+        for position in (ball.position, self.drag_position):
+            self.debug_draw.draw_solid_circle(
+                transform=b2d.transform(position), radius=0.5 * BALL_RADIUS, color=color
             )
-            # round colors to integers
-            color = (round(color[0]), round(color[1]), round(color[2]))
-
-            # draw a line from the ball to the mouse position
-            dragged_ball = self.balls[self.dragged_ball_index]
-            self.debug_draw.draw_segment(
-                dragged_ball.position,
-                self.drag_pos,
-                color=b2d.hex_color(*color),
-            )
-            for pos in [dragged_ball.position, self.drag_pos]:
-                self.debug_draw.draw_solid_circle(
-                    transform=b2d.transform(pos),
-                    color=b2d.hex_color(*color),
-                    radius=BALL_RADIUS * 0.5,
-                )
-
-    def aabb(self):
-        # bouding box from self.levels.course_polygons
-        min_x = min(p[0] for polygon in self.level.course_polygons for p in polygon)
-        min_y = min(p[1] for polygon in self.level.course_polygons for p in polygon)
-        max_x = max(p[0] for polygon in self.level.course_polygons for p in polygon)
-        max_y = max(p[1] for polygon in self.level.course_polygons for p in polygon)
-        margin = 1
-        return b2d.aabb(
-            lower_bound=(min_x - margin, min_y - margin),
-            upper_bound=(max_x + margin, max_y + margin),
-        )

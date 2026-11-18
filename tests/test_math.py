@@ -150,6 +150,19 @@ def test_rotation_functions():
     assert b2d.spring_damper(5, 1, 1.0, 0.0, 1 / 60) < 0
 
 
+def test_reflect():
+    assert tuple(b2d.reflect((1, -1), (0, 1))) == approx((1, 1))  # off the floor
+    assert tuple(b2d.reflect((1, 0), (-1, 0))) == approx((-1, 0))  # straight back
+    n = (math.sqrt(0.5), math.sqrt(0.5))
+    assert tuple(b2d.reflect((-1, 0), n)) == approx((0, 1), abs=1e-6)  # 45 degree mirror
+
+
+def test_clamped():
+    assert tuple(b2d.Vec2(3, 4).clamped(10.0)) == approx((3, 4))  # short enough: unchanged
+    assert tuple(b2d.Vec2(3, 4).clamped(2.5)) == approx((1.5, 2.0))  # same direction, length 2.5
+    assert tuple(b2d.Vec2(0, 0).clamped(1.0)) == approx((0, 0))
+
+
 def test_validation():
     assert b2d.is_valid_float(1.0)
     assert not b2d.is_valid_float(float("nan"))

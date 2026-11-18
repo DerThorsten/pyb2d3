@@ -26,6 +26,7 @@ NB_MODULE(_pyb2d3, m)
     bind::export_world(m);
     bind::export_world_to_canvas(m);
     bind::export_extras(m);
+    bind::export_extensions(m);
 
 #ifdef PYB2D3_NO_THREADING
     m.attr("WITH_THREADING") = false;

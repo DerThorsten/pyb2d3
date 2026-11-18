@@ -10,7 +10,7 @@ for i in range(n):
     body.create_shape(b2d.shape_def(density=1.0), b2d.box(0.3, 0.2))
     bodies.append(body)
 
-# --- reading: one call, one numpy array ----------------------------------------------
+# reading: one call, one numpy array
 positions = bodies.position  # (n, 2) float32
 angles = bodies.angle  # (n,)
 rotations = bodies.rotation  # (n, 2) as (cos, sin)
@@ -20,7 +20,7 @@ print(positions.shape, angles.shape, rotations.shape, transforms.shape, masses.s
 assert np.allclose(transforms[:, :2], positions)
 assert np.allclose(rotations, np.stack([np.cos(angles), np.sin(angles)], axis=1), atol=1e-3)
 
-# --- writing: one value per body ... -------------------------------------------------
+# writing: one value per body ...
 phase = np.linspace(0, 2 * np.pi, n, endpoint=False)
 bodies.linear_velocity = np.stack([np.cos(phase), np.sin(phase)], axis=1)  # (n, 2)
 bodies.angular_velocity = np.linspace(-1, 1, n)  # (n,)

@@ -60,9 +60,7 @@ import pyb2d3  # noqa: E402
 version = release = getattr(pyb2d3, "__version__", "")
 
 
-# -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
-
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
@@ -76,9 +74,7 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "snippets"]
 
 
-# -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
 html_theme = "alabaster"
 html_static_path = ["_static"]
 # the same icon as the browser sandbox (a tiny sandbox scene)

@@ -1,7 +1,16 @@
-# +
+"""A slowly turning box tumbles 2000 small colorful capsules."""
+
+import random
+
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample
-import random
+
+BOX_SIZE = 20  # inner width / height of the tumbler (m)
+WALL = 1  # wall thickness (m)
+MOTOR_SPEED = 0.1  # rad / s
+N_CAPSULES = 2000
+CAPSULE_RADIUS = 0.1
+CAPSULE_LENGTH = 0.2
 
 
 @register_sample("Demos", "Tumbler", video=True)
@@ -14,94 +23,42 @@ class Tumbler(SampleBase):
 
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings)
+        self.create_tumbler()
+        self.create_capsules()
 
-        # physical world
-        box_diameter = 20
-        wall_thickness = 1
-
-        self.wall_thickness = wall_thickness
-        self.box_diameter = box_diameter
-
-        anchor_body = self.world.create_static_body(position=(0, 0))
-        self.tumbler_body = self.world.create_dynamic_body(
-            position=(0, 0), linear_damping=0.1, angular_damping=0.1
+    def create_tumbler(self):
+        """a box of four walls on a motor driven revolute joint"""
+        tumbler = self.world.create_dynamic_body(linear_damping=0.1, angular_damping=0.1)
+        wall_def = b2d.shape_def(
+            density=5, material=b2d.surface_material(restitution=0.5, friction=0.5)
         )
+        h = BOX_SIZE / 2
+        tumbler.create_shape(wall_def, b2d.box(WALL / 2, h, center=(-h, 0)))  # left
+        tumbler.create_shape(wall_def, b2d.box(WALL / 2, h, center=(h, 0)))  # right
+        tumbler.create_shape(wall_def, b2d.box(h, WALL / 2, center=(0, h)))  # top
+        tumbler.create_shape(wall_def, b2d.box(h, WALL / 2, center=(0, -h)))  # bottom
 
-        wall_thickness / 2
-
-        left = b2d.box(
-            hx=wall_thickness / 2,
-            hy=box_diameter / 2,
-            center=(-box_diameter / 2, 0),
-            rotation=0,
-        )
-        right = b2d.box(
-            hx=wall_thickness / 2,
-            hy=box_diameter / 2,
-            center=(box_diameter / 2, 0),
-            rotation=0,
-        )
-        top = b2d.box(
-            hx=box_diameter / 2,
-            hy=wall_thickness / 2,
-            center=(0, box_diameter / 2),
-            rotation=0,
-        )
-        bottom = b2d.box(
-            hx=box_diameter / 2,
-            hy=wall_thickness / 2,
-            center=(0, -box_diameter / 2),
-            rotation=0,
-        )
-
-        material = b2d.surface_material(restitution=0.5, friction=0.5)
-
-        self.tumbler_body.create_shape(b2d.shape_def(density=5, material=material), left)
-
-        self.tumbler_body.create_shape(b2d.shape_def(density=5, material=material), right)
-        self.tumbler_body.create_shape(b2d.shape_def(density=5, material=material), top)
-        self.tumbler_body.create_shape(b2d.shape_def(density=5, material=material), bottom)
-
-        # add a revolute joint to the tumbler body
+        # the motor is strong enough to turn the box however the capsules lie
         self.world.create_revolute_joint(
-            body_a=anchor_body,
-            body_b=self.tumbler_body,
+            body_a=self.anchor_body,
+            body_b=tumbler,
             enable_motor=True,
-            motor_speed=0.1,
+            motor_speed=MOTOR_SPEED,
             max_motor_torque=50000.0,
         )
 
-        # add a bunch of capsules
-        n_capsules = 2000
-        self.capsule_radius = 0.1
-        self.capsule_length = 0.2
-        # self.capsule_bodies = b2d.Bodies()
-        for i in range(n_capsules):
-            # radom position in the tumbler
-            x = random.uniform(
-                -box_diameter / 2 + self.capsule_radius,
-                box_diameter / 2 - self.capsule_radius,
-            )
-            y = random.uniform(
-                -box_diameter / 2 + self.capsule_radius,
-                box_diameter / 2 - self.capsule_radius,
-            )
-
-            capsule_body = self.world.create_dynamic_body(
-                position=(x, y),
-                linear_damping=0.9,
+    def create_capsules(self):
+        """capsules with random colors at random positions inside the box"""
+        r = BOX_SIZE / 2 - CAPSULE_RADIUS
+        capsule = b2d.capsule((0, 0), (CAPSULE_LENGTH, 0), radius=CAPSULE_RADIUS)
+        for _ in range(N_CAPSULES):
+            body = self.world.create_dynamic_body(
+                position=(random.uniform(-r, r), random.uniform(-r, r)), linear_damping=0.9
             )
             material = b2d.surface_material(
-                restitution=0.5,
-                friction=0.5,
-                custom_color=b2d.rgb_to_hex_color(
-                    random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)
-                ),
+                restitution=0.5, friction=0.5, custom_color=b2d.random_hex_color()
             )
-            capsule_body.create_shape(
-                b2d.shape_def(density=1, material=material, enable_contact_events=True),
-                b2d.capsule((0, 0), (self.capsule_length, 0), radius=self.capsule_radius),
-            )
+            body.create_shape(b2d.shape_def(density=1, material=material), capsule)
 
     def on_key_down(self, event):
         if event.key == "g":

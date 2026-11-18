@@ -13,7 +13,7 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .examples_common.batch import Ema, create_circles, hsv_colors
+from .examples_common.batch import hsv_colors
 
 
 @register_sample("Batch API", "N-Body Gravity", video=True)
@@ -34,7 +34,7 @@ class BatchNBody(SampleBase):
         self.count = 300
         self.gravity = 1.0  # the gravitational constant
         self.rng = np.random.default_rng(7)
-        self.force_time = Ema()
+        self.force_ms = 0.0  # time of the force computation, smoothed
         self.bodies = b2d.Bodies()
         self.create_disc()
 
@@ -74,50 +74,42 @@ class BatchNBody(SampleBase):
             ),
             b2d.circle(radius=self.sun_radius),
         )
-        planets = create_circles(
-            self.world, positions, radii, colors=colors, density=1.0, restitution=0.1, friction=0.6
-        )
-        self.bodies = b2d.Bodies([sun, *planets])
+        self.bodies = b2d.Bodies([sun])
+        for (x, y), radius, color in zip(positions, radii, colors):
+            body = self.world.create_dynamic_body(position=(x, y))
+            material = b2d.surface_material(friction=0.6, restitution=0.1, custom_color=int(color))
+            body.create_shape(b2d.shape_def(material=material), b2d.circle(radius=radius))
+            self.bodies.append(body)
 
         # circular orbits: v = sqrt(G * M_inside / r), perpendicular to the radius
-        masses = self.bodies.mass
-        order = np.argsort(r)
-        inside = self.sun_mass + np.cumsum(masses[1:][order]) - masses[1:][order]
-        m_inside = np.empty(n)
-        m_inside[order] = inside
+        planet_masses = self.bodies.mass[1:]
+        m_inside = self.sun_mass + np.array([planet_masses[r < ri].sum() for ri in r])
         speed = np.sqrt(self.gravity * m_inside / r)
         velocities = np.zeros((n + 1, 2))
         velocities[1:] = speed[:, None] * np.stack([-np.sin(phi), np.cos(phi)], axis=1)
         self.bodies.linear_velocity = velocities
 
-    # ---- n^2 gravity ----------------------------------------------------------------------
-
     def pre_update(self, dt):
+        """n^2 gravity: all pair forces with numpy, applied in one batch call"""
         t0 = time.perf_counter()
-        bodies = self.bodies
-        positions = bodies.position.astype(np.float64)  # (n, 2)
-        masses = bodies.mass.astype(np.float64)  # (n,)
-
+        positions = self.bodies.position  # (n, 2)
+        masses = self.bodies.mass  # (n,)
+        # F_i = G m_i sum_j m_j (p_j - p_i) / |p_j - p_i|^3, softened: no huge forces
+        # when two bodies come close
         delta = positions[None, :, :] - positions[:, None, :]  # (n, n, 2): from i to j
-        d2 = np.einsum("ijk,ijk->ij", delta, delta) + self.softening**2
-        inv_d3 = d2**-1.5
-        np.fill_diagonal(inv_d3, 0.0)
-        # F_i = G m_i sum_j m_j (p_j - p_i) / |p_j - p_i|^3
-        forces = (
-            self.gravity
-            * masses[:, None]
-            * np.einsum("ij,ijk->ik", inv_d3 * masses[None, :], delta)
-        )
-        bodies.apply_force_to_center(forces)
-        self.force_time(1000.0 * (time.perf_counter() - t0))
-
-    # ---- drawing --------------------------------------------------------------------------
+        d2 = np.sum(delta**2, axis=2) + self.softening**2  # (n, n)
+        weight = masses[None, :] / d2**1.5  # (n, n): m_j / |p_j - p_i|^3
+        np.fill_diagonal(weight, 0.0)  # no force of a body on itself
+        forces = self.gravity * masses[:, None] * np.sum(weight[:, :, None] * delta, axis=1)
+        self.bodies.apply_force_to_center(forces)
+        self.force_ms = 0.9 * self.force_ms + 0.1 * 1000.0 * (time.perf_counter() - t0)
 
     def post_debug_draw(self):
+        """the center of mass (red) and the force time"""
         dd = self.debug_draw
         positions, masses = self.bodies.position, self.bodies.mass
         center = tuple((positions * masses[:, None]).sum(axis=0) / masses.sum())
         dd.draw_point(center, 6.0, b2d.HexColor.Red)
         n = len(self.bodies)
-        text = f"{n} bodies, {n * (n - 1)} pair forces: {self.force_time.value or 0.0:.2f} ms"
+        text = f"{n} bodies, {n * (n - 1)} pair forces: {self.force_ms:.2f} ms"
         dd.draw_string((0.0, self.disc[1] + 1.0), text, b2d.HexColor.White)

@@ -1,6 +1,10 @@
-# +
+"""Static chain shapes drawn with b2d.PathBuilder: lines, arcs and a billiard table."""
+
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample
+
+VIEW = 50  # half size of the shown region (m)
+SEGMENTS = 20  # line segments per arc
 
 
 @register_sample("Demos", "Chain Builder")
@@ -13,98 +17,71 @@ class ChainBuilder(SampleBase):
 
     def __init__(self, frontend, settings):
         super().__init__(frontend, settings.set_gravity((0, 0)))
-        self.box_radius = 50
+        self.create_arc_examples()
+        self.create_billiard_table(top_left=(0, 20), width=8, pocket_radius=0.5)
 
-        # create a chain shape
-        builder = b2d.PathBuilder((0, 0))
-        builder.line_to(right=5)
-        builder.line_to(up=5)
-        builder.line_to(left=5)
-        builder.arc_to(down=5, radius=5 / 2, clockwise=False, segments=20)
-        self.anchor_body.create_chain(builder.chain_def(is_loop=True))
+    def create_arc_examples(self):
+        """5 x 5 squares, one above the other, with different arcs as their sides"""
+        # left side: an arc bulging out (counter clockwise) ...
+        path = b2d.PathBuilder((0, 0))
+        path.line_to(right=5)
+        path.line_to(up=5)
+        path.line_to(left=5)
+        path.arc_to(down=5, radius=2.5, clockwise=False, segments=SEGMENTS)
+        self.anchor_body.create_chain(path.chain_def(is_loop=True))
 
-        # create a chain shape
-        builder = b2d.PathBuilder((0, -10))
-        builder.line_to(right=5)
-        builder.line_to(up=5)
-        builder.line_to(left=5)
-        builder.arc_to(down=5, radius=5 / 2, clockwise=True, segments=20)
-        self.anchor_body.create_chain(builder.chain_def(is_loop=True))
+        # ... or bulging in (clockwise)
+        path = b2d.PathBuilder((0, -10))
+        path.line_to(right=5)
+        path.line_to(up=5)
+        path.line_to(left=5)
+        path.arc_to(down=5, radius=2.5, clockwise=True, segments=SEGMENTS)
+        self.anchor_body.create_chain(path.chain_def(is_loop=True))
 
-        # create a chain shape
-        builder = b2d.PathBuilder((0, -20))
-        builder.line_to(right=5)
-        builder.arc_to(up=5, radius=5 / 2, clockwise=False, segments=20)
-        builder.line_to(left=5)
-        builder.arc_to(down=5, radius=5 / 2, clockwise=True, segments=20)
-        self.anchor_body.create_chain(builder.chain_def(is_loop=True))
+        # both sides arcs: half circles
+        path = b2d.PathBuilder((0, -20))
+        path.line_to(right=5)
+        path.arc_to(up=5, radius=2.5, clockwise=False, segments=SEGMENTS)
+        path.line_to(left=5)
+        path.arc_to(down=5, radius=2.5, clockwise=True, segments=SEGMENTS)
+        self.anchor_body.create_chain(path.chain_def(is_loop=True))
 
-        # create a chain shape
-        builder = b2d.PathBuilder((0, -30))
-        builder.line_to(right=5)
-        builder.arc_to(up=5, radius=3, clockwise=False, segments=20)
-        builder.line_to(left=5)
-        builder.arc_to(down=5, radius=3, clockwise=True, segments=20)
-        self.anchor_body.create_chain(builder.chain_def(is_loop=True))
+        # a radius larger than half the distance: flatter arcs
+        path = b2d.PathBuilder((0, -30))
+        path.line_to(right=5)
+        path.arc_to(up=5, radius=3, clockwise=False, segments=SEGMENTS)
+        path.line_to(left=5)
+        path.arc_to(down=5, radius=3, clockwise=True, segments=SEGMENTS)
+        self.anchor_body.create_chain(path.chain_def(is_loop=True))
 
-        # create a chain shape
-        builder = b2d.PathBuilder((0, -40))
-        builder.line_to(right=5)
-        builder.arc_to(up=5, radius=3, clockwise=False, segments=20, major_arc=False)
-        builder.line_to(left=5)
-        builder.arc_to(down=5, radius=3, clockwise=False, segments=20, major_arc=True)
-        self.anchor_body.create_chain(builder.chain_def(is_loop=True))
+        # the same circle, but the long way round (major arc) on the left
+        path = b2d.PathBuilder((0, -40))
+        path.line_to(right=5)
+        path.arc_to(up=5, radius=3, clockwise=False, segments=SEGMENTS, major_arc=False)
+        path.line_to(left=5)
+        path.arc_to(down=5, radius=3, clockwise=False, segments=SEGMENTS, major_arc=True)
+        self.anchor_body.create_chain(path.chain_def(is_loop=True))
 
-        # billiard table
-        w = 8
-        h = w / 2
+    def create_billiard_table(self, top_left, width, pocket_radius):
+        """the cushions of a 2:1 table, counter clockwise, with six major arc pockets"""
+        r = pocket_radius
+        height = width / 2
+        pocket = dict(radius=r, clockwise=False, segments=SEGMENTS, major_arc=True)
 
-        # top_left_corner
-        top_left_corner = (0, 20)
-
-        # pocket radius
-        r = 0.5
-
-        md = r * 2
-        cd = r
-
-        # start with left pocket arc
-        start = (top_left_corner[0], top_left_corner[1])
-        builder = b2d.PathBuilder(start)
-        builder.arc_to(delta=(-cd, -cd), radius=r, clockwise=False, segments=20, major_arc=True)
-
-        # move down by height
-        builder.line_to(down=h)
-
-        # add bottom left corner pocket
-        builder.arc_to(delta=(cd, -cd), radius=r, clockwise=False, segments=20, major_arc=True)
-
-        # move right by width /2
-        builder.line_to(right=w / 2)
-        # add bottom middle pocket
-        builder.arc_to(delta=(md, 0), radius=r, clockwise=False, segments=20, major_arc=True)
-
-        # move right by width /2
-        builder.line_to(right=w / 2)
-        # add bottom right corner pocket
-        builder.arc_to(delta=(cd, cd), radius=r, clockwise=False, segments=20, major_arc=True)
-
-        # move up by height
-        builder.line_to(up=h)
-        # add top right corner pocket
-        builder.arc_to(delta=(-cd, cd), radius=r, clockwise=False, segments=20, major_arc=True)
-
-        # move left by width/2
-        builder.line_to(left=w / 2)
-        # add top middle pocket
-        builder.arc_to(delta=(-md, 0), radius=r, clockwise=False, segments=20, major_arc=True)
-        # move left by width/2
-        builder.line_to(left=w / 2)
-
-        self.anchor_body.create_chain(builder.chain_def(is_loop=True))
+        path = b2d.PathBuilder(top_left)
+        path.arc_to(delta=(-r, -r), **pocket)  # top left
+        path.line_to(down=height)
+        path.arc_to(delta=(r, -r), **pocket)  # bottom left
+        path.line_to(right=width / 2)
+        path.arc_to(delta=(2 * r, 0), **pocket)  # bottom middle
+        path.line_to(right=width / 2)
+        path.arc_to(delta=(r, r), **pocket)  # bottom right
+        path.line_to(up=height)
+        path.arc_to(delta=(-r, r), **pocket)  # top right
+        path.line_to(left=width / 2)
+        path.arc_to(delta=(-2 * r, 0), **pocket)  # top middle
+        path.line_to(left=width / 2)
+        self.anchor_body.create_chain(path.chain_def(is_loop=True))
 
     def aabb(self):
-        return b2d.aabb(
-            lower_bound=(-self.box_radius, -self.box_radius),
-            upper_bound=(self.box_radius, self.box_radius),
-        )
+        return b2d.aabb(lower_bound=(-VIEW, -VIEW), upper_bound=(VIEW, VIEW))

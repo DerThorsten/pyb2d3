@@ -34,7 +34,6 @@ namespace pyb2d3::bind
 
     void export_events(nb::module_& m)
     {
-        // ---- contacts -------------------------------------------------------------------
         nb::class_<Contact>(m, "Contact")
             .def_prop_ro("is_valid", &Contact::IsValid)
             .def_prop_ro(
@@ -59,7 +58,6 @@ namespace pyb2d3::bind
             .def_ro("shape_b", &b2ContactData::shapeIdB)
             .def_ro("manifold", &b2ContactData::manifold);
 
-        // ---- sensor events ----------------------------------------------------------------
         nb::class_<b2SensorBeginTouchEvent>(m, "SensorBeginTouchEvent")
             .def_ro("sensor_shape", &b2SensorBeginTouchEvent::sensorShapeId)
             .def_ro("visitor_shape", &b2SensorBeginTouchEvent::visitorShapeId);
@@ -86,7 +84,6 @@ namespace pyb2d3::bind
                 }
             );
 
-        // ---- contact events ---------------------------------------------------------------
         nb::class_<b2ContactBeginTouchEvent>(m, "ContactBeginTouchEvent")
             .def_ro("shape_a", &b2ContactBeginTouchEvent::shapeIdA)
             .def_ro("shape_b", &b2ContactBeginTouchEvent::shapeIdB)
@@ -131,7 +128,6 @@ namespace pyb2d3::bind
                 }
             );
 
-        // ---- body move events -------------------------------------------------------------
         nb::class_<b2BodyMoveEvent> move_event(m, "BodyMoveEvent");
         move_event.def_ro("transform", &b2BodyMoveEvent::transform)
             .def_ro("body", &b2BodyMoveEvent::bodyId)
@@ -188,7 +184,6 @@ namespace pyb2d3::bind
                 }
             );
 
-        // ---- joint events -----------------------------------------------------------------
         nb::class_<b2JointEvent> joint_event(m, "JointEvent");
         joint_event.def_ro("joint", &b2JointEvent::jointId);
         event_user_data(joint_event);

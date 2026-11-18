@@ -90,6 +90,16 @@ namespace pyb2d3::bind
             .def("length", &b2Length, docs::doc<&b2Length>)
             .def("length_squared", &b2LengthSquared, docs::doc<&b2LengthSquared>)
             .def(
+                "clamped",
+                [](b2Vec2 v, float max_length)
+                {
+                    const float length = b2Length(v);
+                    return length > max_length ? b2MulSV(max_length / length, v) : v;
+                },
+                nb::arg("max_length"),
+                "This vector, shortened to `max_length` if it is longer (same direction)."
+            )
+            .def(
                 "__len__",
                 [](const b2Vec2&)
                 {

@@ -85,8 +85,7 @@ public:
         drawIslands = other.drawIslands;
     }
 
-    // -- pyb2d::DebugDraw interface (world coordinates) --------------------------------
-
+    // pyb2d::DebugDraw interface (world coordinates)
     void draw_polygon(const b2Vec2* vertices, int count, b2HexColor color)
     {
         for (int i = 0; i < count; ++i)

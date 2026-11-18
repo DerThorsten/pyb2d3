@@ -22,6 +22,7 @@ out vec2 f_points[8];
 flat out int f_count;
 out float f_radius;
 out float f_thickness;
+out float f_coarse;
 
 void main()
 {
@@ -65,8 +66,11 @@ void main()
     // Scale radius as well
     f_radius = invScale * f_radius;
 
-    // resolution.y = pixelScale * scale
-    f_thickness = 3.0f / (pixelScale * scale);
+    // resolution.y = pixelScale * scale; the border: 3 pixels, but at most 0.09 (the quad
+    // reaches 1.1: a wider border would be cut off square); coarse: see solid_capsule.vs
+    float pixels = 3.0f / (pixelScale * scale);
+    f_thickness = min(pixels, 0.09f);
+    f_coarse = clamp(pixels / 0.09f - 1.0f, 0.0f, 1.0f);
 
     // scale up and transform quad to fit polygon
     float x = v_instanceTransform.x;

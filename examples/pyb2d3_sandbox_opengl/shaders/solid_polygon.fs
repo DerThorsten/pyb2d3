@@ -9,6 +9,7 @@ flat in int f_count;
 in float f_radius;
 in vec4 f_color;
 in float f_thickness;
+in float f_coarse;  // 0: normal, 1: tiny on screen, drawn solid (see solid_capsule.vs)
 
 out vec4 fragColor;
 
@@ -75,7 +76,8 @@ float sdConvexPolygon(in vec2 p, in vec2[8] v, in int count)
 void main()
 {
     vec4 borderColor = f_color;
-    vec4 fillColor = 0.6f * borderColor;
+    // an opaque, darker fill (see solid_capsule.fs)
+    vec4 fillColor = mix(vec4(0.6f * borderColor.rgb, borderColor.a), borderColor, f_coarse);
 
     float dw = sdConvexPolygon(f_position, f_points, f_count);
     float d = abs(dw - f_radius);

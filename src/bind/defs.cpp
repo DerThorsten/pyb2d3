@@ -57,7 +57,6 @@ namespace pyb2d3::bind
 
     void export_defs(nb::module_& m)
     {
-        // ---- world -----------------------------------------------------------------------
         nb::class_<b2Capacity>(m, "Capacity")
             .def(nb::init<>())
             .def_rw("static_shape_count", &b2Capacity::staticShapeCount)
@@ -86,7 +85,6 @@ namespace pyb2d3::bind
         world_def.def("_install_thread_pool", &install_thread_pool, nb::arg("thread_pool"));
 #endif
 
-        // ---- body ------------------------------------------------------------------------
         nb::class_<b2MotionLocks>(m, "MotionLocks")
             .def(
                 "__init__",
@@ -145,7 +143,6 @@ namespace pyb2d3::bind
             );
         def_user_data(body_def);
 
-        // ---- filters / materials ---------------------------------------------------------
         def_class<b2Filter, b2DefaultFilter>(m, "Filter")
             .def_rw("category_bits", &b2Filter::categoryBits)
             .def_rw("mask_bits", &b2Filter::maskBits)
@@ -163,7 +160,6 @@ namespace pyb2d3::bind
             .def_rw("user_material_id", &b2SurfaceMaterial::userMaterialId)
             .def_rw("custom_color", &b2SurfaceMaterial::customColor);
 
-        // ---- shape -----------------------------------------------------------------------
         auto shape_def = def_class<b2ShapeDef, b2DefaultShapeDef>(m, "ShapeDef");
         shape_def.def_rw("material", &b2ShapeDef::material)
             .def_rw("density", &b2ShapeDef::density)
@@ -178,7 +174,7 @@ namespace pyb2d3::bind
             .def_rw("update_body_mass", &b2ShapeDef::updateBodyMass);
         def_user_data(shape_def);
 
-        // ---- chain (owns its points / materials) -----------------------------------------
+        // chain (owns its points / materials)
         nb::class_<PyChainDef>(m, "ChainDef")
             .def(nb::init<>())
             .def(
@@ -290,7 +286,6 @@ namespace pyb2d3::bind
                 }
             );
 
-        // ---- explosion ---------------------------------------------------------------------
         def_class<b2ExplosionDef, b2DefaultExplosionDef>(m, "ExplosionDef")
             .def_rw("mask_bits", &b2ExplosionDef::maskBits)
             .def_rw("position", &b2ExplosionDef::position)
@@ -298,7 +293,6 @@ namespace pyb2d3::bind
             .def_rw("falloff", &b2ExplosionDef::falloff)
             .def_rw("impulse_per_length", &b2ExplosionDef::impulsePerLength);
 
-        // ---- profiling -----------------------------------------------------------------------
         nb::class_<b2Profile>(m, "Profile")
             .def_ro("step", &b2Profile::step)
             .def_ro("pairs", &b2Profile::pairs)

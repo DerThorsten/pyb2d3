@@ -14,12 +14,21 @@ import numpy as np
 import pyb2d3 as b2d
 from pyb2d3_sandbox import SampleBase, register_sample, widgets
 
-from .examples_common.batch import Ema
-
 BATCH, LOOP = "batch API", "python loop"
 TYPES = ["revolute", "prismatic", "wheel", "distance", "pogo", "motor", "mover", "weld"]
 SPACING = 1.6  # between the mechanisms of a tile
 VERTICAL = b2d.make_rot(0.5 * math.pi)  # a joint frame whose x axis points up
+# the body of each mechanism: its offset from the anchor and its shape
+PARTS = {
+    "revolute": ((0.5, 0.0), b2d.box(0.55, 0.15)),  # a motor arm
+    "prismatic": ((0.0, 0.0), b2d.box(0.25, 0.25)),  # a piston moving up and down
+    "wheel": ((0.0, 0.0), b2d.circle(radius=0.3)),  # a sprung wheel spinning back and forth
+    "distance": ((0.0, -0.6), b2d.circle(radius=0.2)),  # a ball on a spring
+    "pogo": ((0.0, 0.4), b2d.box(0.3, 0.3)),  # a box on a pogo spring (along the normal)
+    "motor": ((0.0, 0.0), b2d.box(0.4, 0.15)),  # a box spun in place by a motor joint
+    "mover": ((0.0, 0.0), b2d.box(0.25, 0.25)),  # a box moved with a velocity
+    "weld": ((0.5, 0.0), b2d.box(0.55, 0.06)),  # a beam whose angular stiffness changes
+}
 
 
 @register_sample("Batch API", "Joint Batches", video=True)
@@ -33,15 +42,12 @@ class JointBatches(SampleBase):
         # hundreds of joint drawings would hide the bodies (debug draw panel: back on)
         self.debug_draw.draw_joints = False
         self.side = 8  # mechanisms per tile: side x side
-        self.timings = {BATCH: Ema(), LOOP: Ema()}
         self.t = 0.0
         self.bodies = b2d.Bodies()
         self.build()
         self.frontend.add_widget(
             widgets.IntSlider("grid per type", 2, 20, 1, self.side, self.set_side)
         )
-
-    # ---- building ---------------------------------------------------------------------------
 
     def tile_size(self):
         """the distance between neighboring tiles (with room for the frames and labels)"""
@@ -63,35 +69,32 @@ class JointBatches(SampleBase):
         self.bodies = b2d.Bodies()
         world, anchor = self.world, self.anchor_body
         joints = {name: [] for name in TYPES + ["filter"]}
-        box_def = b2d.shape_def(density=1.0)
-
-        def body(position, geometry):
-            # no sleeping: setting a motor speed / rest length does not wake a body
-            b = world.create_dynamic_body(position=tuple(position), enable_sleep=False)
-            b.create_shape(box_def, geometry)
-            self.bodies.append(b)
-            return b
-
+        shape_def = b2d.shape_def(density=1.0)
         arms = []
         for i, name in enumerate(TYPES):
+            offset, geometry = PARTS[name]
             for a in self.anchors(i):
                 a = tuple(a)
-                if name == "revolute":  # a motor arm
-                    arm = body((a[0] + 0.5, a[1]), b2d.box(0.55, 0.15))
+                # no sleeping: setting a motor speed / rest length does not wake a body
+                body = world.create_dynamic_body(
+                    position=(a[0] + offset[0], a[1] + offset[1]), enable_sleep=False
+                )
+                body.create_shape(shape_def, geometry)
+                self.bodies.append(body)
+                if name == "revolute":
                     j = world.create_revolute_joint(
                         anchor,
-                        arm,
+                        body,
                         local_anchor_a=a,
                         local_anchor_b=(-0.5, 0),
                         enable_motor=True,
                         max_motor_torque=20.0,
                     )
-                    arms.append(arm)
-                elif name == "prismatic":  # a piston moving up and down
-                    piston = body(a, b2d.box(0.25, 0.25))
+                    arms.append(body)
+                elif name == "prismatic":
                     j = world.create_prismatic_joint(
                         anchor,
-                        piston,
+                        body,
                         local_frame_a=b2d.transform(a, VERTICAL),
                         local_frame_b=b2d.transform((0, 0), VERTICAL),
                         enable_limit=True,
@@ -100,11 +103,10 @@ class JointBatches(SampleBase):
                         enable_motor=True,
                         max_motor_force=200.0,
                     )
-                elif name == "wheel":  # a sprung wheel spinning back and forth
-                    wheel = body(a, b2d.circle(radius=0.3))
+                elif name == "wheel":
                     j = world.create_wheel_joint(
                         anchor,
-                        wheel,
+                        body,
                         local_frame_a=b2d.transform(a, VERTICAL),
                         local_frame_b=b2d.transform((0, 0), VERTICAL),
                         enable_spring=True,
@@ -113,22 +115,20 @@ class JointBatches(SampleBase):
                         enable_motor=True,
                         max_motor_torque=10.0,
                     )
-                elif name == "distance":  # a ball on a spring
-                    ball = body((a[0], a[1] - 0.6), b2d.circle(radius=0.2))
+                elif name == "distance":
                     j = world.create_distance_joint(
                         anchor,
-                        ball,
+                        body,
                         local_anchor_a=a,
                         length=0.6,
                         enable_spring=True,
                         hertz=4.0,
                         damping_ratio=0.3,
                     )
-                elif name == "pogo":  # a box on a pogo spring (pushes / pulls along the normal)
-                    box = body((a[0], a[1] + 0.4), b2d.box(0.3, 0.3))
+                elif name == "pogo":
                     j = world.create_pogo_joint(
                         anchor,
-                        box,
+                        body,
                         local_anchor_a=a,
                         normal=(0, 1),
                         rest_length=0.4,
@@ -137,29 +137,26 @@ class JointBatches(SampleBase):
                         max_compression_force=200.0,
                         max_tension_force=200.0,
                     )
-                elif name == "motor":  # a box spun in place by a motor joint
-                    box = body(a, b2d.box(0.4, 0.15))
+                elif name == "motor":
                     j = world.create_motor_joint(
                         anchor,
-                        box,
+                        body,
                         local_anchor_a=a,
                         linear_hertz=5.0,
                         max_spring_force=500.0,
                         max_velocity_torque=50.0,
                     )
-                elif name == "mover":  # a box moved with a velocity
-                    box = body(a, b2d.box(0.25, 0.25))
+                elif name == "mover":
                     j = world.create_mover_joint(
                         anchor,
-                        box,
+                        body,
                         local_anchor_a=a,
                         max_velocity_force=(500.0, 500.0),
                     )
-                else:  # weld: a beam whose angular stiffness changes
-                    beam = body((a[0] + 0.5, a[1]), b2d.box(0.55, 0.06))
+                else:  # weld
                     j = world.create_weld_joint(
                         anchor,
-                        beam,
+                        body,
                         local_anchor_a=a,
                         local_anchor_b=(-0.5, 0),
                         angular_damping_ratio=0.5,
@@ -186,8 +183,7 @@ class JointBatches(SampleBase):
         n = self.side * self.side
         self.phase = np.linspace(0.0, 2.0 * math.pi, n, endpoint=False, dtype=np.float32)
         self.observed = 0.0
-        for ema in self.timings.values():
-            ema.value = None
+        self.ms = {BATCH: 0.0, LOOP: 0.0}  # time per step of both, smoothed
 
     def set_side(self, value):
         self.side = int(value)
@@ -197,8 +193,7 @@ class JointBatches(SampleBase):
         size = self.tile_size()
         return b2d.aabb(lower_bound=(-1.0, -2.0 * size - 5.0), upper_bound=(4.0 * size + 1.0, 2.0))
 
-    # ---- driving: the same settings, twice -----------------------------------------------
-
+    # driving: the same settings, twice
     def drive_batch(self, t):
         s = np.sin(t + self.phase)
         b = self.batches
@@ -253,9 +248,7 @@ class JointBatches(SampleBase):
         for mode, drive in ((LOOP, self.drive_loop), (BATCH, self.drive_batch)):
             t0 = time.perf_counter()
             self.observed = drive(self.t)
-            self.timings[mode](1000.0 * (time.perf_counter() - t0))
-
-    # ---- drawing ------------------------------------------------------------------------------
+            self.ms[mode] = 0.9 * self.ms[mode] + 0.1 * 1000.0 * (time.perf_counter() - t0)
 
     def post_debug_draw(self):
         dd = self.debug_draw
@@ -271,12 +264,10 @@ class JointBatches(SampleBase):
             dd.draw_string((x0 + 0.3, y0 + 0.7), label, b2d.HexColor.White)
 
         lines = [f"{sum(len(b) for b in self.batches.values())} joints, driven every step"]
-        for mode, ema in self.timings.items():
-            value = "-" if ema.value is None else f"{ema.value:.3f} ms"
-            lines.append(f"{mode}: {value} per step")
-        batch, loop = self.timings[BATCH].value, self.timings[LOOP].value
-        if batch and loop:
-            lines.append(f"batch is {loop / batch:.1f}x faster")
+        for mode, ms in self.ms.items():
+            lines.append(f"{mode}: {ms:.3f} ms per step")
+        if self.ms[BATCH] > 0:
+            lines.append(f"batch is {self.ms[LOOP] / self.ms[BATCH]:.1f}x faster")
         y = -2.0 * self.tile_size() + 1.0  # below the tiles
         for k, line in enumerate(lines):
             dd.draw_string((0.3, y - 0.5 - 1.2 * k), line, b2d.HexColor.White)

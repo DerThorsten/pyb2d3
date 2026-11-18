@@ -16,7 +16,7 @@ for i in range(20):
     links.append(link)
     previous = link
 
-# --- Shapes: material properties of many shapes at once ------------------------------
+# Shapes: material properties of many shapes at once
 shapes = b2d.Shapes(shape for link in links for shape in link.shapes)
 shapes.friction = np.linspace(0.2, 1.0, len(shapes))
 shapes.restitution = 0.1
@@ -29,7 +29,7 @@ assert isinstance(shapes[0], b2d.CapsuleShape)
 inside = shapes.test_point((0.5, 10.0))
 assert inside[0] and not inside[-1]
 
-# --- Joints: read the constraint forces of all joints after a step -------------------
+# Joints: read the constraint forces of all joints after a step
 joints = b2d.Joints(joint for link in links for joint in link.joints)
 joints = b2d.Joints(np.unique(joints.ids))  # every joint is attached to two links
 for _ in range(30):

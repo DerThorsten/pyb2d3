@@ -16,6 +16,7 @@ out vec2 f_position;
 out vec4 f_color;
 out float f_length;
 out float f_thickness;
+out float f_coarse;
 
 void main()
 {
@@ -31,8 +32,14 @@ void main()
     // quad range of [-1, 1] implies normalize radius and length
     f_length = length / scale;
 
-    // resolution.y = pixelScale * scale
-    f_thickness = 3.0f / (pixelScale * scale);
+    // resolution.y = pixelScale * scale; the border: 3 pixels, but at most a quarter of
+    // the radius and 0.09 (the quad reaches 1.1: a wider border would be cut off square);
+    // coarse (0..1): how much smaller than that the shape is on screen (zoomed out, small
+    // shapes become solid instead of all border)
+    float pixels = 3.0f / (pixelScale * scale);
+    float cap = min(0.25f * radius / scale, 0.09f);
+    f_thickness = min(pixels, cap);
+    f_coarse = clamp(pixels / cap - 1.0f, 0.0f, 1.0f);
 
     float x = v_instanceTransform.x;
     float y = v_instanceTransform.y;
