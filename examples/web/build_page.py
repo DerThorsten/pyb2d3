@@ -53,7 +53,7 @@ DROP_SUFFIXES = (".pyi", ".pxd", ".h", ".a", ".pc", ".cmake", ".pyc", ".c", ".cp
 # pyjs, pinned (a new one may bring another python), copied into the page from its
 # npm package. Update both together: the packed packages are built for PYTHON_VERSION
 # (the npm package.json says which python a pyjs has: "pyjs": {"python": ...})
-PYJS_VERSION = "6.0.0"
+PYJS_VERSION = "6.0.1"
 PYTHON_VERSION = "3.14"
 PYJS_TARBALL = f"https://registry.npmjs.org/@derthorsten/pyjs/-/pyjs-{PYJS_VERSION}.tgz"
 
