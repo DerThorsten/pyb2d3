@@ -126,7 +126,7 @@ async function main() {
   const params = new URLSearchParams(location.search);
   const dpr = parseFloat(params.get("dpr")); // NaN without the parameter
   const options = Object.fromEntries([...params].filter(([name]) => name !== "sample" && name !== "dpr"));
-  await pyjs.async_exec_eval(startScript(params.get("sample"), dpr, options));
+  await pyjs.runPythonAsync(startScript(params.get("sample"), dpr, options));
   lap("sandbox running");
   // the bytecode of the sandbox's imports, for the next visit: pyjs (>= 5.2) saves it
   // only when asked (and best effort when the page gets hidden); awaited, so a quick

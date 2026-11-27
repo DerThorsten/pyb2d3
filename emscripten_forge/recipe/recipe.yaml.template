@@ -56,6 +56,14 @@ outputs:
     requirements:
       build:
       - pytester
+      # Workaround until pytester pins these itself: the playwright node
+      # driver and its python API must have the same version, and >= 1.62
+      # (knows ubuntu 26.04). Without the pin the solver can fall back to
+      # playwright 1.60 (e.g. while conda-forge's nodejs >= 24 lags behind a
+      # zstd migration): "Playwright does not support chromium on
+      # ubuntu26.04-x64" and "BrowserType.launch: timeout: expected float".
+      - playwright 1.62.*
+      - playwright-python 1.62.*
       run:
       - pytester-run
   - script: generic-testing

@@ -208,13 +208,13 @@ class _Dom:
 
     def __init__(self):
         self.document = pyjs.js.document
-        self._handles = []
+        self._proxies = []
 
     def callable(self, fn):
         """a JS function calling `fn` (alive until `clear`)"""
-        js_fn, handle = pyjs.create_callable(fn)
-        self._handles.append(handle)
-        return js_fn
+        proxy = pyjs.create_proxy(fn)
+        self._proxies.append(proxy)
+        return proxy
 
     def on(self, element, event, fn):
         """element.addEventListener(event, fn(event))"""
@@ -235,9 +235,9 @@ class _Dom:
 
     def clear(self):
         """free the JS callables (their listeners must be gone: remove the elements first)"""
-        for handle in self._handles:
-            handle.delete()
-        self._handles.clear()
+        for proxy in self._proxies:
+            proxy.destroy()
+        self._proxies.clear()
 
 
 class _Labels:

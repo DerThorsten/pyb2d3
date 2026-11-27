@@ -263,7 +263,7 @@ export function setupEditor(pyjs) {
       keepEdit(currentFile, text);
     }
     showError(null);
-    pyjs.exec(`_sandbox_frontend.reload_code(${JSON.stringify(changed)})`);
+    pyjs.runPython(`_sandbox_frontend.reload_code(${JSON.stringify(changed)})`);
   }
 
   /** back to the original of the current file (in the editor; Run applies it; the
